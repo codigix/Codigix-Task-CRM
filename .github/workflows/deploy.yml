@@ -18,22 +18,22 @@ jobs:
           port: 22
           script: |
             echo "🚀 Starting Deployment..."
-            cd /var/www/All_IN_One
+            cd /var/www/Codigix-Task-CRM
             
             # Fetch latest changes
             git pull origin main
 
             # Build & Reload Client
             echo "🎨 Deploying client..."
-            cd /var/www/All_IN_One/client
+            cd /var/www/Codigix-Task-CRM/client
             npm install
             GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true npm run build
 
             # Update & Restart Server
             echo "📦 Deploying Backend..."
-            cd /var/www/All_IN_One/server
+            cd /var/www/Codigix-Task-CRM/server
             npm install --production
-            pm2 restart all-in-one-backend || pm2 start server.js --name "all-in-one-backend"
+            pm2 restart Codigix-Task-CRM-backend 
 
 
             # Save PM2 state
