@@ -223,7 +223,7 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-8 bg-red-600 text-white py-2.5 rounded   text-sm hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2  transition-all active:scale-[0.98]"
+              className="w-full mt-8 bg-green-600 text-white py-2.5 rounded   text-sm hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2  transition-all active:scale-[0.98]"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
