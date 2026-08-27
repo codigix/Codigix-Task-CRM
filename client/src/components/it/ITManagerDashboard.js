@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Folder, ClipboardCheck, FileText, Bug, Cloud, Clock,
   Settings, Layout, Activity, Calendar, MoreHorizontal, Plus,
-  Flag, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, X
+  Flag, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, X, Sparkles
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import BoardTabs from '../common/BoardTabs';
 import { useAuth } from '../../hooks/useAuth';
 import { projectAPI, taskAPI, activitiesAPI } from '../../services/api';
 
@@ -33,7 +34,8 @@ const ITManagerDashboard = () => {
     taskSummary: true,
     workload: true,
     timeTracking: true,
-    openTasks: true
+    openTasks: true,
+    aiSummary: true
   });
 
   useEffect(() => {
@@ -209,7 +211,10 @@ const ITManagerDashboard = () => {
   const completedCount = tasks.filter(t => t.status === 'DONE' || t.status === 'Completed' || t.status === 'Done').length;
 
   return (
-    <div className="p-4 bg-[#F8FAFC] min-h-screen font-sans">
+    <div className="flex w-full min-h-screen bg-[#F8FAFC] font-sans">
+      <div className="flex-1 flex flex-col min-w-0">
+        <BoardTabs department="IT" spaceName="IT Workspace" />
+        <div className="p-4 flex-1">
       {/* HEADER */}
       <div className="flex justify-between items-start mb-6">
         <div>
@@ -252,6 +257,39 @@ const ITManagerDashboard = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+{/* AI EXECUTIVE SUMMARY ROW */}
+      {widgets.aiSummary && (
+        <div className="mb-6 relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50 border border-indigo-100 rounded-xl shadow-sm p-5 group transition-all hover:shadow-md">
+          <div className="absolute right-0 top-0 -mt-4 -mr-4 text-indigo-600/5 group-hover:text-indigo-600/10 transition-colors pointer-events-none">
+            <Sparkles size={160} />
+          </div>
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-md shadow-sm">
+                  <Sparkles size={16} />
+                </div>
+                <h3 className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-900 to-blue-800">AI Task & Blocker Summary</h3>
+              </div>
+              <span className="text-[10px] font-semibold tracking-wider text-indigo-500 bg-indigo-100/50 px-2 py-1 rounded-full uppercase">Live Analysis</span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-6 text-[13px]">
+              <div className="space-y-2.5 text-indigo-900/80 leading-relaxed">
+                <p>
+                  <strong className="text-indigo-900 font-semibold">Overview:</strong> The team is currently handling <strong className="text-indigo-700 bg-indigo-100/50 px-1 rounded">{tasks.length}</strong> active tasks across <strong className="text-indigo-700 bg-indigo-100/50 px-1 rounded">{activeProjectsCount}</strong> projects. Velocity is stable, with <strong className="text-emerald-700 bg-emerald-100/50 px-1 rounded">{completedCount}</strong> tasks recently completed and <strong className="text-amber-700 bg-amber-100/50 px-1 rounded">{inProgressTasksCount}</strong> actively in progress.
+                </p>
+              </div>
+              <div className="space-y-2.5 text-indigo-900/80 leading-relaxed">
+                <p>
+                  <strong className="text-rose-900 font-semibold">Blockers & Risks:</strong> There are <strong className="text-rose-700 bg-rose-100/50 px-1 rounded">{openBugsCount}</strong> open bugs requiring attention. Priority should be given to the <strong className="text-rose-700 bg-rose-100/50 px-1 rounded">{tasks.filter(t => t.priority === 'High' && t.status !== 'Completed' && t.status !== 'Done').length}</strong> high-priority tasks currently in the pipeline to prevent downstream bottlenecks.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -579,6 +617,8 @@ const ITManagerDashboard = () => {
       </div>
 
     </div>
+        </div>
+      </div>
   );
 };
 

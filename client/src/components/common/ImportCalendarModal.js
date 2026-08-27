@@ -269,7 +269,7 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
                 </div>
               </div>
 
-              <p className="text-[11px] text-gray-500 mt-2">
+              <p className="text-xs text-gray-500 mt-2">
                 Untick anything that isn’t work — holidays and notes often sit in the same grid.
               </p>
             </>

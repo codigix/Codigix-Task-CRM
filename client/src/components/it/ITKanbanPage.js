@@ -1248,7 +1248,7 @@ const ITKanbanPage = ({ department }) => {
                                                               prev.includes(card.key) ? prev.filter(k => k !== card.key) : [...prev, card.key]
                                                             );
                                                           }}
-                                                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-gray-200 bg-gray-50 hover:bg-gray-100 text-[11px] font-medium text-gray-700 cursor-pointer transition-all hover:border-gray-300 w-full justify-between select-none"
+                                                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-700 cursor-pointer transition-all hover:border-gray-300 w-full justify-between select-none"
                                                           title="Click to toggle subtasks list"
                                                         >
                                                           <div className="flex items-center gap-1.5 min-w-0">

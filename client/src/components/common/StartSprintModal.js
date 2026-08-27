@@ -170,12 +170,11 @@ const StartSprintModal = ({ isOpen, sprint, itemCount, onCancel, onStart, mode =
               value={endDate}
               disabled={!isCustom}
               onChange={(e) => setEndDate(e.target.value)}
-              className={`w-full border border-gray-300 rounded px-3 py-2 text-[14px] outline-none focus:border-blue-500 ${
-                !isCustom ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
-              }`}
+              className={`w-full border border-gray-300 rounded px-3 py-2 text-[14px] outline-none focus:border-blue-500 ${!isCustom ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                }`}
             />
             {!isCustom && (
-              <p className="text-[11px] text-gray-500 mt-1">Set by the duration. Choose "Custom" to edit.</p>
+              <p className="text-xs text-gray-500 mt-1">Set by the duration. Choose "Custom" to edit.</p>
             )}
           </div>
 

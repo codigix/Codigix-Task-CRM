@@ -67,13 +67,13 @@ const SeoGmbPage = () => {
 
   const currentAnswer = aiAnswers[activeAiAnswerTab] || aiAnswers['ChatGPT'];
 
-  const filteredGeoShareData = activeGeoEngine === 'All Engines' 
-    ? charts.geoShareOfVisibility 
+  const filteredGeoShareData = activeGeoEngine === 'All Engines'
+    ? charts.geoShareOfVisibility
     : charts.geoShareOfVisibility?.filter(e => e.name === activeGeoEngine || (activeGeoEngine === 'Google AI Overview' && e.name.includes('Google AI')));
 
-  const filteredTopPrompts = lists.geoTopPrompts?.filter(p => 
-    activeGeoEngine === 'All Engines' || 
-    p.engine === activeGeoEngine || 
+  const filteredTopPrompts = lists.geoTopPrompts?.filter(p =>
+    activeGeoEngine === 'All Engines' ||
+    p.engine === activeGeoEngine ||
     (activeGeoEngine === 'Google AI Overview' && p.engine.includes('Google AI'))
   );
 
@@ -86,7 +86,7 @@ const SeoGmbPage = () => {
       <div className="flex items-end gap-2 mt-auto">
         <span className="text-2xl font-bold text-gray-900">{value}</span>
         <span className={`text-xs font-semibold ${change >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center mb-1`}>
-          {change >= 0 ? <TrendingUp size={12} className="mr-1"/> : <TrendingDown size={12} className="mr-1"/>}
+          {change >= 0 ? <TrendingUp size={12} className="mr-1" /> : <TrendingDown size={12} className="mr-1" />}
           {Math.abs(change)}%
         </span>
       </div>
@@ -102,7 +102,7 @@ const SeoGmbPage = () => {
         <div className="flex items-center gap-4">
           <SeoGmbProjectSelector selectedProjectId={projectId} onSelectProject={setProjectId} />
         </div>
-        
+
         <div className="flex items-center gap-2 overflow-x-auto">
           <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-100 shadow-sm">
             {tabs.map(tab => (
@@ -127,7 +127,7 @@ const SeoGmbPage = () => {
       </div>
 
       <div className="p-6 max-w-[1600px] mx-auto space-y-6">
-        
+
         {/* Competitors Placeholder */}
         {activeTab === 'Competitors' && (
           <div className="bg-white rounded-xl p-8 text-center text-gray-500 shadow-sm border border-gray-100">
@@ -151,7 +151,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 1 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* SEO Performance (Line Chart) */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
@@ -160,13 +160,13 @@ const SeoGmbPage = () => {
                 </div>
                 <div className="flex-1 min-h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={charts.seoPerformance?.length ? charts.seoPerformance : [{name:'No Data', clicks:0, impressions:0}]}>
+                    <LineChart data={charts.seoPerformance?.length ? charts.seoPerformance : [{ name: 'No Data', clicks: 0, impressions: 0 }]}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} />
-                      <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} tickFormatter={v => `${v/1000}K`} />
-                      <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+                      <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} tickFormatter={v => `${v / 1000}K`} />
+                      <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
                       <RechartsTooltip />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }}/>
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }} />
                       <Line yAxisId="left" type="monotone" dataKey="clicks" stroke="#3B82F6" strokeWidth={2} dot={false} />
                       <Line yAxisId="right" type="monotone" dataKey="impressions" stroke="#8B5CF6" strokeWidth={2} dot={false} />
                       <Line yAxisId="left" type="monotone" dataKey="position" stroke="#F59E0B" strokeWidth={2} dot={false} />
@@ -198,9 +198,9 @@ const SeoGmbPage = () => {
                   </div>
                   <div className="flex-1 pl-4 space-y-2">
                     {charts.rankingDistribution?.map((item, i) => (
-                      <div key={i} className="flex items-center justify-between text-[11px]">
+                      <div key={i} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-sm" style={{backgroundColor: item.color}}></div>
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }}></div>
                           <span className="text-gray-600">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Top Performing Keywords Expanded */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-6 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
@@ -307,7 +307,7 @@ const SeoGmbPage = () => {
                   {widgets.seoHealthDetails?.categories?.map((c, i) => (
                     <div key={i} className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{backgroundColor: c.color}}></div>
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }}></div>
                         <span className="text-gray-700 font-medium">{c.name}</span>
                       </div>
                       <span className="text-gray-500">{c.value}</span>
@@ -341,7 +341,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 3 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Top Keywords by Intent */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
@@ -351,19 +351,19 @@ const SeoGmbPage = () => {
                 <div className="flex flex-wrap justify-center gap-3 mb-4">
                   {charts.keywordsByIntent?.slice(0, 4).map((intent, i) => (
                     <div key={i} className="flex items-center gap-1 text-[10px] text-gray-500">
-                      <div className="w-2 h-2 rounded-sm" style={{backgroundColor: intent.color}}></div> {intent.intent}
+                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: intent.color }}></div> {intent.intent}
                     </div>
                   ))}
                 </div>
                 <div className="space-y-3 flex-1 overflow-y-auto">
                   {lists.topKeywords?.slice(0, 6).map((k, i) => (
-                    <div key={i} className="flex items-center text-[11px]">
+                    <div key={i} className="flex items-center text-xs">
                       <span className="w-1/3 truncate text-gray-700">{k.keyword}</span>
                       <div className="w-1/2 bg-gray-100 rounded-full h-2.5 flex overflow-hidden mr-3">
-                         {charts.keywordsByIntent?.map((intent, j) => {
-                            const width = (Math.random() * 40 + 10);
-                            return <div key={j} className="h-full" style={{width: `${width}%`, backgroundColor: intent.color}}></div>;
-                         })}
+                        {charts.keywordsByIntent?.map((intent, j) => {
+                          const width = (Math.random() * 40 + 10);
+                          return <div key={j} className="h-full" style={{ width: `${width}%`, backgroundColor: intent.color }}></div>;
+                        })}
                       </div>
                       <span className="text-gray-500 w-1/6 text-right">{k.volume}</span>
                     </div>
@@ -412,31 +412,31 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex flex-col">
-                   <div className="h-[140px] w-full flex items-center justify-center relative">
-                     <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie data={charts.devicesByClicks || []} innerRadius={40} outerRadius={60} paddingAngle={2} dataKey="value">
-                            {charts.devicesByClicks?.map((e, i) => <Cell key={i} fill={e.color} />)}
-                          </Pie>
-                          <RechartsTooltip />
-                        </PieChart>
-                     </ResponsiveContainer>
-                   </div>
-                   <div className="space-y-3 mt-4">
-                      {charts.devicesByClicks?.map((d, i) => (
-                        <div key={i} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: d.color}}></div>
-                            <span className="text-gray-700 font-medium">{d.name}</span>
-                          </div>
-                          <span className="font-bold text-gray-900">{d.value} <span className="text-gray-400 font-normal">({d.pct})</span></span>
+                  <div className="h-[140px] w-full flex items-center justify-center relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={charts.devicesByClicks || []} innerRadius={40} outerRadius={60} paddingAngle={2} dataKey="value">
+                          {charts.devicesByClicks?.map((e, i) => <Cell key={i} fill={e.color} />)}
+                        </Pie>
+                        <RechartsTooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="space-y-3 mt-4">
+                    {charts.devicesByClicks?.map((d, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></div>
+                          <span className="text-gray-700 font-medium">{d.name}</span>
                         </div>
-                      ))}
-                   </div>
+                        <span className="font-bold text-gray-900">{d.value} <span className="text-gray-400 font-normal">({d.pct})</span></span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center">View Full Report &rarr;</button>
               </div>
-              
+
             </div>
           </>
         )}
@@ -456,7 +456,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 1 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Performance Over Time */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
@@ -467,10 +467,10 @@ const SeoGmbPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={charts.gmbPerformanceTime || []}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} />
-                      <YAxis axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} tickFormatter={v => v >= 1000 ? `${v/1000}k` : v} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} tickFormatter={v => v >= 1000 ? `${v / 1000}k` : v} />
                       <RechartsTooltip />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }}/>
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }} />
                       <Line type="monotone" dataKey="views" name="Views" stroke="#3B82F6" strokeWidth={2} dot={false} />
                       <Line type="monotone" dataKey="search" name="Search Views" stroke="#10B981" strokeWidth={2} dot={false} />
                       <Line type="monotone" dataKey="maps" name="Map Views" stroke="#F59E0B" strokeWidth={2} dot={false} />
@@ -503,10 +503,10 @@ const SeoGmbPage = () => {
                   </div>
                   <div className="flex-1 pl-4 space-y-4">
                     {charts.gmbCustomerSearch?.map((item, i) => (
-                      <div key={i} className="flex flex-col text-[11px]">
+                      <div key={i} className="flex flex-col text-xs">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-sm" style={{backgroundColor: item.color}}></div>
+                            <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }}></div>
                             <span className="text-gray-900 font-semibold">{item.name}</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -533,12 +533,12 @@ const SeoGmbPage = () => {
                       <div className="flex justify-between mb-1">
                         <span className="text-gray-700">{act.name}</span>
                         <div className="flex items-center gap-3">
-                           <span className="font-bold">{act.value}</span>
-                           <span className="text-green-500 font-medium flex items-center w-12 justify-end">↑ {act.change.replace('+','')}</span>
+                          <span className="font-bold">{act.value}</span>
+                          <span className="text-green-500 font-medium flex items-center w-12 justify-end">↑ {act.change.replace('+', '')}</span>
                         </div>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{width: `${(act.value / 600) * 100}%`}}></div>
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${(act.value / 600) * 100}%` }}></div>
                       </div>
                     </div>
                   ))}
@@ -549,7 +549,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Recent Reviews */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
@@ -559,7 +559,7 @@ const SeoGmbPage = () => {
                 <div className="flex items-center gap-6">
                   <div className="flex flex-col items-center">
                     <span className="text-5xl font-bold text-gray-900">{widgets.gmbRecentReviews?.rating || '4.8'}</span>
-                    <div className="flex text-yellow-400 my-1 text-sm"><Star fill="currentColor" size={14}/><Star fill="currentColor" size={14}/><Star fill="currentColor" size={14}/><Star fill="currentColor" size={14}/><Star fill="currentColor" size={14}/></div>
+                    <div className="flex text-yellow-400 my-1 text-sm"><Star fill="currentColor" size={14} /><Star fill="currentColor" size={14} /><Star fill="currentColor" size={14} /><Star fill="currentColor" size={14} /><Star fill="currentColor" size={14} /></div>
                     <span className="text-[10px] text-gray-500">Total {widgets.gmbRecentReviews?.total || '125'} Reviews</span>
                   </div>
                   <div className="flex-1 space-y-1.5 text-[10px]">
@@ -567,7 +567,7 @@ const SeoGmbPage = () => {
                       <div key={i} className="flex items-center justify-between gap-2">
                         <span className="text-gray-600 w-8">{b.stars} Stars</span>
                         <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                          <div className="h-1.5 rounded-full" style={{width: b.pct, backgroundColor: b.color}}></div>
+                          <div className="h-1.5 rounded-full" style={{ width: b.pct, backgroundColor: b.color }}></div>
                         </div>
                         <span className="text-gray-900 font-semibold w-6 text-right">{b.value}</span>
                         <span className="text-gray-400 w-8 text-right">({b.pct})</span>
@@ -587,10 +587,10 @@ const SeoGmbPage = () => {
                 <div className="flex-1 min-h-[120px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={charts.gmbReviewsOverTime || []}>
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 9}} />
-                      <YAxis axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 9}} width={20} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 9 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 9 }} width={20} />
                       <RechartsTooltip />
-                      <Line type="monotone" dataKey="reviews" stroke="#3B82F6" strokeWidth={2} dot={{r: 3, fill: '#3B82F6'}} />
+                      <Line type="monotone" dataKey="reviews" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3, fill: '#3B82F6' }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -632,18 +632,18 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 space-y-4">
-                   <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-gray-700"><MessageCircle size={14} className="text-blue-500"/> Questions</div>
-                      <div className="flex items-center gap-3"><span className="font-bold">{widgets.gmbQaOverview?.questions}</span><span className="text-green-500">↑ {widgets.gmbQaOverview?.qChange.replace('+ ','')}</span></div>
-                   </div>
-                   <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-gray-700"><CheckCircle2 size={14} className="text-green-500"/> Answered</div>
-                      <div className="flex items-center gap-3"><span className="font-bold">{widgets.gmbQaOverview?.answered}</span><span className="text-green-500">↑ {widgets.gmbQaOverview?.aChange.replace('+ ','')}</span></div>
-                   </div>
-                   <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-gray-700"><Clock size={14} className="text-purple-500"/> Pending</div>
-                      <div className="flex items-center gap-3"><span className="font-bold">{widgets.gmbQaOverview?.pending}</span><span className="text-red-500">↓ {widgets.gmbQaOverview?.pChange.replace('+ ','')}</span></div>
-                   </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-gray-700"><MessageCircle size={14} className="text-blue-500" /> Questions</div>
+                    <div className="flex items-center gap-3"><span className="font-bold">{widgets.gmbQaOverview?.questions}</span><span className="text-green-500">↑ {widgets.gmbQaOverview?.qChange.replace('+ ', '')}</span></div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-gray-700"><CheckCircle2 size={14} className="text-green-500" /> Answered</div>
+                    <div className="flex items-center gap-3"><span className="font-bold">{widgets.gmbQaOverview?.answered}</span><span className="text-green-500">↑ {widgets.gmbQaOverview?.aChange.replace('+ ', '')}</span></div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-gray-700"><Clock size={14} className="text-purple-500" /> Pending</div>
+                    <div className="flex items-center gap-3"><span className="font-bold">{widgets.gmbQaOverview?.pending}</span><span className="text-red-500">↓ {widgets.gmbQaOverview?.pChange.replace('+ ', '')}</span></div>
+                  </div>
                 </div>
                 <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center">View All Q&A &rarr;</button>
               </div>
@@ -652,7 +652,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 3 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Google Business Profile Completion */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <h3 className="font-bold text-gray-900 text-sm mb-4">Google Business Profile Completion</h3>
@@ -671,7 +671,7 @@ const SeoGmbPage = () => {
                 <div className="mt-6 grid grid-cols-2 gap-2 text-[10px]">
                   {widgets.gmbProfileCompletion?.tasks?.map((t, i) => (
                     <div key={i} className="flex items-center gap-1.5 text-gray-700">
-                      {t.completed ? <CheckCircle2 size={12} className="text-green-500"/> : <Circle size={12} className="text-gray-300"/>} {t.name}
+                      {t.completed ? <CheckCircle2 size={12} className="text-green-500" /> : <Circle size={12} className="text-gray-300" />} {t.name}
                     </div>
                   ))}
                 </div>
@@ -705,15 +705,15 @@ const SeoGmbPage = () => {
                 <div className="flex-1 space-y-3">
                   {lists.gmbPostsPerformance?.map((p, i) => (
                     <div key={i} className="flex items-center gap-3">
-                       <img src={p.img} alt={p.title} className="w-12 h-10 rounded object-cover" />
-                       <div className="flex-1 min-w-0">
-                         <h4 className="text-xs font-semibold text-gray-900 truncate">{p.title}</h4>
-                         <p className="text-[9px] text-gray-500">{p.date}</p>
-                       </div>
-                       <div className="flex items-center gap-3 text-xs text-gray-700">
-                         <div className="flex items-center gap-1"><Eye size={12} className="text-gray-400"/> {p.views}</div>
-                         <div className="flex items-center gap-1"><MousePointer2 size={12} className="text-gray-400"/> {p.clicks}</div>
-                       </div>
+                      <img src={p.img} alt={p.title} className="w-12 h-10 rounded object-cover" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs font-semibold text-gray-900 truncate">{p.title}</h4>
+                        <p className="text-[9px] text-gray-500">{p.date}</p>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-700">
+                        <div className="flex items-center gap-1"><Eye size={12} className="text-gray-400" /> {p.views}</div>
+                        <div className="flex items-center gap-1"><MousePointer2 size={12} className="text-gray-400" /> {p.clicks}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -733,7 +733,7 @@ const SeoGmbPage = () => {
                 const isActive = activeGeoEngine === engine.id;
                 const Icon = engine.icon;
                 return (
-                  <button 
+                  <button
                     key={engine.id}
                     onClick={() => setActiveGeoEngine(engine.id)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-sm whitespace-nowrap transition-colors border ${isActive ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
@@ -769,7 +769,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 1 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* AI Visibility Trend */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
@@ -780,15 +780,15 @@ const SeoGmbPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={charts.geoVisibilityTrend || []}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} />
-                      <YAxis axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
                       <RechartsTooltip />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }}/>
-                      {(activeGeoEngine === 'All Engines' || activeGeoEngine === 'ChatGPT') && <Line type="monotone" dataKey="chatgpt" name="ChatGPT" stroke="#3B82F6" strokeWidth={2} dot={{r:3}} />}
-                      {(activeGeoEngine === 'All Engines' || activeGeoEngine === 'Google AI Overview') && <Line type="monotone" dataKey="googleai" name="Google AI" stroke="#10B981" strokeWidth={2} dot={{r:3}} />}
-                      {(activeGeoEngine === 'All Engines' || activeGeoEngine === 'Gemini') && <Line type="monotone" dataKey="gemini" name="Gemini" stroke="#F59E0B" strokeWidth={2} dot={{r:3}} />}
-                      {(activeGeoEngine === 'All Engines' || activeGeoEngine === 'Perplexity') && <Line type="monotone" dataKey="perplexity" name="Perplexity" stroke="#8B5CF6" strokeWidth={2} dot={{r:3}} />}
-                      {(activeGeoEngine === 'All Engines' || activeGeoEngine === 'Claude') && <Line type="monotone" dataKey="claude" name="Claude" stroke="#EF4444" strokeWidth={2} dot={{r:3}} />}
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }} />
+                      {(activeGeoEngine === 'All Engines' || activeGeoEngine === 'ChatGPT') && <Line type="monotone" dataKey="chatgpt" name="ChatGPT" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} />}
+                      {(activeGeoEngine === 'All Engines' || activeGeoEngine === 'Google AI Overview') && <Line type="monotone" dataKey="googleai" name="Google AI" stroke="#10B981" strokeWidth={2} dot={{ r: 3 }} />}
+                      {(activeGeoEngine === 'All Engines' || activeGeoEngine === 'Gemini') && <Line type="monotone" dataKey="gemini" name="Gemini" stroke="#F59E0B" strokeWidth={2} dot={{ r: 3 }} />}
+                      {(activeGeoEngine === 'All Engines' || activeGeoEngine === 'Perplexity') && <Line type="monotone" dataKey="perplexity" name="Perplexity" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3 }} />}
+                      {(activeGeoEngine === 'All Engines' || activeGeoEngine === 'Claude') && <Line type="monotone" dataKey="claude" name="Claude" stroke="#EF4444" strokeWidth={2} dot={{ r: 3 }} />}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -817,9 +817,9 @@ const SeoGmbPage = () => {
                   </div>
                   <div className="flex-1 pl-4 space-y-3">
                     {filteredGeoShareData?.map((item, i) => (
-                      <div key={i} className="flex items-center justify-between text-[11px]">
+                      <div key={i} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-sm" style={{backgroundColor: item.color}}></div>
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }}></div>
                           <span className="text-gray-700 font-medium">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -837,22 +837,22 @@ const SeoGmbPage = () => {
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-gray-900 text-sm">AI Overview Presence</h3>
                   <div className="flex gap-2">
-                     <button className="text-[10px] bg-gray-50 border border-gray-200 px-2 py-1 rounded text-gray-700 font-semibold">Top Queries</button>
-                     <button className="text-[10px] text-gray-500 hover:text-gray-700 px-2 py-1">Top Pages</button>
+                    <button className="text-[10px] bg-gray-50 border border-gray-200 px-2 py-1 rounded text-gray-700 font-semibold">Top Queries</button>
+                    <button className="text-[10px] text-gray-500 hover:text-gray-700 px-2 py-1">Top Pages</button>
                   </div>
                 </div>
                 <div className="flex-1 flex flex-col justify-center space-y-4">
                   {charts.geoOverviewPresence?.map((q, i) => (
-                    <div key={i} className="flex flex-col text-[11px]">
+                    <div key={i} className="flex flex-col text-xs">
                       <div className="flex justify-between mb-1">
                         <span className="text-gray-700 truncate w-3/5">{q.query}</span>
                         <div className="flex items-center gap-2">
-                           <span className="font-bold text-gray-900">{q.value}%</span>
-                           <span className="text-green-500 font-medium text-[9px] flex items-center justify-end">↑ {q.change.replace('+ ','')}</span>
+                          <span className="font-bold text-gray-900">{q.value}%</span>
+                          <span className="text-green-500 font-medium text-[9px] flex items-center justify-end">↑ {q.change.replace('+ ', '')}</span>
                         </div>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{width: `${q.value}%`}}></div>
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${q.value}%` }}></div>
                       </div>
                     </div>
                   ))}
@@ -864,7 +864,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Top Prompts Tracking */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
@@ -872,7 +872,7 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1">
-                  <table className="w-full text-left text-[11px]">
+                  <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-50">
                         <th className="pb-2 font-medium">Prompt / AI Query</th>
@@ -889,14 +889,15 @@ const SeoGmbPage = () => {
                         const trendColor = p.trend.startsWith('+') ? 'text-green-500' : 'text-red-500';
                         const trendIcon = p.trend.startsWith('+') ? '↑' : '↓';
                         return (
-                        <tr key={i} className="text-gray-700">
-                          <td className="py-2.5 font-medium truncate max-w-[120px]">{p.prompt}</td>
-                          <td className="py-2.5 flex items-center gap-1.5"><EngineIcon size={12} className="text-gray-400"/> {p.engine}</td>
-                          <td className="py-2.5 text-center font-bold text-gray-900">{p.position}</td>
-                          <td className="py-2.5 text-center"><span className={`px-2 py-0.5 rounded font-semibold text-[9px] ${visColor}`}>{p.visibility}</span></td>
-                          <td className={`py-2.5 text-center font-bold ${trendColor}`}>{trendIcon} {p.trend.replace(/[-+]\s/,'')}</td>
-                        </tr>
-                      )})}
+                          <tr key={i} className="text-gray-700">
+                            <td className="py-2.5 font-medium truncate max-w-[120px]">{p.prompt}</td>
+                            <td className="py-2.5 flex items-center gap-1.5"><EngineIcon size={12} className="text-gray-400" /> {p.engine}</td>
+                            <td className="py-2.5 text-center font-bold text-gray-900">{p.position}</td>
+                            <td className="py-2.5 text-center"><span className={`px-2 py-0.5 rounded font-semibold text-[9px] ${visColor}`}>{p.visibility}</span></td>
+                            <td className={`py-2.5 text-center font-bold ${trendColor}`}>{trendIcon} {p.trend.replace(/[-+]\s/, '')}</td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -913,14 +914,14 @@ const SeoGmbPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={charts.geoMentionsCitations || []}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 10}} />
-                      <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 10}} />
-                      <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 10}} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+                      <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+                      <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 10 }} />
                       <RechartsTooltip />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }}/>
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }} />
                       {/* Using Bar inside LineChart visually mimics Combo if we used ComposedChart, but we'll stick to LineChart with different strokes for simplicity or use actual Bar chart logic. 
                           Since we only imported LineChart, we'll render both as lines but styled uniquely. (The image shows bars for Citations and line for mentions) */}
-                      <Line yAxisId="left" type="monotone" dataKey="mentions" name="Mentions" stroke="#3B82F6" strokeWidth={2} dot={{r: 3, fill: '#3B82F6'}} />
+                      <Line yAxisId="left" type="monotone" dataKey="mentions" name="Mentions" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3, fill: '#3B82F6' }} />
                       <Line yAxisId="right" type="monotone" dataKey="citations" name="Citations" stroke="#8B5CF6" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -934,7 +935,7 @@ const SeoGmbPage = () => {
                 </div>
                 <div className="flex gap-2 mb-4">
                   {['ChatGPT', 'Google AI', 'Gemini', 'Perplexity'].map(tab => (
-                    <button 
+                    <button
                       key={tab}
                       onClick={() => setActiveAiAnswerTab(tab)}
                       className={`px-3 py-1 rounded text-xs font-semibold ${activeAiAnswerTab === tab ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 font-medium hover:bg-gray-50'}`}
@@ -944,26 +945,26 @@ const SeoGmbPage = () => {
                   ))}
                 </div>
                 <div className="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-100 flex flex-col relative">
-                   <div className="absolute top-1/2 -translate-y-1/2 -left-3 bg-white border border-gray-200 rounded-full p-1 shadow-sm cursor-pointer hover:bg-gray-50"><ChevronLeft size={16} className="text-gray-400"/></div>
-                   <div className="absolute top-1/2 -translate-y-1/2 -right-3 bg-white border border-gray-200 rounded-full p-1 shadow-sm cursor-pointer hover:bg-gray-50"><ChevronRight size={16} className="text-gray-400"/></div>
-                   
-                   <div className="flex items-center justify-between mb-3">
-                     <div className="flex items-center gap-2"><MessageCircle size={16} className="text-gray-900"/><span className="font-bold text-gray-900 text-sm">{activeAiAnswerTab}</span></div>
-                     <span className="text-[10px] text-gray-500 font-medium bg-gray-200 px-2 py-0.5 rounded">{currentAnswer.title}</span>
-                   </div>
-                   <div className="bg-white p-3 rounded-lg border border-gray-100 mb-3 shadow-sm flex-1">
-                      <p className="text-gray-800 text-xs font-medium italic mb-2">"What is the best CRM software for small and medium businesses?"</p>
-                      <p className="text-gray-600 text-[11px] leading-relaxed">
-                         {currentAnswer.text}
-                      </p>
-                   </div>
-                   <div className="flex items-center justify-between text-[10px]">
-                      <div className="text-gray-500">Source: <a href="#" className="text-blue-500 hover:underline">{currentAnswer.source}</a></div>
-                      <div className="flex items-center gap-3 text-gray-600">
-                         <span className="font-semibold text-gray-900">Rank: <span className="font-normal text-gray-600">{currentAnswer.rank}</span></span>
-                         <span className={`flex items-center gap-1 bg-opacity-10 px-2 py-0.5 rounded border font-semibold ${currentAnswer.sentiment === 'Positive' ? 'text-green-600 bg-green-50 border-green-100' : 'text-gray-600 bg-gray-50 border-gray-100'}`}><Check size={10}/> {currentAnswer.sentiment}</span>
-                      </div>
-                   </div>
+                  <div className="absolute top-1/2 -translate-y-1/2 -left-3 bg-white border border-gray-200 rounded-full p-1 shadow-sm cursor-pointer hover:bg-gray-50"><ChevronLeft size={16} className="text-gray-400" /></div>
+                  <div className="absolute top-1/2 -translate-y-1/2 -right-3 bg-white border border-gray-200 rounded-full p-1 shadow-sm cursor-pointer hover:bg-gray-50"><ChevronRight size={16} className="text-gray-400" /></div>
+
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2"><MessageCircle size={16} className="text-gray-900" /><span className="font-bold text-gray-900 text-sm">{activeAiAnswerTab}</span></div>
+                    <span className="text-[10px] text-gray-500 font-medium bg-gray-200 px-2 py-0.5 rounded">{currentAnswer.title}</span>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg border border-gray-100 mb-3 shadow-sm flex-1">
+                    <p className="text-gray-800 text-xs font-medium italic mb-2">"What is the best CRM software for small and medium businesses?"</p>
+                    <p className="text-gray-600 text-xs leading-relaxed">
+                      {currentAnswer.text}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px]">
+                    <div className="text-gray-500">Source: <a href="#" className="text-blue-500 hover:underline">{currentAnswer.source}</a></div>
+                    <div className="flex items-center gap-3 text-gray-600">
+                      <span className="font-semibold text-gray-900">Rank: <span className="font-normal text-gray-600">{currentAnswer.rank}</span></span>
+                      <span className={`flex items-center gap-1 bg-opacity-10 px-2 py-0.5 rounded border font-semibold ${currentAnswer.sentiment === 'Positive' ? 'text-green-600 bg-green-50 border-green-100' : 'text-gray-600 bg-gray-50 border-gray-100'}`}><Check size={10} /> {currentAnswer.sentiment}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -971,7 +972,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 3 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Competitor Compare */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
@@ -979,7 +980,7 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-[10px] px-2 py-1 rounded outline-none font-semibold"><option>AI Visibility Score ▾</option></select>
                 </div>
                 <div className="flex-1">
-                  <table className="w-full text-left text-[11px]">
+                  <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-50">
                         <th className="pb-2 font-medium">Company</th>
@@ -993,13 +994,13 @@ const SeoGmbPage = () => {
                       {lists.geoCompetitorCompare?.map((c, i) => (
                         <tr key={i} className={c.isUs ? "bg-indigo-50/50 text-indigo-900 font-semibold" : "text-gray-700"}>
                           <td className="py-2.5 flex items-center gap-2">
-                             {c.isUs ? <div className="p-1 bg-indigo-600 text-white rounded"><Target size={10}/></div> : <div className="p-1 text-gray-400"><Circle size={10}/></div>}
-                             {c.company}
+                            {c.isUs ? <div className="p-1 bg-indigo-600 text-white rounded"><Target size={10} /></div> : <div className="p-1 text-gray-400"><Circle size={10} /></div>}
+                            {c.company}
                           </td>
                           <td className="py-2.5 text-center font-bold">{c.visibility}</td>
                           <td className="py-2.5 text-center">{c.mentions}</td>
                           <td className="py-2.5 text-center">{c.citations}</td>
-                          <td className="py-2.5 text-center text-green-500 font-semibold flex justify-center items-center gap-1">↑ {c.trend.replace('+ ','')}</td>
+                          <td className="py-2.5 text-center text-green-500 font-semibold flex justify-center items-center gap-1">↑ {c.trend.replace('+ ', '')}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1010,7 +1011,7 @@ const SeoGmbPage = () => {
               {/* AI Content Opportunities */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><Zap size={16} className="text-purple-500 fill-purple-100"/> AI Content Opportunities</h3>
+                  <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><Zap size={16} className="text-purple-500 fill-purple-100" /> AI Content Opportunities</h3>
                 </div>
                 <div className="flex-1">
                   <table className="w-full text-left text-xs">
@@ -1027,7 +1028,7 @@ const SeoGmbPage = () => {
                           <td className="py-2.5 font-medium">{o.idea}</td>
                           <td className="py-2.5 text-center font-bold text-gray-900">{o.score}</td>
                           <td className="py-2.5 flex justify-center">
-                             <span className={`px-2 py-0.5 rounded text-[9px] font-semibold ${o.vsearch === 'High' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>{o.vsearch}</span>
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-semibold ${o.vsearch === 'High' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>{o.vsearch}</span>
                           </td>
                         </tr>
                       ))}
@@ -1041,32 +1042,32 @@ const SeoGmbPage = () => {
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <h3 className="font-bold text-gray-900 text-sm mb-4">GEO Health Score</h3>
                 <div className="flex items-center justify-between h-full gap-4">
-                   <div className="flex flex-col items-center">
-                     <div className="relative w-28 h-28 flex flex-col items-center justify-center">
-                       <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                         <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E5E7EB" strokeWidth="4" />
-                         <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`${widgets.geoHealthScoreDetails?.score || 86}, 100`} />
-                       </svg>
-                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                         <span className="text-2xl font-bold text-gray-900 leading-none">{widgets.geoHealthScoreDetails?.score || 86}</span>
-                         <span className="text-[10px] text-gray-500">/100</span>
-                       </div>
-                     </div>
-                     <span className="text-green-600 font-bold text-xs mt-2">Excellent</span>
-                   </div>
-                   
-                   <div className="flex-1 space-y-2 text-[9px] font-medium">
-                     {widgets.geoHealthScoreDetails?.categories?.map((c, i) => (
-                       <div key={i} className="flex items-center justify-between">
-                         <div className="flex items-center gap-1.5 text-gray-600">
-                           <CheckCircle2 size={10} className="text-green-500"/> {c.name}
-                         </div>
-                         <span className={`${c.color}`}>{c.status}</span>
-                       </div>
-                     ))}
-                   </div>
+                  <div className="flex flex-col items-center">
+                    <div className="relative w-28 h-28 flex flex-col items-center justify-center">
+                      <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E5E7EB" strokeWidth="4" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`${widgets.geoHealthScoreDetails?.score || 86}, 100`} />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="text-2xl font-bold text-gray-900 leading-none">{widgets.geoHealthScoreDetails?.score || 86}</span>
+                        <span className="text-[10px] text-gray-500">/100</span>
+                      </div>
+                    </div>
+                    <span className="text-green-600 font-bold text-xs mt-2">Excellent</span>
+                  </div>
+
+                  <div className="flex-1 space-y-2 text-[9px] font-medium">
+                    {widgets.geoHealthScoreDetails?.categories?.map((c, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <CheckCircle2 size={10} className="text-green-500" /> {c.name}
+                        </div>
+                        <span className={`${c.color}`}>{c.status}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <button className="text-indigo-600 text-[11px] font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Full GEO Report <ArrowDownRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Full GEO Report <ArrowDownRight size={12} /></button>
               </div>
 
             </div>
@@ -1088,7 +1089,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 1 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Visibility Score Comparison */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
@@ -1099,14 +1100,14 @@ const SeoGmbPage = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={charts.compVisibilityComparison || []}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} />
-                      <YAxis axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
                       <RechartsTooltip />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }}/>
-                      <Line type="monotone" dataKey="us" name="codigix.co" stroke="#3B82F6" strokeWidth={2} dot={{r:3}} />
-                      <Line type="monotone" dataKey="comp1" name="competitor1.com" stroke="#10B981" strokeWidth={2} dot={{r:3}} />
-                      <Line type="monotone" dataKey="comp2" name="competitor2.com" stroke="#F59E0B" strokeWidth={2} dot={{r:3}} />
-                      <Line type="monotone" dataKey="comp3" name="competitor3.com" stroke="#6366F1" strokeWidth={2} dot={{r:3}} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }} />
+                      <Line type="monotone" dataKey="us" name="codigix.co" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="comp1" name="competitor1.com" stroke="#10B981" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="comp2" name="competitor2.com" stroke="#F59E0B" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="comp3" name="competitor3.com" stroke="#6366F1" strokeWidth={2} dot={{ r: 3 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -1136,9 +1137,9 @@ const SeoGmbPage = () => {
                   </div>
                   <div className="w-full mt-4 space-y-2">
                     {charts.compTrafficShare?.map((item, i) => (
-                      <div key={i} className="flex items-center justify-between text-[11px]">
+                      <div key={i} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-sm" style={{backgroundColor: item.color}}></div>
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }}></div>
                           <span className="text-gray-700 font-medium">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -1158,7 +1159,7 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left text-[11px] whitespace-nowrap">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-50">
                         <th className="pb-2 font-medium">Domain</th>
@@ -1172,8 +1173,8 @@ const SeoGmbPage = () => {
                       {lists.compTopCompetitors?.map((c, i) => (
                         <tr key={i} className="text-gray-700">
                           <td className="py-2.5 flex items-center gap-1.5 font-semibold text-gray-900">
-                             <div className="w-2 h-2 rounded-full" style={{backgroundColor: c.color}}></div>
-                             {c.domain}
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }}></div>
+                            {c.domain}
                           </td>
                           <td className="py-2.5 text-center font-bold text-indigo-600">{c.visibility}</td>
                           <td className="py-2.5 text-center">{c.keywords.toLocaleString()}</td>
@@ -1184,27 +1185,27 @@ const SeoGmbPage = () => {
                     </tbody>
                   </table>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-right flex items-center justify-end gap-1">View All Competitors <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-right flex items-center justify-end gap-1">View All Competitors <ArrowRight size={12} /></button>
               </div>
 
             </div>
 
             {/* Main Row 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Keyword Gap */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-gray-900 text-sm">Keyword Gap</h3>
                   <div className="flex gap-2">
-                     <button className="text-[10px] bg-indigo-50 text-indigo-700 font-semibold px-2 py-1 rounded">Missing</button>
-                     <button className="text-[10px] text-gray-500 hover:bg-gray-50 px-2 py-1 rounded">Weak</button>
-                     <button className="text-[10px] text-gray-500 hover:bg-gray-50 px-2 py-1 rounded">Strong</button>
-                     <button className="text-[10px] text-gray-500 hover:bg-gray-50 px-2 py-1 rounded">All Keywords</button>
+                    <button className="text-[10px] bg-indigo-50 text-indigo-700 font-semibold px-2 py-1 rounded">Missing</button>
+                    <button className="text-[10px] text-gray-500 hover:bg-gray-50 px-2 py-1 rounded">Weak</button>
+                    <button className="text-[10px] text-gray-500 hover:bg-gray-50 px-2 py-1 rounded">Strong</button>
+                    <button className="text-[10px] text-gray-500 hover:bg-gray-50 px-2 py-1 rounded">All Keywords</button>
                   </div>
                 </div>
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left text-[11px] whitespace-nowrap">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-50">
                         <th className="pb-2 font-medium">Keyword</th>
@@ -1220,16 +1221,16 @@ const SeoGmbPage = () => {
                         <tr key={i} className="text-gray-700">
                           <td className="py-2.5 font-medium">{k.keyword}</td>
                           <td className="py-2.5 font-semibold">{k.volume.toLocaleString()}</td>
-                          <td className="py-2.5"><div className="flex justify-center">{k.us ? <Check size={14} className="text-green-500"/> : <X size={14} className="text-red-500"/>}</div></td>
-                          <td className="py-2.5"><div className="flex justify-center">{k.comp1 ? <Check size={14} className="text-green-500"/> : <X size={14} className="text-red-500"/>}</div></td>
-                          <td className="py-2.5"><div className="flex justify-center">{k.comp2 ? <Check size={14} className="text-green-500"/> : <X size={14} className="text-red-500"/>}</div></td>
-                          <td className="py-2.5"><div className="flex justify-center">{k.comp3 ? <Check size={14} className="text-green-500"/> : <X size={14} className="text-red-500"/>}</div></td>
+                          <td className="py-2.5"><div className="flex justify-center">{k.us ? <Check size={14} className="text-green-500" /> : <X size={14} className="text-red-500" />}</div></td>
+                          <td className="py-2.5"><div className="flex justify-center">{k.comp1 ? <Check size={14} className="text-green-500" /> : <X size={14} className="text-red-500" />}</div></td>
+                          <td className="py-2.5"><div className="flex justify-center">{k.comp2 ? <Check size={14} className="text-green-500" /> : <X size={14} className="text-red-500" />}</div></td>
+                          <td className="py-2.5"><div className="flex justify-center">{k.comp3 ? <Check size={14} className="text-green-500" /> : <X size={14} className="text-red-500" />}</div></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Full Keyword Gap <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Full Keyword Gap <ArrowRight size={12} /></button>
               </div>
 
               {/* Backlink Gap */}
@@ -1239,7 +1240,7 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left text-[11px] whitespace-nowrap">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-50">
                         <th className="pb-2 font-medium">Domain</th>
@@ -1260,7 +1261,7 @@ const SeoGmbPage = () => {
                     </tbody>
                   </table>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Backlink Gap <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Backlink Gap <ArrowRight size={12} /></button>
               </div>
 
               {/* Top Pages by Traffic */}
@@ -1270,7 +1271,7 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left text-[11px] whitespace-nowrap">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-50">
                         <th className="pb-2 font-medium">Page</th>
@@ -1293,14 +1294,14 @@ const SeoGmbPage = () => {
                     </tbody>
                   </table>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-right flex items-center justify-end gap-1">View All Top Pages <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-right flex items-center justify-end gap-1">View All Top Pages <ArrowRight size={12} /></button>
               </div>
 
             </div>
 
             {/* Main Row 3 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Content Gap */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
@@ -1308,7 +1309,7 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left text-[11px] whitespace-nowrap">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-50">
                         <th className="pb-2 font-medium">Topic</th>
@@ -1326,16 +1327,16 @@ const SeoGmbPage = () => {
                           <td className="py-2.5 text-center">
                             <span className={`text-[9px] font-semibold ${c.relevance === 'High' ? 'text-red-500' : (c.relevance === 'Medium' ? 'text-yellow-500' : 'text-blue-500')}`}>{c.relevance}</span>
                           </td>
-                          <td className="py-2.5"><div className="flex justify-center">{c.us ? <Check size={14} className="text-green-500"/> : <X size={14} className="text-red-500"/>}</div></td>
-                          <td className="py-2.5"><div className="flex justify-center">{c.comp1 ? <Check size={14} className="text-green-500"/> : <X size={14} className="text-red-500"/>}</div></td>
-                          <td className="py-2.5"><div className="flex justify-center">{c.comp2 ? <Check size={14} className="text-green-500"/> : <X size={14} className="text-red-500"/>}</div></td>
-                          <td className="py-2.5"><div className="flex justify-center">{c.comp3 ? <Check size={14} className="text-green-500"/> : <X size={14} className="text-red-500"/>}</div></td>
+                          <td className="py-2.5"><div className="flex justify-center">{c.us ? <Check size={14} className="text-green-500" /> : <X size={14} className="text-red-500" />}</div></td>
+                          <td className="py-2.5"><div className="flex justify-center">{c.comp1 ? <Check size={14} className="text-green-500" /> : <X size={14} className="text-red-500" />}</div></td>
+                          <td className="py-2.5"><div className="flex justify-center">{c.comp2 ? <Check size={14} className="text-green-500" /> : <X size={14} className="text-red-500" />}</div></td>
+                          <td className="py-2.5"><div className="flex justify-center">{c.comp3 ? <Check size={14} className="text-green-500" /> : <X size={14} className="text-red-500" />}</div></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Content Gap <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Content Gap <ArrowRight size={12} /></button>
               </div>
 
               {/* Top Competitors by Channel */}
@@ -1345,15 +1346,15 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left text-[11px] whitespace-nowrap">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-50">
                         <th className="pb-2 font-medium">Domain</th>
-                        <th className="pb-2 font-medium text-center"><div className="flex items-center justify-center gap-1"><Search size={12} className="text-blue-500"/> Organic Search</div></th>
-                        <th className="pb-2 font-medium text-center"><div className="flex items-center justify-center gap-1"><CheckCircle2 size={12} className="text-green-500"/> Direct</div></th>
-                        <th className="pb-2 font-medium text-center"><div className="flex items-center justify-center gap-1"><Link size={12} className="text-orange-500"/> Referrals</div></th>
-                        <th className="pb-2 font-medium text-center"><div className="flex items-center justify-center gap-1"><Share2 size={12} className="text-pink-500"/> Social</div></th>
-                        <th className="pb-2 font-medium text-center"><div className="flex items-center justify-center gap-1"><DollarSign size={12} className="text-blue-400"/> Paid Search</div></th>
+                        <th className="pb-2 font-medium text-center"><div className="flex items-center justify-center gap-1"><Search size={12} className="text-blue-500" /> Organic Search</div></th>
+                        <th className="pb-2 font-medium text-center"><div className="flex items-center justify-center gap-1"><CheckCircle2 size={12} className="text-green-500" /> Direct</div></th>
+                        <th className="pb-2 font-medium text-center"><div className="flex items-center justify-center gap-1"><Link size={12} className="text-orange-500" /> Referrals</div></th>
+                        <th className="pb-2 font-medium text-center"><div className="flex items-center justify-center gap-1"><Share2 size={12} className="text-pink-500" /> Social</div></th>
+                        <th className="pb-2 font-medium text-center"><div className="flex items-center justify-center gap-1"><DollarSign size={12} className="text-blue-400" /> Paid Search</div></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -1370,7 +1371,7 @@ const SeoGmbPage = () => {
                     </tbody>
                   </table>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Full Channel Report <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Full Channel Report <ArrowRight size={12} /></button>
               </div>
 
               {/* Top Competitors by Region */}
@@ -1379,38 +1380,38 @@ const SeoGmbPage = () => {
                   <h3 className="font-bold text-gray-900 text-sm">Top Competitors by Region</h3>
                 </div>
                 <div className="flex-1 flex flex-col">
-                   <div className="flex-1 min-h-[120px] bg-indigo-50/50 rounded-lg flex items-center justify-center relative overflow-hidden mb-4">
-                      {/* Abstract map representation */}
-                      <Globe size={180} strokeWidth={0.5} className="text-indigo-200 absolute -right-10 -top-10 opacity-60" />
-                      <Map size={180} strokeWidth={0.5} className="text-indigo-200 absolute -left-10 -bottom-10 opacity-60" />
-                      <div className="z-10 bg-white/80 px-4 py-2 rounded-lg border border-indigo-100 backdrop-blur-sm text-center">
-                         <span className="block text-indigo-900 font-bold text-lg">Global</span>
-                         <span className="block text-indigo-600 font-medium text-xs">Reach Tracking</span>
-                      </div>
-                   </div>
-                   <div className="overflow-x-auto">
-                     <table className="w-full text-left text-[11px] whitespace-nowrap">
-                       <thead>
-                         <tr className="text-gray-500 border-b border-gray-50">
-                           <th className="pb-2 font-medium">Country</th>
-                           <th className="pb-2 font-medium text-right">Top Competitor</th>
-                         </tr>
-                       </thead>
-                       <tbody className="divide-y divide-gray-50">
-                         {lists.compRegion?.map((r, i) => (
-                           <tr key={i} className="text-gray-700">
-                             <td className="py-2 font-medium flex items-center gap-2">
-                               <img src={`https://flagcdn.com/w20/${r.flag}.png`} alt={r.country} className="w-3.5 h-auto rounded-sm shadow-sm" />
-                               {r.country}
-                             </td>
-                             <td className="py-2 text-right font-semibold text-gray-900">{r.topComp}</td>
-                           </tr>
-                         ))}
-                       </tbody>
-                     </table>
-                   </div>
+                  <div className="flex-1 min-h-[120px] bg-indigo-50/50 rounded-lg flex items-center justify-center relative overflow-hidden mb-4">
+                    {/* Abstract map representation */}
+                    <Globe size={180} strokeWidth={0.5} className="text-indigo-200 absolute -right-10 -top-10 opacity-60" />
+                    <Map size={180} strokeWidth={0.5} className="text-indigo-200 absolute -left-10 -bottom-10 opacity-60" />
+                    <div className="z-10 bg-white/80 px-4 py-2 rounded-lg border border-indigo-100 backdrop-blur-sm text-center">
+                      <span className="block text-indigo-900 font-bold text-lg">Global</span>
+                      <span className="block text-indigo-600 font-medium text-xs">Reach Tracking</span>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs whitespace-nowrap">
+                      <thead>
+                        <tr className="text-gray-500 border-b border-gray-50">
+                          <th className="pb-2 font-medium">Country</th>
+                          <th className="pb-2 font-medium text-right">Top Competitor</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {lists.compRegion?.map((r, i) => (
+                          <tr key={i} className="text-gray-700">
+                            <td className="py-2 font-medium flex items-center gap-2">
+                              <img src={`https://flagcdn.com/w20/${r.flag}.png`} alt={r.country} className="w-3.5 h-auto rounded-sm shadow-sm" />
+                              {r.country}
+                            </td>
+                            <td className="py-2 text-right font-semibold text-gray-900">{r.topComp}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Region Report <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Region Report <ArrowRight size={12} /></button>
               </div>
 
             </div>
@@ -1432,7 +1433,7 @@ const SeoGmbPage = () => {
 
             {/* Main Row 1 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* SEO Performance (Line Chart) */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
@@ -1441,13 +1442,13 @@ const SeoGmbPage = () => {
                 </div>
                 <div className="flex-1 min-h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={charts.seoPerformance?.length ? charts.seoPerformance : [{name:'No Data', clicks:0, impressions:0}]}>
+                    <LineChart data={charts.seoPerformance?.length ? charts.seoPerformance : [{ name: 'No Data', clicks: 0, impressions: 0 }]}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} />
-                      <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} tickFormatter={v => `${v/1000}K`} />
-                      <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill:'#9CA3AF', fontSize: 11}} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+                      <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} tickFormatter={v => `${v / 1000}K`} />
+                      <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
                       <RechartsTooltip />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }}/>
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: 10 }} />
                       <Line yAxisId="left" type="monotone" dataKey="clicks" name="Clicks" stroke="#3B82F6" strokeWidth={2} dot={false} />
                       <Line yAxisId="right" type="monotone" dataKey="impressions" name="Impressions" stroke="#8B5CF6" strokeWidth={2} dot={false} />
                       <Line yAxisId="left" type="monotone" dataKey="position" name="Avg. Position" stroke="#F59E0B" strokeWidth={2} dot={false} />
@@ -1472,12 +1473,12 @@ const SeoGmbPage = () => {
                           { name: 'Direct Views', value: 1108, color: '#F59E0B' },
                           { name: 'Website Views', value: 547, color: '#6366F1' }
                         ]} innerRadius={60} outerRadius={85} paddingAngle={2} dataKey="value">
-                          { [
-                              { name: 'Search Views', value: 5302, color: '#3B82F6' },
-                              { name: 'Maps Views', value: 2481, color: '#10B981' },
-                              { name: 'Direct Views', value: 1108, color: '#F59E0B' },
-                              { name: 'Website Views', value: 547, color: '#6366F1' }
-                            ].map((e, i) => <Cell key={i} fill={e.color} />) }
+                          {[
+                            { name: 'Search Views', value: 5302, color: '#3B82F6' },
+                            { name: 'Maps Views', value: 2481, color: '#10B981' },
+                            { name: 'Direct Views', value: 1108, color: '#F59E0B' },
+                            { name: 'Website Views', value: 547, color: '#6366F1' }
+                          ].map((e, i) => <Cell key={i} fill={e.color} />)}
                         </Pie>
                         <RechartsTooltip />
                       </PieChart>
@@ -1494,9 +1495,9 @@ const SeoGmbPage = () => {
                       { name: 'Direct Views', value: 1108, pct: '11.7%', color: '#F59E0B' },
                       { name: 'Website Views', value: 547, pct: '5.9%', color: '#6366F1' }
                     ].map((item, i) => (
-                      <div key={i} className="flex items-center justify-between text-[11px]">
+                      <div key={i} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-sm" style={{backgroundColor: item.color}}></div>
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }}></div>
                           <span className="text-gray-700 font-medium">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-1 ml-4">
@@ -1524,14 +1525,14 @@ const SeoGmbPage = () => {
                     { label: 'Book clicks', value: 122, change: '+ 22.1%', color: 'text-green-500', icon: Calendar }
                   ].map((a, i) => (
                     <div key={i} className="flex items-center justify-between">
-                       <div className="flex items-center gap-2 text-[11px] font-medium text-gray-700">
-                         <div className="p-1.5 bg-gray-50 text-gray-400 rounded"><a.icon size={12}/></div>
-                         {a.label}
-                       </div>
-                       <div className="flex items-center gap-4 text-[11px]">
-                         <span className="font-bold text-gray-900">{a.value}</span>
-                         <span className={`${a.color} font-semibold w-12 text-right`}>↑ {a.change.replace('+ ','')}</span>
-                       </div>
+                      <div className="flex items-center gap-2 text-xs font-medium text-gray-700">
+                        <div className="p-1.5 bg-gray-50 text-gray-400 rounded"><a.icon size={12} /></div>
+                        {a.label}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs">
+                        <span className="font-bold text-gray-900">{a.value}</span>
+                        <span className={`${a.color} font-semibold w-12 text-right`}>↑ {a.change.replace('+ ', '')}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1541,14 +1542,14 @@ const SeoGmbPage = () => {
 
             {/* Main Row 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Top Performing Keywords */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-gray-900 text-sm">Top Performing Keywords</h3>
                 </div>
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left text-[11px] whitespace-nowrap">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-50">
                         <th className="pb-2 font-medium">Keyword</th>
@@ -1571,7 +1572,7 @@ const SeoGmbPage = () => {
                           <td className="py-2.5 font-semibold text-gray-900">{k.keyword}</td>
                           <td className="py-2.5 text-center font-bold">{k.pos}</td>
                           <td className="py-2.5 text-center">
-                            {k.change === '-' ? <span className="text-gray-400"><Minus size={12} className="mx-auto"/></span> : <span className="text-green-500 font-semibold flex items-center justify-center gap-1"><ArrowUpRight size={10}/> {k.change.replace('+ ','')}</span>}
+                            {k.change === '-' ? <span className="text-gray-400"><Minus size={12} className="mx-auto" /></span> : <span className="text-green-500 font-semibold flex items-center justify-center gap-1"><ArrowUpRight size={10} /> {k.change.replace('+ ', '')}</span>}
                           </td>
                           <td className="py-2.5 text-center font-medium">{k.vol}</td>
                           <td className="py-2.5 text-center">{k.traffic}</td>
@@ -1581,7 +1582,7 @@ const SeoGmbPage = () => {
                     </tbody>
                   </table>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View All Keywords <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View All Keywords <ArrowRight size={12} /></button>
               </div>
 
               {/* AI Visibility (GEO) */}
@@ -1591,38 +1592,38 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex flex-col justify-center gap-6">
-                   <div className="flex flex-col items-center">
-                     <div className="relative w-28 h-28 flex flex-col items-center justify-center">
-                       <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                         <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E5E7EB" strokeWidth="4" />
-                         <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`78, 100`} />
-                       </svg>
-                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                         <span className="text-3xl font-bold text-gray-900 leading-none">78</span>
-                         <span className="text-[10px] text-gray-500 font-medium">/100</span>
-                       </div>
-                     </div>
-                     <span className="text-green-600 font-bold text-[11px] mt-2">Good</span>
-                   </div>
-                   
-                   <div className="space-y-3 text-[11px] font-medium w-full px-4">
-                     {[
-                       { name: 'AI Overviews Presence', score: '85/100' },
-                       { name: 'AI Citations', score: '74/100' },
-                       { name: 'Brand Mentions', score: '72/100' },
-                       { name: 'Prompt Rankings', score: '78/100' },
-                       { name: 'Sentiment Score', score: '80/100' }
-                     ].map((c, i) => (
-                       <div key={i} className="flex items-center justify-between">
-                         <div className="flex items-center gap-1.5 text-gray-600">
-                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> {c.name}
-                         </div>
-                         <span className="font-bold text-gray-900">{c.score}</span>
-                       </div>
-                     ))}
-                   </div>
+                  <div className="flex flex-col items-center">
+                    <div className="relative w-28 h-28 flex flex-col items-center justify-center">
+                      <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E5E7EB" strokeWidth="4" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`78, 100`} />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="text-3xl font-bold text-gray-900 leading-none">78</span>
+                        <span className="text-[10px] text-gray-500 font-medium">/100</span>
+                      </div>
+                    </div>
+                    <span className="text-green-600 font-bold text-xs mt-2">Good</span>
+                  </div>
+
+                  <div className="space-y-3 text-xs font-medium w-full px-4">
+                    {[
+                      { name: 'AI Overviews Presence', score: '85/100' },
+                      { name: 'AI Citations', score: '74/100' },
+                      { name: 'Brand Mentions', score: '72/100' },
+                      { name: 'Prompt Rankings', score: '78/100' },
+                      { name: 'Sentiment Score', score: '80/100' }
+                    ].map((c, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> {c.name}
+                        </div>
+                        <span className="font-bold text-gray-900">{c.score}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View GEO Report <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View GEO Report <ArrowRight size={12} /></button>
               </div>
 
               {/* AI Prompt Rankings */}
@@ -1632,7 +1633,7 @@ const SeoGmbPage = () => {
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
-                  <table className="w-full text-left text-[11px] whitespace-nowrap">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-50">
                         <th className="pb-2 font-medium">Prompt / Query</th>
@@ -1652,21 +1653,21 @@ const SeoGmbPage = () => {
                           <td className="py-3.5 font-medium truncate max-w-[200px] text-gray-800">{p.prompt}</td>
                           <td className="py-3.5 text-center font-bold text-gray-900">{p.pos}</td>
                           <td className="py-3.5 text-center">
-                            {p.change === '-' ? <span className="text-gray-400"><Minus size={12} className="mx-auto"/></span> : <span className="text-green-500 font-semibold flex items-center justify-center gap-1"><ArrowUpRight size={10}/> {p.change.replace('+ ','')}</span>}
+                            {p.change === '-' ? <span className="text-gray-400"><Minus size={12} className="mx-auto" /></span> : <span className="text-green-500 font-semibold flex items-center justify-center gap-1"><ArrowUpRight size={10} /> {p.change.replace('+ ', '')}</span>}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View All Prompts <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View All Prompts <ArrowRight size={12} /></button>
               </div>
 
             </div>
 
             {/* Main Row 3 */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* GMB Reviews Overview */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
@@ -1677,15 +1678,15 @@ const SeoGmbPage = () => {
                   <div className="flex flex-col items-center">
                     <span className="text-4xl font-black text-gray-900 mb-1">4.8</span>
                     <div className="flex gap-0.5 text-yellow-400 mb-1">
-                      <Star size={12} fill="currentColor"/>
-                      <Star size={12} fill="currentColor"/>
-                      <Star size={12} fill="currentColor"/>
-                      <Star size={12} fill="currentColor"/>
-                      <Star size={12} fill="currentColor"/>
+                      <Star size={12} fill="currentColor" />
+                      <Star size={12} fill="currentColor" />
+                      <Star size={12} fill="currentColor" />
+                      <Star size={12} fill="currentColor" />
+                      <Star size={12} fill="currentColor" />
                     </div>
                     <span className="text-[10px] text-gray-500 font-medium">Total 125 Reviews</span>
                   </div>
-                  
+
                   <div className="flex-1 space-y-2 text-[10px]">
                     <div className="flex items-center justify-between text-gray-600">
                       <span>New Reviews</span>
@@ -1705,7 +1706,7 @@ const SeoGmbPage = () => {
                     </div>
                   </div>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Reviews <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Reviews <ArrowRight size={12} /></button>
               </div>
 
               {/* GMB Posts Performance */}
@@ -1722,15 +1723,15 @@ const SeoGmbPage = () => {
                   <div className="flex flex-col items-center justify-center border-r border-gray-100 px-2">
                     <span className="text-[10px] text-gray-500 font-medium mb-1">Total Views</span>
                     <span className="text-xl font-bold text-gray-900">1,942</span>
-                    <span className="text-green-500 text-[9px] font-semibold flex items-center mt-0.5"><ArrowUpRight size={10}/> 19.5%</span>
+                    <span className="text-green-500 text-[9px] font-semibold flex items-center mt-0.5"><ArrowUpRight size={10} /> 19.5%</span>
                   </div>
                   <div className="flex flex-col items-center justify-center pl-2">
                     <span className="text-[10px] text-gray-500 font-medium mb-1">Engagements</span>
                     <span className="text-xl font-bold text-gray-900">342</span>
-                    <span className="text-green-500 text-[9px] font-semibold flex items-center mt-0.5"><ArrowUpRight size={10}/> 15.2%</span>
+                    <span className="text-green-500 text-[9px] font-semibold flex items-center mt-0.5"><ArrowUpRight size={10} /> 15.2%</span>
                   </div>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View All Posts <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View All Posts <ArrowRight size={12} /></button>
               </div>
 
               {/* Local Pack Rankings */}
@@ -1739,7 +1740,7 @@ const SeoGmbPage = () => {
                   <h3 className="font-bold text-gray-900 text-sm">Local Pack Rankings</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
-                <div className="flex-1 flex flex-col justify-center space-y-4 text-[11px]">
+                <div className="flex-1 flex flex-col justify-center space-y-4 text-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 font-medium">Keywords in Local Pack</span>
                     <div className="flex items-center gap-3">
@@ -1762,7 +1763,7 @@ const SeoGmbPage = () => {
                     </div>
                   </div>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Local Pack Report <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Local Pack Report <ArrowRight size={12} /></button>
               </div>
 
               {/* Technical SEO Health */}
@@ -1771,41 +1772,41 @@ const SeoGmbPage = () => {
                   <h3 className="font-bold text-gray-900 text-sm">Technical SEO Health</h3>
                 </div>
                 <div className="flex-1 flex items-center justify-between">
-                   <div className="flex flex-col items-center">
-                     <span className="text-[10px] text-gray-600 font-medium mb-1">Site Health Score</span>
-                     <div className="relative w-20 h-20 flex flex-col items-center justify-center">
-                       <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                         <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E5E7EB" strokeWidth="4" />
-                         <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`92, 100`} />
-                       </svg>
-                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center mt-1">
-                         <span className="text-xl font-bold text-gray-900 leading-none">92</span>
-                         <span className="text-[9px] text-gray-500 font-medium">/100</span>
-                       </div>
-                     </div>
-                     <span className="text-green-600 font-bold text-[10px] mt-1">Excellent</span>
-                   </div>
-                   
-                   <div className="flex-1 pl-4 space-y-2 text-[10px]">
-                     <div className="flex items-center justify-between text-gray-600">
-                       <span className="font-medium">Crawled Pages</span>
-                       <span className="font-bold text-gray-900">1,256</span>
-                     </div>
-                     <div className="flex items-center justify-between text-gray-600">
-                       <span className="font-medium">Issues Found</span>
-                       <span className="font-bold text-gray-900">24</span>
-                     </div>
-                     <div className="flex items-center justify-between text-red-500 font-medium">
-                       <span className="flex items-center gap-1"><AlertCircle size={10}/> Critical Issues</span>
-                       <span className="font-bold">3</span>
-                     </div>
-                     <div className="flex items-center justify-between text-orange-500 font-medium">
-                       <span className="flex items-center gap-1"><AlertTriangle size={10}/> Warnings</span>
-                       <span className="font-bold">21</span>
-                     </div>
-                   </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-gray-600 font-medium mb-1">Site Health Score</span>
+                    <div className="relative w-20 h-20 flex flex-col items-center justify-center">
+                      <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E5E7EB" strokeWidth="4" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`92, 100`} />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center mt-1">
+                        <span className="text-xl font-bold text-gray-900 leading-none">92</span>
+                        <span className="text-[9px] text-gray-500 font-medium">/100</span>
+                      </div>
+                    </div>
+                    <span className="text-green-600 font-bold text-[10px] mt-1">Excellent</span>
+                  </div>
+
+                  <div className="flex-1 pl-4 space-y-2 text-[10px]">
+                    <div className="flex items-center justify-between text-gray-600">
+                      <span className="font-medium">Crawled Pages</span>
+                      <span className="font-bold text-gray-900">1,256</span>
+                    </div>
+                    <div className="flex items-center justify-between text-gray-600">
+                      <span className="font-medium">Issues Found</span>
+                      <span className="font-bold text-gray-900">24</span>
+                    </div>
+                    <div className="flex items-center justify-between text-red-500 font-medium">
+                      <span className="flex items-center gap-1"><AlertCircle size={10} /> Critical Issues</span>
+                      <span className="font-bold">3</span>
+                    </div>
+                    <div className="flex items-center justify-between text-orange-500 font-medium">
+                      <span className="flex items-center gap-1"><AlertTriangle size={10} /> Warnings</span>
+                      <span className="font-bold">21</span>
+                    </div>
+                  </div>
                 </div>
-                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Audit Report <ArrowRight size={12}/></button>
+                <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center flex items-center justify-center gap-1">View Audit Report <ArrowRight size={12} /></button>
               </div>
 
             </div>
@@ -1814,10 +1815,10 @@ const SeoGmbPage = () => {
 
         {/* NON-SEO/GMB/GEO/COMPETITORS TABS FALLBACK */}
         {activeTab !== 'SEO' && activeTab !== 'GMB / GBP' && activeTab !== 'GEO / AI' && activeTab !== 'Competitors' && activeTab !== 'Overview' && (
-           <div className="bg-white rounded-xl p-8 text-center text-gray-500 shadow-sm border border-gray-100">
-             <h3 className="text-xl font-bold text-gray-900 mb-2">{activeTab} Metrics</h3>
-             <p>This tab is functioning but the detailed metrics are hidden while viewing the core SEO dashboard. Switch back to the SEO, GMB / GBP, GEO / AI, or Competitors tab to view the main dashboard.</p>
-           </div>
+          <div className="bg-white rounded-xl p-8 text-center text-gray-500 shadow-sm border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{activeTab} Metrics</h3>
+            <p>This tab is functioning but the detailed metrics are hidden while viewing the core SEO dashboard. Switch back to the SEO, GMB / GBP, GEO / AI, or Competitors tab to view the main dashboard.</p>
+          </div>
         )}
 
       </div>

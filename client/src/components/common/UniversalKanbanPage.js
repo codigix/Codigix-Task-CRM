@@ -768,7 +768,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                                                   {/* SUBTASK OVERLAY TRIGGER */}
                                                   <button
                                                     onClick={(e) => handleOpenSubtasksPopover(e, cardKey)}
-                                                    className="flex items-center space-x-1 text-[11px] text-gray-500 hover:bg-gray-100 px-1.5 py-0.5 rounded transition"
+                                                    className="flex items-center space-x-1 text-xs text-gray-500 hover:bg-gray-100 px-1.5 py-0.5 rounded transition"
                                                     title="Manage subtasks"
                                                   >
                                                     <CheckSquare size={12} className={totalSubtasksCount > 0 ? 'text-blue-500' : 'text-gray-400'} />

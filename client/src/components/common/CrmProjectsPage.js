@@ -587,30 +587,30 @@ const CrmProjectsPage = ({ department }) => {
           // Safely calculate min and max dates ensuring they are valid
           let validStartDates = filteredProjects.map(p => new Date(p.start_date || p.created_at || today)).filter(d => !isNaN(d));
           let validEndDates = filteredProjects.map(p => new Date(p.due_date || p.end_date || p.start_date || today)).filter(d => !isNaN(d));
-          
+
           if (validStartDates.length === 0) validStartDates = [today];
           if (validEndDates.length === 0) validEndDates = [new Date(today.getTime() + 30 * 86400000)];
 
           const minDate = new Date(Math.min(...validStartDates, today.getTime() - 15 * 86400000));
           const maxDate = new Date(Math.max(...validEndDates, today.getTime() + 45 * 86400000));
-          
+
           const totalDays = Math.max(1, (maxDate - minDate) / 86400000);
-          
+
           const getLeft = d => !d ? 0 : Math.max(0, Math.min(100, (new Date(d) - minDate) / 86400000 / totalDays * 100));
           const getWidth = (s, e) => {
             const start = s ? Math.max(new Date(s), minDate) : minDate;
             const end = e ? Math.min(new Date(e), maxDate) : new Date(start.getTime() + 7 * 86400000);
             return Math.max(0.5, Math.min(100, (end - start) / 86400000 / totalDays * 100));
           };
-          
+
           const months = [];
-          const cur = new Date(minDate); 
+          const cur = new Date(minDate);
           cur.setDate(1);
           while (cur <= maxDate) {
             months.push(new Date(cur));
             cur.setMonth(cur.getMonth() + 1);
           }
-          
+
           // Generate an array of week markers
           const weeks = [];
           const curWeek = new Date(minDate);
@@ -634,13 +634,13 @@ const CrmProjectsPage = ({ department }) => {
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col mt-4 shadow-sm">
               <div className="overflow-x-auto custom-scrollbar" style={{ padding: '20px 24px' }}>
                 <div style={{ minWidth: 1000, position: 'relative' }}>
-                  
+
                   {/* Timeline Header (Months & Grid) */}
                   <div className="relative border-b border-gray-200 mb-4" style={{ height: 40, marginLeft: 220 }}>
                     {months.map((m, i) => {
                       const leftPos = getLeft(m);
                       return (
-                        <div key={`m-${i}`} className="absolute top-0 text-[11px] font-bold text-gray-500 uppercase tracking-wider" style={{ left: `${leftPos}%`, transform: leftPos > 95 ? 'translateX(-100%)' : 'none' }}>
+                        <div key={`m-${i}`} className="absolute top-0 text-xs font-bold text-gray-500 uppercase tracking-wider" style={{ left: `${leftPos}%`, transform: leftPos > 95 ? 'translateX(-100%)' : 'none' }}>
                           <div className="pl-1 border-l border-gray-300 h-10 pt-1">
                             {m.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                           </div>
@@ -654,7 +654,7 @@ const CrmProjectsPage = ({ department }) => {
                     {filteredProjects.map((p, i) => {
                       const actualStart = p.start_date || p.created_at || today;
                       const actualEnd = p.due_date || p.end_date || new Date(new Date(actualStart).getTime() + 7 * 86400000);
-                      
+
                       return (
                         <div key={p.id} className="flex items-center group">
                           {/* Left Panel: Project Info */}
@@ -669,7 +669,7 @@ const CrmProjectsPage = ({ department }) => {
                               {p.manager_name ? p.manager_name.charAt(0).toUpperCase() : '?'}
                             </div>
                           </div>
-                          
+
                           {/* Right Panel: Timeline Row */}
                           <div className="flex-1 relative h-10 bg-gray-50/40 rounded-r-md border-y border-r border-gray-100 overflow-hidden hover:bg-gray-50 transition-colors">
                             {/* Week Grid Lines */}
@@ -684,9 +684,9 @@ const CrmProjectsPage = ({ department }) => {
                             <div className="absolute top-0 bottom-0 border-l-2 border-red-400 pointer-events-none z-10" style={{ left: `${getLeft(today)}%` }}>
                               <div className="absolute -top-3 -translate-x-1/2 bg-red-100 text-red-600 text-[9px] font-bold px-1 rounded whitespace-nowrap">TODAY</div>
                             </div>
-                            
+
                             {/* Gantt Bar */}
-                            <div 
+                            <div
                               className={`absolute top-2 h-6 rounded-md shadow-sm bg-gradient-to-r ${getStatusColor(p.status)} cursor-pointer transition-all hover:scale-y-110 flex items-center overflow-hidden group-hover:shadow-md z-20`}
                               style={{
                                 left: `${getLeft(actualStart)}%`,
@@ -714,7 +714,7 @@ const CrmProjectsPage = ({ department }) => {
                       </div>
                     )}
                   </div>
-                  
+
                 </div>
               </div>
             </div>
@@ -875,7 +875,7 @@ const CrmProjectsPage = ({ department }) => {
             <form onSubmit={handleAssignTeamSubmit} className="p-5">
               {selectedProjectToAssign && (selectedProjectToAssign.team_name || selectedProjectToAssign.assigned_team) && (
                 <div className="mb-4 bg-blue-50/50 p-3 rounded border border-blue-100">
-                  <h3 className="text-[11px] font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Currently Assigned Team</h3>
+                  <h3 className="text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Currently Assigned Team</h3>
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
                     <span className="text-sm font-medium text-blue-700">{selectedProjectToAssign.team_name || selectedProjectToAssign.assigned_team}</span>

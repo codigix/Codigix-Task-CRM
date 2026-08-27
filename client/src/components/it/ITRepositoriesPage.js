@@ -39,7 +39,7 @@ const CustomSelect = ({ value, onChange, options, className = "" }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-md text-sm text-gray-700 hover:border-gray-300 transition-colors focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5]"
+        className=" flex items-center justify-between p-2 rounded bg-white border border-gray-200  text-xs text-gray-700 hover:border-gray-300 transition-colors focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5]"
       >
         <span className="truncate mr-2">{value}</span>
         <ChevronDown size={14} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -53,7 +53,7 @@ const CustomSelect = ({ value, onChange, options, className = "" }) => {
                 onChange(option);
                 setIsOpen(false);
               }}
-              className={`px-3 py-2 text-sm cursor-pointer transition-colors ${value === option ? 'bg-indigo-50 text-[#4F46E5] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+              className={`p-2 text-xs cursor-pointer transition-colors ${value === option ? 'bg-indigo-50 text-[#4F46E5] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
             >
               {option}
             </div>
@@ -72,7 +72,7 @@ export default function ITRepositoriesPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importing, setImporting] = useState(false);
-  
+
   // Branch State
   const [repoBranches, setRepoBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState(null);
@@ -98,6 +98,8 @@ export default function ITRepositoriesPage() {
   const [selectedLanguage, setSelectedLanguage] = useState('All Languages');
   const [selectedVisibility, setSelectedVisibility] = useState('All Visibility');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const [connections, setConnections] = useState([]);
+  const [selectedAccount, setSelectedAccount] = useState('All Accounts');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -235,6 +237,7 @@ export default function ITRepositoriesPage() {
       if (repo.isPrivate !== isPriv) return false;
     }
     if (selectedStatus !== 'All Status' && repo.status !== selectedStatus) return false;
+    if (selectedAccount !== 'All Accounts' && repo.github_account_name !== selectedAccount) return false;
     return true;
   });
 
@@ -253,7 +256,7 @@ export default function ITRepositoriesPage() {
   const paginatedRepos = filteredRepos.slice(startIndex, endIndex);
 
   const renderBadge = (isPrivate) => (
-    <span className={`flex items-center gap-1 p-2 text-[10px] font-medium rounded ${isPrivate ? 'text-amber-700 bg-amber-50 border border-amber-200' : 'text-emerald-700 bg-emerald-50 border border-emerald-200'}`}>
+    <span className={`flex items-center gap-1 p-2 text-xs font-medium rounded ${isPrivate ? 'text-amber-700 ' : 'text-emerald-700 '}`}>
       {isPrivate ? <Lock size={10} /> : <Globe size={10} />}
       {isPrivate ? 'Private' : 'Public'}
     </span>
@@ -308,7 +311,7 @@ export default function ITRepositoriesPage() {
                     <span className="text-emerald-700 text-xs">● Connected</span>
                   </div>
                 </div>
-                <p className="text-[11px] text-gray-500 mb-2">Connected to <strong>{githubOrg}</strong></p>
+                <p className="text-xs text-gray-500 mb-2">Connected to <strong>{githubOrg}</strong></p>
 
               </div>
             </div>
@@ -328,7 +331,7 @@ export default function ITRepositoriesPage() {
               <p className="text-xs text-gray-500 font-medium mb-1">Total Repositories</p>
               <div className="flex items-end gap-2">
                 <h3 className="text-xl  text-gray-900 leading-none">{totalRepos}</h3>
-                <span className="flex items-center text-[11px] font-medium text-emerald-600 mb-0.5">
+                <span className="flex items-center text-xs font-medium text-emerald-600 mb-0.5">
                   <ArrowUp size={12} /> 12% <span className="text-gray-400 ml-1">vs last month</span>
                 </span>
               </div>
@@ -344,7 +347,7 @@ export default function ITRepositoriesPage() {
               <div className="flex items-end gap-2">
                 <h3 className="text-xl  text-gray-900 leading-none">{privateRepos}</h3>
               </div>
-              <p className="text-[11px] text-gray-500 mt-1">{totalRepos > 0 ? ((privateRepos / totalRepos) * 100).toFixed(1) : 0}% of total</p>
+              <p className="text-xs text-gray-500 mt-1">{totalRepos > 0 ? ((privateRepos / totalRepos) * 100).toFixed(1) : 0}% of total</p>
             </div>
           </div>
 
@@ -357,7 +360,7 @@ export default function ITRepositoriesPage() {
               <div className="flex items-end gap-2">
                 <h3 className="text-xl  text-gray-900 leading-none">{publicRepos}</h3>
               </div>
-              <p className="text-[11px] text-gray-500 mt-1">{totalRepos > 0 ? ((publicRepos / totalRepos) * 100).toFixed(1) : 0}% of total</p>
+              <p className="text-xs text-gray-500 mt-1">{totalRepos > 0 ? ((publicRepos / totalRepos) * 100).toFixed(1) : 0}% of total</p>
             </div>
           </div>
 
@@ -369,7 +372,7 @@ export default function ITRepositoriesPage() {
               <p className="text-xs text-gray-500 font-medium mb-1">Active Repositories</p>
               <div className="flex items-end gap-2">
                 <h3 className="text-xl  text-gray-900 leading-none">{activeRepos}</h3>
-                <span className="flex items-center text-[11px] font-medium text-emerald-600 mb-0.5">
+                <span className="flex items-center text-xs font-medium text-emerald-600 mb-0.5">
                   <ArrowUp size={12} /> 8% <span className="text-gray-400 ml-1">vs last month</span>
                 </span>
               </div>
@@ -397,36 +400,42 @@ export default function ITRepositoriesPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search repositories..."
-              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-shadow "
+              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded text-xs focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-shadow "
             />
           </div>
 
           <CustomSelect
+            value={selectedAccount}
+            onChange={setSelectedAccount}
+            options={['All Accounts', ...new Set(connections.map(c => c.github_account_name).filter(Boolean))]}
+            className=""
+          />
+          <CustomSelect
             value={selectedProject}
             onChange={setSelectedProject}
             options={['All Projects', 'Hospital ERP', 'CRM System', 'Mobile App', 'Website', 'DevOps']}
-            className="min-w-[140px]"
+            className=""
           />
 
           <CustomSelect
             value={selectedLanguage}
             onChange={setSelectedLanguage}
             options={['All Languages', 'TypeScript', 'JavaScript', 'React', 'React Native', 'Node.js', 'Vue', 'Shell', 'Next.js']}
-            className="min-w-[140px]"
+            className=""
           />
 
           <CustomSelect
             value={selectedVisibility}
             onChange={setSelectedVisibility}
             options={['All Visibility', 'Private', 'Public']}
-            className="min-w-[140px]"
+            className=""
           />
 
           <CustomSelect
             value={selectedStatus}
             onChange={setSelectedStatus}
             options={['All Status', 'Active', 'Archived']}
-            className="min-w-[120px]"
+            className=""
           />
 
           <button className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-md  text-[#4F46E5] hover:bg-gray-50 text-sm font-medium transition-colors">
@@ -449,31 +458,28 @@ export default function ITRepositoriesPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50/80 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      <th className="py-3 px-4 font-semibold">Repository</th>
-                      <th className="py-3 px-4 font-semibold">Project</th>
-                      <th className="py-3 px-4 font-semibold">Visibility</th>
-                      <th className="py-3 px-4 font-semibold">Language</th>
-                      <th className="py-3 px-4 font-semibold">Stars ↓</th>
-                      <th className="py-3 px-4 font-semibold text-center">Forks</th>
-                      <th className="py-3 px-4 font-semibold text-center">Open PRs</th>
-                      <th className="py-3 px-4 font-semibold">Last Commit</th>
-                      <th className="py-3 px-4 font-semibold">Updated</th>
-                      <th className="py-3 px-4 font-semibold text-center">Status</th>
-                      <th className="py-3 px-4 font-semibold text-right">Actions</th>
+                    <tr className="bg-gray-50/80 border-b font-thin border-gray-200 text-xs text-gray-500">
+                      <th className="p-2 text-xs">Repository</th>
+                      <th className="p-2 text-xs">Project</th>
+                      <th className="p-2 text-xs">Visibility</th>
+                      <th className="p-2 text-xs">Language</th>
+                      <th className="p-2 text-xs">Last Commit</th>
+                      <th className="p-2 text-xs">Updated</th>
+                      <th className="p-2 text-xs text-center">Status</th>
+                      <th className="p-2 text-xs text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-sm">
                     {loading ? (
                       <tr>
-                        <td colSpan="11" className="py-12 text-center text-gray-500">
+                        <td colSpan="8" className="py-12 text-center text-gray-500">
                           <RefreshCw size={24} className="animate-spin mx-auto mb-2 text-[#4F46E5]" />
                           Loading repositories...
                         </td>
                       </tr>
                     ) : paginatedRepos.length === 0 ? (
                       <tr>
-                        <td colSpan="11" className="py-12 text-center text-gray-500">
+                        <td colSpan="8" className="py-12 text-center text-gray-500">
                           No repositories found matching your filters.
                         </td>
                       </tr>
@@ -483,20 +489,20 @@ export default function ITRepositoriesPage() {
                         onClick={() => setSelectedRepo(repo)}
                         className={`hover:bg-blue-50/50 transition-colors cursor-pointer ${selectedRepo?.id === repo.id ? 'bg-blue-50/50' : 'bg-white'}`}
                       >
-                        <td className="py-3 px-4">
+                        <td className="p-2">
                           <div className="flex items-start gap-3">
                             <Github size={18} className="text-gray-900 mt-0.5 flex-shrink-0" />
                             <div>
                               <p className="font-semibold text-[#4F46E5] text-sm hover:underline">{repo.name}</p>
-                              <p className="text-[11px] text-gray-500 line-clamp-1">{repo.description}</p>
+                              <p className="text-xs text-gray-500 line-clamp-1">{repo.description}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-gray-600 font-medium text-xs">{repo.project}</td>
-                        <td className="py-3 px-4">
+                        <td className="p-2 text-gray-600 font-medium text-xs">{repo.project}</td>
+                        <td className="p-2">
                           {renderBadge(repo.isPrivate)}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="p-2">
                           <div className="flex items-center gap-2">
                             <span className="w-3 h-3 rounded text-[10px] flex items-center justify-center  text-white " style={{ backgroundColor: repo.language_color || repo.languageColor || '#999' }}>
                               {(repo.language || 'U').charAt(0)}
@@ -504,10 +510,7 @@ export default function ITRepositoriesPage() {
                             <span className="text-[#3178C6] font-medium text-xs">{repo.language}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-gray-600 font-medium">{repo.stars}</td>
-                        <td className="py-3 px-4 text-gray-600 text-center">{repo.forks}</td>
-                        <td className="py-3 px-4 text-gray-600 text-center">{repo.open_prs || repo.openPRs || 0}</td>
-                        <td className="py-3 px-4">
+                        <td className="p-2">
                           {repo.last_commit_hash ? (
                             <a href={`https://github.com/${repo.full_name || repo.fullName}/commit/${repo.last_commit_hash}`} target="_blank" rel="noopener noreferrer" className="block hover:opacity-80" onClick={(e) => e.stopPropagation()}>
                               <p className="text-xs text-[#4F46E5] hover:underline line-clamp-1" title={repo.last_commit_msg}>{repo.last_commit_msg}</p>
@@ -517,13 +520,13 @@ export default function ITRepositoriesPage() {
                             <p className="text-xs text-gray-500 italic">No commits</p>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-xs text-gray-500">{repo.github_updated_at ? new Date(repo.github_updated_at).toLocaleDateString() : 'Unknown'}</td>
-                        <td className="py-3 px-4 text-center">
+                        <td className="p-2 text-xs text-gray-500">{repo.github_updated_at ? new Date(repo.github_updated_at).toLocaleDateString() : 'Unknown'}</td>
+                        <td className="p-2 text-center">
                           <span className={`p-2 text-[10px] font-medium rounded ${repo.status === 'Active' ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-gray-700 bg-gray-50 border border-gray-200'}`}>
                             {repo.status}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-right">
+                        <td className="p-2 text-right">
                           <div className="flex justify-end gap-1">
                             <button className="p-1 text-gray-400 hover:text-[#4F46E5] hover:bg-indigo-50 rounded transition-colors" title="View Analytics">
                               <Activity size={16} />
@@ -671,19 +674,19 @@ export default function ITRepositoriesPage() {
                     </div>
                   </div>
                   <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2 text-[11px] text-gray-600">
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
                       <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" /> Repository is up to date
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-gray-600">
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
                       <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" /> No vulnerabilities found
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-gray-600">
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
                       <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" /> CI/CD pipeline active
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-gray-600">
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
                       <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" /> Branch protection enabled
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-gray-600">
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
                       <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" /> Code coverage: 86%
                     </div>
                   </div>
@@ -737,14 +740,14 @@ export default function ITRepositoriesPage() {
                     {fetchingBranches ? (
                       <span className="text-xs text-gray-400">Loading...</span>
                     ) : (
-                      <CustomSelect 
-                        value={selectedBranch ? selectedBranch.name : 'Unknown'} 
-                        options={repoBranches.map(b => b.name)} 
+                      <CustomSelect
+                        value={selectedBranch ? selectedBranch.name : 'Unknown'}
+                        options={repoBranches.map(b => b.name)}
                         onChange={(name) => {
                           const branch = repoBranches.find(b => b.name === name);
                           setSelectedBranch(branch);
                         }}
-                        className="w-36 shadow-sm" 
+                        className=" shadow-sm"
                       />
                     )}
                   </div>
@@ -1024,7 +1027,7 @@ export default function ITRepositoriesPage() {
                   placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm"
                 />
-                <p className="text-[11px] text-gray-500 mt-1">Leave blank if the repository is public or if global GitHub App auth is enabled.</p>
+                <p className="text-xs text-gray-500 mt-1">Leave blank if the repository is public or if global GitHub App auth is enabled.</p>
               </div>
             </div>
 

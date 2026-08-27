@@ -23,7 +23,7 @@ const PriorityBadge = ({ priority }) => {
 
 const TypeBadge = ({ type }) => {
   let colors = 'text-blue-600 bg-blue-50 border-blue-100';
-  return <span className={`text-[11px] font-semibold tracking-wide  px-2 py-1 rounded-sm border ${colors}`}>{type}</span>;
+  return <span className={`text-xs font-semibold tracking-wide  px-2 py-1 rounded-sm border ${colors}`}>{type}</span>;
 };
 
 const StatusBadge = ({ status }) => {
@@ -607,7 +607,7 @@ const ITTestCasesPage = () => {
                     <div key={tc.id} className="flex gap-3">
                       <div className="text-[10px] font-medium text-blue-600 shrink-0 w-[50px]">TC-{tc.id}</div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[11px] text-gray-800 font-medium leading-tight mb-1 truncate" title={tc.title}>
+                        <div className="text-xs text-gray-800 font-medium leading-tight mb-1 truncate" title={tc.title}>
                           {tc.title}
                         </div>
                       </div>

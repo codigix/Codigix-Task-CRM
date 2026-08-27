@@ -55,16 +55,15 @@ const ITIssueActivityTabs = ({
     <div className="space-y-4 pt-4 border-t border-gray-100">
       <div className="flex items-center justify-between">
         <label className="text-xs font-semibold text-gray-700 tracking-wide">Activity</label>
-        <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded text-[11px] font-medium text-gray-600">
+        <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded text-xs font-medium text-gray-600">
           {['Comments', 'History', 'Work log', 'AI Docs'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-2.5 py-1 rounded transition cursor-pointer ${
-                activeTab === tab
+              className={`px-2.5 py-1 rounded transition cursor-pointer ${activeTab === tab
                   ? 'bg-white text-blue-600 shadow-xs font-semibold'
                   : 'hover:text-gray-900'
-              }`}
+                }`}
             >
               {tab === 'Comments' && <MessageSquare size={11} className="inline mr-1" />}
               {tab === 'History' && <History size={11} className="inline mr-1" />}
@@ -296,7 +295,7 @@ const ITIssueActivityTabs = ({
                       <span className="text-gray-500"> logged </span>
                       <span className="font-semibold text-blue-600">{w.timeSpent}</span>
                     </div>
-                    {w.description && <div className="text-[11px] text-gray-600 mt-0.5">{w.description}</div>}
+                    {w.description && <div className="text-xs text-gray-600 mt-0.5">{w.description}</div>}
                     <div className="text-[10px] text-gray-400 mt-0.5">{relativeTime(w.started_at || w.created_at)}</div>
                   </div>
                   <button

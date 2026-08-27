@@ -85,7 +85,7 @@ const CreateSprintModal = ({ isOpen, defaultName, projects, onCancel, onCreate }
                 </option>
               ))}
             </select>
-            <p className="text-[11px] text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               {selected
                 ? `Work added to this sprint will be assigned to “${selected.name}”.`
                 : 'Without a project, work keeps whatever project it already has.'}

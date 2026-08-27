@@ -627,7 +627,7 @@ const ITTeamsPage = ({ department }) => {
                                       <span className="text-[10px]  text-gray-500 uppercase tracking-wider">Allocated Team Members</span>
                                       <button
                                         onClick={() => { setSelectedTeam(team); setIsAddMemberModalOpen(true); }}
-                                        className="text-[11px] text-indigo-600 hover:text-indigo-800  flex items-center gap-1"
+                                        className="text-xs text-indigo-600 hover:text-indigo-800  flex items-center gap-1"
                                       >
                                         <Plus size={12} /> Add Member
                                       </button>
@@ -694,7 +694,7 @@ const ITTeamsPage = ({ department }) => {
                                       <span className="text-[10px]  text-gray-500 uppercase tracking-wider">Assigned Projects</span>
                                       <button
                                         onClick={() => { setSelectedTeam(team); setIsAssignProjectModalOpen(true); }}
-                                        className="text-[11px] text-emerald-600 hover:text-emerald-800  flex items-center gap-1"
+                                        className="text-xs text-emerald-600 hover:text-emerald-800  flex items-center gap-1"
                                       >
                                         <Plus size={12} /> Assign Project
                                       </button>
@@ -1054,7 +1054,7 @@ const ITTeamsPage = ({ department }) => {
             <div className="flex justify-between items-center pb-3 border-b border-gray-100 mb-4">
               <div>
                 <h2 className="text-base  text-gray-900">{isEditMode ? 'Edit Team Details' : 'Create New Team'}</h2>
-                <p className="text-[11px] text-gray-500">{isEditMode ? 'Modify team details, change the manager, or manage team allocations.' : 'Configure team properties, select the manager, and allocate team members.'}</p>
+                <p className="text-xs text-gray-500">{isEditMode ? 'Modify team details, change the manager, or manage team allocations.' : 'Configure team properties, select the manager, and allocate team members.'}</p>
               </div>
               <button
                 type="button"
@@ -1541,7 +1541,7 @@ const ITTeamsPage = ({ department }) => {
                 const assignedProjects = projects.filter(p => String(p.team_id) === String(activeTeamId));
                 return (
                   <div className="bg-gray-50 rounded p-3 border border-gray-100">
-                    <h3 className="text-[11px]  text-gray-700 mb-2 uppercase tracking-wider">Currently Assigned Projects</h3>
+                    <h3 className="text-xs  text-gray-700 mb-2 uppercase tracking-wider">Currently Assigned Projects</h3>
                     {assignedProjects.length > 0 ? (
                       <ul className="text-xs text-gray-600 space-y-1.5 max-h-24 overflow-y-auto custom-scrollbar">
                         {assignedProjects.map(p => (
@@ -1627,7 +1627,7 @@ const ITTeamsPage = ({ department }) => {
                     const manager = users.find(u => u.id === selectedTeam.manager_id);
                     return manager ? (
                       <div className="flex items-center gap-2 mt-1">
-                        <div className="w-6 h-6 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-[11px] ">
+                        <div className="w-6 h-6 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-xs ">
                           {manager.first_name[0].toUpperCase()}
                         </div>
                         <div>
@@ -1701,7 +1701,7 @@ const ITTeamsPage = ({ department }) => {
                       setIsAssignProjectModalOpen(true);
                       setIsViewModalOpen(false);
                     }}
-                    className="text-[11px] text-emerald-600 hover:text-emerald-800  flex items-center gap-1 focus:outline-none"
+                    className="text-xs text-emerald-600 hover:text-emerald-800  flex items-center gap-1 focus:outline-none"
                   >
                     <Plus size={12} /> Assign Project
                   </button>

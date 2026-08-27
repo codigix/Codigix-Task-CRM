@@ -36,7 +36,7 @@ const formatMessageTime = (timeStr) => {
     if (!isNaN(dateObj.getTime())) {
       return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
     }
-  } catch (e) {}
+  } catch (e) { }
 
   return str;
 };
@@ -239,7 +239,7 @@ export default function ITChatPage() {
     const sendHeartbeat = async () => {
       try {
         await axios.post(`${API_BASE_URL}/users/${currentUserId}/heartbeat`);
-      } catch (e) {}
+      } catch (e) { }
     };
     sendHeartbeat();
     const interval = setInterval(sendHeartbeat, 15000);
@@ -590,11 +590,11 @@ export default function ITChatPage() {
             {/* Quoted Reply Block (WhatsApp Style) */}
             {msg.reply_to_text && !isDeleted && (
               <div className={`mb-1 p-2 rounded-lg border-l-4 text-xs ${isMine ? 'bg-[#c5eabf] border-[#25d366] text-gray-900 self-end' : 'bg-gray-100 border-purple-600 text-gray-900 self-start'} max-w-full shadow-2xs`}>
-                <div className="flex items-center gap-1 font-bold text-[11px] text-[#075e54] mb-0.5">
+                <div className="flex items-center gap-1 font-bold text-xs text-[#075e54] mb-0.5">
                   <CornerUpLeft size={10} />
                   <span>{msg.reply_to_sender || 'Replied Message'}</span>
                 </div>
-                <div className="truncate text-[11px] text-gray-700 italic opacity-90">{msg.reply_to_text}</div>
+                <div className="truncate text-xs text-gray-700 italic opacity-90">{msg.reply_to_text}</div>
               </div>
             )}
 
@@ -1116,10 +1116,10 @@ export default function ITChatPage() {
           {replyingToMessage && (
             <div className="mb-2 p-2 bg-emerald-50 border-l-4 border-emerald-600 rounded flex items-center justify-between text-xs text-gray-800">
               <div className="min-w-0 pr-2">
-                <span className="font-bold text-emerald-800 text-[11px] block flex items-center gap-1">
+                <span className="font-bold text-emerald-800 text-xs block flex items-center gap-1">
                   <Reply size={11} /> Replying to {replyingToMessage.sender === 'user' ? 'You' : `${replyingToMessage.first_name || ''}`}
                 </span>
-                <p className="truncate text-gray-600 text-[11px] italic">{replyingToMessage.text}</p>
+                <p className="truncate text-gray-600 text-xs italic">{replyingToMessage.text}</p>
               </div>
               <button onClick={() => setReplyingToMessage(null)} className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
                 <X size={14} />
@@ -1200,13 +1200,13 @@ export default function ITChatPage() {
             <Avatar name={selectedChat.name} src={selectedChat.avatar} size={64} color="bg-blue-500" />
             <h3 className="font-bold text-gray-900 text-sm">{selectedChat.name}</h3>
             {selectedChat.chat_type === 'group' ? (
-              <p className="text-gray-400 text-[11px] font-medium">{(groupMembers.length || 0)} Members</p>
+              <p className="text-gray-400 text-xs font-medium">{(groupMembers.length || 0)} Members</p>
             ) : (
               (() => {
                 const statusObj = getUserOnlineStatus(selectedChat);
                 if (!statusObj) return null;
                 return (
-                  <p className={`text-[11px] font-semibold flex items-center justify-center gap-1 ${statusObj.isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
+                  <p className={`text-xs font-semibold flex items-center justify-center gap-1 ${statusObj.isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
                     {statusObj.isOnline && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                     <span>{statusObj.text}</span>
                   </p>
@@ -1246,7 +1246,7 @@ export default function ITChatPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">Create New Team Group</h3>
-                  <p className="text-[11px] text-gray-400">Start a group channel for team collaboration</p>
+                  <p className="text-xs text-gray-400">Start a group channel for team collaboration</p>
                 </div>
               </div>
               <button onClick={() => setIsCreateTeamOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 cursor-pointer">
@@ -1335,7 +1335,7 @@ export default function ITChatPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm">Add Members to {selectedChat?.name}</h3>
-                  <p className="text-[11px] text-gray-400">Expand team collaboration</p>
+                  <p className="text-xs text-gray-400">Expand team collaboration</p>
                 </div>
               </div>
               <button onClick={() => setIsAddMemberOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 cursor-pointer">

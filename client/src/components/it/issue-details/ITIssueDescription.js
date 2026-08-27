@@ -348,7 +348,7 @@ const ITIssueDescription = ({
                 className="w-full text-xs p-3 focus:outline-none font-sans leading-relaxed text-gray-800 bg-white min-h-[180px] outline-none prose prose-xs max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-2 [&_h3]:mb-1 [&_strong]:font-bold [&_b]:font-bold [&_a]:text-blue-600 [&_a]:underline [&_img]:max-w-full [&_img]:rounded"
               />
               {isUploadingFile && (
-                <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-blue-600 border-t border-gray-200 bg-blue-50/50">
+                <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 border-t border-gray-200 bg-blue-50/50">
                   <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                   Uploading file…
                 </div>

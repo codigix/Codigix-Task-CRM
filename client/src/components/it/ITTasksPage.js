@@ -9,6 +9,7 @@ import {
 import ITCreateIssueDrawer from './ITCreateIssueDrawer';
 import ITIssueDetailsPanel from './ITIssueDetailsPanel';
 import BoardTabs from '../common/BoardTabs';
+import DataTable from '../common/DataTable';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -48,7 +49,7 @@ const ALL_COLUMNS = [
   { key: 'team', label: 'Team', defaultChecked: true },
   { key: 'priority', label: 'Priority', defaultChecked: true },
   { key: 'status', label: 'Status', defaultChecked: true },
-  { key: 'resolution', label: 'Resolution', defaultChecked: true },
+  // { key: 'resolution', label: 'Resolution', defaultChecked: true },
   { key: 'created', label: 'Created', defaultChecked: true },
   { key: 'updated', label: 'Updated', defaultChecked: false },
   { key: 'dueDate', label: 'Due Date', defaultChecked: true },
@@ -79,7 +80,7 @@ const ITTasksPage = () => {
 
   // Columns filter state
   const [selectedColumns, setSelectedColumns] = useState(
-    new Set(['workType', 'key', 'summary', 'assignee', 'reporter', 'team', 'priority', 'status', 'resolution', 'created', 'dueDate', 'actions'])
+    new Set(['workType', 'key', 'summary', 'assignee', 'reporter', 'team', 'priority', 'status', 'created', 'dueDate', 'actions'])
   );
   const [columnSearchQuery, setColumnSearchQuery] = useState('');
   const [activeColumnsTab, setActiveColumnsTab] = useState('My defaults');
@@ -246,6 +247,145 @@ const ITTasksPage = () => {
   const toggleDropdown = (name) => {
     setOpenFilterDropdown(openFilterDropdown === name ? null : name);
   };
+
+const tableColumns = React.useMemo(() => {
+    return ALL_COLUMNS.map(col => {
+      let renderFn;
+      switch (col.key) {
+        case 'workType':
+          renderFn = (val, row) => (
+            <div className="flex items-center gap-1.5 text-gray-600 text-xs">
+              {TYPE_ICONS[row.type] || TYPE_ICONS.Task} {row.type}
+            </div>
+          );
+          break;
+        case 'key':
+          renderFn = (val, row) => (
+            <span className={`text-blue-600 font-semibold hover:underline ${isDoneStatus(row.status) ? 'line-through' : ''}`}>
+              {(row.issue_key || row.key)}
+            </span>
+          );
+          break;
+        case 'summary':
+          renderFn = (val, row) => {
+            const fullSummary = row.title || row.summary || '';
+            const displaySummary = fullSummary.length > 60 ? fullSummary.substring(0, 60) + '...' : fullSummary;
+            return (
+              <span className="text-gray-900 font-semibold cursor-pointer" title={fullSummary}>
+                {displaySummary || '-'}
+              </span>
+            );
+          };
+          break;
+        case 'assignee':
+          renderFn = (val, row) => (
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] ">
+                {(row.assignee ? row.assignee.charAt(0) : "U")}
+              </div>
+              <span>{row.assignee || "Unassigned"}</span>
+            </div>
+          );
+          break;
+        case 'reporter':
+          renderFn = (val, row) => (
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] font-semibold">
+                {(row.reporter ? row.reporter.charAt(0) : "U")}
+              </div>
+              <span>{row.reporter || "Unassigned"}</span>
+            </div>
+          );
+          break;
+        case 'priority':
+          renderFn = (val, row) => (
+            <div className="flex items-center gap-1.5 text-xs text-gray-600">
+              {PRIORITY_ICONS[row.priority]} {row.priority}
+            </div>
+          );
+          break;
+        case 'status':
+          renderFn = (val, row) => (
+            <span className={`px-2 py-0.5 rounded text-xs tracking-wide border ${row.status === 'TO DO' ? 'bg-gray-100 text-gray-600 border-gray-200' :
+              row.status === 'IN PROGRESS' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                row.status === 'IN REVIEW' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                  row.status === 'TESTING' ? 'bg-green-100 text-green-700 border-green-200' :
+                    'bg-teal-100 text-teal-700 border-teal-200'
+              }`}>
+              {row.status}
+            </span>
+          );
+          break;
+        case 'team':
+          renderFn = (val, row) => <span className="font-medium text-gray-700">{row.team || '-'}</span>;
+          break;
+        case 'created':
+          renderFn = (val, row) => <span className="text-gray-500 font-medium">{row.created_at ? new Date(row.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</span>;
+          break;
+        case 'updated':
+          renderFn = (val, row) => <span className="text-gray-500 font-medium">{row.updated_at ? new Date(row.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</span>;
+          break;
+        case 'dueDate':
+          renderFn = (val, row) => <span className="text-gray-500 font-medium">{row.due_date ? new Date(row.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : row.due_date || '-'}</span>;
+          break;
+        case 'actions':
+          renderFn = (val, row) => (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Are you sure you want to delete ticket ${(row.issue_key || row.key)}?`)) {
+                  deleteIssue((row.issue_key || row.key));
+                }
+              }}
+              className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors cursor-pointer flex items-center justify-center"
+              title="Delete Ticket"
+            >
+              <Trash2 size={13} />
+            </button>
+          );
+          break;
+        case 'progress':
+          renderFn = (val, row) => <span className="text-gray-700">{row.progress || 0}%</span>;
+          break;
+        case 'remainingEstimate':
+          renderFn = (val, row) => <span className="text-gray-600">{row.remaining_estimate || '0h'}</span>;
+          break;
+        case 'originalEstimate':
+          renderFn = (val, row) => <span className="text-gray-600">{row.original_estimate || '0h'}</span>;
+          break;
+        case 'timeSpent':
+          renderFn = (val, row) => <span className="text-gray-600">{row.time_spent || '0h'}</span>;
+          break;
+        case 'comments':
+          renderFn = (val, row) => {
+            const commentCount = row.comments ? (Array.isArray(row.comments) ? row.comments.length : JSON.parse(row.comments).length) : 0;
+            return <span className="text-gray-600">{commentCount} Comments</span>;
+          };
+          break;
+        case 'subTasks':
+          renderFn = (val, row) => {
+            const subtaskCount = row.subtasks ? (Array.isArray(row.subtasks) ? row.subtasks.length : JSON.parse(row.subtasks).length) : 0;
+            return <span className="text-gray-600">{subtaskCount} Subtasks</span>;
+          };
+          break;
+        case 'components':
+          renderFn = (val, row) => <span className="text-gray-600">{row.components || '-'}</span>;
+          break;
+        case 'labels':
+          renderFn = (val, row) => (
+            <div className="flex items-center gap-1">
+              {row.labels && Array.isArray(row.labels) && row.labels.map(l => (
+                <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 rounded text-xs font-semibold">{l}</span>
+              ))}
+            </div>
+          );
+          break;
+        default:
+          renderFn = (val, row) => <span className="text-gray-500">{val || '-'}</span>;
+      }
+      return { ...col, sortable: true, render: renderFn };
+    });
+  }, [deleteIssue]);
 
   return (
     <>
@@ -573,251 +713,15 @@ const ITTasksPage = () => {
                   </div>
                 </div>
 
-                <div className="border border-gray-200 rounded bg-white overflow-x-auto w-full max-w-full">
-                  <table className="w-full text-left whitespace-nowrap overflow-auto">
-                    <thead className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500   tracking-wider">
-                      <tr>
-                        <th className="p-3 w-10 text-center">#</th>
-                        {ALL_COLUMNS.filter(col => selectedColumns.has(col.key)).map(col => (
-                          <th key={col.key} className="p-3 select-none">{col.label}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 text-xs text-gray-700">
-                      {tasks.length === 0 ? (
-                        <tr>
-                          <td colSpan="100%" className="p-12 text-center">
-                            <div className="flex flex-col items-center justify-center text-gray-400">
-                              <LayoutList size={40} className="mb-3 opacity-30" />
-                              <span className="text-sm font-semibold text-gray-600 mb-1">No issues found</span>
-                              <span className="text-xs mb-4">There are no tasks matching your current filters or in your database.</span>
-                              <button onClick={() => setIsCreateDrawerOpen(true)} className="p-2 bg-blue-600 text-white rounded text-xs  hover:bg-blue-700 transition  flex items-center gap-1.5"><Plus size={14} /> Create your first issue</button>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : paginatedTasks.map((row, i) => (
-                        <tr key={i} className={`hover:bg-blue-50 cursor-pointer ${selectedIssue === (row.issue_key || row.key) ? 'bg-blue-50' : ''}`} onClick={() => setSelectedIssue((row.issue_key || row.key))}>
-                          <td className="p-3 text-center text-gray-400 text-xs">{(currentPage - 1) * rowsPerPage + i + 1}</td>
-                          {ALL_COLUMNS.filter(col => selectedColumns.has(col.key)).map(col => {
-                            switch (col.key) {
-                              case 'workType':
-                                return (
-                                  <td key={col.key} className="p-3">
-                                    <div className="flex items-center gap-1.5 text-gray-600 text-xs">
-                                      {TYPE_ICONS[row.type] || TYPE_ICONS.Task} {row.type}
-                                    </div>
-                                  </td>
-                                );
-                              case 'key':
-                                // Jira strikes through the key of a finished work item.
-                                return (
-                                  <td key={col.key} className={`p-3 text-blue-600 font-semibold hover:underline ${isDoneStatus(row.status) ? 'line-through' : ''
-                                    }`}>
-                                    {(row.issue_key || row.key)}
-                                  </td>
-                                );
-                              case 'summary':
-                                const fullSummary = row.title || row.summary || '';
-                                const words = fullSummary.trim().split(/\s+/);
-                                const isLong = words.length > 2;
-                                const displaySummary = isLong ? `${words.slice(0, 2).join(' ')}...` : fullSummary;
-
-                                return (
-                                  <td key={col.key} className="p-3">
-                                    <span className="text-gray-900 font-semibold cursor-pointer" title={fullSummary}>
-                                      {displaySummary}
-                                    </span>
-                                  </td>
-                                );
-                              case 'assignee':
-                                return (
-                                  <td key={col.key} className="p-3">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] ">
-                                        {(row.assignee ? row.assignee.charAt(0) : "U")}
-                                      </div>
-                                      <span>{row.assignee || "Unassigned"}</span>
-                                    </div>
-                                  </td>
-                                );
-                              case 'reporter':
-                                return (
-                                  <td key={col.key} className="p-3">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] font-semibold">
-                                        {(row.reporter ? row.reporter.charAt(0) : "U")}
-                                      </div>
-                                      <span>{row.reporter || "Unassigned"}</span>
-                                    </div>
-                                  </td>
-                                );
-                              case 'priority':
-                                return (
-                                  <td key={col.key} className="p-3">
-                                    <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                                      {PRIORITY_ICONS[row.priority]} {row.priority}
-                                    </div>
-                                  </td>
-                                );
-                              case 'status':
-                                return (
-                                  <td key={col.key} className="p-3">
-                                    <span className={`px-2 py-0.5 rounded text-xs   tracking-wide border ${row.status === 'TO DO' ? 'bg-gray-100 text-gray-600 border-gray-200' :
-                                      row.status === 'IN PROGRESS' ? 'bg-orange-100 text-orange-700 border-orange-200' :
-                                        row.status === 'IN REVIEW' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                                          row.status === 'TESTING' ? 'bg-green-100 text-green-700 border-green-200' :
-                                            'bg-teal-100 text-teal-700 border-teal-200'
-                                      }`}>
-                                      {row.status}
-                                    </span>
-                                  </td>
-                                );
-                              case 'team':
-                                return <td key={col.key} className="p-3 text-gray-700 font-medium">{row.team || '-'}</td>;
-                              case 'resolution':
-                                return <td key={col.key} className="p-3 text-gray-500 font-medium">{row.status === 'DONE' ? 'Done' : 'Unresolved'}</td>;
-                              case 'created':
-                                return <td key={col.key} className="p-3 text-gray-500 font-medium">{row.created_at ? new Date(row.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>;
-                              case 'updated':
-                                return <td key={col.key} className="p-3 text-gray-500 font-medium">{row.updated_at ? new Date(row.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>;
-                              case 'dueDate':
-                                return <td key={col.key} className="p-3 text-gray-500 font-medium">{row.due_date ? new Date(row.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : row.due_date || '-'}</td>;
-                              case 'actions':
-                                return (
-                                  <td key={col.key} className="p-3">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (window.confirm(`Are you sure you want to delete ticket ${(row.issue_key || row.key)}?`)) {
-                                          deleteIssue((row.issue_key || row.key));
-                                        }
-                                      }}
-                                      className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors cursor-pointer flex items-center justify-center"
-                                      title="Delete Ticket"
-                                    >
-                                      <Trash2 size={13} />
-                                    </button>
-                                  </td>
-                                );
-
-                              // Unselected/extra columns mock renders
-                              case 'progress':
-                                return <td key={col.key} className="p-3 text-gray-700 ">{row.progress || 0}%</td>;
-                              case 'remainingEstimate':
-                                return <td key={col.key} className="p-3 text-gray-600">{row.remaining_estimate || '0h'}</td>;
-                              case 'originalEstimate':
-                                return <td key={col.key} className="p-3 text-gray-600">{row.original_estimate || '0h'}</td>;
-                              case 'timeSpent':
-                                return <td key={col.key} className="p-3 text-gray-600">{row.time_spent || '0h'}</td>;
-                              case 'comments':
-                                const commentCount = row.comments ? (Array.isArray(row.comments) ? row.comments.length : JSON.parse(row.comments).length) : 0;
-                                return <td key={col.key} className="p-3 text-gray-600">{commentCount} Comments</td>;
-                              case 'subTasks':
-                                const subtaskCount = row.subtasks ? (Array.isArray(row.subtasks) ? row.subtasks.length : JSON.parse(row.subtasks).length) : 0;
-                                return <td key={col.key} className="p-3 text-gray-600">{subtaskCount} Subtasks</td>;
-                              case 'components':
-                                return <td key={col.key} className="p-3 text-gray-600">{row.components || '-'}</td>;
-                              case 'confluenceItems':
-                                return <td key={col.key} className="p-3 text-gray-600">0 Links</td>;
-                              case 'creator':
-                                return <td key={col.key} className="p-3 text-gray-600">{row.reporter || 'System'}</td>;
-                              case 'development':
-                                return <td key={col.key} className="p-3 text-gray-600">0 Branches</td>;
-                              case 'issueColor':
-                                return (
-                                  <td key={col.key} className="p-3">
-                                    <div className="w-3.5 h-3.5 bg-blue-500 rounded-sm"></div>
-                                  </td>
-                                );
-                              case 'rank':
-                                return <td key={col.key} className="p-3 text-gray-600">High</td>;
-                              case 'vulnerability':
-                                return <td key={col.key} className="p-3 text-gray-600">None</td>;
-                              case 'description':
-                                return <td key={col.key} className="p-3 text-gray-500 truncate max-w-xs">Create wireframes and layout...</td>;
-                              case 'environment':
-                                return <td key={col.key} className="p-3 text-gray-600">Production</td>;
-                              case 'fixVersions':
-                                return <td key={col.key} className="p-3 text-gray-600">v1.0</td>;
-                              case 'flagged':
-                                return <td key={col.key} className="p-3 text-gray-600">No</td>;
-                              case 'linkedWorkItems':
-                                return <td key={col.key} className="p-3 text-gray-600">blocks WR-102</td>;
-                              case 'labels':
-                                return (
-                                  <td key={col.key} className="p-3">
-                                    <div className="flex items-center gap-1">
-                                      {row.labels.map(l => (
-                                        <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 rounded text-xs font-semibold">{l}</span>
-                                      ))}
-                                    </div>
-                                  </td>
-                                );
-                              case 'lastViewed':
-                                return <td key={col.key} className="p-3 text-gray-600">Just now</td>;
-                              case 'parent':
-                                return <td key={col.key} className="p-3 text-gray-600">Website Redesign</td>;
-                              case 'space':
-                                return <td key={col.key} className="p-3 text-gray-600">IT Workspace</td>;
-                              case 'resolved':
-                                return <td key={col.key} className="p-3 text-gray-600">-</td>;
-                              case 'securityLevel':
-                                return <td key={col.key} className="p-3 text-gray-600">Public</td>;
-                              case 'startDate':
-                                return <td key={col.key} className="p-3 text-gray-600">01 May 2024</td>;
-                              case 'statusCategory':
-                                return <td key={col.key} className="p-3 text-gray-600 font-medium">To Do</td>;
-                              case 'statusCategoryChanged':
-                                return <td key={col.key} className="p-3 text-gray-600 font-medium">01 May 2024</td>;
-                              case 'subTasks':
-                                return <td key={col.key} className="p-3 text-gray-600">0 Sub-tasks</td>;
-                              case 'team':
-                                return <td key={col.key} className="p-3 text-gray-600 font-semibold text-indigo-600">Frontend Team</td>;
-                              case 'images':
-                                return <td key={col.key} className="p-3 text-gray-600">1 Attachment</td>;
-                              case 'affectsVersions':
-                                return <td key={col.key} className="p-3 text-gray-600">v0.9</td>;
-                              case 'votes':
-                                return <td key={col.key} className="p-3 text-gray-600">2</td>;
-                              case 'watchers':
-                                return <td key={col.key} className="p-3 text-gray-600">5</td>;
-                              case 'workRatio':
-                                return <td key={col.key} className="p-3 text-gray-600">0.5</td>;
-                              default:
-                                return <td key={col.key} className="p-3 text-gray-500">-</td>;
-                            }
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-                  <span>{tasks.length === 0 ? '0 issues' : `${(currentPage - 1) * rowsPerPage + 1}-${Math.min(currentPage * rowsPerPage, tasks.length)} of ${tasks.length} issues`}</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 disabled:opacity-50"
-                    >{'<'}</button>
-
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-6 h-6 flex items-center justify-center rounded ${currentPage === page ? 'bg-blue-600 text-white font-medium' : 'hover:bg-gray-100'}`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-
-                    <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages || totalPages === 0}
-                      className="w-6 h-6 flex items-center justify-center rounded text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-                    >{'>'}</button>
-                  </div>
+                
+                <div className="mt-4 border border-gray-200 rounded bg-white overflow-hidden w-full max-w-full">
+                  <DataTable 
+                    columns={tableColumns} 
+                    data={filteredTasks} 
+                    visibleColumns={Array.from(selectedColumns)}
+                    hideSearch={true}
+                    onRowClick={(row) => setSelectedIssue(row.issue_key || row.key)}
+                  />
                 </div>
               </div>
             </div>
