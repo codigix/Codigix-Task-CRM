@@ -1,0 +1,10 @@
+{
+  "leads": [],
+  "statusStats": [
+    { "status": "New", "leads": 0, "value": 0, "color": "bg-blue-500", "topBorder": "border-t-blue-400" },
+    { "status": "Contacted", "leads": 0, "value": 0, "color": "bg-yellow-500", "topBorder": "border-t-yellow-400" },
+    { "status": "Qualified", "leads": 0, "value": 0, "color": "bg-purple-500", "topBorder": "border-t-purple-400" },
+    { "status": "Converted to Deal", "leads": 0, "value": 0, "color": "bg-green-500", "topBorder": "border-t-green-400" },
+    { "status": "Lost", "leads": 0, "value": 0, "color": "bg-red-500", "topBorder": "border-t-red-400" }
+  ]
+}

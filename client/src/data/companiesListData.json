@@ -1,0 +1,16 @@
+{
+  "companies": [
+    {"id": 1, "name": "NovaWave LLC", "rating": 4.2, "email": "robertson@example.com", "phone": "+1 875455453", "country": "Germany", "tags": ["Collab", "Rated"], "icon": "bg-blue-500"},
+    {"id": 2, "name": "BlueSky Industries", "rating": 5.0, "email": "sharon@example.com", "phone": "+1 989757485", "country": "USA", "tags": ["Collab", "Rated"], "icon": "bg-orange-500"},
+    {"id": 3, "name": "Summit Peak", "rating": 4.5, "email": "jessica13@gmail.com", "phone": "+1 89316-83167", "country": "India", "tags": ["Collab", "Rated"], "icon": "bg-green-500"},
+    {"id": 4, "name": "Summit Peak", "rating": 4.5, "email": "jessica13@gmail.com", "phone": "+1 89316-83167", "country": "India", "tags": ["Collab", "Rated"], "icon": "bg-purple-500"},
+    {"id": 5, "name": "RiverStone Ventur", "rating": 4.7, "email": "carolTho3@gmail.com", "phone": "+1 84295-01629", "country": "China", "tags": ["Collab", "Rated"], "icon": "bg-indigo-500"},
+    {"id": 6, "name": "Bright Bridge Grp", "rating": 5.0, "email": "dawnmercha@gmail.com", "phone": "+1 79253-01692", "country": "Martin Lewis", "tags": ["Collab", "Rated"], "icon": "bg-cyan-500"},
+    {"id": 7, "name": "CoastalStar Co.", "rating": 3.1, "email": "rachel@gmail.com", "phone": "+1 52804-89153", "country": "Indonesia", "tags": ["Collab", "Rated"], "icon": "bg-red-500"},
+    {"id": 8, "name": "HarborView", "rating": 5.0, "email": "jonelle@gmail.com", "phone": "+1 60364-91683", "country": "Cuba", "tags": ["Collab", "Rated"], "icon": "bg-pink-500"},
+    {"id": 9, "name": "Golden Gate Ltd", "rating": 2.7, "email": "jonathan@gmail.com", "phone": "+1 69023-95179", "country": "Isreal", "tags": ["Collab", "Rated"], "icon": "bg-amber-500"},
+    {"id": 10, "name": "Redwood Inc", "rating": 3.0, "email": "brook@gmail.com", "phone": "+1 49815-90142", "country": "Colombia", "tags": ["Collab", "Rated"], "icon": "bg-sky-500"},
+    {"id": 11, "name": "SilverHawk", "rating": 3.0, "email": "vaughan12@example.com", "phone": "+1 546555455", "country": "Canada", "tags": ["Collab", "Rated"], "icon": "bg-emerald-500"},
+    {"id": 12, "name": "SummitPeak", "rating": 3.0, "email": "jessica13@example.com", "phone": "+1 454478787", "country": "India", "tags": ["Collab", "Rated"], "icon": "bg-violet-500"}
+  ]
+}

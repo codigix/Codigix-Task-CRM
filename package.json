@@ -1,0 +1,35 @@
+{
+  "name": "AllINONE",
+  "version": "1.0.0",
+  "description": "Professional AllINONE CRM Dashboard - Complete Integration",
+  "private": true,
+  "scripts": {
+    "setup": "cd server && npm install && cd ../client && npm install && cd ../server && npm run setup",
+    "start": "concurrently \"cd server && npm run dev\" \"cd client && npm start\"",
+    "start:prod": "concurrently \"cd server && npm start\" \"cd client && npm run build:dev\"",
+    "server": "cd server && npm run dev",
+    "server:prod": "cd server && npm start",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "build:dev": "cd client && npm run build:dev",
+    "test": "cd server && npm test",
+    "insert-data": "cd server && node insert-complete-monthly-data.js",
+    "insert-month-data": "cd server && node insert-complete-monthly-data.js"
+  },
+  "keywords": [
+    "crm",
+    "dashboard",
+    "react",
+    "nodejs",
+    "mysql"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "lucide-react": "^0.555.0",
+    "tailwindcss": "^4.1.17"
+  }
+}

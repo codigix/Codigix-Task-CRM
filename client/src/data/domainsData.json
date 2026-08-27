@@ -1,0 +1,95 @@
+{
+  "count": 198,
+  "domains": [
+    {
+      "id": 1,
+      "name": "NovaWave LLC",
+      "domainUrl": "nw.nova.com",
+      "plan": "Advanced (Monthly)",
+      "createdDate": "12 Sep 2025",
+      "status": "Approved",
+      "avatar": "🌊"
+    },
+    {
+      "id": 2,
+      "name": "BlueSky Industries",
+      "domainUrl": "bl.blue.com",
+      "plan": "Enterprise (Monthly)",
+      "createdDate": "24 Oct 2025",
+      "status": "Pending",
+      "avatar": "☁️"
+    },
+    {
+      "id": 3,
+      "name": "Silver Hawk",
+      "domainUrl": "sh.silver.com",
+      "plan": "Advanced (Monthly)",
+      "createdDate": "16 Feb 2025",
+      "status": "Rejected",
+      "avatar": "🦅"
+    },
+    {
+      "id": 4,
+      "name": "Summit Peak",
+      "domainUrl": "sp.summer.com",
+      "plan": "Advanced (Monthly)",
+      "createdDate": "20 Jul 2025",
+      "status": "Approved",
+      "avatar": "⛰️"
+    },
+    {
+      "id": 5,
+      "name": "RiverStone Venture",
+      "domainUrl": "ro.stone.com",
+      "plan": "Basic (Monthly)",
+      "createdDate": "20 Jul 2025",
+      "status": "Approved",
+      "avatar": "🏞️"
+    },
+    {
+      "id": 6,
+      "name": "Bright Bridge Grp",
+      "domainUrl": "bb.bright.com",
+      "plan": "Enterprise (Monthly)",
+      "createdDate": "28 May 2025",
+      "status": "Pending",
+      "avatar": "🌉"
+    },
+    {
+      "id": 7,
+      "name": "CoastalStar Co.",
+      "domainUrl": "cs.coastal.com",
+      "plan": "Advanced (Monthly)",
+      "createdDate": "12 May 2025",
+      "status": "Approved",
+      "avatar": "⭐"
+    },
+    {
+      "id": 8,
+      "name": "HarborView",
+      "domainUrl": "hv.harbor.com",
+      "plan": "Advanced (Monthly)",
+      "createdDate": "14 Apr 2025",
+      "status": "Rejected",
+      "avatar": "🏖️"
+    },
+    {
+      "id": 9,
+      "name": "Golden Gate Ltd",
+      "domainUrl": "ggt.golden.com",
+      "plan": "Enterprise (Monthly)",
+      "createdDate": "03 Apr 2025",
+      "status": "Approved",
+      "avatar": "🚪"
+    },
+    {
+      "id": 10,
+      "name": "Redwood Inc",
+      "domainUrl": "ri.redwood.com",
+      "plan": "Basic (Monthly)",
+      "createdDate": "25 Feb 2025",
+      "status": "Approved",
+      "avatar": "🌲"
+    }
+  ]
+}

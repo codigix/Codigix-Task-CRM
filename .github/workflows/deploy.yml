@@ -1,0 +1,41 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            echo "🚀 Starting Deployment..."
+            cd /var/www/All_IN_One
+            
+            # Fetch latest changes
+            git pull origin main
+
+            # Build & Reload Client
+            echo "🎨 Deploying client..."
+            cd /var/www/All_IN_One/client
+            npm install
+            GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true npm run build
+
+            # Update & Restart Server
+            echo "📦 Deploying Backend..."
+            cd /var/www/All_IN_One/server
+            npm install --production
+            pm2 restart all-in-one-backend || pm2 start server.js --name "all-in-one-backend"
+
+
+            # Save PM2 state
+            pm2 save
+            echo "✅ Deployment Complete!"

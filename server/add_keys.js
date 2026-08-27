@@ -1,0 +1,37 @@
+const fs = require('fs');
+const privateKey = `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAwMVElJTFbR8SlvZu6sH6Lwb49Vx0UzcFENwYqTshR25IP/uv
+3Ibn6nVmJs941pWwaigNvFWCjrf9C7VNIx54LrGDCpWF8WGVdJOSMmzrjSD+4xjq
+BZjWNCuuedX+s5rFrR0VXVJghL5lWqjn+yUaLLa8hn8hI6Q56FNLQESITmZZ1sCn
+/mnrakWylqnpj4JvvodTsJb7W0BwGFFlQCtGT2wkt91rX4SZy84ef0hg0JuD0iz5
+9OFtblJJgShjp45oDFUCUwIdDx97YTSDtw6jksWzXG2kCyQY/9MtKerE7qfX+X5V
+G8nlC3aFcw+Rcijdio8srNlD8ELJRVI/eoGPvwIDAQABAoIBAF/dus1pbwVlfok0
+5NQ6w4C/pu/emrsHka1gx6LhlRtA7Q1kzYCOVqdy2upSI3YT2zfv02Tl4Ze4SE+a
+SlI8xOfzv4dz9LimHv1qpjoNkNcOobOuoDNIXr5zOsG8en43ajc9T3KplPZu+Vis
+xzFOskWqWvdIIeLnuSSgx7ueWWsi/ehsEpdbSGv5zrUG1Gxv/fkxDX98S06bvJIr
+XoLIYT65lkAsB09wi7UNi8dvLkmXjMTkvjOzEZVg0f8rVre5iF5x+9jOzqzgkdzm
+iHzbGJFoUHsXpecmo5uIp6B2uE/FbnHUEUte+A2K5yaV0ciTx/ZlypOYyRXali9z
+oUyz1gECgYEA7nULYqiWR3Q4xMf7Pwq9LzMvivD4EH3DGFSr5snchDMnonguLzH+
+zDw8DprgcOAKmgRPAS04psJ2INxw30vDwmmV2ymJ9KoiCKqSEqYKEpugf6nQxxt4
+4yDAMkaH0+qqT0AjujnvbINcTOrLKl53pq2qWgdmmHE/KP1j++kUoJECgYEAzvPK
+LAwypwvGV2IuZ0HARN7sqBGcEVyeDmLwpG4118vgToUKChGv0QkmuqU7JuqdDcZw
+vGO817JgT5pOiDr9Cr3PqUbLK5H81GH9QyshTaGNv6xD4JcYVmd1/LOkmb8DNBZ1
+mcFtW6dfTiL/NzUT/ZnNEAcSLXRtuhdX0zZFU08CgYBw7bNXpNmOu2bLIp5FC9Pu
+j4IbfeUtAjIryqWiZcTuQr+pfNr6dOXjWT9j90sFicTbjeDQgNcMepmxFFTMGzh5
+UMGsii6QVSZLDmShOksY5uUKsKR0Nvl4LyF2bdqTrNW9NHX3EsrljAxhTOysgxKN
+OD+t5UVcOn2b7uyz931SUQKBgQCn3kiYAiz0IzD3oMRTLZpwQwNkMSSPULlEoizg
+tCUork98YZ4LHN2oievIak7Y+mX6zoSTy7Nao25MI7af+nlXRTA09x/Gb9zNyc5N
+taaF+g2o9Gr6upUbQUELggx6Sd6nWbB6z9ONDO7ZyrmKZpuYkjEsVw//nvmCgXzT
+7qm9MQKBgQDTEaROMlCaOJVOK57FyYJ6FqPxffqu0t4maW7uiUF7l+tbyNGKRvTZ
+x0NFpWbft0pxUzmsGcb4zbr3/8PofRLk73ASJzqmyf28qpVxXobD0eBcN1o3pyEu
+UCjA7W5v06Y6QpEIqJiWkhGkh3YXy+zrITgaMP2vexgdJQh0hKLA3g==
+-----END RSA PRIVATE KEY-----`;
+const b64 = Buffer.from(privateKey).toString('base64');
+const envContent = `
+GITHUB_APP_NAME="codigix"
+GITHUB_APP_ID="4725147"
+GITHUB_CLIENT_ID="Iv23li3aTU5lXK8OdlqU"
+GITHUB_APP_PRIVATE_KEY_BASE64="${b64}"
+`;
+fs.appendFileSync('.env', envContent);
+console.log('Appended to .env');

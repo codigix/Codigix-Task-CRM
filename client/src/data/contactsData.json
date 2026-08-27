@@ -1,0 +1,162 @@
+{
+  "contacts": [
+    {
+      "id": 1,
+      "name": "Darlee Robertson",
+      "position": "Facility Manager",
+      "email": "robertson@example.com",
+      "phone": "1234567890",
+      "country": "Germany",
+      "avatar": "DR",
+      "tags": ["Collab", "VIP"],
+      "collaborators": [
+        { "name": "John", "avatar": "J" },
+        { "name": "Mike", "avatar": "M" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Sharon Roy",
+      "position": "Installer",
+      "email": "sharon@example.com",
+      "phone": "+1 989757485",
+      "country": "USA",
+      "avatar": "SR",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "Sarah", "avatar": "S" },
+        { "name": "Lisa", "avatar": "L" }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Vaughan Lewis",
+      "position": "Senior Manager",
+      "email": "vaughan12@example.com",
+      "phone": "+1 546555455",
+      "country": "India",
+      "avatar": "VL",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "Alex", "avatar": "A" }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Jessica Louise",
+      "position": "Test Engineer",
+      "email": "jessica13@example.com",
+      "phone": "+1 454478787",
+      "country": "India",
+      "avatar": "JL",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "Emma", "avatar": "E" }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Carol Thomas",
+      "position": "UI / UX Designer",
+      "email": "caroltho3@example.com",
+      "phone": "+1 1245478245",
+      "country": "China",
+      "avatar": "CT",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "David", "avatar": "D" }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Dawn Mercha",
+      "position": "Technician",
+      "email": "dawnmercha@example.com",
+      "phone": "+1 478845447",
+      "country": "Martin Lewis",
+      "avatar": "DM",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "Robert", "avatar": "R" }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Rachel Hampton",
+      "position": "Software Developer",
+      "email": "rachel@example.com",
+      "phone": "+1 215544845",
+      "country": "Indonesia",
+      "avatar": "RH",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "Chris", "avatar": "C" }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Jonelle Curtiss",
+      "position": "Supervisor",
+      "email": "jonelle@example.com",
+      "phone": "+1 121145471",
+      "country": "Cuba",
+      "avatar": "JC",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "Karen", "avatar": "K" }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Jonathan Smith",
+      "position": "Team Lead Dev",
+      "email": "jonathan@example.com",
+      "phone": "+1 321454789",
+      "country": "Israel",
+      "avatar": "JS",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "Tom", "avatar": "T" }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Brook Carter",
+      "position": "Team Lead Dev",
+      "email": "brook@example.com",
+      "phone": "+1 278907145",
+      "country": "Colombia",
+      "avatar": "BC",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "James", "avatar": "J" }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Eric Adams",
+      "position": "HR Manager",
+      "email": "ericadams@example.com",
+      "phone": "+1 19023-78104",
+      "country": "France",
+      "avatar": "EA",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "Nicole", "avatar": "N" }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Richard Cooper",
+      "position": "Devops Engineer",
+      "email": "richard@example.com",
+      "phone": "+1 18902-63904",
+      "country": "Belgium",
+      "avatar": "RC",
+      "tags": ["Collab", "Rated"],
+      "collaborators": [
+        { "name": "Paul", "avatar": "P" }
+      ]
+    }
+  ]
+}

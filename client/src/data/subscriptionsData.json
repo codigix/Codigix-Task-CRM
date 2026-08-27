@@ -1,0 +1,125 @@
+{
+  "count": 178,
+  "subscriptions": [
+    {
+      "id": 1,
+      "subscriber": "NovaWave LLC",
+      "plan": "Advanced (Monthly)",
+      "billingCycle": "30 Days",
+      "paymentMethod": "Credit Card",
+      "amount": "$200",
+      "createdDate": "01 Nov 2025",
+      "expiringOn": "01 Nov 2026",
+      "status": "Paid",
+      "avatar": "🌊"
+    },
+    {
+      "id": 2,
+      "subscriber": "BlueSky Industries",
+      "plan": "Basic (Yearly)",
+      "billingCycle": "365 Days",
+      "paymentMethod": "Paypal",
+      "amount": "$600",
+      "createdDate": "10 Oct 2025",
+      "expiringOn": "10 Oct 2026",
+      "status": "Unpaid",
+      "avatar": "☁️"
+    },
+    {
+      "id": 3,
+      "subscriber": "Silver Hawk",
+      "plan": "Advanced (Monthly)",
+      "billingCycle": "30 Days",
+      "paymentMethod": "Debit Card",
+      "amount": "$200",
+      "createdDate": "16 Sep 2025",
+      "expiringOn": "16 Sep 2026",
+      "status": "Paid",
+      "avatar": "🦅"
+    },
+    {
+      "id": 4,
+      "subscriber": "Summit Peak",
+      "plan": "Advanced (Monthly)",
+      "billingCycle": "30 Days",
+      "paymentMethod": "Paypal",
+      "amount": "$200",
+      "createdDate": "20 Jul 2025",
+      "expiringOn": "20 Jul 2026",
+      "status": "Paid",
+      "avatar": "⛰️"
+    },
+    {
+      "id": 5,
+      "subscriber": "RiverStone Venture",
+      "plan": "Enterprise (Monthly)",
+      "billingCycle": "30 Days",
+      "paymentMethod": "Credit Card",
+      "amount": "$400",
+      "createdDate": "17 Jul 2025",
+      "expiringOn": "17 Jul 2026",
+      "status": "Unpaid",
+      "avatar": "🏞️"
+    },
+    {
+      "id": 6,
+      "subscriber": "Bright Bridge Grp",
+      "plan": "Advanced (Monthly)",
+      "billingCycle": "30 Days",
+      "paymentMethod": "Paypal",
+      "amount": "$200",
+      "createdDate": "01 July 2025",
+      "expiringOn": "01 July 2026",
+      "status": "Paid",
+      "avatar": "🌉"
+    },
+    {
+      "id": 7,
+      "subscriber": "CoastalStar Co.",
+      "plan": "Enterprise (Yearly)",
+      "billingCycle": "365 Days",
+      "paymentMethod": "Credit Card",
+      "amount": "$4800",
+      "createdDate": "28 May 2025",
+      "expiringOn": "28 May 2026",
+      "status": "Paid",
+      "avatar": "⭐"
+    },
+    {
+      "id": 8,
+      "subscriber": "HarborView",
+      "plan": "Basic (Monthly)",
+      "billingCycle": "30 Days",
+      "paymentMethod": "Credit Card",
+      "amount": "$50",
+      "createdDate": "20 May 2025",
+      "expiringOn": "20 May 2026",
+      "status": "Paid",
+      "avatar": "🏖️"
+    },
+    {
+      "id": 9,
+      "subscriber": "Golden Gate Ltd",
+      "plan": "Basic (Yearly)",
+      "billingCycle": "365 Days",
+      "paymentMethod": "Paypal",
+      "amount": "$600",
+      "createdDate": "12 May 2025",
+      "expiringOn": "12 May 2026",
+      "status": "Unpaid",
+      "avatar": "🚪"
+    },
+    {
+      "id": 10,
+      "subscriber": "Redwood Inc",
+      "plan": "Advanced (Monthly)",
+      "billingCycle": "30 Days",
+      "paymentMethod": "Credit Card",
+      "amount": "$200",
+      "createdDate": "14 Apr 2025",
+      "expiringOn": "14 Apr 2026",
+      "status": "Paid",
+      "avatar": "🌲"
+    }
+  ]
+}

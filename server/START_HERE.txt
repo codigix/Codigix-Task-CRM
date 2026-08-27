@@ -1,0 +1,151 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                                                                             ║
+║                         🚀 START SERVER HERE 🚀                            ║
+║                                                                             ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+⚠️  CRITICAL: THE SERVER MUST BE RESTARTED TO LOAD NEW ROUTES
+
+═══════════════════════════════════════════════════════════════════════════════
+STEP 1: KILL OLD SERVER
+═══════════════════════════════════════════════════════════════════════════════
+
+Press Ctrl+C in the server terminal where it's running, OR:
+
+Open a Command Prompt and run:
+  taskkill /f /im node.exe
+
+Wait 2 seconds...
+
+═══════════════════════════════════════════════════════════════════════════════
+STEP 2: START NEW SERVER
+═══════════════════════════════════════════════════════════════════════════════
+
+📂 Open: c:\All_IN_One\deals-dashboard\server
+
+🖱️  Double-click: start-dev.bat
+
+📺 You should see this output:
+  ✓ Server running on port 5000
+  ✓ Environment: development
+  ✓ CORS origin: http://localhost:3000
+  ✓ Database connection successful
+  ✓ Entities routes registered          ← This is NEW
+  ✓ All systems operational
+
+Do NOT close this window. Keep it open while using the frontend.
+
+═══════════════════════════════════════════════════════════════════════════════
+STEP 3: VERIFY IN BROWSER
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Open: http://localhost:3000
+
+2. Clear browser cache:
+   Ctrl+Shift+Delete
+   Click "Clear all" → Confirm
+
+3. Reload page:
+   Ctrl+Shift+R
+
+4. Open DevTools:
+   F12 → Network tab
+
+5. Go to Contacts page
+
+6. Check Network tab:
+   GET /api/contacts       Should show 200 ✓ (not 404)
+   GET /api/companies      Should show 200 ✓ (not 404)
+   GET /api/users          Should show 200 ✓ (not 404)
+   GET /api/deals          Should show 200 ✓ (not 404)
+   GET /api/projects       Should show 200 ✓ (not 404)
+
+If all show 200, you're done! ✓
+
+═══════════════════════════════════════════════════════════════════════════════
+STEP 4: OPTIONAL - TEST ALL ENDPOINTS (Advanced)
+═══════════════════════════════════════════════════════════════════════════════
+
+Open a NEW Command Prompt (keep server running):
+
+  cd c:\All_IN_One\deals-dashboard\server
+  node verify-all-apis.js
+
+You should see:
+  ✓ GET Contacts (200)
+  ✓ GET Companies (200)
+  ✓ GET Users (200)
+  ✓ GET Deals (200)
+  ✓ GET Projects (200)
+  ... and more
+
+═══════════════════════════════════════════════════════════════════════════════
+❓ STILL SEEING 404 ERRORS?
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Kill server: taskkill /f /im node.exe
+2. Wait 2 seconds
+3. Restart: start-dev.bat
+4. Wait for "All systems operational"
+5. Clear browser cache: Ctrl+Shift+Delete
+6. Reload page: Ctrl+Shift+R
+7. Check Network tab again
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 WHAT WAS ADDED
+═══════════════════════════════════════════════════════════════════════════════
+
+✨ 9 New API Endpoints (routes/entities-routes.js):
+   • GET  /api/contacts        - List all contacts
+   • POST /api/contacts        - Create new contact
+   • GET  /api/companies       - List all companies
+   • POST /api/companies       - Create new company
+   • GET  /api/users           - List all users
+   • GET  /api/deals           - List all deals
+   • POST /api/deals           - Create new deal
+   • GET  /api/projects        - List all projects
+   • POST /api/projects        - Create new project
+
+✨ Fixed 404 Errors:
+   These endpoints were returning 404 before
+   Now they return 200 with actual data
+
+✨ Total API Endpoints Now: 59
+   6 Authentication
+   9 Core Entities (NEW)
+   8 Activities & Notes
+   9 Tasks & Projects
+   8 Estimations & Pipeline
+   20 Leads, Deals & Roles
+
+═══════════════════════════════════════════════════════════════════════════════
+✅ SUCCESS INDICATORS
+═══════════════════════════════════════════════════════════════════════════════
+
+When server starts correctly:
+  ✓ No errors in console
+  ✓ "Database connection successful" appears
+  ✓ "Entities routes registered" appears
+  ✓ "All systems operational" appears
+  ✓ Server is listening on port 5000
+
+When APIs work:
+  ✓ Browser DevTools shows 200 responses
+  ✓ Contacts page displays data
+  ✓ No red X marks on API calls
+  ✓ No 404 errors in console
+
+═══════════════════════════════════════════════════════════════════════════════
+🎯 SUMMARY
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Kill old server           (taskkill /f /im node.exe)
+2. Start new server          (Double-click start-dev.bat)
+3. Clear browser cache       (Ctrl+Shift+Delete)
+4. Reload page               (Ctrl+Shift+R)
+5. Check DevTools Network    (F12 → Network tab)
+6. Verify 200 responses      (Not 404)
+
+Done! All APIs now working. ✓
+
+═══════════════════════════════════════════════════════════════════════════════
