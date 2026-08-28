@@ -586,7 +586,7 @@ module.exports = function setupEntitiesRoutes(app, pool) {
         LEFT JOIN companies c ON l.company_id = c.id
         LEFT JOIN users u ON l.owner_id = u.id
         LEFT JOIN service_categories sc ON l.service_category_id = sc.id
-        WHERE l.lead_status IN ('Qualified', 'Contacted', 'Converted Lead', 'Quotation', 'Revised Quotation', 'Finalized Deal', 'Converted to Deal', 'Won')
+        WHERE l.lead_status IN ('Qualified', 'Converted Lead', 'Quotation', 'Revised Quotation', 'Finalized Deal', 'Converted to Deal', 'Won')
         AND l.converted_deal_id IS NULL
         AND NOT EXISTS (SELECT 1 FROM deals d2 WHERE d2.deal_name = l.lead_name AND (d2.company_id = l.company_id OR (d2.company_id IS NULL AND l.company_id IS NULL)))
         AND NOT EXISTS (SELECT 1 FROM deals d3 WHERE d3.company_id = l.company_id AND l.company_id IS NOT NULL)
@@ -1269,18 +1269,48 @@ module.exports = function setupEntitiesRoutes(app, pool) {
 
       if (dealId > 1000000) {
         const leadId = dealId - 1000000;
-        await db.query("UPDATE leads SET converted_deal_id = NULL, lead_status = 'Qualified' WHERE id = ?", [leadId]);
+        await db.query("UPDATE leads SET converted_deal_id = NULL, lead_status = 'New' WHERE id = ?", [leadId]);
         return res.json({ success: true, message: 'Virtual deal unlinked successfully' });
       }
 
-      const [result] = await db.query('DELETE FROM deals WHERE id = ?', [id]);
-      
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: 'Deal not found' });
+      // Safe deletion for real deals: clean up foreign key references first
+      const tablesToNullify = [
+        { table: 'leads', column: 'converted_deal_id' },
+        { table: 'projects', column: 'deal_id' },
+        { table: 'invoices', column: 'deal_id' },
+        { table: 'estimations', column: 'deal_id' },
+        { table: 'proposals', column: 'deal_id' },
+        { table: 'contracts', column: 'deal_id' },
+        { table: 'followups', column: 'deal_id' },
+        { table: 'activities', column: 'deal_id' }
+      ];
+
+      for (const t of tablesToNullify) {
+        try {
+          await db.query(`UPDATE ${t.table} SET ${t.column} = NULL WHERE ${t.column} = ?`, [dealId]);
+        } catch (e) {
+          // ignore if table/column missing
+        }
       }
+
+      try {
+        await db.query("UPDATE followups SET related_id = NULL WHERE related_type = 'Deal' AND related_id = ?", [dealId]);
+      } catch (e) {}
+
+      const tablesToDelete = ['deal_contacts', 'deal_services', 'deal_members', 'deal_stage_history', 'deal_history', 'department_assignments'];
+      for (const table of tablesToDelete) {
+        try {
+          await db.query(`DELETE FROM ${table} WHERE deal_id = ?`, [dealId]);
+        } catch (e) {
+          // ignore if table missing
+        }
+      }
+
+      const [result] = await db.query('DELETE FROM deals WHERE id = ?', [dealId]);
       
       return res.json({ success: true, message: 'Deal deleted successfully' });
     } catch (err) {
+      console.error('Error deleting deal:', err);
       responseError(res, 500, 'Failed to delete deal', err);
     }
   });

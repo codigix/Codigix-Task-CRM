@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { MoreVertical, Plus, Grid3x3, List, Download, Send, CheckCircle, XCircle, Edit2 } from 'lucide-react';
+import { MoreVertical, Plus, Grid3x3, List, Download, Send, CheckCircle, XCircle, Edit2, Eye } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { proposalsAPI, companiesAPI, contactsAPI, dealsAPI } from '../../services/api';
 import AddNewProposalModal from './AddNewProposalModal';
+import ProposalDetailsPage from './ProposalDetailsPage';
 
 const ProposalsPage = ({ onViewDetails }) => {
   const [viewMode, setViewMode] = useState('grid');
@@ -16,6 +17,7 @@ const ProposalsPage = ({ onViewDetails }) => {
   const [contacts, setContacts] = useState([]);
   const [deals, setDeals] = useState([]);
   const [showActionMenu, setShowActionMenu] = useState(null);
+  const [selectedProposalId, setSelectedProposalId] = useState(null);
 
   useEffect(() => {
     loadInitialData();
@@ -287,105 +289,126 @@ const ProposalsPage = ({ onViewDetails }) => {
     };
 
     const getCompanyColor = (companyId) => {
-      const colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500'];
+      const colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-amber-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500'];
       return colors[(companyId || 0) % colors.length];
     };
 
+    const cleanText = (str) => {
+      if (!str) return 'No detailed scope description provided.';
+      return str.replace(/[#*`~>_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    };
+
     return (
-      <div className="bg-white border border-gray-200 rounded  overflow-hidden hover:shadow-xl transition-all duration-200">
-        <div className="p-2 pb-3">
-          <div className="flex items-start justify-between mb-3">
-            <span className="text-xs   text-white ">{proposal.proposal_number}</span>
+      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+              {proposal.proposal_number || `PROP-${proposal.id}`}
+            </span>
             <div className="relative">
               <button
                 onClick={() => setShowActionMenu(showActionMenu === proposal.id ? null : proposal.id)}
                 className="p-1 hover:bg-gray-100 rounded transition-colors"
               >
-                <MoreVertical size={16} className="text-[#1F2020]" />
+                <MoreVertical size={16} className="text-gray-600" />
               </button>
               {showActionMenu === proposal.id && (
-                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-300 rounded shadow-lg z-10">
+                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-20 py-1">
+                  <button
+                    onClick={() => { setShowActionMenu(null); setSelectedProposalId(proposal.id); }}
+                    className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                  >
+                    <Eye size={14} className="text-blue-600" /> View Details
+                  </button>
                   {proposal.status === 'Approved' && (
                     <button
                       onClick={() => handleSendProposal(proposal.id)}
-                      className="w-full text-left p-2  text-xs  hover:bg-gray-100 flex items-center gap-2"
+                      className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 flex items-center gap-2 text-gray-700"
                     >
-                      <Send size={14} /> Send
+                      <Send size={14} className="text-blue-600" /> Send to Client
                     </button>
                   )}
                   <button
                     onClick={() => handleStatusChange(proposal.id, 'Approved')}
-                    className="w-full text-left p-2  text-xs  hover:bg-gray-100 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 flex items-center gap-2 text-gray-700"
                   >
-                    <CheckCircle size={14} /> Approve
+                    <CheckCircle size={14} className="text-green-600" /> Approve Proposal
                   </button>
                   <button
                     onClick={() => handleStatusChange(proposal.id, 'Rejected')}
-                    className="w-full text-left p-2  text-xs  hover:bg-gray-100 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 flex items-center gap-2 text-gray-700"
                   >
-                    <XCircle size={14} /> Reject
+                    <XCircle size={14} className="text-red-600" /> Reject
                   </button>
                   {proposal.status === 'Accepted' && (
                     <button
                       onClick={() => handleConvertToInvoice(proposal.id)}
-                      className="w-full text-left p-2  text-xs  hover:bg-gray-100 flex items-center gap-2 border-t"
+                      className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 flex items-center gap-2 border-t text-gray-700"
                     >
-                      <Download size={14} /> Convert to Invoice
+                      <Download size={14} className="text-indigo-600" /> Convert to Invoice
                     </button>
                   )}
                   {proposal.status === 'Sent' && (
                     <button
                       onClick={() => handleConvertToContract(proposal.id)}
-                      className="w-full text-left p-2  text-xs  hover:bg-green-50 text-green-700 flex items-center gap-2 border-t"
+                      className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-green-50 text-green-700 flex items-center gap-2 border-t"
                     >
                       📋 Convert to Contract
                     </button>
                   )}
                   <button
                     onClick={() => handleDeleteProposal(proposal.id)}
-                    className="w-full text-left p-2  text-xs  hover:bg-red-100 text-red-700 flex items-center gap-2 border-t"
+                    className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-red-50 text-red-600 flex items-center gap-2 border-t"
                   >
-                    <XCircle size={14} /> Delete
+                    <XCircle size={14} className="text-red-600" /> Delete
                   </button>
                 </div>
               )}
             </div>
           </div>
 
-          <h3 className=" text-gray-900 text-xs  mb-2">{proposal.title}</h3>
-          <p className="text-xs text-gray-500 mb-3">{proposal.description || 'Proposal'}</p>
+          <h3
+            className="font-semibold text-gray-900 text-sm mb-1 truncate cursor-pointer hover:text-blue-600 transition-colors"
+            title={proposal.title}
+            onClick={() => setSelectedProposalId(proposal.id)}
+          >
+            {proposal.title}
+          </h3>
+          <p className="text-xs text-gray-500 mb-3 line-clamp-2 min-h-[2.25rem] leading-relaxed" title={cleanText(proposal.description)}>
+            {cleanText(proposal.description)}
+          </p>
 
-          <div className="space-y-1 mb-4 text-xs text-gray-600">
-            <div className="flex items-center gap-1.5">
-              <span>📅</span>
-              <span>Date: {new Date(proposal.proposal_date).toLocaleDateString()}</span>
+          <div className="space-y-1.5 mb-4 text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Date:</span>
+              <span className="font-medium">{new Date(proposal.proposal_date).toLocaleDateString()}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span>⏳</span>
-              <span>Valid Till: {proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}</span>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Valid Till:</span>
+              <span className="font-medium text-slate-700">{proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}</span>
             </div>
           </div>
         </div>
 
-        <div className="border-t pt-3 p-2 ">
-          <div className="flex items-center gap-3 mb-4">
-            <div className={`w-12 h-12 rounded-full ${getCompanyColor(company?.id)} text-white flex items-center justify-center  text-xs  flex-shrink-0`}>
-              {company ? getCompanyInitials(company.company_name) : 'N/A'}
+        <div className="border-t border-gray-100 pt-3">
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className={`w-9 h-9 rounded-full ${getCompanyColor(company?.id)} text-white flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-sm`}>
+              {company ? getCompanyInitials(company.company_name) : 'CP'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className=" text-gray-900 text-xs  truncate">
-                {company?.company_name || 'Unknown Company'}
+              <p className="font-medium text-gray-900 text-xs truncate" title={company?.company_name || 'Client'}>
+                {company?.company_name || 'Client Unassigned'}
               </p>
-              <p className="text-xs text-gray-500">Client</p>
+              <p className="text-[11px] text-gray-400">Client Account</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className={`text-xs px-2.5 py-1 rounded-full  ${getStatusColor(proposal.status)}`}>
+          <div className="flex items-center justify-between pt-1">
+            <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${getStatusColor(proposal.status)}`}>
               {proposal.status}
             </span>
-            <span className="text-xs   text-gray-900">
-              💰 {currency} {(proposal.total_amount || 0).toLocaleString()}
+            <span className="text-sm font-bold text-gray-900">
+              {currency} {(proposal.total_amount || 0).toLocaleString()}
             </span>
           </div>
         </div>
@@ -398,36 +421,44 @@ const ProposalsPage = ({ onViewDetails }) => {
     const currency = proposal.currency || 'INR';
 
     return (
-      <tr className="border-b hover:bg-gray-50">
-        <td className="p-2 text-xs">
-          <div className="  text-gray-900">{proposal.proposal_number}</div>
-          <div className="text-xs text-gray-500">{proposal.title}</div>
+      <tr className="border-b hover:bg-gray-50 transition-colors">
+        <td className="p-3 text-xs cursor-pointer" onClick={() => setSelectedProposalId(proposal.id)}>
+          <div className="font-semibold text-slate-800 hover:text-blue-600 transition-colors">
+            {proposal.proposal_number || `PROP-${proposal.id}`}
+          </div>
+          <div className="text-xs text-gray-500 font-medium truncate max-w-xs">{proposal.title}</div>
         </td>
-        <td className="p-2 text-xs text-gray-700">{company?.company_name || 'Unknown'}</td>
-        <td className="p-2 text-xs   text-gray-900">
-          {currency} {proposal.total_amount || 0}
+        <td className="p-3 text-xs text-gray-700 font-medium">{company?.company_name || 'Client Unassigned'}</td>
+        <td className="p-3 text-xs font-bold text-gray-900">
+          {currency} {(proposal.total_amount || 0).toLocaleString()}
         </td>
-        <td className="p-2 text-xs text-gray-600">
+        <td className="p-3 text-xs text-gray-600">
           {new Date(proposal.proposal_date).toLocaleDateString()}
         </td>
-        <td className="p-2 text-xs text-gray-600">
+        <td className="p-3 text-xs text-gray-600">
           {proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}
         </td>
-        <td className="p-2 text-xs">
-          <span className={`text-xs p-1  rounded-full  ${getStatusColor(proposal.status)}`}>
+        <td className="p-3 text-xs">
+          <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${getStatusColor(proposal.status)}`}>
             {proposal.status}
           </span>
         </td>
-        <td className="p-2 text-xs text-right relative">
+        <td className="p-3 text-xs text-right relative">
           <div className="relative">
             <button
               onClick={() => setShowActionMenu(showActionMenu === proposal.id ? null : proposal.id)}
               className="p-1 hover:bg-gray-100 rounded transition-colors"
             >
-              <MoreVertical size={18} className="text-[#1F2020]" />
+              <MoreVertical size={18} className="text-gray-600" />
             </button>
             {showActionMenu === proposal.id && (
-              <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-300 rounded shadow-lg z-10">
+              <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-xl z-20 py-1">
+                <button
+                  onClick={() => { setShowActionMenu(null); setSelectedProposalId(proposal.id); }}
+                  className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                >
+                  <Eye size={14} className="text-blue-600" /> View Details
+                </button>
                 {proposal.status === 'Approved' && (
                   <button
                     onClick={() => handleSendProposal(proposal.id)}
@@ -477,6 +508,18 @@ const ProposalsPage = ({ onViewDetails }) => {
       </tr>
     );
   };
+
+  if (selectedProposalId) {
+    return (
+      <ProposalDetailsPage
+        proposalId={selectedProposalId}
+        onBack={() => {
+          setSelectedProposalId(null);
+          loadInitialData();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -556,6 +599,65 @@ const ProposalsPage = ({ onViewDetails }) => {
 
       {/* Main Content */}
       <div className="p-6">
+        {/* KPI Summary Header */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Total Proposals</p>
+              <h3 className="text-xl font-bold text-gray-900 mt-1">{proposals.length}</h3>
+              <p className="text-xs text-gray-400 mt-1">
+                Value: INR {proposals.reduce((sum, p) => sum + (parseFloat(p.total_amount) || 0), 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
+              📄
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Approved / Sent</p>
+              <h3 className="text-xl font-bold text-indigo-600 mt-1">
+                {proposals.filter(p => p.status === 'Approved' || p.status === 'Sent' || p.status === 'Submitted').length}
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">Pending Client Action</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg">
+              📤
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Accepted (Won)</p>
+              <h3 className="text-xl font-bold text-emerald-600 mt-1">
+                {proposals.filter(p => p.status === 'Accepted').length}
+              </h3>
+              <p className="text-xs text-emerald-600 font-medium mt-1">
+                INR {proposals.filter(p => p.status === 'Accepted').reduce((sum, p) => sum + (parseFloat(p.total_amount) || 0), 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
+              🏆
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Win Conversion Rate</p>
+              <h3 className="text-xl font-bold text-purple-600 mt-1">
+                {proposals.length > 0
+                  ? Math.round((proposals.filter(p => p.status === 'Accepted').length / proposals.length) * 100)
+                  : 0}%
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">Proposals Converted</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg">
+              📊
+            </div>
+          </div>
+        </div>
+
         {error && (
           <div className="mb-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
             {error}

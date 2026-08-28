@@ -371,14 +371,16 @@ const CrmDealsPage = () => {
 
   const handleDeleteDeal = async (e, dealId) => {
     if (e) e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this deal?')) return;
 
     try {
+      setDeals(prev => prev.filter(d => d.id?.toString() !== dealId?.toString()));
       await dealsAPI.delete(dealId);
       showSuccessToast('Deal deleted successfully');
       fetchData();
     } catch (err) {
+      console.error('Failed to delete deal:', err);
       showErrorToast(err.message || 'Failed to delete deal');
+      fetchData();
     }
   };
 

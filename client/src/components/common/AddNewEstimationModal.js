@@ -151,7 +151,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
 
       if (items.length === 0) {
         const baseRate = parseFloat(est.subtotal) || parseFloat(est.amount || est.total) || 0;
-        const defaultService = est.it_services === 'Other' ? est.it_services_other : (est.it_services && est.it_services !== 'None' ? est.it_services : (formData.project_name || formData.dealName || 'CRM'));
+        const defaultService = est.it_services === 'Other' ? est.it_services_other : (est.it_services && est.it_services !== 'None' ? est.it_services : (formData.project_name || formData.dealName || formData.businessType || 'Software Services'));
         items.push({
           id: Date.now(),
           productName: defaultService,
@@ -276,19 +276,24 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
 
         const leadServices = processServices(leadData);
 
-        setFormData(prev => ({
-          ...prev,
-          client: clientName,
-          lead_id: leadId,
-          contactPerson: contactPerson || prev.contactPerson,
-          businessType: leadBusinessType || prev.businessType || '',
-          client_email: clientEmail || prev.client_email,
-          client_phone: clientPhone || prev.client_phone,
-          business_description: businessDescription || prev.business_description,
-          referral_name: referralName || prev.referral_name,
-          assignedExecutiveId: leadData.owner_id ? leadData.owner_id.toString() : prev.assignedExecutiveId,
-          items: (!isExistingQuotation && leadServices.length > 0) ? leadServices : prev.items
-        }));
+        setFormData(prev => {
+          const hasGenericItemsOnly = !prev.items || prev.items.length === 0 || prev.items.every(i => !i.productName || i.productName === 'Software Services' || i.productName === 'CRM' || i.productName === 'Service' || i.productName === clientName);
+          const finalItems = (leadServices.length > 0 && (!isExistingQuotation || hasGenericItemsOnly)) ? leadServices : prev.items;
+
+          return {
+            ...prev,
+            client: clientName,
+            lead_id: leadId,
+            contactPerson: contactPerson || prev.contactPerson,
+            businessType: leadBusinessType || prev.businessType || '',
+            client_email: clientEmail || prev.client_email,
+            client_phone: clientPhone || prev.client_phone,
+            business_description: businessDescription || prev.business_description,
+            referral_name: referralName || prev.referral_name,
+            assignedExecutiveId: leadData.owner_id ? leadData.owner_id.toString() : prev.assignedExecutiveId,
+            items: finalItems
+          };
+        });
 
         // Fetch version history
         const qNum = currentQuotationNum || initialData?.quotation_number || initialData?.quotationNumber || formData.quotationNumber;
@@ -498,7 +503,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
     const newQuotationNumber = `${baseNum}-v${nextVer}`;
 
     const leadItService = formData.it_services === 'Other' 
-      ? (formData.it_services_other || initialData?.it_services_other || 'CRM') 
+      ? (formData.it_services_other || initialData?.it_services_other || 'Software Services') 
       : (formData.it_services || initialData?.it_services);
 
     setFormData(prev => ({
@@ -514,10 +519,10 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
       revisionDate: new Date().toISOString().split('T')[0],
       items: Array.isArray(prev.items) && prev.items.length > 0
         ? prev.items.map(item => {
-            const isGenericName = !item.productName || item.productName === 'Service' || item.productName === prev.client || item.productName === prev.contactPerson || item.productName === prev.businessType || item.productName === 'Software Services';
+            const isGenericName = !item.productName || item.productName === 'Service' || item.productName === prev.client || item.productName === prev.contactPerson || item.productName === 'CRM';
             const name = !isGenericName
               ? item.productName 
-              : (leadItService || prev.project_name || prev.dealName || 'CRM');
+              : (leadItService || prev.project_name || prev.dealName || prev.businessType || 'Software Services');
             return {
               ...item,
               id: Date.now() + Math.random(),
@@ -525,10 +530,10 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
               description: item.description || '',
               duration: item.duration || '',
               quantity: parseFloat(item.quantity) || 1,
-              rate: 0
+              rate: parseFloat(item.rate) || 0
             };
           })
-        : [{ id: Date.now(), productName: leadItService || prev.project_name || prev.dealName || 'CRM', description: '', duration: '', quantity: 1, rate: 0 }],
+        : [{ id: Date.now(), productName: leadItService || prev.project_name || prev.dealName || prev.businessType || 'Software Services', description: '', duration: '', quantity: 1, rate: 0 }],
       discount: 0,
       taxPercentage: prev.taxPercentage !== undefined ? prev.taxPercentage : 10,
       paymentTerms: prev.paymentTerms || '50% advance payment. Balance due upon project completion.',
@@ -544,13 +549,50 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
         const deal_id = initialData.deal_id ? initialData.deal_id.toString() : (initialData.lead_id ? (Number(initialData.lead_id) + 1000000).toString() : (!isQuotation && Number(initialData.id) <= 1000000 ? initialData.id.toString() : ''));
         const lead_id = initialData.lead_id ? initialData.lead_id.toString() : (!isQuotation && Number(initialData.id) > 1000000 ? (Number(initialData.id) - 1000000).toString() : '');
 
-        const defaultItService = initialData.it_services === 'Other' ? (initialData.it_services_other || 'CRM') : (initialData.it_services || 'CRM');
+        const defaultItService = initialData.it_services === 'Other' ? (initialData.it_services_other || 'Software Services') : (initialData.it_services || 'Software Services');
 
         if (initialData.openRevisionDirectly) {
           const currentNum = initialData.quotation_number || initialData.quotationNumber || `Q-${new Date().getFullYear()}-001`;
           const baseNum = currentNum.split('-v')[0];
           const verNum = (initialData.version ? parseInt(initialData.version, 10) : 1) + 1;
           const newQuotationNumber = `${baseNum}-v${verNum}`;
+
+          const revisionItems = Array.isArray(initialData.items) && initialData.items.length > 0
+            ? initialData.items.map(item => ({
+                id: Date.now() + Math.random(),
+                productName: (item.productName && item.productName !== 'CRM') ? item.productName : (initialData.project_name || initialData.deal_name || initialData.business_type || defaultItService),
+                description: item.description || '',
+                duration: item.duration || '',
+                quantity: parseFloat(item.quantity) || 1,
+                rate: parseFloat(item.rate || item.price) || 0
+              }))
+            : (() => {
+                const services = [];
+                if (initialData.it_services && initialData.it_services !== 'None') {
+                  services.push({
+                    id: Date.now() + 1,
+                    productName: initialData.it_services === 'Other' ? initialData.it_services_other : initialData.it_services,
+                    description: initialData.description || '',
+                    duration: '',
+                    quantity: 1,
+                    rate: parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0
+                  });
+                }
+                const marketingServices = parseJson(initialData.marketing_services);
+                if (Array.isArray(marketingServices) && marketingServices.length > 0) {
+                  marketingServices.forEach((service, index) => {
+                    services.push({
+                      id: Date.now() + 100 + index,
+                      productName: service,
+                      description: index === 0 && services.length === 0 ? (initialData.description || '') : '',
+                      duration: '',
+                      quantity: 1,
+                      rate: (index === 0 && services.length === 0) ? (parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0) : 0
+                    });
+                  });
+                }
+                return services.length > 0 ? services : [{ id: Date.now(), productName: initialData.project_name || initialData.deal_name || initialData.business_type || defaultItService, description: initialData.description || '', duration: '', quantity: 1, rate: parseFloat(initialData.amount || initialData.deal_value) || 0 }];
+              })();
 
           setFormData(prev => ({
             ...prev,
@@ -574,7 +616,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
             revisionNumber: `v${verNum}`,
             revisionReason: 'Quotation revision requested by client',
             revisionDate: new Date().toISOString().split('T')[0],
-            items: [{ id: Date.now(), productName: defaultItService, description: '', duration: '', quantity: 1, rate: 0 }],
+            items: revisionItems,
             discount: 0,
             taxPercentage: initialData.tax_percentage !== undefined ? Number(initialData.tax_percentage) : 10,
             paymentTerms: initialData.payment_terms || initialData.paymentTerms || '50% advance payment. Balance due upon project completion.',
@@ -605,12 +647,16 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
             quotationType: initialData.quotation_type || initialData.quotationType || 'Draft',
             businessType: initialData.business_type || initialData.businessType || '',
             items: Array.isArray(initialData.items) && initialData.items.length > 0
-              ? initialData.items.map(item => ({
-                ...item,
-                productName: item.productName || item.item_name || item.product_name || item.name || '',
-                rate: parseFloat(item.rate || item.price) || 0,
-                quantity: parseFloat(item.quantity) || 1
-              }))
+              ? initialData.items.map(item => {
+                const pName = item.productName || item.item_name || item.product_name || item.name || '';
+                const finalName = (pName && pName !== 'CRM') ? pName : (initialData.project_name || initialData.deal_name || initialData.business_type || defaultItService);
+                return {
+                  ...item,
+                  productName: finalName,
+                  rate: parseFloat(item.rate || item.price) || 0,
+                  quantity: parseFloat(item.quantity) || 1
+                };
+              })
               : (() => {
                 const services = [];
                 if (initialData.it_services && initialData.it_services !== 'None') {
@@ -618,6 +664,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                     id: Date.now() + 1,
                     productName: initialData.it_services === 'Other' ? initialData.it_services_other : initialData.it_services,
                     description: initialData.description || '',
+                    duration: '',
                     quantity: 1,
                     rate: parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0
                   });
@@ -629,12 +676,14 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                       id: Date.now() + 100 + index,
                       productName: service,
                       description: index === 0 && services.length === 0 ? (initialData.description || '') : '',
+                      duration: '',
                       quantity: 1,
                       rate: (index === 0 && services.length === 0) ? (parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0) : 0
                     });
                   });
                 }
-                return services.length > 0 ? services : (initialData.amount || initialData.deal_value ? [{ id: Date.now(), productName: defaultItService, description: initialData.description || '', quantity: 1, rate: parseFloat(initialData.amount || initialData.deal_value) || 0 }] : [{ id: Date.now(), productName: defaultItService, description: '', quantity: 1, rate: 0 }]);
+                const fallbackName = initialData.project_name || initialData.deal_name || initialData.business_type || defaultItService;
+                return services.length > 0 ? services : (initialData.amount || initialData.deal_value ? [{ id: Date.now(), productName: fallbackName, description: initialData.description || '', duration: '', quantity: 1, rate: parseFloat(initialData.amount || initialData.deal_value) || 0 }] : [{ id: Date.now(), productName: fallbackName, description: '', duration: '', quantity: 1, rate: 0 }]);
               })(),
             paymentTerms: initialData.payment_terms || initialData.paymentTerms || '50% advance payment. Balance due upon project completion.',
             notes: initialData.notes || '',

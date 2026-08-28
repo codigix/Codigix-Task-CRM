@@ -1144,6 +1144,28 @@ module.exports = function setupFollowupsRoutes(app, pool) {
     }
   });
 
+  app.delete('/api/followups/by-client-name/:name', async (req, res) => {
+    try {
+      const { name } = req.params;
+      const searchTerm = `%${name}%`;
+      await pool.query(`
+        DELETE FROM followups 
+        WHERE id IN (
+          SELECT f_sub.id FROM (
+            SELECT f.id FROM followups f
+            LEFT JOIN leads l ON (f.lead_id = l.id OR (f.related_type = 'Lead' AND f.related_id = l.id))
+            LEFT JOIN deals d ON (f.deal_id = d.id OR (f.related_type = 'Deal' AND f.related_id = d.id))
+            WHERE l.lead_name LIKE ? OR l.company LIKE ? OR d.deal_name LIKE ? OR f.related_id IN (SELECT id FROM leads WHERE lead_name LIKE ?)
+          ) AS f_sub
+        )
+      `, [searchTerm, searchTerm, searchTerm, searchTerm]);
+      res.json({ message: `Follow-ups for ${name} deleted successfully` });
+    } catch (error) {
+      console.error('Failed to delete followups by client name:', error);
+      responseError(res, 500, 'Failed to delete follow-ups', error);
+    }
+  });
+
   app.delete('/api/followups/:id', async (req, res) => {
     try {
       const { id } = req.params;

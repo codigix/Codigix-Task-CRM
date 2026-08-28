@@ -72,38 +72,82 @@ const FollowupsPage = () => {
   const openQuotationModal = async (f, openRevisionDirectly = false) => {
     if (!f) return;
     try {
+      const realLeadId = f.related_type === 'Lead' 
+        ? (Number(f.related_id) > 1000000 ? Number(f.related_id) - 1000000 : Number(f.related_id))
+        : null;
+
+      let leadInfo = null;
+      if (realLeadId) {
+        try {
+          leadInfo = await leadsAPI.getById(realLeadId);
+        } catch (e) {}
+      }
+
       const res = await estimationsAPI.getAll();
       const allEsts = Array.isArray(res) ? res : (res.data || []);
-      const matchingEsts = allEsts.filter(est => 
-        (f.related_type === 'Lead' && (est.lead_id === f.related_id || (f.related_id > 1000000 && est.lead_id === f.related_id - 1000000))) ||
-        (f.related_type === 'Deal' && (est.deal_id === f.related_id || est.lead_id === f.related_id)) ||
-        (f.related_type === 'Customer' && est.client_id === f.related_id)
-      ).sort((a, b) => b.id - a.id);
+      const matchingEsts = allEsts.filter(est => {
+        const estLeadId = est.lead_id ? Number(est.lead_id) : null;
+        const estDealId = est.deal_id ? Number(est.deal_id) : null;
+        const estClientId = est.client_id ? Number(est.client_id) : null;
+        const relId = Number(f.related_id);
+
+        if (f.related_type === 'Lead') {
+          return estLeadId === realLeadId || estLeadId === relId;
+        } else if (f.related_type === 'Deal') {
+          return estDealId === relId || estLeadId === relId;
+        } else if (f.related_type === 'Customer') {
+          return estClientId === relId;
+        }
+        return false;
+      }).sort((a, b) => Number(b.id) - Number(a.id));
       
       const matchingEst = matchingEsts[0];
 
       if (matchingEst) {
+        let estItems = [];
+        try {
+          estItems = await estimationsAPI.getItems(matchingEst.id);
+        } catch (e) {
+          console.error('Error fetching quotation items for followup modal:', e);
+        }
+
         setQuotationInitialData({
           ...matchingEst,
+          marketing_services: matchingEst.marketing_services || leadInfo?.marketing_services,
+          it_services: matchingEst.it_services || leadInfo?.it_services,
+          it_services_other: matchingEst.it_services_other || leadInfo?.it_services_other,
+          business_type: matchingEst.business_type || leadInfo?.business_type,
+          items: Array.isArray(estItems) && estItems.length > 0 ? estItems.map(item => ({
+            id: item.id || Date.now() + Math.random(),
+            productName: item.item_name || item.productName || item.product_name || item.name || '',
+            description: item.description || '',
+            duration: item.duration || '',
+            quantity: parseFloat(item.quantity) || 1,
+            rate: parseFloat(item.rate || item.price) || 0
+          })) : undefined,
           quotationNumber: matchingEst.estimation_number || matchingEst.quotation_number,
           quotationDate: matchingEst.estimate_date,
           validUntil: matchingEst.expiry_date,
-          client: matchingEst.client_name || matchingEst.lead_name || f.related_name,
-          lead_id: f.related_type === 'Lead' ? f.related_id : (matchingEst.lead_id || null),
+          client: matchingEst.client_name || matchingEst.lead_name || leadInfo?.lead_name || f.related_name,
+          lead_id: realLeadId || matchingEst.lead_id || null,
           deal_id: f.related_type === 'Deal' ? f.related_id : (matchingEst.deal_id || null),
-          client_email: f.client_email,
-          client_phone: f.client_phone,
+          client_email: f.client_email || leadInfo?.email,
+          client_phone: f.client_phone || leadInfo?.phone,
           isFromFollowup: true,
           openRevisionDirectly: openRevisionDirectly
         });
       } else {
         setQuotationInitialData({
-          client: f.related_name,
+          client: f.related_name || leadInfo?.lead_name,
           client_id: f.related_type === 'Customer' ? f.related_id : null,
-          lead_id: f.related_type === 'Lead' ? f.related_id : null,
+          lead_id: realLeadId,
           deal_id: f.related_type === 'Deal' ? f.related_id : null,
-          client_email: f.client_email,
-          client_phone: f.client_phone,
+          client_email: f.client_email || leadInfo?.email,
+          client_phone: f.client_phone || leadInfo?.phone,
+          marketing_services: leadInfo?.marketing_services,
+          it_services: leadInfo?.it_services,
+          it_services_other: leadInfo?.it_services_other,
+          business_type: leadInfo?.business_type,
           openRevisionDirectly: openRevisionDirectly
         });
       }
@@ -359,6 +403,23 @@ const FollowupsPage = () => {
         fetchFollowups();
       } catch (err) {
         showErrorToast('Failed to delete follow-up');
+      }
+    }
+  };
+
+  const handleDeleteClientGroup = async (client) => {
+    if (window.confirm(`Are you sure you want to delete all follow-up records for "${client.name}"?`)) {
+      try {
+        if (client.name) {
+          await followupsAPI.deleteByClientName(client.name);
+        } else if (client.followups && client.followups.length > 0) {
+          await Promise.all(client.followups.map(f => followupsAPI.delete(f.id)));
+        }
+        showSuccessToast(`Follow-ups for ${client.name} deleted successfully`);
+        fetchFollowups();
+      } catch (err) {
+        console.error('Failed to delete client followups:', err);
+        showErrorToast('Failed to delete follow-ups for client');
       }
     }
   };
@@ -1481,7 +1542,16 @@ const FollowupsPage = () => {
                             )}
                           </td>
                           <td className="p-2 text-right">
-                            {/* Parent-row + button removed to prevent sequence mismatch */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClientGroup(client);
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title={`Delete all follow-ups for ${client.name}`}
+                            >
+                              <Trash2 size={15} />
+                            </button>
                           </td>
                         </tr>
                         {expandedClients[client.key] && (

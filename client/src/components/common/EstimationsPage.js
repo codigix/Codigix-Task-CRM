@@ -1,16 +1,19 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Download, Plus, MoreVertical, FileText, Send, Copy, Trash2, Eye, Edit2, FileJson, LayoutGrid, List, ChevronDown, RotateCcw, Maximize, Search, Star, Filter, ChevronsUpDown, Printer, Calendar, Hash, CircleDollarSign } from 'lucide-react';
+import { Download, Plus, MoreVertical, FileText, Send, Copy, Trash2, Eye, Edit2, FileJson, LayoutGrid, List, ChevronDown, RotateCcw, Maximize, Search, Star, Filter, ChevronsUpDown, Printer, Calendar, Hash, CircleDollarSign, Sparkles, CheckCircle, XCircle, Clock } from 'lucide-react';
 import Swal from 'sweetalert2';
 import AddNewEstimationModal from './AddNewEstimationModal';
 import ReviseQuotationModal from '../sales/ReviseQuotationModal';
 import DateRangeDropdown from './DateRangeDropdown';
+import EstimationDetailsPage from './EstimationDetailsPage';
 import { estimationsAPI, dealsAPI, leadsAPI, activitiesAPI } from '../../services/api';
+import { generateQuotationPDF } from '../../utils/generateQuotationPDF';
 import { showSuccessToast } from '../../utils/toast';
 
 const EstimationsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState('kanban');
+  const [selectedEstimationId, setSelectedEstimationId] = useState(null);
   const [dateRangeType, setDateRangeType] = useState('All Time');
   const [customDateRange, setCustomDateRange] = useState({ startDate: null, endDate: null });
   const [activeFilters, setActiveFilters] = useState({
@@ -37,7 +40,7 @@ const EstimationsPage = () => {
     'Amount': true,
     'Project': true,
     'Date': true,
-    'Expiry Date': false,
+    'Expiry Date': true,
     'Estimation By': true,
     'Status': true,
     'Action': true
@@ -55,7 +58,8 @@ const EstimationsPage = () => {
     { id: 'Sent', name: 'Sent', color: '#3B82F6' },
     { id: 'Revised', name: 'Revised', color: '#6366F1' },
     { id: 'Accepted', name: 'Accepted', color: '#10B981' },
-    { id: 'Declined', name: 'Declined', color: '#EF4444' },
+    { id: 'Rejected', name: 'Rejected / Declined', color: '#EF4444' },
+    { id: 'Expired', name: 'Expired / Cancelled', color: '#6B7280' },
   ];
 
   const getStatusColor = (status) => {
@@ -579,11 +583,6 @@ const EstimationsPage = () => {
     }
   };
 
-  const handleDownloadPDF = (estimation) => {
-    console.log('Downloading PDF for:', estimation.estimateId);
-    alert(`PDF download initiated for ${estimation.estimateId}`);
-  };
-
   const handleSendEstimation = async (estimation) => {
     try {
       const estimationNumber = estimation.estimateId || estimation.estimation_number || `EST-${estimation.id}`;
@@ -755,87 +754,187 @@ const EstimationsPage = () => {
     }
   };
 
+  const handleDeleteEstimation = async (estimation) => {
+    if (estimation.status !== 'Draft' && estimation.status !== 'Cancelled') {
+      Swal.fire('Action Restricted', 'Business Rule: Only Draft or Cancelled estimations can be deleted.', 'warning');
+      return;
+    }
+    const result = await Swal.fire({
+      title: 'Delete Estimation?',
+      text: `Are you sure you want to delete Estimation #${estimation.estimation_number}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Yes, Delete'
+    });
+    if (result.isConfirmed) {
+      try {
+        await estimationsAPI.delete(estimation.id);
+        showSuccessToast('Estimation deleted');
+        fetchEstimations();
+      } catch (err) {
+        Swal.fire('Error', err.message || 'Failed to delete estimation', 'error');
+      }
+    }
+  };
+
+  const handleDuplicateEstimation = async (estimation) => {
+    try {
+      const res = await estimationsAPI.duplicate(estimation.id);
+      showSuccessToast('Estimation duplicated as new Draft');
+      fetchEstimations();
+    } catch (err) {
+      Swal.fire('Error', err.message || 'Failed to duplicate estimation', 'error');
+    }
+  };
+
+  const handleConvertToProposal = async (estimation) => {
+    const result = await Swal.fire({
+      title: 'Convert to Proposal?',
+      text: `Create a formal sales proposal from Estimation #${estimation.estimation_number || estimation.id}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Convert'
+    });
+    if (result.isConfirmed) {
+      try {
+        const response = await estimationsAPI.convertToProposal(estimation.id, {
+          title: `Proposal for ${estimation.estimation_number}`
+        });
+        await Swal.fire('Success!', `Proposal ${response.proposalNumber} created.`, 'success');
+        fetchEstimations();
+      } catch (err) {
+        Swal.fire('Error', err.message || 'Failed to convert to proposal', 'error');
+      }
+    }
+  };
+
+  const handleDownloadPDF = async (estimation) => {
+    try {
+      const itemsData = await estimationsAPI.getItems(estimation.id).catch(() => []);
+      const pdfData = {
+        estimation_number: estimation.estimation_number || `EST-${estimation.id}`,
+        quotationNumber: estimation.estimation_number || `EST-${estimation.id}`,
+        estimate_date: estimation.estimate_date || estimation.created_at,
+        expiry_date: estimation.expiry_date,
+        client: estimation.company || estimation.client_name || 'Client',
+        contactPerson: estimation.contact_name || estimation.lead_name || 'Valued Client',
+        amount: estimation.amount || estimation.total || 0,
+        currency: estimation.currency || 'INR',
+        discount: estimation.discount_amount || 0,
+        tax_percentage: estimation.tax_percentage || 0,
+        items: itemsData.length > 0 ? itemsData.map(it => ({
+          productName: it.item_name,
+          description: it.description,
+          quantity: it.quantity,
+          rate: it.rate
+        })) : []
+      };
+      await generateQuotationPDF(pdfData);
+      showSuccessToast('PDF Downloaded successfully');
+    } catch (err) {
+      Swal.fire('Error', 'Failed to generate PDF: ' + err.message, 'error');
+    }
+  };
+
   const handlePrint = () => {
     window.print();
     setActionMenu(null);
   };
 
   const ActionMenu = ({ estimation, onClose, className = "right-0 top-10" }) => (
-    <div className={`absolute ${className} bg-white border border-gray-200 rounded  shadow-xl z-[100] w-52 text-left py-1.5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}>
+    <div className={`absolute ${className} bg-white border border-slate-200 rounded-xl shadow-2xl z-[100] w-56 text-left py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}>
       <button
         onClick={(e) => {
           e.stopPropagation();
+          onClose();
+          setSelectedEstimationId(estimation.id);
+        }}
+        className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+      >
+        <Eye size={15} className="text-blue-600" /> View Details
+      </button>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
           setSelectedEstimation(estimation);
           setIsEditModalOpen(true);
-          onClose();
         }}
-        className="w-full p-2 text-left text-xs  text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors group"
+        className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
       >
-        <Edit2 size={16} className="text-[#1F2020] group-hover:text-white  transition-colors" /> Edit
+        <Edit2 size={15} className="text-slate-500" /> Edit Estimation
       </button>
+
       <button
         onClick={(e) => {
           e.stopPropagation();
-          handleDelete(estimation.id);
           onClose();
+          handleDuplicateEstimation(estimation);
         }}
-        className="w-full p-2 text-left text-xs  text-red  hover:bg-red-50 flex items-center gap-3 transition-colors group border-b border-gray-50"
+        className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
       >
-        <Trash2 size={16} className="text-red-400 group-hover:text-red  transition-colors" /> Delete
+        <Copy size={15} className="text-slate-500" /> Duplicate
       </button>
-      <div className="px-4 py-1.5 bg-gray-50/50">
-        <span className="text-xs    text-[#1F2020]  ">Actions</span>
-      </div>
+
       <button
         onClick={(e) => {
           e.stopPropagation();
-          setSelectedEstimation(estimation);
-          setIsViewModalOpen(true);
           onClose();
+          handleDownloadPDF(estimation);
         }}
-        className="w-full p-2 text-left text-xs  text-gray-600 hover:bg-gray-50 flex items-center gap-3 transition-colors group"
+        className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
       >
-        <Eye size={16} className="text-[#1F2020] group-hover:text-gray-900 transition-colors" /> View Estimation
+        <Download size={15} className="text-indigo-600" /> Export PDF
       </button>
+
+      <div className="border-t border-slate-100 my-1"></div>
+
       <button
         onClick={(e) => {
           e.stopPropagation();
+          onClose();
+          handleConvertToProposal(estimation);
+        }}
+        className="w-full px-3 py-2 text-left text-xs font-medium text-blue-600 hover:bg-blue-50 flex items-center gap-2.5 transition-colors"
+      >
+        <Sparkles size={15} className="text-blue-600" /> Convert to Proposal
+      </button>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
           handleStatusChange(estimation.id, 'Accepted');
-          onClose();
         }}
-        className="w-full p-2 text-left text-xs  text-gray-600 hover:bg-gray-50 flex items-center gap-3 transition-colors group"
+        className="w-full px-3 py-2 text-left text-xs font-medium text-emerald-600 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors"
       >
-        <RotateCcw size={16} className="text-[#1F2020] group-hover:text-green-600 transition-colors" /> Mark as Accepted
+        <CheckCircle size={15} className="text-emerald-600" /> Mark Accepted
       </button>
+
       <button
         onClick={(e) => {
           e.stopPropagation();
-          handleStatusChange(estimation.id, 'Draft');
           onClose();
+          handleStatusChange(estimation.id, 'Rejected');
         }}
-        className="w-full p-2 text-left text-xs  text-gray-600 hover:bg-gray-50 flex items-center gap-3 transition-colors group"
+        className="w-full px-3 py-2 text-left text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
       >
-        <RotateCcw size={16} className="text-[#1F2020] group-hover:text-yellow-600 transition-colors" /> Mark as Draft
+        <XCircle size={15} className="text-rose-600" /> Mark Rejected
       </button>
+
+      <div className="border-t border-slate-100 my-1"></div>
+
       <button
         onClick={(e) => {
           e.stopPropagation();
-          handleStatusChange(estimation.id, 'Declined');
           onClose();
+          handleDeleteEstimation(estimation);
         }}
-        className="w-full p-2 text-left text-xs  text-gray-600 hover:bg-gray-50 flex items-center gap-3 transition-colors group border-b border-gray-50"
+        className="w-full px-3 py-2 text-left text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
       >
-        <RotateCcw size={16} className="text-[#1F2020] group-hover:text-red  transition-colors" /> Mark as Declined
-      </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handlePrint();
-          onClose();
-        }}
-        className="w-full p-2 text-left text-xs  text-gray-600 hover:bg-gray-50 flex items-center gap-3 transition-colors group"
-      >
-        <Printer size={16} className="text-[#1F2020] group-hover:text-gray-900 transition-colors" /> Print
+        <Trash2 size={15} className="text-rose-500" /> Delete
       </button>
     </div>
   );
@@ -970,52 +1069,122 @@ const EstimationsPage = () => {
   };
 
 
+  const summaryMetrics = useMemo(() => {
+    const totalCount = estimations.length;
+    const draftCount = estimations.filter(e => (e.status || '').toLowerCase() === 'draft').length;
+    const sentCount = estimations.filter(e => (e.status || '').toLowerCase() === 'sent').length;
+    const revisedCount = estimations.filter(e => (e.status || '').toLowerCase() === 'revised' || (e.version || 1) > 1).length;
+    const acceptedCount = estimations.filter(e => (e.status || '').toLowerCase() === 'accepted').length;
+    const rejectedCount = estimations.filter(e => (e.status || '').toLowerCase() === 'rejected' || (e.status || '').toLowerCase() === 'declined').length;
+    
+    const totalVal = estimations.reduce((sum, e) => sum + (parseFloat(e.amount || e.total) || 0), 0);
+    const acceptedVal = estimations.filter(e => (e.status || '').toLowerCase() === 'accepted').reduce((sum, e) => sum + (parseFloat(e.amount || e.total) || 0), 0);
+    const convRate = totalCount > 0 ? Math.round((acceptedCount / totalCount) * 100) : 0;
+
+    return { totalCount, draftCount, sentCount, revisedCount, acceptedCount, rejectedCount, totalVal, acceptedVal, convRate };
+  }, [estimations]);
+
+  if (selectedEstimationId) {
+    return (
+      <EstimationDetailsPage
+        estimationId={selectedEstimationId}
+        onBack={() => {
+          setSelectedEstimationId(null);
+          fetchEstimations();
+        }}
+        onEdit={(est) => {
+          setSelectedEstimation(est);
+          setIsEditModalOpen(true);
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="flex-1 flex flex-col bg-[#F9FAFB]  font-sans">
+    <div className="flex-1 flex flex-col bg-[#F9FAFB] font-sans">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-2">
-        <div className="flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 p-4">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-xl font-[500] text-gray-900 ">
-              Estimations
-              <span className="inline-block p-1  bg-red-50 text-red  text-xs  rounded-full border border-red-100">
+            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              Estimations Management
+              <span className="inline-block px-2.5 py-0.5 bg-red-50 text-red-600 text-xs font-semibold rounded-full border border-red-100">
                 {filteredEstimations.length}
               </span>
             </h1>
-            <nav className="text-xs  text-gray-500 mt-1 flex items-center gap-1">
-              <span>Home</span>
+            <nav className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+              <span>Sales Workspace</span>
               <span className="text-gray-300 mx-1">›</span>
-              <span className="text-gray-900 ">Estimations</span>
+              <span className="text-gray-900 font-medium">Estimations</span>
             </nav>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
               <button
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
-                className="h-9 px-3 bg-red-600 rounded text-xs  text-white flex items-center gap-2 hover:bg-red-700 transition-colors "
+                className="h-9 px-3 bg-red-600 rounded-lg text-xs font-medium text-white flex items-center gap-2 hover:bg-red-700 transition-colors shadow-sm"
               >
                 <Download size={16} /> Export <ChevronDown size={14} className={`transition-transform duration-200 ${showExportDropdown ? 'rotate-180' : ''}`} />
               </button>
               {showExportDropdown && (
-                <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded  shadow-xl z-[100] w-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                  <button className="w-full p-2  text-left text-xs  text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50">
-                    <FileText size={14} className="text-[#1F2020]" /> Export as PDF
-                  </button>
-                  <button className="w-full p-2  text-left text-xs  text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                    <FileJson size={14} className="text-[#1F2020]" /> Export as Excel
+                <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] w-40 overflow-hidden py-1">
+                  <button onClick={() => { handlePrint(); setShowExportDropdown(false); }} className="w-full px-3 py-2 text-left text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                    <Printer size={14} className="text-gray-500" /> Export as PDF
                   </button>
                 </div>
               )}
             </div>
             <button
               onClick={() => fetchEstimations()}
-              className="p-2 border border-gray-300 rounded flex items-center justify-center bg-white hover:bg-gray-50"
+              className="p-2 border border-gray-300 rounded-lg flex items-center justify-center bg-white hover:bg-gray-50 text-gray-600 transition-colors"
+              title="Refresh"
             >
-              <RotateCcw size={16} className="text-gray-600" />
+              <RotateCcw size={16} />
             </button>
-            <button className="p-2 border border-gray-300 rounded flex items-center justify-center bg-white hover:bg-gray-50">
-              <Maximize size={16} className="text-gray-600" />
-            </button>
+          </div>
+        </div>
+
+        {/* 9 Summary Metric Widgets */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2.5 pt-2 border-t border-slate-100">
+          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-center">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Total Est.</p>
+            <p className="text-base font-bold text-slate-900 mt-0.5">{summaryMetrics.totalCount}</p>
+          </div>
+          <div className="bg-amber-50/50 p-2.5 rounded-lg border border-amber-200 text-center">
+            <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider">Draft</p>
+            <p className="text-base font-bold text-amber-900 mt-0.5">{summaryMetrics.draftCount}</p>
+          </div>
+          <div className="bg-blue-50/50 p-2.5 rounded-lg border border-blue-200 text-center">
+            <p className="text-[10px] font-semibold text-blue-700 uppercase tracking-wider">Sent</p>
+            <p className="text-base font-bold text-blue-900 mt-0.5">{summaryMetrics.sentCount}</p>
+          </div>
+          <div className="bg-indigo-50/50 p-2.5 rounded-lg border border-indigo-200 text-center">
+            <p className="text-[10px] font-semibold text-indigo-700 uppercase tracking-wider">Revised</p>
+            <p className="text-base font-bold text-indigo-900 mt-0.5">{summaryMetrics.revisedCount}</p>
+          </div>
+          <div className="bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-200 text-center">
+            <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">Accepted</p>
+            <p className="text-base font-bold text-emerald-900 mt-0.5">{summaryMetrics.acceptedCount}</p>
+          </div>
+          <div className="bg-rose-50/50 p-2.5 rounded-lg border border-rose-200 text-center">
+            <p className="text-[10px] font-semibold text-rose-700 uppercase tracking-wider">Rejected</p>
+            <p className="text-base font-bold text-rose-900 mt-0.5">{summaryMetrics.rejectedCount}</p>
+          </div>
+          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-center col-span-2 sm:col-span-1">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Est. Value</p>
+            <p className="text-xs font-bold text-slate-900 mt-1 truncate" title={`INR ${summaryMetrics.totalVal.toLocaleString()}`}>
+              INR {summaryMetrics.totalVal.toLocaleString()}
+            </p>
+          </div>
+          <div className="bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-200 text-center col-span-2 sm:col-span-1">
+            <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">Won Value</p>
+            <p className="text-xs font-bold text-emerald-800 mt-1 truncate" title={`INR ${summaryMetrics.acceptedVal.toLocaleString()}`}>
+              INR {summaryMetrics.acceptedVal.toLocaleString()}
+            </p>
+          </div>
+          <div className="bg-purple-50/50 p-2.5 rounded-lg border border-purple-200 text-center col-span-2 sm:col-span-1">
+            <p className="text-[10px] font-semibold text-purple-700 uppercase tracking-wider">Win Rate</p>
+            <p className="text-base font-bold text-purple-900 mt-0.5">{summaryMetrics.convRate}%</p>
           </div>
         </div>
       </div>
@@ -1185,94 +1354,108 @@ const EstimationsPage = () => {
                       columnEstimations.map((item) => (
                         <div
                           key={item.id}
-                          className="border border-gray-200 rounded p-2 mb-4 bg-white  hover:shadow-lg transition-all duration-300 cursor-move relative group/card"
+                          className="border border-slate-200 rounded-xl p-3 mb-3 bg-white hover:shadow-md transition-all duration-200 cursor-pointer relative group/card flex flex-col justify-between"
                           draggable
                           onDragStart={(e) => handleDragStart(e, item)}
                           onDragEnd={handleDragEnd}
+                          onClick={() => setSelectedEstimationId(item.id)}
                         >
-                          <div className="flex items-start justify-between mb-3 pointer-events-none">
-                            <div className="flex items-center gap-3 flex-1">
-                              {visibleColumns['Client'] && (
-                                item.logo ? (
-                                  <img
-                                    src={item.logo}
-                                    alt="company"
-                                    draggable="false"
-                                    className="w-10 h-10 rounded  object-cover border border-gray-200"
-                                  />
-                                ) : (
-                                  <div className="w-10 h-10 rounded  bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs">
-                                    {getCardValue(item, 'company')[0]}
-                                  </div>
-                                )
-                              )}
-                              <div>
+                          <div>
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
                                 {visibleColumns['Client'] && (
-                                  <h3 className=" text-base  text-gray-900">{getCardValue(item, 'company')}</h3>
+                                  item.logo ? (
+                                    <img
+                                      src={item.logo}
+                                      alt="company"
+                                      draggable="false"
+                                      className="w-8 h-8 rounded-lg object-cover border border-slate-200 flex-shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                      {getCardValue(item, 'company')[0]}
+                                    </div>
+                                  )
                                 )}
-                                {visibleColumns['Project'] && (
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-xs text-gray-500 ">{getCardValue(item, 'type')}</p>
-                                    {item.status === 'Sent' && ((item.version || 1) > 1 || item.parent_id) && (
-                                      <span className="px-1.5 py-0.5 bg-teal-50 text-teal-600 text-xs font-[600] rounded border border-teal-100 flex items-center gap-1">
-                                        <Send size={10} /> SENT
-                                      </span>
-                                    )}
-                                  </div>
+                                <div className="min-w-0">
+                                  {visibleColumns['Client'] && (
+                                    <h3 className="font-semibold text-xs text-slate-900 truncate" title={getCardValue(item, 'company')}>
+                                      {getCardValue(item, 'company')}
+                                    </h3>
+                                  )}
+                                  {visibleColumns['Project'] && (
+                                    <p className="text-[11px] text-slate-500 truncate">{getCardValue(item, 'type')}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="relative pointer-events-auto flex items-center gap-1">
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                  v{item.version || 1}
+                                </span>
+                                {visibleColumns['Action'] && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActionMenu(actionMenu === item.id ? null : item.id);
+                                    }}
+                                    className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+                                  >
+                                    <MoreVertical size={16} className="text-slate-500" />
+                                  </button>
+                                )}
+                                {actionMenu === item.id && (
+                                  <ActionMenu
+                                    estimation={item}
+                                    onClose={() => setActionMenu(null)}
+                                  />
                                 )}
                               </div>
                             </div>
-                            <div className="relative pointer-events-auto">
-                              {visibleColumns['Action'] && (
-                                <button
-                                  onClick={() => setActionMenu(actionMenu === item.id ? null : item.id)}
-                                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                                >
-                                  <MoreVertical size={16} className="text-[#1F2020]" />
-                                </button>
+
+                            <p className="text-xs text-slate-600 mb-3 line-clamp-2 leading-relaxed">{getCardValue(item, 'desc')}</p>
+
+                            <div className="space-y-1.5 text-xs text-slate-700 bg-slate-50 rounded-lg p-2.5 border border-slate-100 mb-3">
+                              {visibleColumns['Estimations ID'] && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-slate-400 text-[11px]">Estimate ID:</span>
+                                  <span className="font-semibold text-slate-800">{getCardValue(item, 'estimateId')}</span>
+                                </div>
                               )}
-                              {actionMenu === item.id && (
-                                <ActionMenu
-                                  estimation={item}
-                                  onClose={() => setActionMenu(null)}
-                                />
+                              {visibleColumns['Amount'] && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-slate-400 text-[11px]">Amount:</span>
+                                  <span className="font-bold text-slate-900">{getCardValue(item, 'amount')}</span>
+                                </div>
+                              )}
+                              {visibleColumns['Date'] && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-slate-400 text-[11px]">Date:</span>
+                                  <span className="text-slate-600 text-[11px]">{getCardValue(item, 'date')}</span>
+                                </div>
                               )}
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600 mt-3 line-clamp-2 leading-relaxed pointer-events-none">{getCardValue(item, 'desc')}</p>
-                          <div className="mt-4 space-y-2 text-xs text-gray-700 bg-gray-50 rounded  p-3 border border-gray-100 pointer-events-none">
-                            {visibleColumns['Estimations ID'] && (
-                              <p className="flex items-center gap-2"><Hash size={14} className="text-[#1F2020]" /> <span className="text-gray-500">Estimate ID :</span> <span className=" text-white ">{getCardValue(item, 'estimateId')}</span></p>
-                            )}
-                            {visibleColumns['Amount'] && (
-                              <p className="flex items-center gap-2"><CircleDollarSign size={14} className="text-[#1F2020]" /> <span className="text-gray-500">Amount :</span> <span className=" text-gray-900">{getCardValue(item, 'amount')}</span></p>
-                            )}
-                            {visibleColumns['Date'] && (
-                              <p className="flex items-center gap-2"><Calendar size={14} className="text-[#1F2020]" /> <span className="text-gray-500">Date :</span> <span className="">{getCardValue(item, 'date')}</span></p>
-                            )}
-                            {visibleColumns['Expiry Date'] && (
-                              <p className="flex items-center gap-2"><Calendar size={14} className="text-[#1F2020]" /> <span className="text-gray-500">Expiry Date :</span> <span className="">{getCardValue(item, 'expiry')}</span></p>
-                            )}
-                          </div>
-                          <div className=" flex items-center gap-3 p-2 border-t border-gray-200 pointer-events-none">
+
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
                             {visibleColumns['Estimation By'] && (
-                              <>
-                                <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-200">
-                                  {item.avatar ? (
-                                    <img
-                                      src={item.avatar}
-                                      alt="creator"
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs  ">
-                                      {(item.creator_first_name?.[0] || 'U')}
-                                    </div>
-                                  )}
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-700">
+                                  {getCardValue(item, 'owner')[0]}
                                 </div>
-                                <p className="text-sm  text-gray-800">{getCardValue(item, 'owner')}</p>
-                              </>
+                                <span className="text-[11px] text-slate-600 truncate max-w-[100px]">{getCardValue(item, 'owner')}</span>
+                              </div>
                             )}
+
+                            {/* Expiry Warning Indicator */}
+                            {item.expiry_date && (() => {
+                              const diffDays = Math.ceil((new Date(item.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
+                              if (diffDays < 0) {
+                                return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Expired</span>;
+                              } else if (diffDays <= 3) {
+                                return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">In {diffDays}d</span>;
+                              }
+                              return null;
+                            })()}
                           </div>
                         </div>
                       ))
@@ -1381,59 +1564,80 @@ const EstimationsPage = () => {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredEstimations.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="p-2  text-center"><input type="checkbox" className="rounded border-gray-300" /></td>
-                    <td className="p-2  text-center"><Star size={16} className="text-gray-300 hover:text-yellow-400 cursor-pointer" /></td>
+                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-2 text-center"><input type="checkbox" className="rounded border-gray-300" /></td>
+                    <td className="p-2 text-center"><Star size={16} className="text-gray-300 hover:text-yellow-400 cursor-pointer" /></td>
                     {visibleColumns['Estimations ID'] && (
-                      <td className="p-2  text-xs  text-white  ">{getCardValue(item, 'estimateId')}</td>
+                      <td className="p-2 text-xs font-semibold text-slate-800 cursor-pointer hover:text-blue-600" onClick={() => setSelectedEstimationId(item.id)}>
+                        <div className="flex items-center gap-1.5">
+                          <span>{getCardValue(item, 'estimateId')}</span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            v{item.version || 1}
+                          </span>
+                        </div>
+                      </td>
                     )}
                     {visibleColumns['Client'] && (
-                      <td className="p-2 ">
+                      <td className="p-2 cursor-pointer" onClick={() => setSelectedEstimationId(item.id)}>
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-xs  text-gray-600 border border-gray-200 overflow-hidden">
+                          <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-xs text-gray-600 border border-gray-200 overflow-hidden font-bold">
                             {item.logo ? <img src={item.logo} alt="" className="w-full h-full object-cover" /> : getCardValue(item, 'company')[0]}
                           </div>
-                          <span className="text-xs   text-gray-900">{getCardValue(item, 'company')}</span>
+                          <span className="text-xs font-semibold text-slate-900 hover:text-blue-600">{getCardValue(item, 'company')}</span>
                         </div>
                       </td>
                     )}
                     {visibleColumns['Amount'] && (
-                      <td className="p-2  text-xs   text-gray-700">{getCardValue(item, 'amount')}</td>
+                      <td className="p-2 text-xs font-bold text-slate-900">{getCardValue(item, 'amount')}</td>
                     )}
                     {visibleColumns['Project'] && (
-                      <td className="p-2 ">
+                      <td className="p-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-xs  text-white  border border-blue-100">
+                          <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-xs text-blue-600 font-bold border border-blue-100">
                             {getCardValue(item, 'type')[0]}
                           </div>
-                          <span className="text-xs  text-gray-600">{getCardValue(item, 'type')}</span>
+                          <span className="text-xs text-gray-600">{getCardValue(item, 'type')}</span>
                         </div>
                       </td>
                     )}
                     {visibleColumns['Date'] && (
-                      <td className="p-2  text-xs  text-gray-600">{getCardValue(item, 'date')}</td>
+                      <td className="p-2 text-xs text-gray-600">{getCardValue(item, 'date')}</td>
                     )}
                     {visibleColumns['Expiry Date'] && (
-                      <td className="p-2  text-xs  text-gray-600">{getCardValue(item, 'expiry')}</td>
+                      <td className="p-2 text-xs text-gray-600">
+                        {item.expiry_date ? (() => {
+                          const diffDays = Math.ceil((new Date(item.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
+                          if (diffDays < 0) {
+                            return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Expired</span>;
+                          } else if (diffDays <= 3) {
+                            return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">In {diffDays}d</span>;
+                          }
+                          return new Date(item.expiry_date).toLocaleDateString();
+                        })() : 'N/A'}
+                      </td>
                     )}
                     {visibleColumns['Estimation By'] && (
-                      <td className="p-2 ">
+                      <td className="p-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs  text-gray-600 overflow-hidden border border-gray-200">
+                          <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-600 overflow-hidden border border-gray-200">
                             {item.avatar ? <img src={item.avatar} alt="" className="w-full h-full object-cover" /> : getCardValue(item, 'owner')[0]}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-xs   text-gray-900">{getCardValue(item, 'owner')}</span>
-                            <span className="text-xs text-gray-500">Lead Dev</span>
+                            <span className="text-xs text-gray-900">{getCardValue(item, 'owner')}</span>
                           </div>
                         </div>
                       </td>
                     )}
                     {visibleColumns['Status'] && (
-                      <td className="p-2 ">
+                      <td className="p-2">
                         <span
-                          className="px-2.5 py-1 text-xs  rounded  tracking-wide inline-block"
-                          style={{ backgroundColor: getStatusColor(item.status) + '20', color: getStatusColor(item.status) }}
+                          className={`px-2.5 py-1 text-[11px] font-medium rounded-full border ${
+                            item.status === 'Accepted' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                            item.status === 'Sent' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                            item.status === 'Revised' ? 'bg-indigo-100 text-indigo-800 border-indigo-300' :
+                            item.status === 'Rejected' || item.status === 'Declined' ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                            'bg-amber-100 text-amber-800 border-amber-300'
+                          }`}
                         >
                           {item.status}
                         </span>

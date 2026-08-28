@@ -78,7 +78,7 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
   if (error) {
     return (
       <div className="p-6">
-        <button onClick={onBack} className="flex items-center gap-2 text-white  hover:text-blue-800 mb-4">
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-700 hover:text-red-600 mb-4 font-medium">
           <ArrowLeft size={20} />
           Back
         </button>
@@ -92,7 +92,7 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
   if (!proposal) {
     return (
       <div className="p-6">
-        <button onClick={onBack} className="flex items-center gap-2 text-white  hover:text-blue-800 mb-4">
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-700 hover:text-red-600 mb-4 font-medium">
           <ArrowLeft size={20} />
           Back
         </button>
@@ -113,23 +113,23 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
           <div className="flex items-center gap-4">
             <button 
               onClick={onBack}
-              className="flex items-center gap-2 text-white  hover:text-blue-800"
+              className="flex items-center gap-2 text-slate-700 hover:text-red-600 font-medium"
             >
               <ArrowLeft size={20} />
               Back
             </button>
             <div>
-              <h1 className="text-xl  text-gray-900">{proposal.title}</h1>
-              <p className="text-xs  text-gray-500 mt-1">{proposal.proposal_number}</p>
+              <h1 className="text-xl font-bold text-gray-900">{proposal.title}</h1>
+              <p className="text-xs text-gray-500 mt-1">{proposal.proposal_number}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`text-xs  px-3 py-1 rounded-full  ${getStatusColor(proposal.status)}`}>
+            <span className={`text-xs px-3 py-1 rounded-full font-medium ${getStatusColor(proposal.status)}`}>
               {proposal.status}
             </span>
             <button 
               onClick={() => setIsEditing(!isEditing)}
-              className="flex items-center gap-2 p-2  border border-gray-300 rounded  hover:bg-gray-50"
+              className="flex items-center gap-2 p-2 text-xs border border-gray-300 rounded hover:bg-gray-50 font-medium"
             >
               <Edit2 size={16} />
               Edit
@@ -137,7 +137,7 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
             {proposal.status === 'Accepted' && (
               <button 
                 onClick={handleConvertToInvoice}
-                className="flex items-center gap-2 p-2  bg-red-600  text-white rounded  hover:bg-blue-700"
+                className="flex items-center gap-2 p-2 text-xs bg-red-600 text-white rounded hover:bg-red-700 font-medium"
               >
                 <Download size={16} />
                 Convert to Invoice
@@ -151,9 +151,9 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
           <div className="px-6 flex gap-2 overflow-x-auto">
             <button
               onClick={() => setActiveTab('workflow')}
-              className={`py-3 border-b-2   transition-colors whitespace-nowrap ${
+              className={`py-3 border-b-2 text-xs font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'workflow'
-                  ? 'border-red-600  text-white '
+                  ? 'border-red-600 text-red-600 font-semibold'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -161,9 +161,9 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
             </button>
             <button
               onClick={() => setActiveTab('details')}
-              className={`py-3 border-b-2   transition-colors ${
+              className={`py-3 border-b-2 text-xs font-medium transition-colors ${
                 activeTab === 'details'
-                  ? 'border-red-600  text-white '
+                  ? 'border-red-600 text-red-600 font-semibold'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -171,9 +171,9 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
             </button>
             <button
               onClick={() => setActiveTab('lineItems')}
-              className={`py-3 border-b-2   transition-colors ${
+              className={`py-3 border-b-2 text-xs font-medium transition-colors ${
                 activeTab === 'lineItems'
-                  ? 'border-red-600  text-white '
+                  ? 'border-red-600 text-red-600 font-semibold'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -181,9 +181,9 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
             </button>
             <button
               onClick={() => setActiveTab('versions')}
-              className={`py-3 border-b-2   transition-colors whitespace-nowrap ${
+              className={`py-3 border-b-2 text-xs font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'versions'
-                  ? 'border-red-600  text-white '
+                  ? 'border-red-600 text-red-600 font-semibold'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -191,9 +191,9 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`py-3 border-b-2   transition-colors ${
+              className={`py-3 border-b-2 text-xs font-medium transition-colors ${
                 activeTab === 'history'
-                  ? 'border-red-600  text-white '
+                  ? 'border-red-600 text-red-600 font-semibold'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -289,25 +289,25 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
                   <div className="flex justify-between text-xs ">
                     <span className="text-gray-600">Subtotal:</span>
                     <span className="  text-gray-900">
-                      {currency} {(proposal.total_amount + proposal.discount_amount - proposal.tax_amount).toFixed(2)}
+                      {currency} {((parseFloat(proposal.total_amount) || 0) + (parseFloat(proposal.discount_amount) || 0) - (parseFloat(proposal.tax_amount) || 0)).toFixed(2)}
                     </span>
                   </div>
-                  {proposal.discount_amount > 0 && (
+                  {(parseFloat(proposal.discount_amount) || 0) > 0 && (
                     <div className="flex justify-between text-xs  text-orange-600">
                       <span>Discount:</span>
-                      <span>-{currency} {proposal.discount_amount.toFixed(2)}</span>
+                      <span>-{currency} {(parseFloat(proposal.discount_amount) || 0).toFixed(2)}</span>
                     </div>
                   )}
-                  {proposal.tax_amount > 0 && (
+                  {(parseFloat(proposal.tax_amount) || 0) > 0 && (
                     <div className="flex justify-between text-xs  text-green-600">
                       <span>Tax:</span>
-                      <span>+{currency} {proposal.tax_amount.toFixed(2)}</span>
+                      <span>+{currency} {(parseFloat(proposal.tax_amount) || 0).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="border-t pt-3 flex justify-between">
                     <span className=" text-gray-900">Total:</span>
-                    <span className="text-xl  text-white ">
-                      {currency} {proposal.total_amount.toFixed(2)}
+                    <span className="text-xl font-bold text-slate-900">
+                      {currency} {(parseFloat(proposal.total_amount) || 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -419,16 +419,16 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
                         <td className="px-4 py-3 text-gray-600">{item.description}</td>
                         <td className="px-4 py-3 text-right text-gray-600">{item.quantity}</td>
                         <td className="px-4 py-3 text-right text-gray-600">
-                          {currency} {item.rate.toFixed(2)}
+                          {currency} {(parseFloat(item.rate) || 0).toFixed(2)}
                         </td>
                         <td className="px-4 py-3 text-right text-orange-600">
-                          {currency} {item.discount_amount.toFixed(2)}
+                          {currency} {(parseFloat(item.discount_amount) || 0).toFixed(2)}
                         </td>
                         <td className="px-4 py-3 text-right text-green-600">
-                          {currency} {item.tax_amount.toFixed(2)}
+                          {currency} {(parseFloat(item.tax_amount) || 0).toFixed(2)}
                         </td>
-                        <td className="px-4 py-3 text-right   text-gray-900">
-                          {currency} {item.total.toFixed(2)}
+                        <td className="px-4 py-3 text-right text-gray-900 font-semibold">
+                          {currency} {(parseFloat(item.total) || 0).toFixed(2)}
                         </td>
                       </tr>
                     ))

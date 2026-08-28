@@ -992,6 +992,42 @@ module.exports = function(app, pool) {
 
       const estimationId = result.insertId;
 
+      // Save line items (multiple services) if provided
+      const rawItems = req.body.items || req.body.line_items;
+      if (Array.isArray(rawItems) && rawItems.length > 0) {
+        for (const item of rawItems) {
+          const itemName = item.item_name || item.productName || item.product_name || item.name;
+          if (itemName) {
+            const qty = parseFloat(item.quantity) || 1;
+            const rateVal = parseFloat(item.rate || item.price) || 0;
+            const discPct = parseFloat(item.discount_percent || item.discount) || 0;
+            const discAmt = (qty * rateVal * discPct) / 100;
+            const itemSubtotal = qty * rateVal - discAmt;
+            const taxPct = parseFloat(item.tax_percent || item.taxPercentage) || 0;
+            const taxAmt = (itemSubtotal * taxPct) / 100;
+            const itemTotal = itemSubtotal + taxAmt;
+
+            await connection.query(`
+              INSERT INTO estimation_line_items 
+              (estimation_id, item_name, description, quantity, rate, discount_percent, discount_amount, tax_percent, tax_amount, subtotal, total)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              estimationId, 
+              itemName, 
+              item.description || null, 
+              qty, 
+              rateVal, 
+              discPct, 
+              discAmt, 
+              taxPct, 
+              taxAmt, 
+              itemSubtotal, 
+              itemTotal
+            ]);
+          }
+        }
+      }
+
       const [estimations] = await connection.query(`
         SELECT e.*, c.company_name as client_name, l.lead_name, d.deal_name, u.first_name, u.last_name, u.email as user_email, l.email as lead_email, l.phone as lead_phone
         FROM estimations e 
@@ -1061,29 +1097,15 @@ module.exports = function(app, pool) {
           ]);
         };
 
-        const cancelPendingFollowups = async () => {
-           const related_type = deal_id ? 'Deal' : (lead_id ? 'Lead' : 'Customer');
-           const related_id = deal_id || lead_id || client_id;
-           if (!related_id) return;
-           await connection.query(
-             "UPDATE followups SET status = 'Cancelled', outcome = 'Superseded by Quotation Action' WHERE related_type = ? AND related_id = ? AND status IN ('Scheduled', 'Pending', 'Overdue')",
-             [related_type, related_id]
-           );
-        };
-
         if (status === 'Sent') {
-          // await cancelPendingFollowups();
           await createFollowup(true, 'Email', `Quotation Sent (Ver: ${version || 1}, Amount: ₹${amount || total || 0})`, 'Sent');
           await createFollowup(false, 'Call', `Follow-up on Sent Quotation (${finalEstimationNumber || 'No.'})`, null, 2);
         } else if (status === 'Revised') {
-          // await cancelPendingFollowups();
           await createFollowup(true, 'Task', `Quotation Revision Sent (Ver: ${version || 2}, Amount: ₹${amount || total || 0})`, 'Revised');
           await createFollowup(false, 'Call', `Follow-up on Revised Quotation (${finalEstimationNumber || 'No.'})`, null, 2);
         } else if (status === 'Accepted') {
-          // await cancelPendingFollowups();
           await createFollowup(true, 'Meeting', 'Quotation Accepted', 'Accepted');
         } else if (status === 'Declined') {
-          // await cancelPendingFollowups();
           await createFollowup(true, 'Meeting', 'Quotation Declined', 'Declined');
         }
       }
@@ -1112,13 +1134,16 @@ module.exports = function(app, pool) {
          WHERE e.id = ?`,
         [id]
       );
-      connection.release();
 
       if (estimations.length === 0) {
         return res.status(404).json({ error: 'Estimation not found' });
       }
 
-      return res.json(estimations[0]);
+      const est = estimations[0];
+      const [items] = await connection.query('SELECT * FROM estimation_line_items WHERE estimation_id = ? ORDER BY id ASC', [id]);
+      est.items = items || [];
+
+      return res.json(est);
     } catch (err) {
       responseError(res, 500, 'Failed to fetch estimation', err);
     } finally {
@@ -1178,6 +1203,43 @@ module.exports = function(app, pool) {
         values
       );
 
+      // Update line items (multiple services) if provided
+      const rawItems = updates.items || updates.line_items;
+      if (Array.isArray(rawItems)) {
+        await connection.query('DELETE FROM estimation_line_items WHERE estimation_id = ?', [id]);
+        for (const item of rawItems) {
+          const itemName = item.item_name || item.productName || item.product_name || item.name;
+          if (itemName) {
+            const qty = parseFloat(item.quantity) || 1;
+            const rateVal = parseFloat(item.rate || item.price) || 0;
+            const discPct = parseFloat(item.discount_percent || item.discount) || 0;
+            const discAmt = (qty * rateVal * discPct) / 100;
+            const itemSubtotal = qty * rateVal - discAmt;
+            const taxPct = parseFloat(item.tax_percent || item.taxPercentage) || 0;
+            const taxAmt = (itemSubtotal * taxPct) / 100;
+            const itemTotal = itemSubtotal + taxAmt;
+
+            await connection.query(`
+              INSERT INTO estimation_line_items 
+              (estimation_id, item_name, description, quantity, rate, discount_percent, discount_amount, tax_percent, tax_amount, subtotal, total)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              id, 
+              itemName, 
+              item.description || null, 
+              qty, 
+              rateVal, 
+              discPct, 
+              discAmt, 
+              taxPct, 
+              taxAmt, 
+              itemSubtotal, 
+              itemTotal
+            ]);
+          }
+        }
+      }
+
       if (updates.status && updates.status !== oldStatus) {
         const [estimations] = await connection.query(`
           SELECT e.*, c.company_name as client_name, l.lead_name, d.deal_name, u.first_name, u.last_name, u.email as user_email, l.email as lead_email, l.phone as lead_phone
@@ -1224,7 +1286,7 @@ module.exports = function(app, pool) {
               );
             }
           }
-          
+
           // Follow-up Automations
           const createFollowup = async (isCompleted, type, subject, outcome, daysOffset = 0) => {
             const related_type = est.deal_id ? 'Deal' : (est.lead_id ? 'Lead' : 'Customer');
@@ -1251,31 +1313,16 @@ module.exports = function(app, pool) {
               est.lead_id, est.deal_id
             ]);
           };
-          
-          // Auto-cancel pending follow-ups for this entity (to clean up before adding new ones, or on accepted/declined)
-          const cancelPendingFollowups = async () => {
-             const related_type = est.deal_id ? 'Deal' : (est.lead_id ? 'Lead' : 'Customer');
-             const related_id = est.deal_id || est.lead_id || est.client_id;
-             if (!related_id) return;
-             await connection.query(
-               "UPDATE followups SET status = 'Cancelled', outcome = 'Superseded by Quotation Action' WHERE related_type = ? AND related_id = ? AND status IN ('Scheduled', 'Pending', 'Overdue')",
-               [related_type, related_id]
-             );
-          };
 
           if (updates.status === 'Sent') {
-            // await cancelPendingFollowups();
-            await createFollowup(true, 'Email', `Quotation Sent (Ver: ${est.version || 1}, Amount: ₹${est.amount})`, 'Sent');
+            await createFollowup(true, 'Email', `Quotation Sent (Ver: ${est.version || 1}, Amount: ₹${est.amount || est.total || 0})`, 'Sent');
             await createFollowup(false, 'Call', `Follow-up on Sent Quotation (${est.estimation_number || 'No.'})`, null, 2);
           } else if (updates.status === 'Revised') {
-            // await cancelPendingFollowups();
-            await createFollowup(true, 'Task', `Quotation Revision Sent (Ver: ${est.version || 2}, Amount: ₹${est.amount})`, 'Revised');
+            await createFollowup(true, 'Task', `Quotation Revision Sent (Ver: ${est.version || 2}, Amount: ₹${est.amount || est.total || 0})`, 'Revised');
             await createFollowup(false, 'Call', `Follow-up on Revised Quotation (${est.estimation_number || 'No.'})`, null, 2);
           } else if (updates.status === 'Accepted') {
-            // await cancelPendingFollowups();
             await createFollowup(true, 'Meeting', 'Quotation Accepted', 'Accepted');
           } else if (updates.status === 'Declined') {
-            // await cancelPendingFollowups();
             await createFollowup(true, 'Meeting', 'Quotation Declined', 'Declined');
           }
         }
