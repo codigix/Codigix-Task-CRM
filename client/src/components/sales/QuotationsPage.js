@@ -7,6 +7,7 @@ import DateRangeDropdown from '../common/DateRangeDropdown';
 import ReviseQuotationModal from './ReviseQuotationModal';
 import { estimationsAPI, dealsAPI, leadsAPI, activitiesAPI } from '../../services/api';
 import { showSuccessToast } from '../../utils/toast';
+import { generateQuotationPDF } from '../../utils/generateQuotationPDF';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -1236,143 +1237,19 @@ const QuotationsPage = () => {
   };
 
   const handleDownloadPDF = (quotation) => {
-    const printWindow = window.open('', '_blank');
-    const items = quotation.items || [];
-
-    // Calculate totals if not already there
-    const subTotal = items.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
-    const discountAmount = parseFloat(quotation.discount_amount || 0);
-    const taxAmount = parseFloat(quotation.tax_amount || 0);
-    const totalAmount = parseFloat(quotation.amount || subTotal - discountAmount + taxAmount);
-
-    const formatCurrency = (val) => {
-      return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: quotation.currency || 'INR',
-        minimumFractionDigits: 2
-      }).format(val);
-    };
-
-    const html = `
-      <html>
-        <head>
-          <title>Quotation #${quotation.estimation_number || quotation.id}</title>
-          <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 0; padding: 40px; }
-            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #E62E14; padding-bottom: 20px; margin-bottom: 30px; }
-            .logo { font-size: 24px; font-weight: bold; color: #E62E14; }
-            .quotation-info { text-align: right; }
-            .info-grid { display: grid; grid-template-cols: repeat(3, 1fr); gap: 30px; margin-bottom: 40px; }
-            .info-section h4 { margin: 0 0 10px 0; color: #666; font-size: 12px; text-transform: ; }
-            .info-section p { margin: 2px 0; font-size: 14px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            th { background: #f9fafb; text-align: left; padding: 12px; font-size: 12px; text-transform: ; color: #666; border-bottom: 1px solid #eee; }
-            td { padding: 12px; font-size: 14px; border-bottom: 1px solid #eee; }
-            .totals { display: flex; justify-content: flex-end; }
-            .totals-table { width: 300px; }
-            .totals-table tr td { border: none; padding: 5px 12px; }
-            .totals-table .grand-total { font-size: 18px; font-weight: bold; color: #E62E14; border-top: 1px solid #eee; padding-top: 10px; }
-            .footer { margin-top: 50px; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
-            @media print {
-              .no-print { display: none; }
-              body { padding: 0; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="logo">CRMS</div>
-            <div class="quotation-info">
-              <h2 style="margin:0">QUOTATION</h2>
-              <p style="margin:5px 0">#${quotation.estimation_number || quotation.id}</p>
-              <p style="margin:5px 0; color:#666; font-size:14px;">Date: ${new Date(quotation.estimate_date).toLocaleDateString('en-GB')}</p>
-            </div>
-          </div>
-
-          <div class="info-grid">
-            <div class="info-section">
-              <h4>Client Information</h4>
-              <p><strong>${quotation.client_name || 'N/A'}</strong></p>
-              ${quotation.client_email ? `<p style="color:#666; font-size:13px; margin-top:5px;">${quotation.client_email}</p>` : ''}
-              ${quotation.client_phone ? `<p style="color:#666; font-size:13px;">${quotation.client_phone}</p>` : ''}
-            </div>
-            <div class="info-section">
-              <h4>Business Context</h4>
-              <p><strong>Project:</strong> ${quotation.project_name || 'N/A'}</p>
-              <p><strong>Business Type:</strong> ${quotation.business_type || 'N/A'}</p>
-              <p style="color:#666; font-size:13px; margin-top:5px; font-style: italic;">
-                ${quotation.business_description || 'No business description provided.'}
-              </p>
-            </div>
-            <div class="info-section">
-              <h4>Quotation Details</h4>
-              <p><strong>Referral:</strong> ${quotation.referral_name || 'N/A'}</p>
-              <p><strong>Date:</strong> ${new Date(quotation.estimate_date).toLocaleDateString('en-GB')}</p>
-              <p><strong>Valid Until:</strong> ${quotation.expiry_date ? new Date(quotation.expiry_date).toLocaleDateString('en-GB') : 'N/A'}</p>
-            </div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Service Description</th>
-                <th style="text-align:center">Qty</th>
-                <th style="text-align:right">Rate</th>
-                <th style="text-align:right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.map(item => `
-                <tr>
-                  <td>
-                    <strong>${item.item_name}</strong><br/>
-                    <small style="color:#666">${item.description || ''}</small>
-                    ${item.duration ? `<br/><small style="color:#E62E14">${item.duration}</small>` : ''}
-                  </td>
-                  <td style="text-align:center">${item.quantity}</td>
-                  <td style="text-align:right">${formatCurrency(item.rate)}</td>
-                  <td style="text-align:right">${formatCurrency(item.total)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-
-          <div class="totals">
-            <table class="totals-table">
-              <tr>
-                <td>Sub Total</td>
-                <td style="text-align:right">${formatCurrency(subTotal)}</td>
-              </tr>
-              <tr>
-                <td>Discount (${quotation.discount_percentage || 0}%)</td>
-                <td style="text-align:right">-${formatCurrency(discountAmount)}</td>
-              </tr>
-              <tr>
-                <td>Tax (${quotation.tax_percentage || 10}%)</td>
-                <td style="text-align:right">${formatCurrency(taxAmount)}</td>
-              </tr>
-              <tr class="grand-total">
-                <td>Grand Total</td>
-                <td style="text-align:right">${formatCurrency(totalAmount)}</td>
-              </tr>
-            </table>
-          </div>
-
-          <div class="footer">
-            <p><strong>Terms & Conditions:</strong></p>
-            <p>The products/services listed in this invoice will be delivered/provided as per the specifications and schedule detailed in the invoice or as agreed upon by both parties in previous communications.</p>
-            <p style="text-align:center; margin-top:30px;">Thank you for your business!</p>
-          </div>
-
-          <script>
-            window.onload = function() { window.print(); window.close(); };
-          </script>
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(html);
-    printWindow.document.close();
+    generateQuotationPDF({
+      quotationNumber: quotation.estimation_number || quotation.quotationNumber || quotation.estimateId || ('Q-' + quotation.id),
+      quotationDate: quotation.estimate_date || quotation.created_at,
+      validUntil: quotation.expiry_date,
+      client: quotation.company_name || quotation.client_name || quotation.lead_name || quotation.client,
+      contactPerson: quotation.contact_person || quotation.client_name || quotation.company_name,
+      businessType: quotation.business_type || quotation.address || 'Pimpri, Pune',
+      items: Array.isArray(quotation.items) ? quotation.items : [],
+      amount: quotation.amount || quotation.total,
+      subtotal: quotation.subtotal,
+      discount: quotation.discount_amount || quotation.discount,
+      taxPercentage: quotation.tax_percentage || quotation.taxPercentage || 10
+    });
   };
 
   const handleSendQuotation = async (quotation) => {

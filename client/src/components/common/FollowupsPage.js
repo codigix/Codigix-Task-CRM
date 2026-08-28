@@ -11,6 +11,7 @@ import { followupsAPI, leadsAPI, dealsAPI, estimationsAPI } from '../../services
 import { generateMeetingLink } from '../../utils/meetingUtils';
 import AddFollowupModal from './AddFollowupModal';
 import AddNewEstimationModal from './AddNewEstimationModal';
+import { generateQuotationPDF } from '../../utils/generateQuotationPDF';
 import AdvancedDataTable from './AdvancedDataTable';
 import DateRangeDropdown from './DateRangeDropdown';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
@@ -68,6 +69,50 @@ const FollowupsPage = () => {
   const [isGroupedView, setIsGroupedView] = useState(true);
   const [expandedClients, setExpandedClients] = useState({});
 
+  const openQuotationModal = async (f, openRevisionDirectly = false) => {
+    if (!f) return;
+    try {
+      const res = await estimationsAPI.getAll();
+      const allEsts = Array.isArray(res) ? res : (res.data || []);
+      const matchingEsts = allEsts.filter(est => 
+        (f.related_type === 'Lead' && (est.lead_id === f.related_id || (f.related_id > 1000000 && est.lead_id === f.related_id - 1000000))) ||
+        (f.related_type === 'Deal' && (est.deal_id === f.related_id || est.lead_id === f.related_id)) ||
+        (f.related_type === 'Customer' && est.client_id === f.related_id)
+      ).sort((a, b) => b.id - a.id);
+      
+      const matchingEst = matchingEsts[0];
+
+      if (matchingEst) {
+        setQuotationInitialData({
+          ...matchingEst,
+          quotationNumber: matchingEst.estimation_number || matchingEst.quotation_number,
+          quotationDate: matchingEst.estimate_date,
+          validUntil: matchingEst.expiry_date,
+          client: matchingEst.client_name || matchingEst.lead_name || f.related_name,
+          lead_id: f.related_type === 'Lead' ? f.related_id : (matchingEst.lead_id || null),
+          deal_id: f.related_type === 'Deal' ? f.related_id : (matchingEst.deal_id || null),
+          client_email: f.client_email,
+          client_phone: f.client_phone,
+          isFromFollowup: true,
+          openRevisionDirectly: openRevisionDirectly
+        });
+      } else {
+        setQuotationInitialData({
+          client: f.related_name,
+          client_id: f.related_type === 'Customer' ? f.related_id : null,
+          lead_id: f.related_type === 'Lead' ? f.related_id : null,
+          deal_id: f.related_type === 'Deal' ? f.related_id : null,
+          client_email: f.client_email,
+          client_phone: f.client_phone,
+          openRevisionDirectly: openRevisionDirectly
+        });
+      }
+      setIsQuotationModalOpen(true);
+    } catch (err) {
+      console.error('Error opening quotation modal:', err);
+    }
+  };
+
   const handleAddQuotation = async (formData) => {
     if (!formData) {
       fetchFollowups();
@@ -92,13 +137,41 @@ const FollowupsPage = () => {
         total: parseFloat(formData.amount || formData.total || 0)
       };
 
-      if (quotationInitialData && quotationInitialData.id) {
-         await estimationsAPI.update(quotationInitialData.id, quotationData);
+      let resEst;
+      const isRevisionSave = formData.isRevision || formData.isCreatingRevision;
+      if (!isRevisionSave && quotationInitialData && quotationInitialData.id && quotationInitialData.id !== 'NEW') {
+         resEst = await estimationsAPI.update(quotationInitialData.id, quotationData);
          showSuccessToast('Quotation updated successfully');
       } else {
-         await estimationsAPI.create(quotationData);
-         showSuccessToast('Quotation created successfully');
+         if (quotationInitialData && quotationInitialData.id && quotationInitialData.id !== 'NEW') {
+           try {
+             await estimationsAPI.update(quotationInitialData.id, { status: 'Revised' });
+           } catch (pErr) {
+             console.warn('Could not mark parent as revised:', pErr);
+           }
+         }
+         resEst = await estimationsAPI.create(quotationData);
+         showSuccessToast(isRevisionSave ? 'Quotation revision created successfully' : 'Quotation created successfully');
       }
+
+      const targetEstId = (resEst && resEst.id) || (quotationInitialData && quotationInitialData.id);
+      const recipientEmail = formData.client_email || formData.email;
+      if (targetEstId && (formData.shouldSendEmail || formData.status === 'Sent') && recipientEmail) {
+        try {
+          const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+          const emailRes = await fetch(`${API_BASE_URL}/estimations/${targetEstId}/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: recipientEmail, pdfBase64: formData.pdfBase64 || null })
+          });
+          if (emailRes.ok) {
+            showSuccessToast(`Email sent successfully to ${recipientEmail}`);
+          }
+        } catch (mailErr) {
+          console.warn('Error triggering quotation email:', mailErr);
+        }
+      }
+
       setIsQuotationModalOpen(false);
       setQuotationInitialData(null);
       fetchFollowups();
@@ -106,6 +179,41 @@ const FollowupsPage = () => {
       console.error(err);
       showErrorToast('Failed to save quotation');
     }
+  };
+
+  const getAttemptVersion = (f, attemptsList, currentIdx) => {
+    if (!f) return 1;
+    if (f.subject) {
+      const verMatch = f.subject.match(/\(Ver:\s*(\d+)/i) || f.subject.match(/-v(\d+)/i);
+      if (verMatch) return parseInt(verMatch[1], 10);
+    }
+    if (currentIdx === 0 || f.attempt === 1 || f.attempt === 2 || f.outcome === 'Asking for Quotation') {
+      return 1;
+    }
+    if (Array.isArray(attemptsList)) {
+      let ver = 1;
+      for (let i = 0; i < currentIdx; i++) {
+        const att = attemptsList[i];
+        if (att.outcome === 'Revised' || (att.subject && att.subject.toLowerCase().includes('revised'))) {
+          ver++;
+        }
+      }
+      if (f.outcome === 'Revised' || (f.subject && f.subject.toLowerCase().includes('revised quotation'))) {
+        ver++;
+      }
+      return ver;
+    }
+    return f.revision_count || 1;
+  };
+
+  const getAttemptQuotationStatus = (f, client, currentIdx) => {
+    if (!f) return 'Draft';
+    const attemptVer = getAttemptVersion(f, client.followups, currentIdx);
+    const maxVer = client.last_followup?.revision_count || 1;
+    if (attemptVer < maxVer) {
+      return 'Revised';
+    }
+    return f.latest_quotation_status || 'Draft';
   };
 
   const tabs = ['All Follow-Ups', "Today's", 'Overdue', 'Scheduled', 'Completed'];
@@ -884,7 +992,7 @@ const FollowupsPage = () => {
       return {
         ...client,
         followups: sorted,
-        last_followup: sorted.find(f => f.status === 'Completed') || sorted[sorted.length - 1],
+        last_followup: [...sorted].reverse().find(f => f.status === 'Completed') || sorted[sorted.length - 1],
         next_followup: [...client.followups]
           .filter(f => {
             const now = new Date();
@@ -1318,12 +1426,21 @@ const FollowupsPage = () => {
                                     </span>
                                   )}
                                   {quotStatus && (
-                                    <div className="flex items-center gap-1">
-                                      <span className={`text-[9px] ${quotStatus === 'Accepted' ? 'text-green-600' : quotStatus === 'Declined' ? 'text-red-600' : 'text-blue-600'} font-medium`}>
+                                    <div 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (client.last_followup) {
+                                          openQuotationModal(client.last_followup, client.last_followup.outcome === 'Revise Quotation');
+                                        }
+                                      }}
+                                      className="flex items-center gap-1 cursor-pointer group/q"
+                                      title="Click to view/access quotation"
+                                    >
+                                      <span className={`text-[9px] ${quotStatus === 'Accepted' ? 'bg-green-50 text-green-700 border-green-200' : quotStatus === 'Declined' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'} px-1.5 py-0.5 rounded border font-medium group-hover/q:underline flex items-center gap-1`}>
                                         Quotation: {quotStatus}
                                       </span>
                                       {revisions > 0 && (
-                                        <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1 rounded">
+                                        <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-200 font-medium group-hover/q:bg-indigo-100">
                                           Rev: {revisions}
                                         </span>
                                       )}
@@ -1384,15 +1501,18 @@ const FollowupsPage = () => {
                                         <th className="p-2 text-xs  text-gray-500  font-[500] text-right">Actions</th>
                                       </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-50">
-                                      {client.followups.map((f, idx) => (
-                                        <tr key={f.id} className="hover:bg-gray-50 transition-colors">
-                                          <td className="p-2 text-xs text-gray-500">#{f.attempt}</td>
-                                          <td className="p-2">
-                                            <div className="flex items-center gap-1.5">
-                                              <div className={`p-1 rounded ${getStatusStyle(f.status)}`}>
-                                                {getTypeIcon(f.type)}
-                                              </div>
+                                     <tbody className="divide-y divide-gray-50">
+                                       {client.followups.map((f, idx) => {
+                                         const isFinalized = ['Converted to Deal', 'Quotation Accepted & Converted to Deal', 'Quotation Accepted', 'Quotation Declined', 'Not Interested', 'Wrong Number'].includes(f.outcome) ||
+                                           ['Converted to Deal', 'Won', 'Lost'].includes(client.last_followup?.lead_status);
+                                         return (
+                                           <tr key={f.id} className="hover:bg-gray-50 transition-colors">
+                                             <td className="p-2 text-xs text-gray-500">#{f.attempt}</td>
+                                             <td className="p-2">
+                                               <div className="flex items-center gap-1.5">
+                                                 <div className={`p-1 rounded ${getStatusStyle(f.status)}`}>
+                                                   {getTypeIcon(f.type)}
+                                                 </div>
                                               <div className="flex items-center gap-1">
                                                 <span className="text-xs text-gray-700">{f.type}</span>
                                                 {['Google Meet', 'Zoom Meeting', 'Internal Video Call', 'Demo'].includes(f.type) && f.calendar_event_id && (
@@ -1424,63 +1544,66 @@ const FollowupsPage = () => {
                                           </td>
                                           <td className="p-2 text-right">
                                             <div className="flex items-center justify-end gap-1">
-                                              {(['Asking for Quotation', 'Revise Quotation'].includes(f.outcome) || (f.subject && f.subject.includes('Send Revised Quotation'))) && (
-                                                <div className="flex items-center gap-1">
-                                                  {f.latest_quotation_status && (
-                                                    <span className="text-[9px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded border border-green-200 font-medium whitespace-nowrap">
-                                                      Quotation: {f.latest_quotation_status}
-                                                    </span>
-                                                  )}
-                                                  <button
-                                                    onClick={async (e) => {
-                                                      e.stopPropagation();
-                                                      try {
-                                                        const res = await estimationsAPI.getAll();
-                                                        const allEsts = Array.isArray(res) ? res : (res.data || []);
-                                                        // Sort to get latest quotation for this entity
-                                                        const matchingEsts = allEsts.filter(est => 
-                                                          (f.related_type === 'Lead' && est.lead_id === f.related_id) ||
-                                                          (f.related_type === 'Deal' && est.deal_id === f.related_id) ||
-                                                          (f.related_type === 'Customer' && est.client_id === f.related_id)
-                                                        ).sort((a, b) => b.id - a.id);
-                                                        
-                                                        const matchingEst = matchingEsts[0];
+                                              {(() => {
+                                                 const isQuotationSentAttempt = f.outcome === 'Sent' || f.outcome === 'Revised' || (f.subject && f.subject.toLowerCase().includes('quotation sent'));
+                                                 const isAskingPending = f.outcome === 'Asking for Quotation' && (!Array.isArray(client.followups) || !client.followups.some((a, aIdx) => aIdx > idx && (a.outcome === 'Sent' || (a.subject && a.subject.toLowerCase().includes('quotation sent')))));
+                                                 const isRevisePending = f.outcome === 'Revise Quotation' && (!Array.isArray(client.followups) || !client.followups.some((a, aIdx) => aIdx > idx && (a.outcome === 'Revised' || (a.subject && a.subject.toLowerCase().includes('quotation sent')))));
 
-                                                        if (matchingEst) {
-                                                          setQuotationInitialData({
-                                                            ...matchingEst,
-                                                            quotationNumber: matchingEst.estimation_number || matchingEst.quotation_number,
-                                                            quotationDate: matchingEst.estimate_date,
-                                                            validUntil: matchingEst.expiry_date,
-                                                            client: matchingEst.client_name || matchingEst.lead_name || f.related_name,
-                                                            lead_id: f.related_type === 'Lead' ? f.related_id : null,
-                                                            deal_id: f.related_type === 'Deal' ? f.related_id : null,
-                                                            client_email: f.client_email,
-                                                            client_phone: f.client_phone,
-                                                            isFromFollowup: true,
-                                                          });
-                                                        } else {
-                                                          setQuotationInitialData({
-                                                            client: f.related_name,
-                                                            client_id: f.related_type === 'Customer' ? f.related_id : null,
-                                                            lead_id: f.related_type === 'Lead' ? f.related_id : null,
-                                                            deal_id: f.related_type === 'Deal' ? f.related_id : null,
-                                                            client_email: f.client_email,
-                                                            client_phone: f.client_phone,
-                                                          });
-                                                        }
-                                                        setIsQuotationModalOpen(true);
-                                                      } catch (err) {
-                                                        console.error(err);
-                                                      }
-                                                    }}
-                                                    className={`p-1 flex items-center gap-1 ${f.latest_quotation_status ? 'text-blue-600 hover:bg-blue-50' : 'text-green-600 hover:bg-green-50'} rounded transition-colors`}
-                                                    title={f.latest_quotation_status ? "View Quotations" : "Create Quotation"}
-                                                  >
-                                                    <Calculator size={12} />
-                                                  </button>
-                                                </div>
-                                              )}
+                                                 if (isQuotationSentAttempt) {
+                                                   return (
+                                                     <div className="flex items-center gap-1">
+                                                       <span 
+                                                         onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
+                                                         className={`text-[9px] ${getAttemptQuotationStatus(f, client, idx) === 'Revised' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-green-50 text-green-700 border-green-200'} px-1.5 py-0.5 rounded border font-medium whitespace-nowrap cursor-pointer hover:underline`}
+                                                         title="Click to view quotation"
+                                                       >
+                                                         Quotation: {getAttemptQuotationStatus(f, client, idx)}
+                                                       </span>
+                                                       <span 
+                                                         onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
+                                                         className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-200 font-medium whitespace-nowrap cursor-pointer hover:bg-indigo-100"
+                                                         title="Click to view version history"
+                                                       >
+                                                         Rev: {getAttemptVersion(f, client.followups, idx)}
+                                                       </span>
+                                                       <button
+                                                         onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
+                                                         className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                         title="View Quotation"
+                                                       >
+                                                         <Calculator size={12} />
+                                                       </button>
+                                                     </div>
+                                                   );
+                                                 }
+
+                                                 if (isAskingPending) {
+                                                   return (
+                                                     <button
+                                                       onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
+                                                       className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+                                                       title="Create Quotation"
+                                                     >
+                                                       <Calculator size={12} />
+                                                     </button>
+                                                   );
+                                                 }
+
+                                                 if (isRevisePending) {
+                                                   return (
+                                                     <button
+                                                       onClick={(e) => { e.stopPropagation(); openQuotationModal(f, true); }}
+                                                       className="p-1 text-orange-600 hover:bg-orange-50 border border-orange-200 rounded transition-colors flex items-center gap-1 text-[10px] font-medium"
+                                                       title="Create Revised Quotation"
+                                                     >
+                                                       <RotateCcw size={12} />
+                                                       <span>Revise</span>
+                                                     </button>
+                                                   );
+                                                 }
+
+                                                 return null;
+                                               })()}
                                               {f.status === 'Scheduled' && ['Google Meet', 'Zoom Meeting', 'Internal Video Call', 'Demo'].includes(f.type) && (
                                                 <button
                                                   onClick={(e) => handleJoinMeeting(e, f)}
@@ -1546,7 +1669,8 @@ const FollowupsPage = () => {
                                             </div>
                                           </td>
                                         </tr>
-                                      ))}
+                                      );
+                                       })}
                                     </tbody>
                                   </table>
                                 </div>
@@ -1605,7 +1729,7 @@ const FollowupsPage = () => {
         }}
         onSubmit={handleAddQuotation}
         initialData={quotationInitialData}
-        onGeneratePDF={() => {}}
+        onGeneratePDF={generateQuotationPDF}
       />
     </div>
   );

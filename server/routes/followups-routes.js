@@ -86,8 +86,42 @@ module.exports = function setupFollowupsRoutes(app, pool) {
           "UPDATE leads SET lead_status = ?, last_follow_up = NOW(), updated_at = NOW() WHERE id = ?",
           [leadStatus, relatedId]
         );
+
+        // Auto-convert lead to deal if outcome is Converted to Deal or Quotation Accepted & Converted to Deal
+        if (['Converted to Deal', 'Quotation Accepted & Converted to Deal', 'Quotation Accepted'].includes(outcome)) {
+          try {
+            const [leadRows] = await runner.query("SELECT * FROM leads WHERE id = ?", [relatedId]);
+            if (leadRows.length > 0) {
+              const lead = leadRows[0];
+              if (!lead.converted_deal_id) {
+                const [estRows] = await runner.query("SELECT * FROM estimations WHERE lead_id = ? ORDER BY id DESC LIMIT 1", [relatedId]);
+                const dealValue = estRows.length > 0 ? (parseFloat(estRows[0].total || estRows[0].amount) || lead.value) : lead.value;
+                const dealName = lead.project_name || lead.lead_name || 'New Deal';
+
+                const [dealResult] = await runner.query(`
+                  INSERT INTO deals (
+                    deal_name, company_id, pipeline, deal_stage, value, currency,
+                    lead_id, assignee_id, user_id, expected_close_date, description, created_at, updated_at
+                  ) VALUES (?, ?, 'Won', 'Won', ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY), ?, NOW(), NOW())
+                `, [
+                  dealName, lead.company_id || null, dealValue || 0, lead.currency || 'INR',
+                  relatedId, lead.owner_id || null, lead.owner_id || null, lead.notes || ''
+                ]);
+
+                const newDealId = dealResult.insertId;
+                await runner.query(
+                  "UPDATE leads SET lead_status = 'Converted to Deal', converted_deal_id = ?, updated_at = NOW() WHERE id = ?",
+                  [newDealId, relatedId]
+                );
+                console.log(`✓ Auto-converted Lead ${relatedId} to Deal ${newDealId} on quotation acceptance!`);
+              }
+            }
+          } catch (convErr) {
+            console.error('Error auto-converting lead to deal:', convErr.message);
+          }
+        }
       } else if (relatedType === 'Deal') {
-        const dealStage = (leadStatus === 'Qualified' || leadStatus === 'Revised Quotation') ? 'Quotation' : (leadStatus === 'Won' ? 'Won' : (leadStatus === 'Lost' ? 'Lost' : 'In Progress'));
+        const dealStage = (leadStatus === 'Qualified' || leadStatus === 'Revised Quotation') ? 'Quotation' : (leadStatus === 'Won' || outcome.includes('Accepted') ? 'Won' : (leadStatus === 'Lost' ? 'Lost' : 'In Progress'));
         await runner.query(
           "UPDATE deals SET pipeline = ?, deal_stage = ?, updated_at = NOW() WHERE id = ?",
           [dealStage, dealStage, relatedId]
@@ -808,11 +842,15 @@ module.exports = function setupFollowupsRoutes(app, pool) {
                l.lead_status as lead_status,
                d.deal_stage as deal_stage,
                d.status as deal_status,
-               (SELECT status FROM estimations 
-                WHERE (deal_id = d.id OR lead_id = l.id) 
-                ORDER BY created_at DESC LIMIT 1) as latest_quotation_status,
-               (SELECT COUNT(*) FROM estimations 
-                WHERE (deal_id = d.id OR lead_id = l.id) AND status = 'Revised') as revision_count
+                (SELECT status FROM estimations 
+                 WHERE (deal_id = d.id OR (l.id IS NOT NULL AND lead_id = l.id) OR (f.related_type = 'Lead' AND lead_id = f.related_id) OR (f.related_type = 'Deal' AND deal_id = f.related_id)) 
+                 ORDER BY created_at DESC LIMIT 1) as latest_quotation_status,
+                 (SELECT GREATEST(
+                  COALESCE(MAX(version), 1),
+                  COALESCE(MAX(CASE WHEN estimation_number LIKE '%-v%' THEN CAST(SUBSTRING_INDEX(estimation_number, '-v', -1) AS UNSIGNED) ELSE 1 END), 1),
+                  COALESCE(COUNT(*), 1)
+                ) FROM estimations 
+                WHERE (deal_id = d.id OR (l.id IS NOT NULL AND lead_id = l.id) OR (f.related_type = 'Lead' AND lead_id = f.related_id) OR (f.related_type = 'Deal' AND deal_id = f.related_id))) as revision_count
         FROM followups f
         LEFT JOIN leads l ON f.related_type = 'Lead' AND f.related_id = l.id
         LEFT JOIN deals d ON (f.related_type = 'Deal' AND f.related_id = d.id) OR f.deal_id = d.id

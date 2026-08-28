@@ -374,6 +374,19 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null }) => 
           formal_message: `Dear ${prev.related_name || 'Client'}, I would like to schedule a ${value} to discuss our collaboration. Looking forward to connecting with you.`
         };
       });
+    } else if (name === 'outcome') {
+      const isCompletedOutcome = ['Converted to Deal', 'Quotation Accepted & Converted to Deal', 'Quotation Accepted', 'Quotation Declined', 'Not Interested', 'Wrong Number'].includes(value);
+      setFormData(prev => ({
+        ...prev,
+        outcome: value,
+        status: isCompletedOutcome ? 'Completed' : prev.status,
+        next_followup_date: isCompletedOutcome ? '' : prev.next_followup_date,
+        next_followup_time: isCompletedOutcome ? '' : prev.next_followup_time,
+        next_followup_type: isCompletedOutcome ? '' : prev.next_followup_type
+      }));
+      if (isCompletedOutcome) {
+        setOpenPanels(prev => ({ ...prev, completion: true }));
+      }
     } else {
       setFormData(prev => ({
         ...prev,

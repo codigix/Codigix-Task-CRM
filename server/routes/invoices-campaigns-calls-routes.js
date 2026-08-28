@@ -943,19 +943,34 @@ module.exports = function(app, pool) {
         tax_percentage, tax_amount, subtotal, total
       } = req.body;
 
+      connection = await getConnection();
       let finalEstimationNumber = estimation_number;
 
       // If estimation_number is not provided, or it looks like the default starting number,
       // generate a fresh unique one to avoid "Duplicate entry" errors.
       if (!finalEstimationNumber || finalEstimationNumber.endsWith('-001')) {
         finalEstimationNumber = await generateEstimationNumber(pool);
+      } else {
+        // Check if finalEstimationNumber already exists in DB
+        const [existing] = await connection.query('SELECT id FROM estimations WHERE estimation_number = ?', [finalEstimationNumber]);
+        if (existing.length > 0) {
+          const baseNum = finalEstimationNumber.split('-v')[0];
+          const [allVers] = await connection.query('SELECT estimation_number FROM estimations WHERE estimation_number LIKE ?', [`${baseNum}%`]);
+          let maxVer = 1;
+          allVers.forEach(v => {
+            const m = (v.estimation_number || '').match(/-v(\d+)$/);
+            if (m) {
+              const num = parseInt(m[1], 10);
+              if (num >= maxVer) maxVer = num;
+            }
+          });
+          finalEstimationNumber = `${baseNum}-v${maxVer + 1}`;
+        }
       }
 
       if (!client_id && !lead_id) {
         return res.status(400).json({ error: 'Client ID or Lead ID required' });
       }
-
-      connection = await getConnection();
       const [result] = await connection.query(
         `INSERT INTO estimations (
           estimation_number, client_id, lead_id, deal_id, contact_id, project_id, 
@@ -1062,8 +1077,8 @@ module.exports = function(app, pool) {
           await createFollowup(false, 'Call', `Follow-up on Sent Quotation (${finalEstimationNumber || 'No.'})`, null, 2);
         } else if (status === 'Revised') {
           // await cancelPendingFollowups();
-          await createFollowup(true, 'Task', 'Client Requested Revision / Quotation Revised', 'Revised');
-          await createFollowup(false, 'Task', `Send Revised Quotation (${finalEstimationNumber || 'No.'})`, null, 0);
+          await createFollowup(true, 'Task', `Quotation Revision Sent (Ver: ${version || 2}, Amount: ₹${amount || total || 0})`, 'Revised');
+          await createFollowup(false, 'Call', `Follow-up on Revised Quotation (${finalEstimationNumber || 'No.'})`, null, 2);
         } else if (status === 'Accepted') {
           // await cancelPendingFollowups();
           await createFollowup(true, 'Meeting', 'Quotation Accepted', 'Accepted');
@@ -1254,8 +1269,8 @@ module.exports = function(app, pool) {
             await createFollowup(false, 'Call', `Follow-up on Sent Quotation (${est.estimation_number || 'No.'})`, null, 2);
           } else if (updates.status === 'Revised') {
             // await cancelPendingFollowups();
-            await createFollowup(true, 'Task', 'Client Requested Revision / Quotation Revised', 'Revised');
-            await createFollowup(false, 'Task', `Send Revised Quotation (${est.estimation_number || 'No.'})`, null, 0);
+            await createFollowup(true, 'Task', `Quotation Revision Sent (Ver: ${est.version || 2}, Amount: ₹${est.amount})`, 'Revised');
+            await createFollowup(false, 'Call', `Follow-up on Revised Quotation (${est.estimation_number || 'No.'})`, null, 2);
           } else if (updates.status === 'Accepted') {
             // await cancelPendingFollowups();
             await createFollowup(true, 'Meeting', 'Quotation Accepted', 'Accepted');
@@ -1326,7 +1341,7 @@ module.exports = function(app, pool) {
     let connection;
     try {
       const { id } = req.params;
-      const { email: recipientEmail } = req.body;
+      const { email: recipientEmail, pdfBase64 } = req.body;
       
       connection = await getConnection();
 
@@ -1388,66 +1403,202 @@ module.exports = function(app, pool) {
       `).join('');
 
       const emailHtml = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-          <div style="background-color: #f8f9fa; padding: 20px; border-bottom: 1px solid #e0e0e0;">
-            <h2 style="margin: 0; color: #333;">Quotation: ${est.estimation_number}</h2>
-            <p style="margin: 5px 0 0; color: #666;">Date: ${new Date(est.estimate_date).toLocaleDateString()}</p>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+          <!-- Header Bar -->
+          <div style="background-color: #1F2D5A; padding: 24px 30px; text-align: left; color: #ffffff;">
+            <div style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">Codigix Infotech</div>
+            <div style="font-size: 12px; color: #93c5fd; margin-top: 4px;">Official Quotation</div>
           </div>
-          <div style="padding: 20px;">
-            <p>Dear ${est.client_name || est.lead_name || 'Valued Client'},</p>
-            <p>Please find below the quotation details for your request.</p>
-            
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+
+          <div style="padding: 30px; color: #334155; line-height: 1.6; font-size: 14px;">
+            <p style="margin-top: 0; font-size: 15px; font-weight: 600; color: #0f172a;">
+              Dear ${est.client_name || est.lead_name || 'Valued Client'},
+            </p>
+
+            <p style="color: #334155; margin-bottom: 20px;">
+              Thank you for choosing <strong>Codigix Infotech</strong>. We are pleased to submit our official quotation <strong>#${est.estimation_number}</strong> for your review.
+            </p>
+
+            <!-- Highlight Box -->
+            <div style="background-color: #f8fafc; border-left: 4px solid #1F2D5A; padding: 16px; border-radius: 6px; margin-bottom: 24px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Quotation No:</span>
+                <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${est.estimation_number}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Date:</span>
+                <span style="font-size: 13px; font-weight: 600; color: #334155;">${new Date(est.estimate_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 8px;">
+                <span style="font-size: 13px; font-weight: 700; color: #0f172a;">Total Quoted Amount:</span>
+                <span style="font-size: 16px; font-weight: 800; color: #1F2D5A;">${currencySymbol} ${parseFloat(est.total || est.amount).toLocaleString('en-IN')}/-</span>
+              </div>
+            </div>
+
+            <!-- Items Summary -->
+            <p style="font-weight: 600; color: #0f172a; margin-bottom: 10px;">Services & Line Items Breakdown:</p>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
               <thead>
-                <tr style="background-color: #f8f9fa;">
-                  <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Item</th>
-                  <th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">Qty</th>
-                  <th style="padding: 10px; text-align: right; border-bottom: 2px solid #dee2e6;">Rate</th>
-                  <th style="padding: 10px; text-align: right; border-bottom: 2px solid #dee2e6;">Amount</th>
+                <tr style="background-color: #1F2D5A; color: #ffffff;">
+                  <th style="padding: 10px 12px; text-align: left;">Item / Service</th>
+                  <th style="padding: 10px 12px; text-align: center; width: 60px;">Qty</th>
+                  <th style="padding: 10px 12px; text-align: right; width: 120px;">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 ${itemsHtml}
               </tbody>
-              <tfoot>
-                ${est.discount_amount > 0 ? `
-                <tr>
-                  <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold;">Discount:</td>
-                  <td style="padding: 10px; text-align: right; color: #dc3545;">-${currencySymbol}${parseFloat(est.discount_amount).toLocaleString()}</td>
-                </tr>` : ''}
-                ${est.tax_amount > 0 ? `
-                <tr>
-                  <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold;">Tax:</td>
-                  <td style="padding: 10px; text-align: right;">${currencySymbol}${parseFloat(est.tax_amount).toLocaleString()}</td>
-                </tr>` : ''}
-                <tr>
-                  <td colspan="3" style="padding: 10px; text-align: right; font-size: 18px; font-weight: bold;">Total:</td>
-                  <td style="padding: 10px; text-align: right; font-size: 18px; font-weight: bold; color: #28a745;">${currencySymbol}${parseFloat(est.total || est.amount).toLocaleString()}</td>
-                </tr>
-              </tfoot>
             </table>
 
-            ${est.description ? `
-            <div style="margin-top: 30px;">
-              <h4 style="margin-bottom: 10px; color: #333;">Description/Notes:</h4>
-              <p style="color: #555; white-space: pre-wrap;">${est.description}</p>
-            </div>` : ''}
-
-            <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; font-size: 14px; color: #888;">
-              <p>Thank you for your business!</p>
-              <p>Best regards,<br>${est.creator_name || 'Team'}</p>
+            <!-- Attachment Callout -->
+            <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px;">
+              <div style="font-weight: 700; color: #1e40af; font-size: 13px; margin-bottom: 2px;">📎 Official PDF Attachment Included</div>
+              <div style="font-size: 12px; color: #3b82f6;">Your complete branded PDF quotation file (<strong>Quotation-${est.estimation_number}.pdf</strong>) has been attached to this email for downloading and printing.</div>
             </div>
+
+            <p style="color: #475569;">
+              If you have any questions or require any adjustments, please feel free to reply directly to this email.
+            </p>
+
+            <p style="color: #475569; margin-top: 24px;">
+              Warm regards,<br>
+              <strong style="color: #0f172a;">${est.creator_name || 'Codigix Infotech Sales Team'}</strong><br>
+              <span style="font-size: 12px; color: #64748b;">Codigix Infotech | +91 7066556768</span>
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="background-color: #f1f5f9; padding: 16px 30px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
+            Office 309, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18 | Codigixinfotech@gmail.com
           </div>
         </div>
       `;
 
+      // Build Attachments array
+      const attachments = [];
+      if (pdfBase64) {
+        const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, '');
+        attachments.push({
+          filename: `Quotation-${est.estimation_number || id}.pdf`,
+          content: Buffer.from(cleanBase64, 'base64'),
+          contentType: 'application/pdf'
+        });
+      } else {
+        try {
+          const PDFDocument = require('pdfkit');
+          const pdfBuf = await new Promise((resolve, reject) => {
+            const doc = new PDFDocument({ margin: 40, size: 'A4' });
+            const buffers = [];
+            doc.on('data', b => buffers.push(b));
+            doc.on('end', () => resolve(Buffer.concat(buffers)));
+            doc.on('error', err => reject(err));
+
+            const currencySymbol = est.currency === 'USD' ? '$' : (est.currency === 'INR' ? '₹' : est.currency);
+
+            doc.rect(0, 0, 595, 12).fill('#1F2D5A');
+
+            doc.fillColor('#1F2D5A').fontSize(22).font('Helvetica-Bold').text('CODIGIX INFOTECH', 40, 35);
+            doc.fillColor('#64748B').fontSize(9).font('Helvetica').text('Office 309, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18', 40, 62);
+            doc.text('Phone: +91 7066556768 | Email: Codigixinfotech@gmail.com', 40, 75);
+
+            doc.fillColor('#1F2D5A').fontSize(20).font('Helvetica-Bold').text('QUOTATION', 400, 35, { align: 'right' });
+            doc.fillColor('#334155').fontSize(10).font('Helvetica-Bold').text(`No: ${est.estimation_number || est.id}`, 400, 62, { align: 'right' });
+            doc.fillColor('#64748B').fontSize(9).font('Helvetica').text(`Date: ${new Date(est.estimate_date || Date.now()).toLocaleDateString('en-GB')}`, 400, 75, { align: 'right' });
+
+            doc.moveTo(40, 95).lineTo(555, 95).strokeColor('#E2E8F0').lineWidth(1).stroke();
+
+            doc.fillColor('#64748B').fontSize(9).font('Helvetica-Bold').text('QUOTATION TO:', 40, 110);
+            doc.fillColor('#0F172A').fontSize(12).font('Helvetica-Bold').text(est.client_name || est.lead_name || 'Valued Client', 40, 123);
+            if (targetEmail) {
+              doc.fillColor('#475569').fontSize(9).font('Helvetica').text(targetEmail, 40, 138);
+            }
+
+            let y = 165;
+            doc.rect(40, y, 515, 24).fill('#1F2D5A');
+            doc.fillColor('#FFFFFF').fontSize(9).font('Helvetica-Bold');
+            doc.text('ITEM / SERVICE DESCRIPTION', 50, y + 7);
+            doc.text('QTY', 360, y + 7, { width: 40, align: 'center' });
+            doc.text('RATE', 410, y + 7, { width: 60, align: 'right' });
+            doc.text('SUBTOTAL', 480, y + 7, { width: 65, align: 'right' });
+
+            y += 24;
+            doc.font('Helvetica').fontSize(9);
+
+            const safeItems = Array.isArray(items) && items.length > 0 ? items : [{ item_name: 'Software Services', quantity: 1, rate: est.amount || est.total || 0, total: est.amount || est.total || 0 }];
+
+            safeItems.forEach((item, idx) => {
+              const bg = idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+              doc.rect(40, y, 515, 24).fill(bg);
+              const r = parseFloat(item.rate || 0);
+              const q = parseInt(item.quantity || 1, 10);
+              const tot = parseFloat(item.total || (r * q));
+
+              doc.fillColor('#0F172A').text(item.item_name || 'Service', 50, y + 7, { width: 300 });
+              doc.fillColor('#475569').text(String(q), 360, y + 7, { width: 40, align: 'center' });
+              doc.text(`${currencySymbol}${r.toLocaleString()}`, 410, y + 7, { width: 60, align: 'right' });
+              doc.fillColor('#0F172A').font('Helvetica-Bold').text(`${currencySymbol}${tot.toLocaleString()}/-`, 480, y + 7, { width: 65, align: 'right' });
+              doc.font('Helvetica');
+              y += 24;
+            });
+
+            doc.moveTo(40, y).lineTo(555, y).strokeColor('#E2E8F0').stroke();
+
+            y += 15;
+            const sub = parseFloat(est.subtotal || est.total || est.amount || 0);
+            const disc = parseFloat(est.discount_amount || 0);
+            const taxA = parseFloat(est.tax_amount || 0);
+            const totA = parseFloat(est.total || est.amount || 0);
+
+            doc.fontSize(9).font('Helvetica-Bold').fillColor('#475569');
+            doc.text('Subtotal:', 380, y, { width: 80, align: 'right' });
+            doc.fillColor('#0F172A').text(`${currencySymbol}${sub.toLocaleString()}/-`, 470, y, { width: 75, align: 'right' });
+
+            if (disc > 0) {
+              y += 16;
+              doc.fillColor('#475569').text('Discount:', 380, y, { width: 80, align: 'right' });
+              doc.fillColor('#DC2626').text(`-${currencySymbol}${disc.toLocaleString()}/-`, 470, y, { width: 75, align: 'right' });
+            }
+
+            if (taxA > 0) {
+              y += 16;
+              doc.fillColor('#475569').text(`Tax (${est.tax_percentage || 0}%):`, 380, y, { width: 80, align: 'right' });
+              doc.fillColor('#0F172A').text(`${currencySymbol}${taxA.toLocaleString()}/-`, 470, y, { width: 75, align: 'right' });
+            }
+
+            y += 20;
+            doc.rect(370, y - 4, 185, 26).fill('#1F2D5A');
+            doc.fillColor('#FFFFFF').fontSize(11).font('Helvetica-Bold');
+            doc.text('Total Amount:', 380, y + 3);
+            doc.text(`${currencySymbol}${totA.toLocaleString()}/-`, 470, y + 3, { width: 75, align: 'right' });
+
+            y += 55;
+            doc.fillColor('#64748B').fontSize(8).font('Helvetica-Bold').text('PAYMENT BANK DETAILS:', 40, y);
+            doc.fillColor('#334155').fontSize(8).font('Helvetica').text('Account Name: Codigix Infotech | A/C No: 07230200002504 | IFSC: BARB0CHINCH | Bank: Bank of Baroda Pimpri', 40, y + 12);
+
+            doc.fillColor('#0F172A').fontSize(10).font('Helvetica-Bold').text('Nitin Kamble', 450, y + 10, { align: 'right' });
+            doc.fillColor('#64748B').fontSize(8).font('Helvetica').text('CEO, Codigix Infotech', 450, y + 23, { align: 'right' });
+
+            doc.end();
+          });
+
+          attachments.push({
+            filename: `Quotation-${est.estimation_number || id}.pdf`,
+            content: pdfBuf,
+            contentType: 'application/pdf'
+          });
+        } catch (pdfGenErr) {
+          console.error('Error generating fallback PDF with pdfkit:', pdfGenErr);
+        }
+      }
+
       // 5. Send Email
       console.log(`📧 Attempting to send email to: ${targetEmail}`);
       const info = await transporter.sendMail({
-        from: `"Quotation System" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER}>`,
+        from: `"Codigix Quotations" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER}>`,
         to: targetEmail,
         subject: `Quotation ${est.estimation_number} - ${est.client_name || est.lead_name || ''}`,
-        html: emailHtml
+        html: emailHtml,
+        attachments: attachments
       });
       console.log('✅ Email sent successfully:', info.messageId);
       console.log('📩 Response:', info.response);

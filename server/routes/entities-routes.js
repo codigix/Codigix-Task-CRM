@@ -1269,11 +1269,8 @@ module.exports = function setupEntitiesRoutes(app, pool) {
 
       if (dealId > 1000000) {
         const leadId = dealId - 1000000;
-        const [result] = await db.query('DELETE FROM leads WHERE id = ?', [leadId]);
-        if (result.affectedRows === 0) {
-          return res.status(404).json({ error: 'Virtual deal (lead) not found' });
-        }
-        return res.json({ success: true, message: 'Virtual deal (lead) deleted successfully' });
+        await db.query("UPDATE leads SET converted_deal_id = NULL, lead_status = 'Qualified' WHERE id = ?", [leadId]);
+        return res.json({ success: true, message: 'Virtual deal unlinked successfully' });
       }
 
       const [result] = await db.query('DELETE FROM deals WHERE id = ?', [id]);

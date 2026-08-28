@@ -197,7 +197,7 @@ const CrmLeadsPage = () => {
         const newStatusStats = targetStatuses.map(status => {
           const statusLeads = formattedLeads.filter(l => {
             if (status === 'Not Contacted') return l.status === 'Not Contacted' || l.status === 'New';
-            if (status === 'Qualified') return l.status === 'Qualified' || l.status === 'Converted to Deal';
+            if (status === 'Qualified') return ['Qualified', 'Converted to Deal', 'Quotation', 'Revised Quotation', 'Quotation Sent', 'Quotation Accepted', 'Draft', 'Revised', 'Accepted'].includes(l.status);
             if (status === 'Lost') return l.status === 'Lost' || l.status === 'Unqualified';
             return l.status === status;
           });
@@ -549,7 +549,7 @@ const CrmLeadsPage = () => {
                 const stageLeads = leads.filter(lead => {
                   let matchesStatus = lead.status === statusObj.status;
                   if (statusObj.status === 'Not Contacted') matchesStatus = lead.status === 'Not Contacted' || lead.status === 'New';
-                  if (statusObj.status === 'Qualified') matchesStatus = lead.status === 'Qualified' || lead.status === 'Qualified' || lead.status === 'Converted to Deal';
+                  if (statusObj.status === 'Qualified') matchesStatus = ['Qualified', 'Converted to Deal', 'Quotation', 'Revised Quotation', 'Quotation Sent', 'Quotation Accepted', 'Draft', 'Revised', 'Accepted'].includes(lead.status);
                   if (statusObj.status === 'Lost') matchesStatus = lead.status === 'Lost' || lead.status === 'Unqualified';
 
                   const matchesSearch = !searchTerm ||

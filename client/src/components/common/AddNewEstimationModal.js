@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload } from 'lucide-react';
+import { X, Upload, RotateCcw, Mail, FileText } from 'lucide-react';
 import { dealsAPI, companiesAPI, leadsAPI, contactsAPI, projectAPI, usersAPI, estimationsAPI } from '../../services/api';
-import ReviseQuotationModal from '../sales/ReviseQuotationModal';
+import { generateQuotationPDF, generateQuotationPDFBase64 } from '../../utils/generateQuotationPDF';
 
 const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGeneratePDF }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,7 +12,8 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [deals, setDeals] = useState([]);
-  const [isReviseModalOpen, setIsReviseModalOpen] = useState(false);
+  const [isEmailPreviewOpen, setIsEmailPreviewOpen] = useState(false);
+  const [emailToRecipient, setEmailToRecipient] = useState('');
   const [formData, setFormData] = useState({
     quotationNumber: `Q-${new Date().getFullYear()}-001`,
     deal_id: '',
@@ -95,15 +96,18 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
             }
           }
 
+          const isCurrent = initialData?.id ? Number(est.id) === Number(initialData.id) : index === 0;
+
           return {
             version: `v${sortedEstimations.length - index}`,
             status: est.status,
             date: dateStr,
-            amount: parseFloat(est.amount || est.total) || 0,
+            amount: parseFloat(est.total) || parseFloat(est.amount) || 0,
             type: est.quotation_type || (est.status === 'Revised' ? 'Revised Quotation' : (est.status + ' Quotation')),
-            current: index === 0,
+            current: isCurrent,
             id: est.id,
-            number: est.estimation_number || est.quotation_number
+            number: est.estimation_number || est.quotation_number,
+            rawEst: est
           };
         });
 
@@ -119,6 +123,67 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
       console.error('Error fetching version history:', err);
     } finally {
       isFetchingVersionsRef.current = false;
+    }
+  };
+
+  const handleSelectVersion = async (v) => {
+    if (!v || !v.rawEst) return;
+    const est = v.rawEst;
+    setLoadingData(true);
+
+    try {
+      let items = [];
+      try {
+        const itemsRes = await estimationsAPI.getItems(est.id);
+        if (Array.isArray(itemsRes) && itemsRes.length > 0) {
+          items = itemsRes.map(item => ({
+            id: item.id || Date.now() + Math.random(),
+            productName: item.item_name || item.productName || item.product_name || item.name || '',
+            description: item.description || '',
+            duration: item.duration || '',
+            quantity: parseFloat(item.quantity) || 1,
+            rate: parseFloat(item.rate || item.price) || 0
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching selected version line items:', err);
+      }
+
+      if (items.length === 0) {
+        const baseRate = parseFloat(est.subtotal) || parseFloat(est.amount || est.total) || 0;
+        const defaultService = est.it_services === 'Other' ? est.it_services_other : (est.it_services && est.it_services !== 'None' ? est.it_services : (formData.project_name || formData.dealName || 'CRM'));
+        items.push({
+          id: Date.now(),
+          productName: defaultService,
+          description: est.description || '',
+          quantity: 1,
+          rate: baseRate
+        });
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        id: est.id,
+        quotationNumber: est.estimation_number || est.quotation_number || prev.quotationNumber,
+        quotationDate: est.estimate_date ? new Date(est.estimate_date).toISOString().split('T')[0] : prev.quotationDate,
+        validUntil: est.expiry_date ? new Date(est.expiry_date).toISOString().split('T')[0] : prev.validUntil,
+        status: est.status || prev.status,
+        quotationType: est.quotation_type || est.status || prev.quotationType,
+        discount: Number(est.discount || est.discount_amount) || 0,
+        taxPercentage: est.tax_percentage !== undefined ? Number(est.tax_percentage) : (est.tax_percent !== undefined ? Number(est.tax_percent) : 0),
+        notes: est.notes || '',
+        paymentTerms: est.payment_terms || prev.paymentTerms,
+        assignedExecutiveId: est.estimate_by ? est.estimate_by.toString() : prev.assignedExecutiveId,
+        items: items,
+        versionHistory: prev.versionHistory.map(item => ({
+          ...item,
+          current: Number(item.id) === Number(est.id)
+        }))
+      }));
+    } catch (err) {
+      console.error('Error selecting quotation version:', err);
+    } finally {
+      setLoadingData(false);
     }
   };
 
@@ -412,6 +477,65 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
     handleDealChangeById(e.target.value);
   };
 
+  const handleTriggerRevision = () => {
+    const currentNum = formData.quotationNumber || initialData?.quotation_number || initialData?.quotationNumber || `Q-${new Date().getFullYear()}-001`;
+    const baseNum = currentNum.split('-v')[0];
+    
+    let highestVer = 1;
+    if (Array.isArray(formData.versionHistory) && formData.versionHistory.length > 0) {
+      formData.versionHistory.forEach(v => {
+        const match = (v.number || '').match(/-v(\d+)$/);
+        if (match) {
+          const verNum = parseInt(match[1], 10);
+          if (verNum >= highestVer) highestVer = verNum;
+        } else if (v.version && v.version.startsWith('v')) {
+          const verNum = parseInt(v.version.replace('v', ''), 10);
+          if (verNum >= highestVer) highestVer = verNum;
+        }
+      });
+    }
+    const nextVer = highestVer + 1;
+    const newQuotationNumber = `${baseNum}-v${nextVer}`;
+
+    const leadItService = formData.it_services === 'Other' 
+      ? (formData.it_services_other || initialData?.it_services_other || 'CRM') 
+      : (formData.it_services || initialData?.it_services);
+
+    setFormData(prev => ({
+      ...prev,
+      id: null,
+      quotationNumber: newQuotationNumber,
+      status: 'Draft',
+      quotationType: 'Revised',
+      isRevision: true,
+      isCreatingRevision: true,
+      revisionNumber: `v${nextVer}`,
+      revisionReason: prev.revisionReason || 'Quotation revision requested by client',
+      revisionDate: new Date().toISOString().split('T')[0],
+      items: Array.isArray(prev.items) && prev.items.length > 0
+        ? prev.items.map(item => {
+            const isGenericName = !item.productName || item.productName === 'Service' || item.productName === prev.client || item.productName === prev.contactPerson || item.productName === prev.businessType || item.productName === 'Software Services';
+            const name = !isGenericName
+              ? item.productName 
+              : (leadItService || prev.project_name || prev.dealName || 'CRM');
+            return {
+              ...item,
+              id: Date.now() + Math.random(),
+              productName: name,
+              description: item.description || '',
+              duration: item.duration || '',
+              quantity: parseFloat(item.quantity) || 1,
+              rate: 0
+            };
+          })
+        : [{ id: Date.now(), productName: leadItService || prev.project_name || prev.dealName || 'CRM', description: '', duration: '', quantity: 1, rate: 0 }],
+      discount: 0,
+      taxPercentage: prev.taxPercentage !== undefined ? prev.taxPercentage : 10,
+      paymentTerms: prev.paymentTerms || '50% advance payment. Balance due upon project completion.',
+      notes: prev.notes || ''
+    }));
+  };
+
   useEffect(() => {
     if (isOpen) {
       fetchClientsAndProjects();
@@ -420,65 +544,109 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
         const deal_id = initialData.deal_id ? initialData.deal_id.toString() : (initialData.lead_id ? (Number(initialData.lead_id) + 1000000).toString() : (!isQuotation && Number(initialData.id) <= 1000000 ? initialData.id.toString() : ''));
         const lead_id = initialData.lead_id ? initialData.lead_id.toString() : (!isQuotation && Number(initialData.id) > 1000000 ? (Number(initialData.id) - 1000000).toString() : '');
 
-        setFormData(prev => ({
-          ...prev,
-          quotationNumber: initialData.quotation_number || initialData.quotationNumber || `Q-${new Date().getFullYear()}-001`,
-          client: initialData.company_name || initialData.client_name || initialData.client || '',
-          client_id: initialData.client_id || initialData.company_id || '',
-          lead_id: lead_id,
-          deal_id: deal_id,
-          project_id: initialData.project_id ? initialData.project_id.toString() : '',
-          dealName: initialData.deal_name || initialData.dealName || '',
-          project_name: initialData.project_name || initialData.deal_name || initialData.dealName || '',
-          contactPerson: initialData.contact_first_name ? `${initialData.contact_first_name} ${initialData.contact_last_name || ''}`.trim() : (initialData.contact_person || initialData.contactPerson || ''),
-          assignedExecutiveId: initialData.assignee_id || initialData.assigned_executive_id || initialData.user_id || initialData.estimate_by || '',
-          quotationDate: initialData.quotation_date ? new Date(initialData.quotation_date).toISOString().split('T')[0] : (initialData.estimate_date ? new Date(initialData.estimate_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
-          validUntil: initialData.valid_until ? new Date(initialData.valid_until).toISOString().split('T')[0] : (initialData.expiry_date ? new Date(initialData.expiry_date).toISOString().split('T')[0] : ''),
-          status: initialData.status || 'Draft',
-          quotationType: initialData.quotation_type || initialData.quotationType || 'Draft',
-          businessType: initialData.business_type || initialData.businessType || '',
-          items: Array.isArray(initialData.items) && initialData.items.length > 0
-            ? initialData.items.map(item => ({
-              ...item,
-              productName: item.productName || item.item_name || item.product_name || item.name || '',
-              rate: parseFloat(item.rate || item.price) || 0,
-              quantity: parseFloat(item.quantity) || 1
-            }))
-            : (() => {
-              const services = [];
-              if (initialData.it_services && initialData.it_services !== 'None') {
-                services.push({
-                  id: Date.now() + 1,
-                  productName: initialData.it_services === 'Other' ? initialData.it_services_other : initialData.it_services,
-                  description: initialData.description || '',
-                  quantity: 1,
-                  rate: parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0
-                });
-              }
-              const marketingServices = parseJson(initialData.marketing_services);
-              if (Array.isArray(marketingServices) && marketingServices.length > 0) {
-                marketingServices.forEach((service, index) => {
+        const defaultItService = initialData.it_services === 'Other' ? (initialData.it_services_other || 'CRM') : (initialData.it_services || 'CRM');
+
+        if (initialData.openRevisionDirectly) {
+          const currentNum = initialData.quotation_number || initialData.quotationNumber || `Q-${new Date().getFullYear()}-001`;
+          const baseNum = currentNum.split('-v')[0];
+          const verNum = (initialData.version ? parseInt(initialData.version, 10) : 1) + 1;
+          const newQuotationNumber = `${baseNum}-v${verNum}`;
+
+          setFormData(prev => ({
+            ...prev,
+            id: null,
+            quotationNumber: newQuotationNumber,
+            client: initialData.company_name || initialData.client_name || initialData.client || '',
+            client_id: initialData.client_id || initialData.company_id || '',
+            lead_id: lead_id,
+            deal_id: deal_id,
+            project_id: initialData.project_id ? initialData.project_id.toString() : '',
+            dealName: initialData.deal_name || initialData.dealName || '',
+            project_name: initialData.project_name || initialData.deal_name || initialData.dealName || '',
+            contactPerson: initialData.contact_first_name ? `${initialData.contact_first_name} ${initialData.contact_last_name || ''}`.trim() : (initialData.contact_person || initialData.contactPerson || ''),
+            assignedExecutiveId: initialData.assignee_id || initialData.assigned_executive_id || initialData.user_id || initialData.estimate_by || '',
+            quotationDate: new Date().toISOString().split('T')[0],
+            validUntil: '',
+            status: 'Draft',
+            quotationType: 'Revised',
+            isRevision: true,
+            isCreatingRevision: true,
+            revisionNumber: `v${verNum}`,
+            revisionReason: 'Quotation revision requested by client',
+            revisionDate: new Date().toISOString().split('T')[0],
+            items: [{ id: Date.now(), productName: defaultItService, description: '', duration: '', quantity: 1, rate: 0 }],
+            discount: 0,
+            taxPercentage: initialData.tax_percentage !== undefined ? Number(initialData.tax_percentage) : 10,
+            paymentTerms: initialData.payment_terms || initialData.paymentTerms || '50% advance payment. Balance due upon project completion.',
+            notes: '',
+            currency: initialData.currency || 'INR',
+            client_email: initialData.client_email || initialData.email || '',
+            client_phone: initialData.client_phone || initialData.phone || '',
+            business_description: initialData.business_description || initialData.description || '',
+            referral_name: initialData.referral_name || '',
+          }));
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            id: initialData.id || null,
+            quotationNumber: initialData.quotation_number || initialData.quotationNumber || `Q-${new Date().getFullYear()}-001`,
+            client: initialData.company_name || initialData.client_name || initialData.client || '',
+            client_id: initialData.client_id || initialData.company_id || '',
+            lead_id: lead_id,
+            deal_id: deal_id,
+            project_id: initialData.project_id ? initialData.project_id.toString() : '',
+            dealName: initialData.deal_name || initialData.dealName || '',
+            project_name: initialData.project_name || initialData.deal_name || initialData.dealName || '',
+            contactPerson: initialData.contact_first_name ? `${initialData.contact_first_name} ${initialData.contact_last_name || ''}`.trim() : (initialData.contact_person || initialData.contactPerson || ''),
+            assignedExecutiveId: initialData.assignee_id || initialData.assigned_executive_id || initialData.user_id || initialData.estimate_by || '',
+            quotationDate: initialData.quotation_date ? new Date(initialData.quotation_date).toISOString().split('T')[0] : (initialData.estimate_date ? new Date(initialData.estimate_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+            validUntil: initialData.valid_until ? new Date(initialData.valid_until).toISOString().split('T')[0] : (initialData.expiry_date ? new Date(initialData.expiry_date).toISOString().split('T')[0] : ''),
+            status: initialData.status || 'Draft',
+            quotationType: initialData.quotation_type || initialData.quotationType || 'Draft',
+            businessType: initialData.business_type || initialData.businessType || '',
+            items: Array.isArray(initialData.items) && initialData.items.length > 0
+              ? initialData.items.map(item => ({
+                ...item,
+                productName: item.productName || item.item_name || item.product_name || item.name || '',
+                rate: parseFloat(item.rate || item.price) || 0,
+                quantity: parseFloat(item.quantity) || 1
+              }))
+              : (() => {
+                const services = [];
+                if (initialData.it_services && initialData.it_services !== 'None') {
                   services.push({
-                    id: Date.now() + 100 + index,
-                    productName: service,
-                    description: index === 0 && services.length === 0 ? (initialData.description || '') : '',
+                    id: Date.now() + 1,
+                    productName: initialData.it_services === 'Other' ? initialData.it_services_other : initialData.it_services,
+                    description: initialData.description || '',
                     quantity: 1,
-                    rate: (index === 0 && services.length === 0) ? (parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0) : 0
+                    rate: parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0
                   });
-                });
-              }
-              return services.length > 0 ? services : (initialData.amount || initialData.deal_value ? [{ id: Date.now(), productName: initialData.project_name || initialData.deal_name || 'Service', description: initialData.description || '', quantity: 1, rate: parseFloat(initialData.amount || initialData.deal_value) }] : [{ id: Date.now(), productName: '', description: '', quantity: 1, rate: 0 }]);
-            })(),
-          paymentTerms: initialData.payment_terms || initialData.paymentTerms || '50% advance payment. Balance due upon project completion.',
-          notes: initialData.notes || '',
-          currency: initialData.currency || 'INR',
-          discount: Number(initialData.discount || initialData.discount_amount) || 0,
-          taxPercentage: initialData.tax_percentage !== undefined ? Number(initialData.tax_percentage) : 10,
-          client_email: initialData.client_email || initialData.email || '',
-          client_phone: initialData.client_phone || initialData.phone || '',
-          business_description: initialData.business_description || initialData.description || '',
-          referral_name: initialData.referral_name || '',
-        }));
+                }
+                const marketingServices = parseJson(initialData.marketing_services);
+                if (Array.isArray(marketingServices) && marketingServices.length > 0) {
+                  marketingServices.forEach((service, index) => {
+                    services.push({
+                      id: Date.now() + 100 + index,
+                      productName: service,
+                      description: index === 0 && services.length === 0 ? (initialData.description || '') : '',
+                      quantity: 1,
+                      rate: (index === 0 && services.length === 0) ? (parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0) : 0
+                    });
+                  });
+                }
+                return services.length > 0 ? services : (initialData.amount || initialData.deal_value ? [{ id: Date.now(), productName: defaultItService, description: initialData.description || '', quantity: 1, rate: parseFloat(initialData.amount || initialData.deal_value) || 0 }] : [{ id: Date.now(), productName: defaultItService, description: '', quantity: 1, rate: 0 }]);
+              })(),
+            paymentTerms: initialData.payment_terms || initialData.paymentTerms || '50% advance payment. Balance due upon project completion.',
+            notes: initialData.notes || '',
+            currency: initialData.currency || 'INR',
+            discount: Number(initialData.discount || initialData.discount_amount) || 0,
+            taxPercentage: initialData.tax_percentage !== undefined ? Number(initialData.tax_percentage) : 10,
+            client_email: initialData.client_email || initialData.email || '',
+            client_phone: initialData.client_phone || initialData.phone || '',
+            business_description: initialData.business_description || initialData.description || '',
+            referral_name: initialData.referral_name || '',
+          }));
+        }
 
         // Fetch version history
         const qNum = initialData.quotation_number || initialData.quotationNumber || `Q-${new Date().getFullYear()}-001`;
@@ -529,12 +697,12 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
   }, [isOpen, initialData?.id]);
 
   const calculatePricing = () => {
-    const subtotal = formData.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
-    const discountAmount = Number(formData.discount) || 0;
+    const subtotal = Math.round(formData.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0) * 100) / 100;
+    const discountAmount = Math.round((Number(formData.discount) || 0) * 100) / 100;
     const amountAfterDiscount = subtotal - discountAmount;
     const taxRate = Number(formData.taxPercentage) || 0;
-    const tax = amountAfterDiscount * (taxRate / 100);
-    const total = amountAfterDiscount + tax;
+    const tax = Math.round((amountAfterDiscount * (taxRate / 100)) * 100) / 100;
+    const total = Math.round((amountAfterDiscount + tax) * 100) / 100;
     return { subtotal, discountAmount, tax, total };
   };
 
@@ -608,15 +776,15 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
     }
   };
 
-  const handleSubmit = async (e, manualStatus = null, shouldSendEmail = false) => {
+  const handleSubmit = async (e, manualStatus = null, shouldSendEmail = false, overrideData = null) => {
     if (e && e.preventDefault) e.preventDefault();
     setError('');
 
-    // Determine status - use manualStatus if provided, otherwise formData.status
-    const currentStatus = manualStatus || formData.status;
-    const sendEmail = shouldSendEmail || formData.shouldSendEmail;
+    const activeForm = overrideData || formData;
+    const currentStatus = manualStatus || activeForm.status;
+    const sendEmail = shouldSendEmail || activeForm.shouldSendEmail;
 
-    console.log('📝 Submitting form with data:', { ...formData, status: currentStatus, shouldSendEmail: sendEmail });
+    console.log('📝 Submitting form with data:', { ...activeForm, status: currentStatus, shouldSendEmail: sendEmail });
 
     // Validation
     if (!formData.quotationNumber) {
@@ -672,26 +840,49 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
     setIsLoading(true);
     try {
       if (onSubmit) {
-        // Ensure all required fields for backend are present
+        let finalQuotationNumber = formData.quotationNumber;
+        const isRev = formData.isRevision || formData.isCreatingRevision;
+        if (isRev) {
+          if (!finalQuotationNumber.includes('-v')) {
+            const baseNum = finalQuotationNumber.split('-v')[0];
+            let highestVer = 1;
+            if (Array.isArray(formData.versionHistory) && formData.versionHistory.length > 0) {
+              formData.versionHistory.forEach(v => {
+                const num = v.number || (v.rawEst && v.rawEst.estimation_number) || '';
+                const match = num.match(/-v(\d+)$/);
+                if (match) {
+                  const verNum = parseInt(match[1], 10);
+                  if (verNum >= highestVer) highestVer = verNum;
+                }
+              });
+            }
+            finalQuotationNumber = `${baseNum}-v${highestVer + 1}`;
+          }
+        }
+
         const isVirtualDeal = formData.deal_id && Number(formData.deal_id) > 1000000;
+        const verMatch = finalQuotationNumber.match(/-v(\d+)$/);
+        const currentVersion = verMatch ? parseInt(verMatch[1], 10) : (formData.version ? parseInt(formData.version, 10) : 1);
+
         const submitData = {
-          ...formData,
+          ...activeForm,
+          version: currentVersion,
+          quotationNumber: finalQuotationNumber,
+          estimation_number: finalQuotationNumber,
           status: currentStatus,
           shouldSendEmail: sendEmail,
-          // Keep original deal_id for status updates in onSubmit, 
-          // but provide null/lead_id for estimation creation if needed
-          deal_id_original: formData.deal_id,
-          deal_id: isVirtualDeal ? null : formData.deal_id,
-          lead_id: formData.lead_id || (isVirtualDeal ? (Number(formData.deal_id) - 1000000) : null),
-          tags: formData.tags || [],
+          deal_id_original: activeForm.deal_id,
+          deal_id: isVirtualDeal ? null : activeForm.deal_id,
+          lead_id: activeForm.lead_id || (isVirtualDeal ? (Number(activeForm.deal_id) - 1000000) : null),
+          tags: activeForm.tags || [],
           amount: total,
           subtotal: subtotal,
           tax_amount: tax,
-          tax_percentage: Number(formData.taxPercentage) || 0,
+          tax_percentage: Number(activeForm.taxPercentage) || 0,
           discount_amount: discountAmount,
-          estimate_date: formData.quotationDate ? (formData.quotationDate.includes('T') ? formData.quotationDate.split('T')[0] : formData.quotationDate) : new Date().toISOString().split('T')[0],
-          expiry_date: formData.validUntil ? (formData.validUntil.includes('T') ? formData.validUntil.split('T')[0] : formData.validUntil) : null,
-          estimate_by: formData.assignedExecutiveId,
+          estimate_date: activeForm.quotationDate ? (activeForm.quotationDate.includes('T') ? activeForm.quotationDate.split('T')[0] : activeForm.quotationDate) : new Date().toISOString().split('T')[0],
+          expiry_date: activeForm.validUntil ? (activeForm.validUntil.includes('T') ? activeForm.validUntil.split('T')[0] : activeForm.validUntil) : null,
+          estimate_by: activeForm.assignedExecutiveId,
         };
 
         await onSubmit(submitData);
@@ -1173,33 +1364,57 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
               <div className="bg-white rounded border border-gray-200 overflow-hidden">
                 <div className="p-3 bg-gray-50/50 border-b border-gray-200 text-xs  text-gray-800 ">Version History</div>
                 <div className="p-4 space-y-4">
-                  {formData.versionHistory.map((v, i) => (
-                    <div key={i} className={`flex items-start gap-3 ${i > 0 ? 'opacity-50' : ''}`}>
-                      <div className="w-8 h-8 rounded bg-gray-50 border border-gray-100 flex items-center justify-center text-xs font-[500] text-gray-400">{v.version.toUpperCase()}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-baseline mb-0.5">
-                          <span className="text-xs  text-gray-900 truncate">{v.type || v.status}</span>
-                          <span className="text-xs  text-gray-900">₹ {Number(v.amount || 0).toLocaleString()}</span>
+                  {formData.versionHistory.map((v, i) => {
+                    const isSelected = v.current || Number(formData.id) === Number(v.id);
+                    return (
+                      <div 
+                        key={i} 
+                        onClick={() => handleSelectVersion(v)}
+                        className={`flex items-start gap-3 p-2 rounded cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-blue-50/80 border border-blue-300 shadow-xs'
+                            : 'hover:bg-gray-50 border border-transparent opacity-75 hover:opacity-100'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded border flex items-center justify-center text-xs font-[500] ${
+                          isSelected
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-gray-50 border-gray-200 text-gray-500'
+                        }`}>
+                          {v.version.toUpperCase()}
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          <span>{v.date}</span>
-                          {v.current && <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-baseline mb-0.5">
+                            <span className={`text-xs truncate ${isSelected ? 'font-[500] text-blue-900' : 'text-gray-900'}`}>{v.type || v.status}</span>
+                            <span className={`text-xs ${isSelected ? 'font-[500] text-blue-900' : 'text-gray-900'}`}>₹ {Number(v.amount || 0).toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <span>{v.date}</span>
+                            {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Revision Details Card */}
               <div className="bg-white rounded border border-gray-200 overflow-hidden">
-                <div className="p-3 bg-gray-50/50 border-b border-gray-200 text-xs  text-gray-800 ">Revision Details</div>
+                <div className="p-3 bg-gray-50/50 border-b border-gray-200 text-xs text-gray-800 font-medium">Revision Details</div>
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs  text-gray-600">Create Revision</span>
+                    <span className="text-xs text-gray-600">Create Revision</span>
                     <button
-                      onClick={() => setFormData(prev => ({ ...prev, isRevision: !prev.isRevision }))}
-                      className={`w-10 h-5 rounded-full relative transition-colors duration-200 ${formData.isRevision ? 'bg-blue-600' : 'bg-gray-200'}`}
+                      type="button"
+                      onClick={() => {
+                        if (!formData.isRevision) {
+                          handleTriggerRevision();
+                        } else {
+                          setFormData(prev => ({ ...prev, isRevision: false, isCreatingRevision: false }));
+                        }
+                      }}
+                      className={`w-10 h-5 rounded-full relative transition-colors duration-200 ${formData.isRevision ? 'bg-orange-600' : 'bg-gray-200'}`}
                     >
                       <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-0.75 transition-all duration-200 ${formData.isRevision ? 'right-1' : 'left-1'}`}></div>
                     </button>
@@ -1249,31 +1464,48 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
             <button
               type="button"
               onClick={handleSubmit}
-              className="p-2 bg-green-600 text-white rounded text-xs  hover:bg-green-700 transition-all "
+              className="p-2 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-all"
             >
               Save Quotation
             </button>
             <button
               type="button"
-              onClick={(e) => handleSubmit(e, 'Sent', true)}
-              className="p-2 bg-blue-500 text-white rounded text-xs  hover:bg-blue-600 transition-all "
+              onClick={() => {
+                const email = formData.client_email || formData.email || '';
+                setEmailToRecipient(email);
+                setIsEmailPreviewOpen(true);
+              }}
+              className="p-2 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-all font-medium flex items-center gap-1"
             >
+              <Mail size={12} />
               Send to Client
             </button>
 
-            {initialData && initialData.id && initialData.id !== 'NEW' && (
-              <button
-                type="button"
-                onClick={() => setIsReviseModalOpen(true)}
-                className="p-2 bg-orange-500 text-white rounded text-xs  hover:bg-orange-600 transition-all "
-              >
-                Create Revision
-              </button>
-            )}
             <button
               type="button"
-              className="p-2 bg-red-600 text-white rounded text-xs  hover:bg-red-700 shadow-md transition-all disabled:opacity-50"
-              onClick={() => onGeneratePDF && onGeneratePDF(formData)}
+              onClick={() => {
+                if (!formData.isRevision) {
+                  handleTriggerRevision();
+                } else {
+                  handleSubmit();
+                }
+              }}
+              className="p-2 bg-orange-500 text-white rounded text-xs hover:bg-orange-600 transition-all font-medium flex items-center gap-1"
+            >
+              <RotateCcw size={12} />
+              {formData.isRevision ? 'Save Revision' : 'Create Revision'}
+            </button>
+
+            <button
+              type="button"
+              className="p-2 bg-red-600 text-white rounded text-xs hover:bg-red-700 shadow-md transition-all disabled:opacity-50"
+              onClick={() => {
+                if (onGeneratePDF) {
+                  onGeneratePDF(formData);
+                } else {
+                  generateQuotationPDF(formData);
+                }
+              }}
               disabled={isLoading}
             >
               Generate PDF
@@ -1282,21 +1514,147 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
         </div>
       </div>
 
-      <ReviseQuotationModal
-        isOpen={isReviseModalOpen}
-        onClose={() => setIsReviseModalOpen(false)}
-        quotation={{ ...initialData, ...formData }}
-        onUpdate={() => {
-          setIsReviseModalOpen(false);
-          onClose();
-          // Just notify parent to refresh data, don't try to submit again
-          if (onSubmit) {
-            // We call onSubmit with null to signify a refresh is needed 
-            // without providing new formData to create
-            onSubmit(null);
-          }
-        }}
-      />
+      {/* Send Quotation Email Preview Modal */}
+      {isEmailPreviewOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+          <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
+                  <Mail size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-white">Send Quotation Email Preview</h3>
+                  <p className="text-xs text-slate-400">Review all quotation details before sending to client</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsEmailPreviewOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-5 overflow-y-auto space-y-4 text-xs text-gray-700">
+              
+              {/* Email Meta Card */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-gray-600 w-20">To Email:</span>
+                  <input 
+                    type="email" 
+                    value={emailToRecipient} 
+                    onChange={(e) => setEmailToRecipient(e.target.value)} 
+                    placeholder="Enter client email..." 
+                    className="flex-1 px-2.5 py-1 border border-gray-300 rounded font-medium text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-gray-600 w-20">Subject:</span>
+                  <span className="font-medium text-gray-900 truncate">
+                    Quotation #{formData.quotationNumber} for {formData.client || formData.contactPerson} - Codigix Infotech
+                  </span>
+                </div>
+              </div>
+
+              {/* Client & Quotation Info */}
+              <div className="grid grid-cols-2 gap-3 bg-blue-50/50 border border-blue-100 rounded-lg p-3">
+                <div>
+                  <p className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">Client Information</p>
+                  <p className="font-bold text-gray-900 text-sm mt-0.5">{formData.contactPerson || formData.client || 'Valued Client'}</p>
+                  <p className="text-gray-600">{formData.client}</p>
+                  <p className="text-gray-500">{formData.client_phone || formData.businessType}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">Quotation Information</p>
+                  <p className="font-bold text-gray-900 text-sm mt-0.5">#{formData.quotationNumber}</p>
+                  <p className="text-gray-600">Date: {formData.quotationDate}</p>
+                  <p className="text-gray-500">Valid Until: {formData.validUntil || 'N/A'}</p>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-gray-100 border-b border-gray-200">
+                    <tr>
+                      <th className="p-2 font-semibold text-gray-700">Item / Service</th>
+                      <th className="p-2 font-semibold text-gray-700 text-center">Qty</th>
+                      <th className="p-2 font-semibold text-gray-700 text-right">Rate</th>
+                      <th className="p-2 font-semibold text-gray-700 text-right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {formData.items.map((item, idx) => (
+                      <tr key={idx}>
+                        <td className="p-2 font-medium text-gray-900">{item.productName || 'Software Service'}</td>
+                        <td className="p-2 text-center text-gray-600">{item.quantity}</td>
+                        <td className="p-2 text-right text-gray-600">₹{Number(item.rate).toLocaleString()}</td>
+                        <td className="p-2 text-right font-semibold text-gray-900">₹{Number(item.quantity * item.rate).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Financial Summary */}
+              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 text-blue-700 font-medium">
+                  <FileText size={16} className="text-red-500" />
+                  <span>Attachment: <strong>Quotation-{formData.quotationNumber}.pdf</strong></span>
+                </div>
+                <div className="text-right space-y-0.5">
+                  <p className="text-gray-600">Subtotal: <span className="font-semibold text-gray-900">₹{Number(subtotal).toLocaleString()}</span></p>
+                  {tax > 0 && <p className="text-gray-600">Tax ({formData.taxPercentage}%): <span className="font-semibold text-gray-900">₹{Number(tax).toLocaleString()}</span></p>}
+                  <p className="text-sm font-bold text-gray-900">Total Amount: <span className="text-blue-600">₹{Number(total).toLocaleString()}</span></p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+              <button
+                type="button"
+                onClick={() => setIsEmailPreviewOpen(false)}
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async (e) => {
+                  setIsEmailPreviewOpen(false);
+                  const targetEmail = emailToRecipient || formData.client_email || formData.email || '';
+                  let pdfBase64 = null;
+                  try {
+                    pdfBase64 = await generateQuotationPDFBase64(formData);
+                  } catch (pdfErr) {
+                    console.warn('Could not generate PDF base64 attachment:', pdfErr);
+                  }
+                  const updatedFormData = {
+                    ...formData,
+                    client_email: targetEmail,
+                    email: targetEmail,
+                    status: 'Sent',
+                    shouldSendEmail: true,
+                    pdfBase64: pdfBase64
+                  };
+                  setFormData(updatedFormData);
+                  await handleSubmit(e, 'Sent', true, updatedFormData);
+                }}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-md flex items-center gap-2 transition-all"
+              >
+                <Mail size={14} />
+                Confirm & Send Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
