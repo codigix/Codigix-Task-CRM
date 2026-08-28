@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  TrendingUp, TrendingDown, RefreshCw, Eye, ArrowUpRight, Cpu, 
+  TrendingUp, TrendingDown, RefreshCw, Eye, ArrowUpRight, Cpu,
   MapPin, Link, Focus, BarChart2, AlertTriangle, Shield, CheckCircle,
   Clock, Download, ChevronRight, Activity, Search, Target, DollarSign,
   PieChart as PieChartIcon, Globe, ArrowLeft, Sparkles, Sliders, Hash,
@@ -23,7 +23,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
   const [forecastType, setForecastType] = useState('Traffic Forecast');
 
   const tabs = [
-    'Overview', 'Traffic Forecast', 'Keyword Forecast', 'AI Visibility Forecast', 
+    'Overview', 'Traffic Forecast', 'Keyword Forecast', 'AI Visibility Forecast',
     'Conversions Forecast', 'Competitor Forecast', 'Opportunities', 'Risk Analysis', 'Reports'
   ];
 
@@ -58,7 +58,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
         <div className={`p-2 rounded-lg bg-opacity-10 ${colorClass.replace('text', 'bg')}`}>
           <Icon size={18} className={colorClass} />
         </div>
-        <span className="text-gray-900 text-[11px] font-semibold">{title}</span>
+        <span className="text-gray-900 text-xs font-semibold">{title}</span>
       </div>
       <div className="flex justify-between items-end">
         <div>
@@ -109,8 +109,8 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <ComposedChart data={trafficData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorPred" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
@@ -151,7 +151,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
                 { o: 'Expand Content Clusters', i: 'Medium', e: 'Medium', s: 78 },
               ].map((row, i) => (
                 <tr key={i} className="text-gray-700">
-                  <td className="py-3 font-medium flex items-center gap-2"><Target size={12} className="text-indigo-500"/> {row.o}</td>
+                  <td className="py-3 font-medium flex items-center gap-2"><Target size={12} className="text-indigo-500" /> {row.o}</td>
                   <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded font-bold ${row.i === 'High' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>{row.i}</span></td>
                   <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded font-bold ${row.e === 'Low' ? 'text-green-600 bg-green-50' : row.e === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50'}`}>{row.e}</span></td>
                   <td className="py-3 text-center">
@@ -167,55 +167,55 @@ const SeoGmbPredictiveAnalysisPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Shortened versions of the other forecasts for Overview */}
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-           <h3 className="font-semibold text-gray-900 mb-4 text-xs">Keyword Forecast</h3>
-           <table className="w-full text-left text-[10px] whitespace-nowrap">
-              <thead>
-                <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                  <th className="pb-2 font-semibold">Keyword</th>
-                  <th className="pb-2 font-semibold text-center">Cur</th>
-                  <th className="pb-2 font-semibold text-center">Pred</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                 <tr><td className="py-2 text-indigo-600">cloud erp software</td><td className="py-2 text-center text-gray-500">8</td><td className="py-2 text-center text-green-600 font-bold">3</td></tr>
-                 <tr><td className="py-2 text-indigo-600">manufacturing erp</td><td className="py-2 text-center text-gray-500">12</td><td className="py-2 text-center text-green-600 font-bold">6</td></tr>
-                 <tr><td className="py-2 text-indigo-600">erp for sme</td><td className="py-2 text-center text-gray-500">15</td><td className="py-2 text-center text-green-600 font-bold">7</td></tr>
-              </tbody>
-           </table>
-           <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('Keyword Forecast')}>View Full Forecast &rarr;</button>
+          <h3 className="font-semibold text-gray-900 mb-4 text-xs">Keyword Forecast</h3>
+          <table className="w-full text-left text-[10px] whitespace-nowrap">
+            <thead>
+              <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
+                <th className="pb-2 font-semibold">Keyword</th>
+                <th className="pb-2 font-semibold text-center">Cur</th>
+                <th className="pb-2 font-semibold text-center">Pred</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              <tr><td className="py-2 text-indigo-600">cloud erp software</td><td className="py-2 text-center text-gray-500">8</td><td className="py-2 text-center text-green-600 font-bold">3</td></tr>
+              <tr><td className="py-2 text-indigo-600">manufacturing erp</td><td className="py-2 text-center text-gray-500">12</td><td className="py-2 text-center text-green-600 font-bold">6</td></tr>
+              <tr><td className="py-2 text-indigo-600">erp for sme</td><td className="py-2 text-center text-gray-500">15</td><td className="py-2 text-center text-green-600 font-bold">7</td></tr>
+            </tbody>
+          </table>
+          <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('Keyword Forecast')}>View Full Forecast &rarr;</button>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-           <h3 className="font-semibold text-gray-900 mb-4 text-xs">AI Visibility Forecast</h3>
-           <table className="w-full text-left text-[10px] whitespace-nowrap">
-              <thead>
-                <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                  <th className="pb-2 font-semibold">Platform</th>
-                  <th className="pb-2 font-semibold text-center">Cur Score</th>
-                  <th className="pb-2 font-semibold text-center">Pred Score</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                 <tr><td className="py-2">ChatGPT</td><td className="py-2 text-center text-gray-500">68/100</td><td className="py-2 text-center text-green-600 font-bold">82/100</td></tr>
-                 <tr><td className="py-2">Google AI Overview</td><td className="py-2 text-center text-gray-500">72/100</td><td className="py-2 text-center text-green-600 font-bold">86/100</td></tr>
-                 <tr><td className="py-2">Gemini</td><td className="py-2 text-center text-gray-500">65/100</td><td className="py-2 text-center text-green-600 font-bold">78/100</td></tr>
-              </tbody>
-           </table>
-           <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('AI Visibility Forecast')}>View Full AI Visibility &rarr;</button>
+          <h3 className="font-semibold text-gray-900 mb-4 text-xs">AI Visibility Forecast</h3>
+          <table className="w-full text-left text-[10px] whitespace-nowrap">
+            <thead>
+              <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
+                <th className="pb-2 font-semibold">Platform</th>
+                <th className="pb-2 font-semibold text-center">Cur Score</th>
+                <th className="pb-2 font-semibold text-center">Pred Score</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              <tr><td className="py-2">ChatGPT</td><td className="py-2 text-center text-gray-500">68/100</td><td className="py-2 text-center text-green-600 font-bold">82/100</td></tr>
+              <tr><td className="py-2">Google AI Overview</td><td className="py-2 text-center text-gray-500">72/100</td><td className="py-2 text-center text-green-600 font-bold">86/100</td></tr>
+              <tr><td className="py-2">Gemini</td><td className="py-2 text-center text-gray-500">65/100</td><td className="py-2 text-center text-green-600 font-bold">78/100</td></tr>
+            </tbody>
+          </table>
+          <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('AI Visibility Forecast')}>View Full AI Visibility &rarr;</button>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-           <h3 className="font-semibold text-gray-900 mb-4 text-xs">Conversions Forecast</h3>
-           <div className="h-[120px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={convData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#9CA3AF' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#9CA3AF' }} />
-                    <Bar dataKey="pred" fill="#8B5CF6" radius={[2, 2, 0, 0]} barSize={15} />
-                 </BarChart>
-              </ResponsiveContainer>
-           </div>
-           <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('Conversions Forecast')}>View Full Conversions &rarr;</button>
+          <h3 className="font-semibold text-gray-900 mb-4 text-xs">Conversions Forecast</h3>
+          <div className="h-[120px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={convData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#9CA3AF' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#9CA3AF' }} />
+                <Bar dataKey="pred" fill="#8B5CF6" radius={[2, 2, 0, 0]} barSize={15} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('Conversions Forecast')}>View Full Conversions &rarr;</button>
         </div>
       </div>
     </div>
@@ -236,8 +236,8 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <ComposedChart data={trafficData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorPred" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
@@ -254,33 +254,33 @@ const SeoGmbPredictiveAnalysisPage = () => {
             </ResponsiveContainer>
           </div>
           <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
-             <Download size={12} /> Download Forecast Report
+            <Download size={12} /> Download Forecast Report
           </button>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
           <h3 className="font-semibold text-gray-900 mb-6">Forecast Summary</h3>
           <div className="space-y-4">
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Predicted Traffic (Next 90 Days)</span>
-                <span className="font-bold text-gray-900">48,756</span>
-             </div>
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Upper Range</span>
-                <span className="font-bold text-gray-900">64,240</span>
-             </div>
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Lower Range</span>
-                <span className="font-bold text-gray-900">45,120</span>
-             </div>
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Avg. Daily Traffic</span>
-                <span className="font-bold text-gray-900">1,625</span>
-             </div>
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Growth Rate</span>
-                <span className="font-bold text-green-600">18.6%</span>
-             </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Predicted Traffic (Next 90 Days)</span>
+              <span className="font-bold text-gray-900">48,756</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Upper Range</span>
+              <span className="font-bold text-gray-900">64,240</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Lower Range</span>
+              <span className="font-bold text-gray-900">45,120</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Avg. Daily Traffic</span>
+              <span className="font-bold text-gray-900">1,625</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Growth Rate</span>
+              <span className="font-bold text-green-600">18.6%</span>
+            </div>
           </div>
         </div>
       </div>
@@ -290,56 +290,56 @@ const SeoGmbPredictiveAnalysisPage = () => {
   const renderKeywordForecastTab = () => (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-         <KPICard title="Total Keywords Tracked" value="342" icon={Target} colorClass="text-purple-600" />
-         <KPICard title="Improving Keywords" value="186" change="15" changeLabel="up" icon={TrendingUp} colorClass="text-green-600" />
-         <KPICard title="Declining Keywords" value="42" change="-5" changeLabel="down" icon={TrendingDown} colorClass="text-red-500" />
-         <KPICard title="New Opportunities" value="114" icon={Eye} colorClass="text-blue-600" />
+        <KPICard title="Total Keywords Tracked" value="342" icon={Target} colorClass="text-purple-600" />
+        <KPICard title="Improving Keywords" value="186" change="15" changeLabel="up" icon={TrendingUp} colorClass="text-green-600" />
+        <KPICard title="Declining Keywords" value="42" change="-5" changeLabel="down" icon={TrendingDown} colorClass="text-red-500" />
+        <KPICard title="New Opportunities" value="114" icon={Eye} colorClass="text-blue-600" />
       </div>
       <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-         <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900">Keyword Forecast</h3>
-            <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
-              <option>Next 90 Days ▾</option>
-            </select>
-         </div>
-         <div className="overflow-x-auto">
-            <table className="w-full text-left text-[11px] whitespace-nowrap">
-               <thead>
-                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                   <th className="pb-3 font-semibold">Keyword</th>
-                   <th className="pb-3 font-semibold text-center">Current Rank</th>
-                   <th className="pb-3 font-semibold text-center">Predicted Rank</th>
-                   <th className="pb-3 font-semibold text-center">Change</th>
-                   <th className="pb-3 font-semibold text-center">Probability</th>
-                   <th className="pb-3 font-semibold text-center">Search Volume</th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-gray-50">
-                  {[
-                     { k: 'cloud erp software', c: 8, p: 3, ch: '+ 5', pr: '85%', s: 1400 },
-                     { k: 'manufacturing erp', c: 12, p: 6, ch: '+ 6', pr: '78%', s: 1200 },
-                     { k: 'erp for sme', c: 15, p: 7, ch: '+ 8', pr: '72%', s: 980 },
-                     { k: 'inventory management software', c: 9, p: 4, ch: '+ 5', pr: '81%', s: 880 },
-                     { k: 'production management system', c: 18, p: 9, ch: '+ 9', pr: '68%', s: 720 },
-                     { k: 'supply chain management', c: 11, p: 6, ch: '+ 5', pr: '74%', s: 650 },
-                     { k: 'business automation software', c: 23, p: 12, ch: '+ 11', pr: '62%', s: 480 },
-                     { k: 'quality management system', c: 20, p: 11, ch: '+ 9', pr: '69%', s: 420 },
-                  ].map((row, i) => (
-                     <tr key={i} className="text-gray-700">
-                        <td className="py-3 font-medium text-indigo-600">{row.k}</td>
-                        <td className="py-3 text-center text-gray-500">{row.c}</td>
-                        <td className="py-3 text-center font-bold text-gray-900">{row.p}</td>
-                        <td className="py-3 text-center font-bold text-green-600">↑ {row.ch.replace('+ ', '')}</td>
-                        <td className="py-3 text-center text-green-600">{row.pr}</td>
-                        <td className="py-3 text-center">{row.s.toLocaleString()}</td>
-                     </tr>
-                  ))}
-               </tbody>
-            </table>
-         </div>
-         <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
-             <Download size={12} /> Download Keyword Report
-         </button>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-semibold text-gray-900">Keyword Forecast</h3>
+          <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
+            <option>Next 90 Days ▾</option>
+          </select>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs whitespace-nowrap">
+            <thead>
+              <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
+                <th className="pb-3 font-semibold">Keyword</th>
+                <th className="pb-3 font-semibold text-center">Current Rank</th>
+                <th className="pb-3 font-semibold text-center">Predicted Rank</th>
+                <th className="pb-3 font-semibold text-center">Change</th>
+                <th className="pb-3 font-semibold text-center">Probability</th>
+                <th className="pb-3 font-semibold text-center">Search Volume</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {[
+                { k: 'cloud erp software', c: 8, p: 3, ch: '+ 5', pr: '85%', s: 1400 },
+                { k: 'manufacturing erp', c: 12, p: 6, ch: '+ 6', pr: '78%', s: 1200 },
+                { k: 'erp for sme', c: 15, p: 7, ch: '+ 8', pr: '72%', s: 980 },
+                { k: 'inventory management software', c: 9, p: 4, ch: '+ 5', pr: '81%', s: 880 },
+                { k: 'production management system', c: 18, p: 9, ch: '+ 9', pr: '68%', s: 720 },
+                { k: 'supply chain management', c: 11, p: 6, ch: '+ 5', pr: '74%', s: 650 },
+                { k: 'business automation software', c: 23, p: 12, ch: '+ 11', pr: '62%', s: 480 },
+                { k: 'quality management system', c: 20, p: 11, ch: '+ 9', pr: '69%', s: 420 },
+              ].map((row, i) => (
+                <tr key={i} className="text-gray-700">
+                  <td className="py-3 font-medium text-indigo-600">{row.k}</td>
+                  <td className="py-3 text-center text-gray-500">{row.c}</td>
+                  <td className="py-3 text-center font-bold text-gray-900">{row.p}</td>
+                  <td className="py-3 text-center font-bold text-green-600">↑ {row.ch.replace('+ ', '')}</td>
+                  <td className="py-3 text-center text-green-600">{row.pr}</td>
+                  <td className="py-3 text-center">{row.s.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
+          <Download size={12} /> Download Keyword Report
+        </button>
       </div>
     </div>
   );
@@ -347,52 +347,52 @@ const SeoGmbPredictiveAnalysisPage = () => {
   const renderAIVisibilityTab = () => (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-         <KPICard title="Average AI Visibility Score" value={<span>79 <span className="text-sm font-medium text-gray-400">/100</span></span>} icon={Cpu} colorClass="text-purple-600" />
-         <KPICard title="Improved Platforms" value={<span>5 <span className="text-sm font-medium text-gray-400">/6</span></span>} icon={TrendingUp} colorClass="text-green-600" />
-         <KPICard title="Total Citations (Predicted)" value="12,850" icon={Link} colorClass="text-blue-600" />
-         <KPICard title="Growth (Next 30 Days)" value="14.2%" icon={Activity} colorClass="text-indigo-600" />
+        <KPICard title="Average AI Visibility Score" value={<span>79 <span className="text-sm font-medium text-gray-400">/100</span></span>} icon={Cpu} colorClass="text-purple-600" />
+        <KPICard title="Improved Platforms" value={<span>5 <span className="text-sm font-medium text-gray-400">/6</span></span>} icon={TrendingUp} colorClass="text-green-600" />
+        <KPICard title="Total Citations (Predicted)" value="12,850" icon={Link} colorClass="text-blue-600" />
+        <KPICard title="Growth (Next 30 Days)" value="14.2%" icon={Activity} colorClass="text-indigo-600" />
       </div>
       <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-         <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900">AI Visibility Forecast</h3>
-            <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
-              <option>Next 90 Days ▾</option>
-            </select>
-         </div>
-         <div className="overflow-x-auto">
-            <table className="w-full text-left text-[11px] whitespace-nowrap">
-               <thead>
-                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                   <th className="pb-3 font-semibold">AI Platform</th>
-                   <th className="pb-3 font-semibold text-center">Current Score</th>
-                   <th className="pb-3 font-semibold text-center">Predicted Score</th>
-                   <th className="pb-3 font-semibold text-center">Change</th>
-                   <th className="pb-3 font-semibold text-center">Predicted Mentions</th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-gray-50">
-                  {[
-                     { p: 'ChatGPT', c: '68/100', pr: '82/100', ch: '+ 14', m: 3450 },
-                     { p: 'Google AI Overview', c: '72/100', pr: '86/100', ch: '+ 14', m: 3880 },
-                     { p: 'Gemini', c: '65/100', pr: '78/100', ch: '+ 13', m: 2750 },
-                     { p: 'Perplexity', c: '60/100', pr: '74/100', ch: '+ 14', m: 1820 },
-                     { p: 'Claude', c: '58/100', pr: '72/100', ch: '+ 14', m: 1650 },
-                     { p: 'Microsoft Copilot', c: '55/100', pr: '70/100', ch: '+ 15', m: 800 },
-                  ].map((row, i) => (
-                     <tr key={i} className="text-gray-700">
-                        <td className="py-3 font-medium flex items-center gap-2"><Cpu size={14} className="text-indigo-500" /> {row.p}</td>
-                        <td className="py-3 text-center text-gray-500">{row.c}</td>
-                        <td className="py-3 text-center font-bold text-gray-900">{row.pr}</td>
-                        <td className="py-3 text-center font-bold text-green-600">↑ {row.ch.replace('+ ', '')}</td>
-                        <td className="py-3 text-center">{row.m.toLocaleString()}</td>
-                     </tr>
-                  ))}
-               </tbody>
-            </table>
-         </div>
-         <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
-             <Download size={12} /> Download AI Visibility Report
-         </button>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-semibold text-gray-900">AI Visibility Forecast</h3>
+          <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
+            <option>Next 90 Days ▾</option>
+          </select>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs whitespace-nowrap">
+            <thead>
+              <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
+                <th className="pb-3 font-semibold">AI Platform</th>
+                <th className="pb-3 font-semibold text-center">Current Score</th>
+                <th className="pb-3 font-semibold text-center">Predicted Score</th>
+                <th className="pb-3 font-semibold text-center">Change</th>
+                <th className="pb-3 font-semibold text-center">Predicted Mentions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {[
+                { p: 'ChatGPT', c: '68/100', pr: '82/100', ch: '+ 14', m: 3450 },
+                { p: 'Google AI Overview', c: '72/100', pr: '86/100', ch: '+ 14', m: 3880 },
+                { p: 'Gemini', c: '65/100', pr: '78/100', ch: '+ 13', m: 2750 },
+                { p: 'Perplexity', c: '60/100', pr: '74/100', ch: '+ 14', m: 1820 },
+                { p: 'Claude', c: '58/100', pr: '72/100', ch: '+ 14', m: 1650 },
+                { p: 'Microsoft Copilot', c: '55/100', pr: '70/100', ch: '+ 15', m: 800 },
+              ].map((row, i) => (
+                <tr key={i} className="text-gray-700">
+                  <td className="py-3 font-medium flex items-center gap-2"><Cpu size={14} className="text-indigo-500" /> {row.p}</td>
+                  <td className="py-3 text-center text-gray-500">{row.c}</td>
+                  <td className="py-3 text-center font-bold text-gray-900">{row.pr}</td>
+                  <td className="py-3 text-center font-bold text-green-600">↑ {row.ch.replace('+ ', '')}</td>
+                  <td className="py-3 text-center">{row.m.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
+          <Download size={12} /> Download AI Visibility Report
+        </button>
       </div>
     </div>
   );
@@ -400,10 +400,10 @@ const SeoGmbPredictiveAnalysisPage = () => {
   const renderConversionsTab = () => (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-         <KPICard title="Predicted Conversions (Next 90 Days)" value="1,245" change="21.7%" changeLabel="vs prev" icon={Link} colorClass="text-purple-600" />
-         <KPICard title="Conversion Rate (Predicted)" value="2.85%" change="13.5%" changeLabel="vs prev" icon={TrendingUp} colorClass="text-green-600" />
-         <KPICard title="Avg. Order Value (Predicted)" value="₹6,240" change="4.2%" changeLabel="vs prev" icon={DollarSign} colorClass="text-blue-600" />
-         <KPICard title="Revenue (Predicted)" value="₹12,48,300" change="23.8%" changeLabel="vs prev" icon={Activity} colorClass="text-teal-600" />
+        <KPICard title="Predicted Conversions (Next 90 Days)" value="1,245" change="21.7%" changeLabel="vs prev" icon={Link} colorClass="text-purple-600" />
+        <KPICard title="Conversion Rate (Predicted)" value="2.85%" change="13.5%" changeLabel="vs prev" icon={TrendingUp} colorClass="text-green-600" />
+        <KPICard title="Avg. Order Value (Predicted)" value="₹6,240" change="4.2%" changeLabel="vs prev" icon={DollarSign} colorClass="text-blue-600" />
+        <KPICard title="Revenue (Predicted)" value="₹12,48,300" change="23.8%" changeLabel="vs prev" icon={Activity} colorClass="text-teal-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -416,51 +416,51 @@ const SeoGmbPredictiveAnalysisPage = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={convData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
-                  <RechartsTooltip />
-                  <Bar dataKey="pred" name="Predicted Conversions" fill="#8B5CF6" radius={[4, 4, 0, 0]} barSize={25} />
-               </BarChart>
+              <BarChart data={convData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+                <RechartsTooltip />
+                <Bar dataKey="pred" name="Predicted Conversions" fill="#8B5CF6" radius={[4, 4, 0, 0]} barSize={25} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
           <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
-             <Download size={12} /> Download Conversions Report
+            <Download size={12} /> Download Conversions Report
           </button>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
           <h3 className="font-semibold text-gray-900 mb-6">Forecast Breakdown</h3>
           <div className="space-y-4">
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Conversions (Next 90 Days)</span>
-                <span className="font-bold text-gray-900">1,245</span>
-             </div>
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Upper Range</span>
-                <span className="font-bold text-gray-900">1,450</span>
-             </div>
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Lower Range</span>
-                <span className="font-bold text-gray-900">980</span>
-             </div>
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Avg. Daily Conversions</span>
-                <span className="font-bold text-gray-900">14.2</span>
-             </div>
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Conversion Rate</span>
-                <span className="font-bold text-green-600">2.85%</span>
-             </div>
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px] pt-4">
-                <span className="font-semibold text-gray-900">Revenue (Predicted)</span>
-                <span className="font-bold text-indigo-600">₹12,48,300</span>
-             </div>
-             <div className="flex justify-between border-b border-gray-100 pb-2 text-[11px]">
-                <span className="text-gray-500">Revenue Range</span>
-                <span className="font-bold text-gray-500">₹10,50,000 - ₹14,80,000</span>
-             </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Conversions (Next 90 Days)</span>
+              <span className="font-bold text-gray-900">1,245</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Upper Range</span>
+              <span className="font-bold text-gray-900">1,450</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Lower Range</span>
+              <span className="font-bold text-gray-900">980</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Avg. Daily Conversions</span>
+              <span className="font-bold text-gray-900">14.2</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Conversion Rate</span>
+              <span className="font-bold text-green-600">2.85%</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs pt-4">
+              <span className="font-semibold text-gray-900">Revenue (Predicted)</span>
+              <span className="font-bold text-indigo-600">₹12,48,300</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
+              <span className="text-gray-500">Revenue Range</span>
+              <span className="font-bold text-gray-500">₹10,50,000 - ₹14,80,000</span>
+            </div>
           </div>
         </div>
       </div>
@@ -469,88 +469,88 @@ const SeoGmbPredictiveAnalysisPage = () => {
 
   const renderCompetitorTab = () => {
     const marketShareData = [
-       { name: 'Your Website', value: 34.2, color: '#3B82F6' },
-       { name: 'Competitor A', value: 28.5, color: '#10B981' },
-       { name: 'Competitor B', value: 21.1, color: '#F59E0B' },
-       { name: 'Competitor C', value: 12.6, color: '#EF4444' },
-       { name: 'Competitor D', value: 3.6, color: '#8B5CF6' }
+      { name: 'Your Website', value: 34.2, color: '#3B82F6' },
+      { name: 'Competitor A', value: 28.5, color: '#10B981' },
+      { name: 'Competitor B', value: 21.1, color: '#F59E0B' },
+      { name: 'Competitor C', value: 12.6, color: '#EF4444' },
+      { name: 'Competitor D', value: 3.6, color: '#8B5CF6' }
     ];
 
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-           <KPICard title="Total Competitors" value="5" icon={Target} colorClass="text-purple-600" />
-           <KPICard title="Market Share (Predicted)" value="34.2%" icon={PieChartIcon} colorClass="text-blue-600" />
-           <KPICard title="Your Growth (Next 30 Days)" value="18.6%" icon={TrendingUp} colorClass="text-green-600" />
-           <KPICard title="Top Competitor Growth" value="14.4%" icon={Activity} colorClass="text-indigo-600" />
+          <KPICard title="Total Competitors" value="5" icon={Target} colorClass="text-purple-600" />
+          <KPICard title="Market Share (Predicted)" value="34.2%" icon={PieChartIcon} colorClass="text-blue-600" />
+          <KPICard title="Your Growth (Next 30 Days)" value="18.6%" icon={TrendingUp} colorClass="text-green-600" />
+          <KPICard title="Top Competitor Growth" value="14.4%" icon={Activity} colorClass="text-indigo-600" />
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-           <div className="flex justify-between items-center mb-6">
-              <h3 className="font-semibold text-gray-900">Competitor Forecast</h3>
-              <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
-                <option>Next 90 Days ▾</option>
-              </select>
-           </div>
-           <div className="flex flex-col lg:flex-row gap-8">
-              <div className="flex-1 overflow-x-auto">
-                 <table className="w-full text-left text-[11px] whitespace-nowrap">
-                    <thead>
-                      <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                        <th className="pb-3 font-semibold">Competitor</th>
-                        <th className="pb-3 font-semibold text-center">Current Traffic</th>
-                        <th className="pb-3 font-semibold text-center">Predicted Traffic (90 Days)</th>
-                        <th className="pb-3 font-semibold text-center">Change</th>
-                        <th className="pb-3 font-semibold text-center">Market Share</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                       {[
-                          { c: 'Your Website', ct: 39000, pt: 48756, ch: '+ 18.6%', m: '34.2%' },
-                          { c: 'Competitor A', ct: 35000, pt: 40612, ch: '+ 14.4%', m: '28.5%' },
-                          { c: 'Competitor B', ct: 28000, pt: 30105, ch: '+ 8.2%', m: '21.1%' },
-                          { c: 'Competitor C', ct: 16000, pt: 17905, ch: '+ 11.1%', m: '12.6%' },
-                          { c: 'Competitor D', ct: 12000, pt: 12824, ch: '+ 3.6%', m: '3.6%' },
-                       ].map((row, i) => (
-                          <tr key={i} className={`text-gray-700 ${row.c === 'Your Website' ? 'bg-indigo-50/30' : ''}`}>
-                             <td className={`py-3 font-medium flex items-center gap-2 ${row.c === 'Your Website' ? 'text-indigo-600' : ''}`}><Globe size={14} className={row.c === 'Your Website' ? 'text-indigo-600' : 'text-gray-400'} /> {row.c}</td>
-                             <td className="py-3 text-center text-gray-500">{row.ct.toLocaleString()}</td>
-                             <td className="py-3 text-center font-bold text-gray-900">{row.pt.toLocaleString()}</td>
-                             <td className="py-3 text-center font-bold text-green-600">↑ {row.ch.replace('+ ', '')}</td>
-                             <td className="py-3 text-center font-bold text-gray-900">{row.m}</td>
-                          </tr>
-                       ))}
-                    </tbody>
-                 </table>
-                 <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
-                     <Download size={12} /> Download Competitor Report
-                 </button>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-semibold text-gray-900">Competitor Forecast</h3>
+            <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
+              <option>Next 90 Days ▾</option>
+            </select>
+          </div>
+          <div className="flex flex-col lg:flex-row gap-8">
+            <div className="flex-1 overflow-x-auto">
+              <table className="w-full text-left text-xs whitespace-nowrap">
+                <thead>
+                  <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
+                    <th className="pb-3 font-semibold">Competitor</th>
+                    <th className="pb-3 font-semibold text-center">Current Traffic</th>
+                    <th className="pb-3 font-semibold text-center">Predicted Traffic (90 Days)</th>
+                    <th className="pb-3 font-semibold text-center">Change</th>
+                    <th className="pb-3 font-semibold text-center">Market Share</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {[
+                    { c: 'Your Website', ct: 39000, pt: 48756, ch: '+ 18.6%', m: '34.2%' },
+                    { c: 'Competitor A', ct: 35000, pt: 40612, ch: '+ 14.4%', m: '28.5%' },
+                    { c: 'Competitor B', ct: 28000, pt: 30105, ch: '+ 8.2%', m: '21.1%' },
+                    { c: 'Competitor C', ct: 16000, pt: 17905, ch: '+ 11.1%', m: '12.6%' },
+                    { c: 'Competitor D', ct: 12000, pt: 12824, ch: '+ 3.6%', m: '3.6%' },
+                  ].map((row, i) => (
+                    <tr key={i} className={`text-gray-700 ${row.c === 'Your Website' ? 'bg-indigo-50/30' : ''}`}>
+                      <td className={`py-3 font-medium flex items-center gap-2 ${row.c === 'Your Website' ? 'text-indigo-600' : ''}`}><Globe size={14} className={row.c === 'Your Website' ? 'text-indigo-600' : 'text-gray-400'} /> {row.c}</td>
+                      <td className="py-3 text-center text-gray-500">{row.ct.toLocaleString()}</td>
+                      <td className="py-3 text-center font-bold text-gray-900">{row.pt.toLocaleString()}</td>
+                      <td className="py-3 text-center font-bold text-green-600">↑ {row.ch.replace('+ ', '')}</td>
+                      <td className="py-3 text-center font-bold text-gray-900">{row.m}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
+                <Download size={12} /> Download Competitor Report
+              </button>
+            </div>
+
+            <div className="w-full lg:w-[250px] flex flex-col items-center border-l border-gray-100 pl-8">
+              <h4 className="text-xs font-semibold text-gray-700 mb-4 w-full text-center">Predicted Market Share</h4>
+              <div className="relative w-[180px] h-[180px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={marketShareData} innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="value">
+                      {marketShareData.map((e, i) => <Cell key={i} fill={e.color} />)}
+                    </Pie>
+                    <RechartsTooltip />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-              
-              <div className="w-full lg:w-[250px] flex flex-col items-center border-l border-gray-100 pl-8">
-                 <h4 className="text-xs font-semibold text-gray-700 mb-4 w-full text-center">Predicted Market Share</h4>
-                 <div className="relative w-[180px] h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={marketShareData} innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="value">
-                          {marketShareData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                        </Pie>
-                        <RechartsTooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                 </div>
-                 <div className="w-full mt-4 space-y-2">
-                    {marketShareData.map((d, i) => (
-                       <div key={i} className="flex justify-between items-center text-[10px]">
-                          <div className="flex items-center gap-1.5 text-gray-600">
-                             <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: d.color }}></div>
-                             {d.name}
-                          </div>
-                          <span className="font-bold text-gray-900">{d.value}%</span>
-                       </div>
-                    ))}
-                 </div>
+              <div className="w-full mt-4 space-y-2">
+                {marketShareData.map((d, i) => (
+                  <div key={i} className="flex justify-between items-center text-[10px]">
+                    <div className="flex items-center gap-1.5 text-gray-600">
+                      <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: d.color }}></div>
+                      {d.name}
+                    </div>
+                    <span className="font-bold text-gray-900">{d.value}%</span>
+                  </div>
+                ))}
               </div>
-           </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -559,56 +559,56 @@ const SeoGmbPredictiveAnalysisPage = () => {
   const renderRiskAnalysisTab = () => (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-         <KPICard title="High Risk Areas" value="2" icon={AlertTriangle} colorClass="text-red-600" />
-         <KPICard title="Medium Risk Areas" value="3" icon={AlertTriangle} colorClass="text-yellow-600" />
-         <KPICard title="Low Risk Areas" value="2" icon={CheckCircle} colorClass="text-green-600" />
-         <KPICard title="Overall Risk Score" value={<span>62 <span className="text-sm font-medium text-gray-400">/100</span> <span className="text-[10px] font-semibold text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded ml-1">Medium</span></span>} icon={Shield} colorClass="text-orange-500" />
+        <KPICard title="High Risk Areas" value="2" icon={AlertTriangle} colorClass="text-red-600" />
+        <KPICard title="Medium Risk Areas" value="3" icon={AlertTriangle} colorClass="text-yellow-600" />
+        <KPICard title="Low Risk Areas" value="2" icon={CheckCircle} colorClass="text-green-600" />
+        <KPICard title="Overall Risk Score" value={<span>62 <span className="text-sm font-medium text-gray-400">/100</span> <span className="text-[10px] font-semibold text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded ml-1">Medium</span></span>} icon={Shield} colorClass="text-orange-500" />
       </div>
       <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-         <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900">Risk Analysis</h3>
-            <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
-              <option>Next 90 Days ▾</option>
-            </select>
-         </div>
-         <div className="overflow-x-auto">
-            <table className="w-full text-left text-[11px] whitespace-nowrap">
-               <thead>
-                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                   <th className="pb-3 font-semibold">Risk Factor</th>
-                   <th className="pb-3 font-semibold text-center">Impact</th>
-                   <th className="pb-3 font-semibold text-center">Probability</th>
-                   <th className="pb-3 font-semibold text-center">Risk Score</th>
-                   <th className="pb-3 font-semibold">Recommendation</th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-gray-50">
-                  {[
-                     { r: 'Algorithm Update', i: 'High', p: 'Medium', s: 75, rc: 'Monitor updates & optimize content' },
-                     { r: 'Top Competitor Ranking', i: 'High', p: 'High', s: 82, rc: 'Improve content & build backlinks' },
-                     { r: 'Content Decay', i: 'Medium', p: 'High', s: 68, rc: 'Update old, refresh old content' },
-                     { r: 'Backlink Loss', i: 'Medium', p: 'Medium', s: 55, rc: 'Rebuild lost backlinks' },
-                     { r: 'Low Search Demand', i: 'Low', p: 'Low', s: 24, rc: 'Target long-tail keywords' },
-                     { r: 'Technical Issues', i: 'Low', p: 'Low', s: 18, rc: 'Fix minor crawl/index errors' },
-                     { r: 'Seasonality Impact', i: 'Low', p: 'Medium', s: 35, rc: 'Plan seasonal content strategy' },
-                  ].map((row, i) => (
-                     <tr key={i} className="text-gray-700">
-                        <td className="py-3 font-medium flex items-center gap-2">
-                           {row.s > 70 ? <AlertTriangle size={14} className="text-red-500" /> : row.s > 40 ? <AlertTriangle size={14} className="text-yellow-500" /> : <CheckCircle size={14} className="text-green-500" />}
-                           {row.r}
-                        </td>
-                        <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded font-bold ${row.i === 'High' ? 'text-red-600 bg-red-50' : row.i === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.i}</span></td>
-                        <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded font-bold ${row.p === 'High' ? 'text-red-600 bg-red-50' : row.p === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.p}</span></td>
-                        <td className="py-3 text-center font-bold text-gray-900">{row.s}/100</td>
-                        <td className="py-3 text-gray-600">{row.rc}</td>
-                     </tr>
-                  ))}
-               </tbody>
-            </table>
-         </div>
-         <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
-             <Download size={12} /> Download Risk Report
-         </button>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-semibold text-gray-900">Risk Analysis</h3>
+          <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
+            <option>Next 90 Days ▾</option>
+          </select>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs whitespace-nowrap">
+            <thead>
+              <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
+                <th className="pb-3 font-semibold">Risk Factor</th>
+                <th className="pb-3 font-semibold text-center">Impact</th>
+                <th className="pb-3 font-semibold text-center">Probability</th>
+                <th className="pb-3 font-semibold text-center">Risk Score</th>
+                <th className="pb-3 font-semibold">Recommendation</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {[
+                { r: 'Algorithm Update', i: 'High', p: 'Medium', s: 75, rc: 'Monitor updates & optimize content' },
+                { r: 'Top Competitor Ranking', i: 'High', p: 'High', s: 82, rc: 'Improve content & build backlinks' },
+                { r: 'Content Decay', i: 'Medium', p: 'High', s: 68, rc: 'Update old, refresh old content' },
+                { r: 'Backlink Loss', i: 'Medium', p: 'Medium', s: 55, rc: 'Rebuild lost backlinks' },
+                { r: 'Low Search Demand', i: 'Low', p: 'Low', s: 24, rc: 'Target long-tail keywords' },
+                { r: 'Technical Issues', i: 'Low', p: 'Low', s: 18, rc: 'Fix minor crawl/index errors' },
+                { r: 'Seasonality Impact', i: 'Low', p: 'Medium', s: 35, rc: 'Plan seasonal content strategy' },
+              ].map((row, i) => (
+                <tr key={i} className="text-gray-700">
+                  <td className="py-3 font-medium flex items-center gap-2">
+                    {row.s > 70 ? <AlertTriangle size={14} className="text-red-500" /> : row.s > 40 ? <AlertTriangle size={14} className="text-yellow-500" /> : <CheckCircle size={14} className="text-green-500" />}
+                    {row.r}
+                  </td>
+                  <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded font-bold ${row.i === 'High' ? 'text-red-600 bg-red-50' : row.i === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.i}</span></td>
+                  <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded font-bold ${row.p === 'High' ? 'text-red-600 bg-red-50' : row.p === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.p}</span></td>
+                  <td className="py-3 text-center font-bold text-gray-900">{row.s}/100</td>
+                  <td className="py-3 text-gray-600">{row.rc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
+          <Download size={12} /> Download Risk Report
+        </button>
       </div>
     </div>
   );
@@ -616,7 +616,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
   const renderGenerateForecastForm = () => (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
+
         {/* Left Column: Forecast Type */}
         <div className="lg:col-span-3 space-y-4">
           <h3 className="font-bold text-gray-900 text-sm">1. Forecast Type</h3>
@@ -653,7 +653,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
           <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
             <h3 className="font-bold text-gray-900 text-sm">2. Forecast Configuration</h3>
             <p className="text-xs text-gray-500 mb-6">Set the parameters for your forecast</p>
-            
+
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Project / Domain <span className="text-red-500">*</span></label>
@@ -681,13 +681,13 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Start Date</label>
                 <div className="w-full text-xs border border-gray-200 rounded px-3 py-2 flex items-center gap-2">
-                  <Clock size={14} className="text-gray-400"/> May 24, 2026
+                  <Clock size={14} className="text-gray-400" /> May 24, 2026
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">End Date</label>
                 <div className="w-full text-xs border border-gray-200 rounded px-3 py-2 flex items-center gap-2">
-                  <Clock size={14} className="text-gray-400"/> Aug 21, 2026
+                  <Clock size={14} className="text-gray-400" /> Aug 21, 2026
                 </div>
               </div>
               <div>
@@ -719,7 +719,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-3">Historical Data Source <Info size={12} className="text-gray-400"/></label>
+              <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-3">Historical Data Source <Info size={12} className="text-gray-400" /></label>
               <div className="grid grid-cols-2 gap-4">
                 <label className="border border-indigo-600 bg-indigo-50/30 p-3 rounded-lg flex items-start gap-3 cursor-pointer">
                   <input type="radio" name="dataSource" defaultChecked className="mt-1" />
@@ -757,7 +757,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
                 </select>
               </div>
               <div className="col-span-1">
-                <label className="flex items-center gap-1 text-[10px] font-semibold text-gray-700 mb-2">Model Sensitivity <Info size={10} className="text-gray-400"/></label>
+                <label className="flex items-center gap-1 text-[10px] font-semibold text-gray-700 mb-2">Model Sensitivity <Info size={10} className="text-gray-400" /></label>
                 <input type="range" className="w-full accent-indigo-600" />
                 <div className="flex justify-between text-[9px] text-gray-500 mt-1"><span>Low</span><span>Medium</span><span>High</span></div>
               </div>
@@ -776,7 +776,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
           <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
             <h3 className="font-bold text-gray-900 text-sm">4. Forecast Name & Description</h3>
             <p className="text-xs text-gray-500 mb-6">Give a name to your forecast (Optional)</p>
-            
+
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-3">
                 <label className="block text-[10px] font-semibold text-gray-700 mb-1">Forecast Name</label>
@@ -797,7 +797,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             <div className="flex items-start gap-2">
               <div className="p-1 rounded bg-indigo-50"><Clock size={14} className="text-indigo-600" /></div>
               <div>
-                <div className="text-[11px] font-bold text-indigo-900">AI Processing Time</div>
+                <div className="text-xs font-bold text-indigo-900">AI Processing Time</div>
                 <div className="text-[10px] text-gray-500 mt-0.5">Forecast generation typically takes <span className="font-bold text-gray-700">2-5 minutes</span> depending on data volume and complexity.</div>
               </div>
             </div>
@@ -820,34 +820,34 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <h3 className="font-bold text-indigo-900 text-xs">Forecast Details</h3>
             </div>
             <p className="text-[10px] text-indigo-900/70 mb-6">AI model will analyze your historical data and market trends to generate accurate predictions.</p>
-            
+
             <div className="space-y-4 mb-6">
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded bg-white shadow-sm"><Hash size={12} className="text-indigo-500" /></div>
                 <div>
                   <div className="text-[10px] font-medium text-gray-500">Model</div>
-                  <div className="text-[11px] font-bold text-indigo-900">Machine Learning (Prophet + XGBoost)</div>
+                  <div className="text-xs font-bold text-indigo-900">Machine Learning (Prophet + XGBoost)</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded bg-white shadow-sm"><Target size={12} className="text-indigo-500" /></div>
                 <div>
                   <div className="text-[10px] font-medium text-gray-500">Confidence Level</div>
-                  <div className="text-[11px] font-bold text-indigo-900">90%</div>
+                  <div className="text-xs font-bold text-indigo-900">90%</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded bg-white shadow-sm"><Clock size={12} className="text-indigo-500" /></div>
                 <div>
                   <div className="text-[10px] font-medium text-gray-500">Last Updated</div>
-                  <div className="text-[11px] font-bold text-indigo-900">May 23, 2026 10:30 AM</div>
+                  <div className="text-xs font-bold text-indigo-900">May 23, 2026 10:30 AM</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded bg-white shadow-sm"><Database size={12} className="text-indigo-500" /></div>
                 <div>
                   <div className="text-[10px] font-medium text-gray-500">Data Points</div>
-                  <div className="text-[11px] font-bold text-indigo-900">1,248 (Last 12 Months)</div>
+                  <div className="text-xs font-bold text-indigo-900">1,248 (Last 12 Months)</div>
                 </div>
               </div>
             </div>
@@ -883,7 +883,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <p className="text-xs text-gray-500">Configure your settings and generate AI-powered predictions</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4 ml-auto">
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-gray-500">Project:</span>
@@ -942,11 +942,10 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-3 text-[11px] font-bold border-b-[3px] transition-colors whitespace-nowrap ${
-                  activeTab === tab 
-                    ? 'border-indigo-600 text-indigo-700' 
+                className={`py-3 text-xs font-bold border-b-[3px] transition-colors whitespace-nowrap ${activeTab === tab
+                    ? 'border-indigo-600 text-indigo-700'
                     : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 {tab}
               </button>

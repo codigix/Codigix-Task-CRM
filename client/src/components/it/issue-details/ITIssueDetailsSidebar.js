@@ -314,7 +314,7 @@ const ITIssueDetailsSidebar = ({
                       </div>
                       <span className="text-xs text-gray-700 font-medium truncate">{assignee?.name || 'Unassigned'}</span>
                     </div>
-                    <button onClick={handleAssignToMe} className="text-[11px] text-blue-600 hover:underline font-semibold cursor-pointer">
+                    <button onClick={handleAssignToMe} className="text-xs text-blue-600 hover:underline font-semibold cursor-pointer">
                       Assign to me
                     </button>
                   </div>
@@ -611,144 +611,144 @@ const ITIssueDetailsSidebar = ({
           where they apply. */}
       {showDevTools && (
         <>
-        {/* COLLAPSIBLE DEVELOPMENT ACCORDION (REAL JIRA CODE INTEGRATION) */}
-        <div className="border border-gray-200 rounded">
-          <div
-            onClick={() => toggleSection('development')}
-            className="flex items-center justify-between p-2 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition"
-          >
-            <div className="flex items-center gap-1.5">
-              {collapsedSections.development ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-              <span className="text-xs font-semibold text-gray-700 tracking-wide">Development</span>
-            </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDevModal(true);
-              }}
-              className="text-gray-400 hover:text-gray-600"
-              title="Configure Git Repositories"
+          {/* COLLAPSIBLE DEVELOPMENT ACCORDION (REAL JIRA CODE INTEGRATION) */}
+          <div className="border border-gray-200 rounded">
+            <div
+              onClick={() => toggleSection('development')}
+              className="flex items-center justify-between p-2 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition"
             >
-              <Settings size={14} />
-            </button>
-          </div>
-
-          {!collapsedSections.development && (
-            <div className="p-3.5 space-y-3 text-xs bg-white">
-              {/* Git Branch Info */}
-              <div className="p-2 bg-gray-50 rounded border border-gray-200 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1 text-[11px] font-bold text-gray-700">
-                    <GitBranch size={13} className="text-purple-600" /> {issueKey} Branch
-                  </span>
-                  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">Active</span>
-                </div>
-                <div className="text-[11px] font-mono text-gray-600 bg-white p-1 rounded border border-gray-200 truncate" title={branchName}>
-                  {branchName}
-                </div>
-                <button
-                  onClick={handleCopyBranch}
-                  className="flex items-center gap-1 text-[11px] text-purple-700 font-semibold hover:underline cursor-pointer"
-                >
-                  <Copy size={11} /> {copiedBranch ? 'Copied to clipboard!' : 'Copy git checkout command'}
-                </button>
+              <div className="flex items-center gap-1.5">
+                {collapsedSections.development ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                <span className="text-xs font-semibold text-gray-700 tracking-wide">Development</span>
               </div>
-
-              {/* Pull Requests & Builds */}
-              <div className="flex items-center justify-between text-gray-600 pt-1">
-                <span className="flex items-center gap-1 font-medium">
-                  <GitPullRequest size={13} className="text-blue-600" /> Pull Request #101
-                </span>
-                <span className="text-blue-600 font-semibold">OPEN 🟢</span>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="pt-2 border-t border-gray-100 space-y-2">
-                <button
-                  onClick={() => setShowDevModal(true)}
-                  className="flex items-center gap-2 text-blue-600 hover:underline font-semibold p-1 -ml-1 rounded transition w-full text-left cursor-pointer"
-                >
-                  <Github size={13} className="text-gray-700" />
-                  <span>Connect development tools</span>
-                </button>
-                <button
-                  onClick={handleOpenInVsCode}
-                  className="flex items-center gap-2 text-blue-600 hover:underline font-semibold p-1 -ml-1 rounded transition w-full text-left cursor-pointer"
-                >
-                  <Terminal size={13} className="text-blue-600" />
-                  <span>Open in VS Code IDE</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* COLLAPSIBLE AUTOMATION ACCORDION (REAL JIRA AUTOMATION ENGINE) */}
-        <div className="border border-gray-200 rounded">
-          <div
-            onClick={() => toggleSection('automation')}
-            className="flex items-center justify-between p-2 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition"
-          >
-            <div className="flex items-center gap-1.5">
-              {collapsedSections.automation ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-              <span className="text-xs font-semibold text-gray-700 tracking-wide">Automation</span>
-            </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowAutomationModal(true);
-              }}
-              className="text-gray-400 hover:text-gray-600"
-              title="Automation Rules"
-            >
-              <Settings size={14} />
-            </button>
-          </div>
-
-          {!collapsedSections.automation && (
-            <div className="p-3.5 space-y-3 bg-white text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">Recent rule runs</span>
-                <button
-                  onClick={handleRefreshAutomation}
-                  disabled={isRefreshingAutomation}
-                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium transition cursor-pointer disabled:opacity-50"
-                >
-                  <RefreshCw size={11} className={isRefreshingAutomation ? 'animate-spin' : ''} />
-                  <span>Refresh</span>
-                </button>
-              </div>
-
-              {/* Automation Run Logs List */}
-              <div className="space-y-2">
-                {automationLogs.map(log => (
-                  <div key={log.id} className="p-2 bg-gray-50 border border-gray-200 rounded flex items-start justify-between">
-                    <div className="space-y-0.5 min-w-0 pr-2">
-                      <div className="flex items-center gap-1 font-semibold text-gray-800 truncate text-[11px]">
-                        <Zap size={11} className="text-amber-500 shrink-0" />
-                        <span className="truncate">{log.rule}</span>
-                      </div>
-                      <div className="text-[10px] text-gray-500 truncate">{log.trigger}</div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1 py-0.5 rounded border border-green-200 block">
-                        {log.status}
-                      </span>
-                      <span className="text-[9px] text-gray-400 mt-0.5 block">{log.time}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               <button
-                onClick={() => setShowAutomationModal(true)}
-                className="w-full text-center text-xs text-blue-600 hover:underline font-semibold pt-1 block cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDevModal(true);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+                title="Configure Git Repositories"
               >
-                View all 4 active rules →
+                <Settings size={14} />
               </button>
             </div>
-          )}
-        </div>
+
+            {!collapsedSections.development && (
+              <div className="p-3.5 space-y-3 text-xs bg-white">
+                {/* Git Branch Info */}
+                <div className="p-2 bg-gray-50 rounded border border-gray-200 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1 text-xs font-bold text-gray-700">
+                      <GitBranch size={13} className="text-purple-600" /> {issueKey} Branch
+                    </span>
+                    <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">Active</span>
+                  </div>
+                  <div className="text-xs font-mono text-gray-600 bg-white p-1 rounded border border-gray-200 truncate" title={branchName}>
+                    {branchName}
+                  </div>
+                  <button
+                    onClick={handleCopyBranch}
+                    className="flex items-center gap-1 text-xs text-purple-700 font-semibold hover:underline cursor-pointer"
+                  >
+                    <Copy size={11} /> {copiedBranch ? 'Copied to clipboard!' : 'Copy git checkout command'}
+                  </button>
+                </div>
+
+                {/* Pull Requests & Builds */}
+                <div className="flex items-center justify-between text-gray-600 pt-1">
+                  <span className="flex items-center gap-1 font-medium">
+                    <GitPullRequest size={13} className="text-blue-600" /> Pull Request #101
+                  </span>
+                  <span className="text-blue-600 font-semibold">OPEN 🟢</span>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="pt-2 border-t border-gray-100 space-y-2">
+                  <button
+                    onClick={() => setShowDevModal(true)}
+                    className="flex items-center gap-2 text-blue-600 hover:underline font-semibold p-1 -ml-1 rounded transition w-full text-left cursor-pointer"
+                  >
+                    <Github size={13} className="text-gray-700" />
+                    <span>Connect development tools</span>
+                  </button>
+                  <button
+                    onClick={handleOpenInVsCode}
+                    className="flex items-center gap-2 text-blue-600 hover:underline font-semibold p-1 -ml-1 rounded transition w-full text-left cursor-pointer"
+                  >
+                    <Terminal size={13} className="text-blue-600" />
+                    <span>Open in VS Code IDE</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* COLLAPSIBLE AUTOMATION ACCORDION (REAL JIRA AUTOMATION ENGINE) */}
+          <div className="border border-gray-200 rounded">
+            <div
+              onClick={() => toggleSection('automation')}
+              className="flex items-center justify-between p-2 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition"
+            >
+              <div className="flex items-center gap-1.5">
+                {collapsedSections.automation ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                <span className="text-xs font-semibold text-gray-700 tracking-wide">Automation</span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAutomationModal(true);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+                title="Automation Rules"
+              >
+                <Settings size={14} />
+              </button>
+            </div>
+
+            {!collapsedSections.automation && (
+              <div className="p-3.5 space-y-3 bg-white text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700 font-medium">Recent rule runs</span>
+                  <button
+                    onClick={handleRefreshAutomation}
+                    disabled={isRefreshingAutomation}
+                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium transition cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw size={11} className={isRefreshingAutomation ? 'animate-spin' : ''} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                {/* Automation Run Logs List */}
+                <div className="space-y-2">
+                  {automationLogs.map(log => (
+                    <div key={log.id} className="p-2 bg-gray-50 border border-gray-200 rounded flex items-start justify-between">
+                      <div className="space-y-0.5 min-w-0 pr-2">
+                        <div className="flex items-center gap-1 font-semibold text-gray-800 truncate text-xs">
+                          <Zap size={11} className="text-amber-500 shrink-0" />
+                          <span className="truncate">{log.rule}</span>
+                        </div>
+                        <div className="text-[10px] text-gray-500 truncate">{log.trigger}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1 py-0.5 rounded border border-green-200 block">
+                          {log.status}
+                        </span>
+                        <span className="text-[9px] text-gray-400 mt-0.5 block">{log.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setShowAutomationModal(true)}
+                  className="w-full text-center text-xs text-blue-600 hover:underline font-semibold pt-1 block cursor-pointer"
+                >
+                  View all 4 active rules →
+                </button>
+              </div>
+            )}
+          </div>
         </>
       )}
 
@@ -830,7 +830,7 @@ const ITIssueDetailsSidebar = ({
                   <span className="font-bold text-gray-900">1. Auto-Assign on In Progress</span>
                   <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>
                 </div>
-                <p className="text-gray-600 text-[11px]">When ticket status changes to 'IN PROGRESS', automatically assign to current active user.</p>
+                <p className="text-gray-600 text-xs">When ticket status changes to 'IN PROGRESS', automatically assign to current active user.</p>
               </div>
 
               <div className="p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-1">
@@ -838,7 +838,7 @@ const ITIssueDetailsSidebar = ({
                   <span className="font-bold text-gray-900">2. Auto-Complete Parent Issue</span>
                   <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>
                 </div>
-                <p className="text-gray-600 text-[11px]">When all 5 subtasks are marked DONE, automatically transition parent issue to DONE.</p>
+                <p className="text-gray-600 text-xs">When all 5 subtasks are marked DONE, automatically transition parent issue to DONE.</p>
               </div>
 
               <div className="p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-1">
@@ -846,7 +846,7 @@ const ITIssueDetailsSidebar = ({
                   <span className="font-bold text-gray-900">3. Due Date Reminder Alert</span>
                   <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>
                 </div>
-                <p className="text-gray-600 text-[11px]">When due date is within 24 hours, send automated reminder notification to assignee.</p>
+                <p className="text-gray-600 text-xs">When due date is within 24 hours, send automated reminder notification to assignee.</p>
               </div>
 
               <div className="p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-1">
@@ -854,7 +854,7 @@ const ITIssueDetailsSidebar = ({
                   <span className="font-bold text-gray-900">4. Git Branch Status Sync</span>
                   <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>
                 </div>
-                <p className="text-gray-600 text-[11px]">When a developer commits to the ticket branch, update Development metrics automatically.</p>
+                <p className="text-gray-600 text-xs">When a developer commits to the ticket branch, update Development metrics automatically.</p>
               </div>
             </div>
 

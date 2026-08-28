@@ -198,6 +198,16 @@ module.exports = function setupGithubRoutes(app, pool) {
     }
   });
 
+
+  app.get('/api/github/connections', async (req, res) => {
+    try {
+      const [connections] = await db.query('SELECT * FROM github_connections ORDER BY id DESC');
+      res.json(connections);
+    } catch (err) {
+      res.status(500).json({ message: 'Error fetching connections', error: err.message });
+    }
+  });
+
   app.get('/api/github/repositories', async (req, res) => {
     try {
       const [repos] = await db.query(`
@@ -215,84 +225,102 @@ module.exports = function setupGithubRoutes(app, pool) {
 
   app.post('/api/github/repositories/sync', async (req, res) => {
     try {
-      const [connections] = await db.query('SELECT * FROM github_connections WHERE status = "connected"');
+      let query = 'SELECT * FROM github_connections WHERE status = "connected"';
+      let params = [];
+      if (req.body && req.body.connection_id) {
+        query += ' AND id = ?';
+        params.push(req.body.connection_id);
+      }
+      const [connections] = await db.query(query, params);
+      
       if (connections.length === 0) {
-        return res.status(400).json({ message: 'No active GitHub connection found' });
+        return res.status(400).json({ message: 'No active GitHub connection found for sync' });
       }
-      const connection = connections[0];
-      let reposToSync = [];
-      const privateKeyBase64 = process.env.GITHUB_APP_PRIVATE_KEY_BASE64;
-      const appId = process.env.GITHUB_APP_ID;
 
-      if (appId && privateKeyBase64 && connection.installation_id && !connection.installation_id.startsWith('mock')) {
-        try {
-          const { App } = require('@octokit/app');
-          const privateKey = Buffer.from(privateKeyBase64, 'base64').toString('utf8');
-          const app = new App({
-            appId: appId,
-            privateKey: privateKey,
-          });
-          const octokit = await app.getInstallationOctokit(Number(connection.installation_id));
-          const { data } = await octokit.request('GET /installation/repositories', { per_page: 100 });
-          
-          reposToSync = await Promise.all(data.repositories.map(async r => {
-            let lastCommitMsg = '';
-            let lastCommitHash = '';
-            try {
-              const commitRes = await octokit.request('GET /repos/{owner}/{repo}/commits', {
-                owner: r.owner.login,
-                repo: r.name,
-                per_page: 1
-              });
-              if (commitRes.data && commitRes.data.length > 0) {
-                lastCommitHash = commitRes.data[0].sha.substring(0, 7);
-                lastCommitMsg = commitRes.data[0].commit.message;
+      for (const connection of connections) {
+        let reposToSync = [];
+        
+        const currAppId = connection.app_id || process.env.GITHUB_APP_ID;
+        const currPrivateKey = process.env['GITHUB_APP_PRIVATE_KEY_BASE64_' + currAppId] || process.env.GITHUB_APP_PRIVATE_KEY_BASE64;
+
+        if (currAppId && currPrivateKey && connection.installation_id && !connection.installation_id.startsWith('mock')) {
+          try {
+            const { App } = require('@octokit/app');
+            const privateKey = Buffer.from(currPrivateKey, 'base64').toString('utf8');
+            const app = new App({
+              appId: currAppId,
+              privateKey: privateKey,
+            });
+            const octokit = await app.getInstallationOctokit(Number(connection.installation_id));
+            const { data } = await octokit.request('GET /installation/repositories', { per_page: 100 });
+            
+            reposToSync = await Promise.all(data.repositories.map(async r => {
+              let lastCommitMsg = '';
+              let lastCommitHash = '';
+              try {
+                const commitRes = await octokit.request('GET /repos/{owner}/{repo}/commits', {
+                  owner: r.owner.login,
+                  repo: r.name,
+                  per_page: 1
+                });
+                if (commitRes.data && commitRes.data.length > 0) {
+                  lastCommitHash = commitRes.data[0].sha.substring(0, 7);
+                  lastCommitMsg = commitRes.data[0].commit.message;
+                }
+              } catch (e) {
+                console.error(`Error fetching commits for ${r.name}:`, e.message);
               }
-            } catch (e) {
-              console.error(`Error fetching commits for ${r.name}:`, e.message);
-            }
-            return {
-              github_repo_id: String(r.id),
-              repository_name: r.name,
-              full_name: r.full_name,
-              owner: r.owner.login,
-              description: r.description || '',
-              html_url: r.html_url,
-              visibility: r.private ? 'Private' : 'Public',
-              default_branch: r.default_branch,
-              language: r.language || 'Unknown',
-              github_created_at: r.created_at,
-              github_updated_at: r.pushed_at || r.updated_at,
-              last_commit_msg: lastCommitMsg,
-              last_commit_hash: lastCommitHash
-            };
-          }));
-        } catch (githubErr) {
-          console.error("Failed to fetch from GitHub API using Octokit:", githubErr);
-          return res.status(500).json({ message: 'Failed to sync from GitHub API', error: githubErr.message });
+              return {
+                github_repo_id: String(r.id),
+                repository_name: r.name,
+                full_name: r.full_name,
+                owner: r.owner.login,
+                description: r.description || '',
+                html_url: r.html_url,
+                visibility: r.private ? 'Private' : 'Public',
+                default_branch: r.default_branch,
+                language: r.language || 'Unknown',
+                github_created_at: r.created_at,
+                github_updated_at: r.pushed_at || r.updated_at,
+                last_commit_msg: lastCommitMsg,
+                last_commit_hash: lastCommitHash
+              };
+            }));
+          } catch (githubErr) {
+            console.error("Failed to fetch from GitHub API using Octokit for connection " + connection.id, githubErr);
+            continue; // Skip this connection and try others
+          }
+        } else {
+          // Mock sync if no real app config or if it's a mock connection
+          reposToSync = [
+            { github_repo_id: 'repo-mock-' + connection.id, repository_name: 'mock-repo-' + connection.id, full_name: connection.github_account_name + '/mock-repo-' + connection.id, owner: connection.github_account_name, description: 'Mock repository for testing multiple accounts', html_url: 'https://github.com/' + connection.github_account_name + '/mock', visibility: 'Public', default_branch: 'main', language: 'JavaScript', github_created_at: new Date(), github_updated_at: new Date(), last_commit_msg: 'Mock commit for ' + connection.github_account_name, last_commit_hash: '1a2b3c4' }
+          ];
         }
-      } else {
-        reposToSync = [
-          { github_repo_id: 'repo-001', repository_name: 'enterprise-crm', full_name: 'codigix-infotech/enterprise-crm', owner: 'codigix-infotech', description: 'Main enterprise CRM backend and frontend', html_url: 'https://github.com/codigix-infotech/enterprise-crm', visibility: 'Private', default_branch: 'main', language: 'JavaScript', github_created_at: new Date(), github_updated_at: new Date(), last_commit_msg: 'Initial mock commit', last_commit_hash: '1a2b3c4' }
-        ];
-      }
 
-      for (const repo of reposToSync) {
-        await db.query(`
-          INSERT INTO github_repositories 
-          (connection_id, github_repo_id, repository_name, full_name, owner, description, html_url, visibility, default_branch, language, github_created_at, github_updated_at, last_commit_msg, last_commit_hash, last_sync_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-          ON DUPLICATE KEY UPDATE 
-          repository_name = VALUES(repository_name), full_name = VALUES(full_name), description = VALUES(description), visibility = VALUES(visibility), default_branch = VALUES(default_branch), language = VALUES(language), github_created_at = VALUES(github_created_at), github_updated_at = VALUES(github_updated_at), last_commit_msg = VALUES(last_commit_msg), last_commit_hash = VALUES(last_commit_hash), last_sync_at = CURRENT_TIMESTAMP
-        `, [
-          connection.id, repo.github_repo_id, repo.repository_name, repo.full_name, repo.owner, repo.description, repo.html_url, repo.visibility, repo.default_branch, repo.language, 
-          repo.github_created_at ? new Date(repo.github_created_at) : null, 
-          repo.github_updated_at ? new Date(repo.github_updated_at) : null,
-          repo.last_commit_msg, repo.last_commit_hash
-        ]);
+        for (const repo of reposToSync) {
+          await db.query(`
+            INSERT INTO github_repositories 
+            (connection_id, github_repo_id, repository_name, full_name, owner, description, html_url, visibility, default_branch, language, github_created_at, github_updated_at, last_commit_msg, last_commit_hash, last_sync_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON DUPLICATE KEY UPDATE 
+            repository_name = VALUES(repository_name), full_name = VALUES(full_name), description = VALUES(description), visibility = VALUES(visibility), default_branch = VALUES(default_branch), language = VALUES(language), github_created_at = VALUES(github_created_at), github_updated_at = VALUES(github_updated_at), last_commit_msg = VALUES(last_commit_msg), last_commit_hash = VALUES(last_commit_hash), last_sync_at = CURRENT_TIMESTAMP
+          `, [
+            connection.id, repo.github_repo_id, repo.repository_name, repo.full_name, repo.owner, repo.description, repo.html_url, repo.visibility, repo.default_branch, repo.language, 
+            repo.github_created_at ? new Date(repo.github_created_at) : null, 
+            repo.github_updated_at ? new Date(repo.github_updated_at) : null,
+            repo.last_commit_msg, repo.last_commit_hash
+          ]);
+        }
+        await db.query('UPDATE github_connections SET last_sync_at = CURRENT_TIMESTAMP WHERE id = ?', [connection.id]);
       }
-      await db.query('UPDATE github_connections SET last_sync_at = CURRENT_TIMESTAMP WHERE id = ?', [connection.id]);
-      const [updatedRepos] = await db.query('SELECT * FROM github_repositories WHERE connection_id IS NOT NULL');
+      
+      const [updatedRepos] = await db.query(`
+        SELECT r.*, c.github_account_name 
+        FROM github_repositories r
+        LEFT JOIN github_connections c ON r.connection_id = c.id
+        WHERE r.connection_id IS NOT NULL
+        ORDER BY r.last_sync_at DESC
+      `);
       res.json({ message: 'Sync successful', repositories: updatedRepos });
     } catch (err) {
       console.error('Error syncing repositories', err);
@@ -312,8 +340,14 @@ module.exports = function setupGithubRoutes(app, pool) {
       const [connections] = await db.query('SELECT * FROM github_connections WHERE id = ?', [repo.connection_id]);
       const connection = connections.length > 0 ? connections[0] : null;
 
-      const appId = process.env.GITHUB_APP_ID;
-      const privateKeyBase64 = process.env.GITHUB_APP_PRIVATE_KEY_BASE64;
+      const appId = connection.app_id || process.env.GITHUB_APP_ID;
+      const privateKeyBase64 = process.env['GITHUB_APP_PRIVATE_KEY_BASE64_' + appId] || process.env.GITHUB_APP_PRIVATE_KEY_BASE64;
+      
+      console.log('Branch route authentication debug:');
+      console.log('connection.app_id:', connection.app_id);
+      console.log('resolved appId:', appId);
+      console.log('has explicit private key:', !!process.env['GITHUB_APP_PRIVATE_KEY_BASE64_' + appId]);
+      console.log('has fallback private key:', !!process.env.GITHUB_APP_PRIVATE_KEY_BASE64);
       
       if (connection && appId && privateKeyBase64 && connection.installation_id && !connection.installation_id.startsWith('mock')) {
         const { App } = require('@octokit/app');

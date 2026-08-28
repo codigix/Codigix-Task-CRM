@@ -597,7 +597,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
                 labelRenderer={(sp) => sp ? `${sp.name}${sp.status === 'Active' ? ' (active)' : ''}` : ''}
                 iconRenderer={(sp) => sp ? <div className="w-5 h-5 bg-emerald-600 rounded flex items-center justify-center text-white text-xs">S</div> : null}
               />
-              <p className="text-[11px] text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 {formData.sprint
                   ? 'This work item will be created inside the sprint.'
                   : 'Leave empty to create it in the Backlog.'}
@@ -832,7 +832,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
                 if (options.length === 0) return null;
                 return (
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    <span className="text-[11px] text-gray-400 mr-0.5">
+                    <span className="text-xs text-gray-400 mr-0.5">
                       {knownLabels.length > 0 ? 'Used on this board:' : 'Suggestions:'}
                     </span>
                     {options.map(l => (
@@ -843,7 +843,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
                           setFormData(prev => ({ ...prev, labels: [...prev.labels, l] }));
                           setNewLabel('');
                         }}
-                        className="text-[11px] px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                        className="text-xs px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
                       >
                         {l}
                       </button>
@@ -851,7 +851,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
                   </div>
                 );
               })()}
-              <p className="text-[11px] text-gray-500 mt-1.5">
+              <p className="text-xs text-gray-500 mt-1.5">
                 Group work across projects — the kind of work or the campaign. Not the
                 department or team; those are already fields.
               </p>

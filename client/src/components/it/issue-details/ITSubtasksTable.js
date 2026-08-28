@@ -153,7 +153,7 @@ const ITSubtasksTable = ({
         <div className="border border-gray-200 rounded-lg overflow-hidden my-3 shadow-2xs font-sans text-xs bg-white">
           <table className="w-full text-left border-collapse table-fixed">
             <thead>
-              <tr className="bg-gray-50/90 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+              <tr className="bg-gray-50/90 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 <th className="py-2 px-3 font-semibold text-gray-600 w-[42%] truncate">Work</th>
                 <th className="py-2 px-1 font-semibold text-gray-600 w-[14%] text-center truncate">Priority</th>
                 <th className="py-2 px-1 font-semibold text-gray-600 w-[24%] text-center truncate">Assignee</th>
@@ -187,7 +187,7 @@ const ITSubtasksTable = ({
                               setSubtaskViewIndex(idx);
                             }
                           }}
-                          className="text-[11px] text-blue-600 font-semibold hover:underline cursor-pointer shrink-0"
+                          className="text-xs text-blue-600 font-semibold hover:underline cursor-pointer shrink-0"
                           title="Click to view subtask details"
                         >
                           {subtaskKey}
@@ -225,7 +225,7 @@ const ITSubtasksTable = ({
                     <td className="py-2 px-1 align-middle text-center">
                       <div className="flex items-center justify-center gap-1" title={`Priority: ${st.priority || 'Medium'}`}>
                         {PRIORITY_ICONS[st.priority || 'Medium'] || PRIORITY_ICONS.Medium}
-                        <span className="text-[11px] text-gray-600 font-medium">{st.priority || 'Medium'}</span>
+                        <span className="text-xs text-gray-600 font-medium">{st.priority || 'Medium'}</span>
                       </div>
                     </td>
 
@@ -245,7 +245,7 @@ const ITSubtasksTable = ({
                           <select
                             value={stAssignee}
                             onChange={(e) => handleAssigneeChange(st.id, e.target.value)}
-                            className="text-[11px] font-medium text-gray-700 bg-transparent border-none focus:outline-none cursor-pointer truncate max-w-[85px] appearance-none pr-3"
+                            className="text-xs font-medium text-gray-700 bg-transparent border-none focus:outline-none cursor-pointer truncate max-w-[85px] appearance-none pr-3"
                             title="Change subtask assignee"
                           >
                             <option value="Unassigned">Unassigned</option>
@@ -278,13 +278,12 @@ const ITSubtasksTable = ({
                             setSubtasks(updatedSubtasks);
                             handleUpdate({ subtasks: updatedSubtasks });
                           }}
-                          className={`text-[11px] font-semibold px-2 py-0.5 rounded border appearance-none cursor-pointer pr-5 focus:outline-none transition ${
-                            currentSubtaskStatus === 'Done'
+                          className={`text-xs font-semibold px-2 py-0.5 rounded border appearance-none cursor-pointer pr-5 focus:outline-none transition ${currentSubtaskStatus === 'Done'
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                               : currentSubtaskStatus === 'In Progress'
-                              ? 'bg-blue-50 text-blue-700 border-blue-300'
-                              : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                          }`}
+                                ? 'bg-blue-50 text-blue-700 border-blue-300'
+                                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                            }`}
                         >
                           <option value="To Do">To Do</option>
                           <option value="In Progress">In Progress</option>
@@ -344,7 +343,7 @@ const ITSubtasksTable = ({
             <div className="p-4 space-y-4 text-xs">
               {/* Title Input */}
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">Subtask Title</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Subtask Title</label>
                 <input
                   type="text"
                   value={selectedSubtaskForView.title}
@@ -419,7 +418,7 @@ const ITSubtasksTable = ({
 
               {/* Parent Task Context */}
               <div className="bg-blue-50/50 border border-blue-100 rounded p-2.5 text-xs">
-                <span className="text-gray-500 font-medium block text-[11px]">Parent Ticket</span>
+                <span className="text-gray-500 font-medium block text-xs">Parent Ticket</span>
                 <span className="font-semibold text-blue-600">{issue?.key || 'WR-101'}: {issue?.title}</span>
               </div>
             </div>

@@ -131,7 +131,7 @@ const StatusPicker = ({ status, onChange }) => {
           setAnchorRect(e.currentTarget.getBoundingClientRect());
           setOpen(!open);
         }}
-        className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded border transition ${statusStyle(current)}`}
+        className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border transition ${statusStyle(current)}`}
       >
         {titleCase(current)} <ChevronDown size={11} />
       </button>
@@ -142,7 +142,7 @@ const StatusPicker = ({ status, onChange }) => {
             onClick={() => { setOpen(false); if (s !== current) onChange(s); }}
             className="px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer flex items-center justify-between gap-2"
           >
-            <span className={`text-[11px] font-medium px-2 py-0.5 rounded border ${statusStyle(s)}`}>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded border ${statusStyle(s)}`}>
               {titleCase(s)}
             </span>
             {s === current && <Check size={13} className="text-blue-600" />}
@@ -337,7 +337,7 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
           {...provided.dragHandleProps}
           onClick={() => onOpen(item.issue_key)}
           className={`flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0 cursor-pointer group transition ${snapshot.isDragging ? 'bg-white shadow-lg ring-1 ring-blue-300' :
-              isSelected ? 'bg-blue-50 ring-1 ring-inset ring-blue-300' : 'bg-white hover:bg-blue-50/40'
+            isSelected ? 'bg-blue-50 ring-1 ring-inset ring-blue-300' : 'bg-white hover:bg-blue-50/40'
             }`}
           style={provided.draggableProps.style}
         >
@@ -360,9 +360,9 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
             return (
               <span
                 title={`${isDue ? 'Due' : 'Starts'} ${text}${overdue ? ' — overdue' : ''}`}
-                className={`shrink-0 flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border ${overdue
-                    ? 'bg-red-50 text-red-700 border-red-200 font-medium'
-                    : 'bg-gray-50 text-gray-600 border-gray-200'
+                className={`shrink-0 flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border ${overdue
+                  ? 'bg-red-50 text-red-700 border-red-200 font-medium'
+                  : 'bg-gray-50 text-gray-600 border-gray-200'
                   }`}
               >
                 <Calendar size={10} /> {text}
@@ -996,7 +996,7 @@ const BacklogPage = ({ department }) => {
                   {dates ? (
                     <button
                       onClick={() => setSprintToEdit(sprint)}
-                      className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-blue-600 hover:underline"
+                      className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 hover:underline"
                       title="Edit sprint dates"
                     >
                       <Calendar size={11} /> {dates}
@@ -1004,12 +1004,12 @@ const BacklogPage = ({ department }) => {
                   ) : (
                     <button
                       onClick={() => setSprintToEdit(sprint)}
-                      className="flex items-center gap-1 text-[11px] text-blue-600 hover:underline font-medium"
+                      className="flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium"
                     >
                       <Calendar size={11} /> Add dates
                     </button>
                   )}
-                  <span className="text-[11px] text-gray-500">
+                  <span className="text-xs text-gray-500">
                     ({sprint.issues.length} work item{sprint.issues.length === 1 ? '' : 's'})
                   </span>
                   {/* Which project this sprint's work belongs to. */}
@@ -1018,7 +1018,7 @@ const BacklogPage = ({ department }) => {
                   {projects.find(p => Number(p.id) === Number(sprint.project_id))?.name || `Project #${sprint.project_id}`}
                 </span>
               )} */}
-                  {sprint.goal && <span className="text-[11px] text-gray-400 italic truncate max-w-[220px]">{sprint.goal}</span>}
+                  {sprint.goal && <span className="text-xs text-gray-400 italic truncate max-w-[220px]">{sprint.goal}</span>}
 
                   <div className="ml-auto flex items-center gap-3">
                     <CountBadges counts={sprint.counts} />
@@ -1080,7 +1080,7 @@ const BacklogPage = ({ department }) => {
               </button>
               <Inbox size={14} className="text-gray-500" />
               <span className="font-semibold text-sm text-gray-900">Backlog</span>
-              <span className="text-[11px] text-gray-500">
+              <span className="text-xs text-gray-500">
                 ({backlog.length} work item{backlog.length === 1 ? '' : 's'})
               </span>
               <button

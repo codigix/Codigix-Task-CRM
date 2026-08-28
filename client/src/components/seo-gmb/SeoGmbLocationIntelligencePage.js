@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  MapPin, Eye, Activity, ShoppingCart, Trophy, Target, 
+  MapPin, Eye, Activity, ShoppingCart, Trophy, Target,
   ChevronDown, RefreshCw, Download, Info, Plus, Minus, Globe,
   CheckCircle, AlertTriangle, Settings, FileText, Bell, Search, Layout,
   BarChart2, PieChart as PieChartIcon, TrendingUp, Filter,
@@ -22,7 +22,7 @@ const SeoGmbLocationIntelligencePage = () => {
   const [activeTab, setActiveTab] = useState('Overview');
 
   const tabs = [
-    'Overview', 'Geo Performance', 'Local Rankings', 'Local Competitors', 
+    'Overview', 'Geo Performance', 'Local Rankings', 'Local Competitors',
     'Search Intent', 'Multi-Location', 'Heatmap', 'Reports', 'Settings'
   ];
 
@@ -33,7 +33,7 @@ const SeoGmbLocationIntelligencePage = () => {
         <div className={`p-2 rounded-lg bg-opacity-10 ${colorClass.replace('text', 'bg')}`}>
           <Icon size={18} className={colorClass} />
         </div>
-        <span className="text-gray-900 text-[11px] font-semibold">{title}</span>
+        <span className="text-gray-900 text-xs font-semibold">{title}</span>
       </div>
       <div>
         <div className="flex items-end gap-2">
@@ -61,7 +61,7 @@ const SeoGmbLocationIntelligencePage = () => {
       { date: 'May 28', india: 84, us: 74, uk: 69, canada: 66 },
       { date: 'May 29', india: 88, us: 78, uk: 70, canada: 68 },
     ];
-    
+
     const trafficDist = [
       { name: 'Asia', value: 45, color: '#3B82F6' },
       { name: 'North America', value: 25, color: '#10B981' },
@@ -93,7 +93,7 @@ const SeoGmbLocationIntelligencePage = () => {
                 <Globe size={48} className="text-indigo-200 opacity-50" />
               </div>
               <div className="flex-1">
-                <table className="w-full text-left text-[11px] whitespace-nowrap">
+                <table className="w-full text-left text-xs whitespace-nowrap">
                   <thead>
                     <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
                       <th className="pb-2 font-semibold">Country</th>
@@ -140,7 +140,7 @@ const SeoGmbLocationIntelligencePage = () => {
                 </ResponsiveContainer>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col">
               <h3 className="font-semibold text-gray-900 mb-4 text-xs">Traffic Distribution</h3>
               <div className="flex-1 flex items-center justify-center relative min-h-[150px]">
@@ -179,7 +179,7 @@ const SeoGmbLocationIntelligencePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-4 text-sm">Rankings by Location</h3>
-            <table className="w-full text-left text-[11px] whitespace-nowrap">
+            <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
                   <th className="pb-2 font-semibold">Location</th>
@@ -212,7 +212,7 @@ const SeoGmbLocationIntelligencePage = () => {
 
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-4 text-sm">Top Ranking Keywords</h3>
-            <table className="w-full text-left text-[11px] whitespace-nowrap">
+            <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
                   <th className="pb-2 font-semibold">Keyword</th>
@@ -270,7 +270,7 @@ const SeoGmbLocationIntelligencePage = () => {
 
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-4 text-sm">Competitor Visibility Comparison</h3>
-            <table className="w-full text-left text-[11px] whitespace-nowrap">
+            <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
                   <th className="pb-2 font-semibold">Competitor</th>
@@ -355,7 +355,7 @@ const SeoGmbLocationIntelligencePage = () => {
 
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col">
             <h3 className="font-semibold text-gray-900 mb-4 text-sm">Top Search Intents by Location</h3>
-            <table className="w-full text-left text-[11px] whitespace-nowrap">
+            <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
                   <th className="pb-2 font-semibold">Location</th>
@@ -389,7 +389,7 @@ const SeoGmbLocationIntelligencePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-4 text-sm">Top Queries by Intent</h3>
-            <table className="w-full text-left text-[11px] whitespace-nowrap">
+            <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
                   <th className="pb-2 font-semibold">Query</th>
@@ -458,7 +458,7 @@ const SeoGmbLocationIntelligencePage = () => {
               <Plus size={14} /> Add Location
             </button>
           </div>
-          <table className="w-full text-left text-[11px] whitespace-nowrap">
+          <table className="w-full text-left text-xs whitespace-nowrap">
             <thead>
               <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
                 <th className="pb-2 font-semibold">Location</th>
@@ -521,26 +521,26 @@ const SeoGmbLocationIntelligencePage = () => {
                 <option>Heatmap Density</option>
               </select>
             </div>
-            
+
             <div className="mt-auto space-y-3">
               <div className="flex items-center gap-2 text-xs font-medium text-gray-600"><div className="w-3 h-3 bg-green-500 rounded-sm"></div> High (80-100)</div>
               <div className="flex items-center gap-2 text-xs font-medium text-gray-600"><div className="w-3 h-3 bg-yellow-500 rounded-sm"></div> Medium (50-80)</div>
               <div className="flex items-center gap-2 text-xs font-medium text-gray-600"><div className="w-3 h-3 bg-red-500 rounded-sm"></div> Low (0-50)</div>
             </div>
           </div>
-          
+
           {/* Main Map Area */}
           <div className="bg-green-50/30 rounded-xl border border-green-100/50 shadow-sm col-span-2 relative flex items-center justify-center overflow-hidden">
-             {/* Map Placeholder */}
-             <Map size={120} className="text-green-200 opacity-40" />
-             <div className="absolute bottom-4 right-4 flex flex-col bg-white border border-gray-200 rounded shadow-sm">
-                <button className="p-2 hover:bg-gray-50 border-b border-gray-200"><Plus size={16} className="text-gray-600" /></button>
-                <button className="p-2 hover:bg-gray-50"><Minus size={16} className="text-gray-600" /></button>
-             </div>
-             {/* Heatmap Blobs Simulation */}
-             <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-red-500 rounded-full blur-3xl opacity-40"></div>
-             <div className="absolute bottom-1/3 right-1/3 w-40 h-40 bg-green-500 rounded-full blur-3xl opacity-40"></div>
-             <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-yellow-500 rounded-full blur-2xl opacity-50"></div>
+            {/* Map Placeholder */}
+            <Map size={120} className="text-green-200 opacity-40" />
+            <div className="absolute bottom-4 right-4 flex flex-col bg-white border border-gray-200 rounded shadow-sm">
+              <button className="p-2 hover:bg-gray-50 border-b border-gray-200"><Plus size={16} className="text-gray-600" /></button>
+              <button className="p-2 hover:bg-gray-50"><Minus size={16} className="text-gray-600" /></button>
+            </div>
+            {/* Heatmap Blobs Simulation */}
+            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-red-500 rounded-full blur-3xl opacity-40"></div>
+            <div className="absolute bottom-1/3 right-1/3 w-40 h-40 bg-green-500 rounded-full blur-3xl opacity-40"></div>
+            <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-yellow-500 rounded-full blur-2xl opacity-50"></div>
           </div>
 
           {/* Right Info Panel */}
@@ -562,7 +562,7 @@ const SeoGmbLocationIntelligencePage = () => {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <h3 className="font-semibold text-gray-900 text-sm mb-3">Low Performing Areas</h3>
               <div className="space-y-3">
@@ -616,7 +616,7 @@ const SeoGmbLocationIntelligencePage = () => {
 
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-3">
           <h3 className="font-semibold text-gray-900 text-sm mb-4">Recent Reports</h3>
-          <table className="w-full text-left text-[11px] whitespace-nowrap">
+          <table className="w-full text-left text-xs whitespace-nowrap">
             <thead>
               <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
                 <th className="pb-3 font-semibold">Report Name</th>
@@ -659,14 +659,14 @@ const SeoGmbLocationIntelligencePage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm space-y-5">
           <h3 className="font-semibold text-gray-900 text-sm border-b border-gray-100 pb-2">Location Settings</h3>
-          
+
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-700">Enable Location Tracking</span>
             <div className="w-8 h-4 bg-green-500 rounded-full relative cursor-pointer">
               <div className="w-3 h-3 bg-white rounded-full absolute right-0.5 top-0.5"></div>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-700">Auto Detect New Locations</span>
             <div className="w-8 h-4 bg-green-500 rounded-full relative cursor-pointer">
@@ -697,7 +697,7 @@ const SeoGmbLocationIntelligencePage = () => {
 
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm space-y-5">
           <h3 className="font-semibold text-gray-900 text-sm border-b border-gray-100 pb-2">Tracking & Notifications</h3>
-          
+
           <div className="space-y-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" defaultChecked className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
@@ -716,7 +716,7 @@ const SeoGmbLocationIntelligencePage = () => {
               <span className="text-xs text-gray-700">Weekly summary reports</span>
             </label>
           </div>
-          
+
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Email Notifications</label>
             <input type="text" defaultValue="rahul.patil@codigix.com" className="w-full bg-white border border-gray-200 text-gray-700 text-xs rounded px-3 py-2 outline-none" />
@@ -725,7 +725,7 @@ const SeoGmbLocationIntelligencePage = () => {
 
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm space-y-4">
           <h3 className="font-semibold text-gray-900 text-sm border-b border-gray-100 pb-2">Connected Integrations</h3>
-          
+
           {[
             { n: 'Google Search Console', s: 'Connected' },
             { n: 'Google Analytics', s: 'Connected' },
@@ -789,11 +789,10 @@ const SeoGmbLocationIntelligencePage = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`py-3 text-[11px] font-bold border-b-[3px] transition-colors whitespace-nowrap ${
-                activeTab === tab 
-                  ? 'border-indigo-600 text-indigo-700' 
+              className={`py-3 text-xs font-bold border-b-[3px] transition-colors whitespace-nowrap ${activeTab === tab
+                  ? 'border-indigo-600 text-indigo-700'
                   : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
-              }`}
+                }`}
             >
               {tab}
             </button>

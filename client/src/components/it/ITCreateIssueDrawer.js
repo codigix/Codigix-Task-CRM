@@ -142,8 +142,8 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
   const path = window.location.pathname.toLowerCase();
   const currentDept = department || (
     path.includes('/marketing') ? 'Marketing' :
-    path.includes('/seo-gmb') ? 'Marketing' :
-    'IT'
+      path.includes('/seo-gmb') ? 'Marketing' :
+        'IT'
   );
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -274,10 +274,10 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
               last_name: user.last_name,
               email: user.email
             };
-            setFormData(prev => ({ 
-              ...prev, 
+            setFormData(prev => ({
+              ...prev,
               reporter: prev.reporter || currentReporter,
-              assignee: prev.assignee || currentReporter 
+              assignee: prev.assignee || currentReporter
             }));
           } else if (userList.length > 0) {
             const searchName = username || 'ashwini';
@@ -380,7 +380,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
     }
 
     if (targetProject) {
-      const matchedTeam = teams.find(t => 
+      const matchedTeam = teams.find(t =>
         (targetProject.team_id && Number(t.id) === Number(targetProject.team_id)) ||
         (targetProject.team_name && t.name && t.name.toLowerCase() === targetProject.team_name.toLowerCase())
       );
@@ -583,7 +583,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
       }
 
       let createdData = null;
-      try { createdData = await res.json(); } catch (_) {}
+      try { createdData = await res.json(); } catch (_) { }
       if (!res.ok) throw new Error(createdData?.error || 'Failed to create issue');
 
       // Upload attachments if any
@@ -731,7 +731,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
                 labelRenderer={(sp) => sp ? `${sp.name}${sp.status === 'Active' ? ' (active)' : ''}` : ''}
                 iconRenderer={(sp) => sp ? <div className="w-5 h-5 bg-emerald-600 rounded flex items-center justify-center text-white text-xs">S</div> : null}
               />
-              <p className="text-[11px] text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 {formData.sprint
                   ? 'This work item will be created inside the sprint.'
                   : 'Leave empty to create it in the Backlog.'}
