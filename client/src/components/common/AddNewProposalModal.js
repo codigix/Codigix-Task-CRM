@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronDown, Plus, X, CheckCircle, Upload } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronDown, Plus, X, CheckCircle, Upload, User } from 'lucide-react';
+import SearchableSelect from './SearchableSelect';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contacts = [], deals = [] }) => {
+const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contacts = [], deals = [], leads = [], initialData = null }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [tagInput, setTagInput] = useState('');
@@ -15,11 +16,15 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
   const [localCompanies, setLocalCompanies] = useState([]);
   const [localContacts, setLocalContacts] = useState([]);
   const [localDeals, setLocalDeals] = useState([]);
+  const [localLeads, setLocalLeads] = useState([]);
+  const [selectedLeadInfo, setSelectedLeadInfo] = useState(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
     proposal_date: new Date().toISOString().split('T')[0],
     validity_date: '',
+    lead_id: '',
     client_id: '',
     project_id: '',
     related_to: '',
@@ -32,62 +37,130 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
     attachments: []
   });
 
+  const hasFetchedRef = useRef(false);
+
   useEffect(() => {
     if (isOpen) {
-      console.log('🔵 Modal opened - syncing data from props:', {
-        companies: companies?.length,
-        contacts: contacts?.length,
-        deals: deals?.length
-      });
-      console.log('📦 Full data:', { companies, contacts, deals });
-
-      fetchUsersAndProjects();
+      if (!hasFetchedRef.current) {
+        hasFetchedRef.current = true;
+        fetchUsersAndProjects();
+      }
 
       if (companies && companies.length > 0) {
         setLocalCompanies(companies);
-        console.log('✅ Companies set:', companies.length);
-      } else {
-        console.warn('⚠️ No companies received');
       }
-
       if (contacts && contacts.length > 0) {
         setLocalContacts(contacts);
-        console.log('✅ Contacts set:', contacts.length);
-      } else {
-        console.warn('⚠️ No contacts received');
       }
-
       if (deals && deals.length > 0) {
         setLocalDeals(deals);
-        console.log('✅ Deals set:', deals.length);
+      }
+      if (leads && leads.length > 0) {
+        setLocalLeads(leads);
+      }
+    } else {
+      hasFetchedRef.current = false;
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        let atts = [];
+        if (initialData.attachments) {
+          try {
+            atts = typeof initialData.attachments === 'string' ? JSON.parse(initialData.attachments) : initialData.attachments;
+          } catch {
+            atts = [];
+          }
+        }
+        setFormData({
+          title: initialData.title || '',
+          proposal_date: initialData.proposal_date ? new Date(initialData.proposal_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          validity_date: initialData.validity_date ? new Date(initialData.validity_date).toISOString().split('T')[0] : '',
+          lead_id: initialData.lead_id ? String(initialData.lead_id) : '',
+          client_id: initialData.client_id ? String(initialData.client_id) : '',
+          currency: initialData.currency || 'INR',
+          status: initialData.status || 'Draft',
+          assigned_to: initialData.assigned_to ? String(initialData.assigned_to) : '',
+          description: initialData.description || '',
+          attachments: Array.isArray(atts) ? atts : []
+        });
+
+        setSelectedLeadInfo({
+          name: initialData.lead_name || '',
+          company: initialData.client_name || '',
+          email: initialData.email || initialData.client_email || '',
+          phone: initialData.phone || initialData.client_phone || '',
+          industry: initialData.industry || '',
+          status: initialData.lead_status || initialData.status_badge || '',
+          business_type: initialData.business_type || '',
+          service_needed: initialData.service_needed || '',
+          project_name: initialData.project_scope || ''
+        });
       } else {
-        console.warn('⚠️ No deals received');
+        setFormData({
+          title: '',
+          proposal_date: new Date().toISOString().split('T')[0],
+          validity_date: '',
+          lead_id: '',
+          client_id: '',
+          currency: 'INR',
+          status: 'Draft',
+          assigned_to: '',
+          description: '',
+          attachments: []
+        });
+        setSelectedLeadInfo(null);
       }
     }
-  }, [isOpen, companies, contacts, deals]);
+  }, [isOpen, initialData]);
+
+  useEffect(() => {
+    if (isOpen && formData.lead_id && localLeads.length > 0) {
+      const foundLead = localLeads.find(l => String(l.id) === String(formData.lead_id));
+      if (foundLead) {
+        if (!selectedLeadInfo || !selectedLeadInfo.email || !selectedLeadInfo.phone || !selectedLeadInfo.status) {
+          handleLeadSelect(foundLead.id, { lead: foundLead });
+        }
+      }
+    }
+  }, [isOpen, formData.lead_id, localLeads, selectedLeadInfo]);
 
   const fetchUsersAndProjects = async () => {
     setLoadingData(true);
     try {
       const apiUrl = process.env.REACT_APP_API_URL || API_BASE_URL + '';
-      const [usersRes, projectsRes] = await Promise.all([
-        fetch(`${apiUrl}/contacts`),
-        fetch(`${apiUrl}/projects`)
-      ]);
 
-      if (usersRes.ok) {
-        const usersData = await usersRes.json();
-        setUsers(Array.isArray(usersData) ? usersData : []);
+      if (leads && leads.length > 0) {
+        setLocalLeads(leads);
       }
 
-      if (projectsRes.ok) {
-        const projectsData = await projectsRes.json();
-        setProjects(Array.isArray(projectsData) ? projectsData : []);
+      const tasks = [fetch(`${apiUrl}/users`)];
+      const keys = ['users'];
+
+      if (!leads || leads.length === 0) {
+        tasks.push(fetch(`${apiUrl}/leads`));
+        keys.push('leads');
+      }
+      if (!companies || companies.length === 0) {
+        tasks.push(fetch(`${apiUrl}/companies`));
+        keys.push('companies');
+      }
+
+      const responses = await Promise.all(tasks);
+      for (let i = 0; i < responses.length; i++) {
+        const res = responses[i];
+        const key = keys[i];
+        if (res.ok) {
+          const data = await res.json();
+          if (key === 'users') setUsers(Array.isArray(data) ? data : []);
+          if (key === 'leads') setLocalLeads(Array.isArray(data) ? data : []);
+          if (key === 'companies') setLocalCompanies(Array.isArray(data) ? data : []);
+        }
       }
     } catch (err) {
       console.error('Error fetching data:', err);
-      setUsers([]);
-      setProjects([]);
     } finally {
       setLoadingData(false);
     }
@@ -99,6 +172,109 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleLeadSelect = (valOrEvent, rawOption) => {
+    const leadId = typeof valOrEvent === 'object' && valOrEvent?.target ? valOrEvent.target.value : valOrEvent;
+    const lead = rawOption?.lead || localLeads.find(l => l.id.toString() === String(leadId));
+
+    if (lead) {
+      let matchedClientId = '';
+      if (lead.company_id) {
+        matchedClientId = lead.company_id.toString();
+      } else if (lead.converted_company_id) {
+        matchedClientId = lead.converted_company_id.toString();
+      } else {
+        const compName = lead.company || lead.company_name;
+        if (compName) {
+          const found = localCompanies.find(
+            c => c.company_name?.toLowerCase() === compName.toLowerCase()
+          );
+          if (found) matchedClientId = found.id.toString();
+        }
+      }
+
+      let servicesNeeded = '';
+      if (lead.it_services) {
+        servicesNeeded = lead.it_services;
+      } else if (lead.marketing_services) {
+        if (Array.isArray(lead.marketing_services)) {
+          servicesNeeded = lead.marketing_services.join(', ');
+        } else if (typeof lead.marketing_services === 'string') {
+          try {
+            const parsed = JSON.parse(lead.marketing_services);
+            servicesNeeded = Array.isArray(parsed) ? parsed.join(', ') : lead.marketing_services;
+          } catch (e) {
+            servicesNeeded = lead.marketing_services;
+          }
+        }
+      }
+
+      const leadName = lead.lead_name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || lead.name || `Lead #${lead.id}`;
+      const companyName = lead.company || lead.company_name || '';
+      
+      let autoTitle = '';
+      if (lead.project_name) {
+        autoTitle = `${lead.project_name} Proposal`;
+      } else if (servicesNeeded) {
+        autoTitle = `${servicesNeeded} Proposal - ${companyName || leadName}`;
+      } else if (companyName) {
+        autoTitle = `Proposal for ${companyName}`;
+      } else {
+        autoTitle = `Proposal for ${leadName}`;
+      }
+
+      let matchedProjectId = '';
+      if (lead.project_name && projects && projects.length > 0) {
+        const foundProj = projects.find(p => 
+          (p.project_name || p.name || '').toLowerCase() === lead.project_name.toLowerCase()
+        );
+        if (foundProj) matchedProjectId = foundProj.id.toString();
+      }
+
+      let assignedUserId = '';
+      if (lead.owner_id) {
+        assignedUserId = String(lead.owner_id);
+      } else if (lead.people_assigned) {
+        try {
+          const parsed = typeof lead.people_assigned === 'string' ? JSON.parse(lead.people_assigned) : lead.people_assigned;
+          assignedUserId = Array.isArray(parsed) ? String(parsed[0]) : String(parsed);
+        } catch {
+          assignedUserId = String(lead.people_assigned);
+        }
+      }
+
+      setSelectedLeadInfo({
+        name: leadName,
+        company: companyName,
+        email: lead.email || '',
+        phone: lead.phone || '',
+        industry: lead.industry || '',
+        status: lead.lead_status || lead.status || '',
+        business_type: lead.business_type || '',
+        service_needed: servicesNeeded,
+        project_name: lead.project_name || '',
+        budget: lead.value || '',
+        currency: lead.currency || 'INR'
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        lead_id: leadId,
+        title: autoTitle,
+        client_id: matchedClientId || prev.client_id,
+        project_id: matchedProjectId || prev.project_id,
+        assigned_to: assignedUserId || prev.assigned_to,
+        currency: lead.currency || prev.currency || 'INR'
+      }));
+    } else {
+      setSelectedLeadInfo(null);
+      setFormData(prev => ({
+        ...prev,
+        lead_id: '',
+        title: ''
+      }));
+    }
   };
 
   const addTag = (e) => {
@@ -128,28 +304,84 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
     return users.find(u => u.id === parseInt(formData.assigned_to));
   };
 
-  const handleFileUpload = (e) => {
-    const files = Array.from(e.target.files);
-    setFormData(prev => ({
-      ...prev,
-      attachments: [...prev.attachments, ...files]
-    }));
+  const handleFileUpload = async (e) => {
+    const rawFiles = Array.from(e.target.files);
+    if (!rawFiles || rawFiles.length === 0) return;
+
+    setIsUploadingFile(true);
+    try {
+      const uploadedList = [];
+      for (const file of rawFiles) {
+        const fd = new FormData();
+        fd.append('file', file);
+        if (formData.lead_id) fd.append('lead_id', formData.lead_id);
+        if (formData.client_id) fd.append('company_id', formData.client_id);
+
+        try {
+          const res = await fetch(`${API_BASE_URL}/files/upload`, {
+            method: 'POST',
+            body: fd
+          });
+          if (res.ok) {
+            const savedFile = await res.json();
+            uploadedList.push({
+              id: savedFile.id,
+              name: savedFile.name || file.name,
+              file_path: savedFile.file_path,
+              url: savedFile.file_path,
+              size: savedFile.size_bytes || file.size,
+              type: savedFile.mime_type || file.type
+            });
+            continue;
+          }
+        } catch (err) {
+          console.warn('File upload to server failed:', err);
+        }
+
+        // Fallback
+        uploadedList.push({
+          name: file.name,
+          size: file.size,
+          type: file.type
+        });
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        attachments: [...prev.attachments, ...uploadedList]
+      }));
+    } catch (err) {
+      console.error('File upload error:', err);
+    } finally {
+      setIsUploadingFile(false);
+      if (e.target) e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.title || !formData.client_id) {
-      setError('Please fill in required fields: Subject and Client');
+    if (!formData.lead_id || !formData.client_id) {
+      setError('Please fill in required fields: Lead and Client');
       return;
     }
+
+    const finalTitle = formData.title || (selectedLeadInfo ? `Proposal for ${selectedLeadInfo.company || selectedLeadInfo.name}` : 'Proposal');
 
     setIsLoading(true);
     try {
       console.log('📤 Submitting proposal with data:', formData);
       if (onSubmit) {
-        await onSubmit(formData);
+        await onSubmit({
+          ...formData,
+          proposal_number: formData.proposal_number || `PROP-${Date.now()}`,
+          title: finalTitle,
+          business_type: selectedLeadInfo?.business_type || '',
+          service_needed: selectedLeadInfo?.service_needed || '',
+          project_scope: selectedLeadInfo?.project_name || '',
+          amount: 0
+        });
         console.log('✅ Proposal created successfully');
       }
       handleCancel();
@@ -167,6 +399,7 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
       title: '',
       proposal_date: new Date().toISOString().split('T')[0],
       validity_date: '',
+      lead_id: '',
       client_id: '',
       project_id: '',
       related_to: '',
@@ -179,10 +412,70 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
       attachments: []
     });
     setError('');
+    setSelectedLeadInfo(null);
     setTagInput('');
     setShowUserDropdown(false);
     onClose();
   };
+
+  const leadOptions = (localLeads || []).map(lead => {
+    const leadName = lead.lead_name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || lead.name || `Lead #${lead.id}`;
+    const companyName = lead.company || lead.company_name;
+    let serviceStr = lead.it_services || '';
+    if (!serviceStr && lead.marketing_services) {
+      if (Array.isArray(lead.marketing_services)) {
+        serviceStr = lead.marketing_services.join(', ');
+      } else if (typeof lead.marketing_services === 'string') {
+        try {
+          const parsed = JSON.parse(lead.marketing_services);
+          serviceStr = Array.isArray(parsed) ? parsed.join(', ') : lead.marketing_services;
+        } catch (e) {
+          serviceStr = lead.marketing_services;
+        }
+      }
+    }
+    const subParts = [companyName, serviceStr || lead.business_type, lead.email].filter(Boolean);
+    return {
+      id: lead.id,
+      value: lead.id,
+      label: companyName ? `${leadName} (${companyName})` : leadName,
+      sublabel: subParts.join(' • '),
+      lead: lead
+    };
+  });
+
+  const clientOptions = (localCompanies || []).map(company => ({
+    id: company.id,
+    value: company.id,
+    label: company.company_name,
+    sublabel: company.email || company.phone || company.city || ''
+  }));
+
+  const projectOptions = (projects || []).map(project => ({
+    id: project.id,
+    value: project.id,
+    label: project.project_name || project.name || `Project #${project.id}`
+  }));
+
+  const contactOptions = (localContacts || []).map(contact => ({
+    id: contact.id,
+    value: contact.id,
+    label: `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || `Contact #${contact.id}`,
+    sublabel: contact.email || contact.phone || ''
+  }));
+
+  const userOptions = (users || []).map(user => {
+    const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.name || `User #${user.id}`;
+    return {
+      id: user.id,
+      value: String(user.id),
+      label: name,
+      sublabel: user.email || user.role_name || '',
+      initials: getInitials(user.first_name, user.last_name)
+    };
+  });
+
+  const isEditMode = Boolean(initialData && (initialData.id || initialData.proposal_number));
 
   if (!isOpen) return null;
 
@@ -190,7 +483,7 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
     <div className="fixed inset-0 z-50 flex justify-end bg-black/20">
       <div className="h-full w-full md:w-[72%] lg:w-[60%] xl:w-[55%] bg-white shadow-xl overflow-y-auto border-l border-gray-200">
         <div className="flex justify-between items-center p-3  border-b border-[#EAECF0] sticky top-0 bg-white z-10">
-          <h2 className="text-md  text-gray-900">Create New Proposal</h2>
+          <h2 className="text-md font-semibold text-gray-900">{isEditMode ? 'Edit Proposal' : 'Create New Proposal'}</h2>
           <button
             onClick={handleCancel}
             disabled={isLoading}
@@ -208,16 +501,13 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
           )}
 
           <div>
-            <label className="block text-xs    text-gray-700 mb-2">
-              Subject<span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              placeholder="Enter subject"
-              className="w-full p-2 border border-gray-300 rounded  text-xs  bg-white focus:outline-none focus:border-blue-500 transition"
+            <SearchableSelect
+              label="Lead"
+              required={true}
+              placeholder="Choose Lead"
+              options={leadOptions}
+              value={formData.lead_id}
+              onChange={(val, raw) => handleLeadSelect(val, raw)}
             />
           </div>
 
@@ -249,188 +539,127 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
           </div>
 
           <div>
-            <label className="block text-xs    text-gray-700 mb-2">
-              Client<span className="text-red-500">*</span>
-            </label>
-            <select
-              name="client_id"
+            <SearchableSelect
+              label="Client"
+              required={true}
+              placeholder="Choose Client"
+              options={clientOptions}
               value={formData.client_id}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded  text-xs  bg-white focus:outline-none focus:border-blue-500 transition"
-            >
-              <option value="">Choose</option>
-              {localCompanies && localCompanies.length > 0 ? (
-                localCompanies.map(company => (
-                  <option key={company.id} value={company.id}>
-                    {company.company_name}
-                  </option>
-                ))
-              ) : (
-                <option disabled>No companies available</option>
-              )}
-            </select>
+              onChange={(val) => setFormData(prev => ({ ...prev, client_id: val }))}
+            />
           </div>
 
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <label className="block text-xs    text-gray-700 mb-2">
-                Project
-              </label>
-              <select
-                name="project_id"
-                value={formData.project_id}
-                onChange={handleInputChange}
-                disabled={loadingData}
-                className="w-full p-2 border border-gray-300 rounded  text-xs  bg-white focus:outline-none focus:border-blue-500 transition disabled:opacity-50"
-              >
-                <option value="">Choose</option>
-                {projects.map(project => (
-                  <option key={project.id} value={project.id}>
-                    {project.project_name || project.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button type="button" className="text-red-500 hover:text-red-700 text-lg  mb-1" title="Add New">+</button>
-          </div>
-
-          <div>
-            <label className="block text-xs    text-gray-700 mb-2">
-              Related to
-            </label>
-            <select
-              name="related_to"
-              value={formData.related_to}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded  text-xs  bg-white focus:outline-none focus:border-blue-500 transition"
-            >
-              <option value="">Choose</option>
-              {localContacts && localContacts.length > 0 ? (
-                localContacts.map(contact => (
-                  <option key={contact.id} value={contact.id}>
-                    {contact.first_name} {contact.last_name}
-                  </option>
-                ))
-              ) : (
-                <option disabled>No contacts available</option>
-              )}
-            </select>
-          </div>
-
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <label className="block text-xs    text-gray-700 mb-2">
-                Deals
-              </label>
-              <select
-                name="deal_id"
-                value={formData.deal_id}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded  text-xs  bg-white focus:outline-none focus:border-blue-500 transition"
-              >
-                <option value="">Choose</option>
-                {localDeals && localDeals.length > 0 ? (
-                  localDeals.map(deal => (
-                    <option key={deal.id} value={deal.id}>
-                      {deal.deal_name}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No deals available</option>
-                )}
-              </select>
-            </div>
-            <button type="button" className="text-red-500 hover:text-red-700 text-lg  mb-1" title="Add New">+</button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs    text-gray-700 mb-2">
-                Currency
-              </label>
-              <select
-                name="currency"
-                value={formData.currency}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded  text-xs  bg-white focus:outline-none focus:border-blue-500 transition"
-              >
-                <option value="INR">INR</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs    text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded  text-xs  bg-white focus:outline-none focus:border-blue-500 transition"
-              >
-                <option value="Draft">Draft</option>
-                <option value="Accepted">Accepted</option>
-                <option value="Declined">Declined</option>
-                <option value="Pending">Pending</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs    text-gray-700 mb-2">
-              Assigned to
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowUserDropdown(!showUserDropdown)}
-                disabled={loadingData}
-                className="w-full p-2 border border-gray-300 rounded  text-xs  bg-white focus:outline-none focus:border-blue-500 transition disabled:opacity-50 text-left flex items-center justify-between"
-              >
-                <span className="flex items-center gap-2">
-                  {getSelectedUser() ? (
-                    <>
-                      <div className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs ">
-                        {getInitials(getSelectedUser().first_name, getSelectedUser().last_name)}
-                      </div>
-                      <span>{getSelectedUser().first_name} {getSelectedUser().last_name}</span>
-                    </>
-                  ) : (
-                    <span className="text-gray-500">{loadingData ? 'Loading...' : 'Select'}</span>
-                  )}
+          {selectedLeadInfo && (
+            <div className="p-3 bg-blue-50/70 border border-blue-200 rounded text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-blue-900 flex items-center gap-1.5">
+                  <User size={13} className="text-blue-600" />
+                  Client & Lead Information
                 </span>
-                <span className="text-[#1F2020]">▼</span>
-              </button>
+                <div className="flex items-center gap-1.5">
+                  {selectedLeadInfo.status && (
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-semibold">
+                      {selectedLeadInfo.status}
+                    </span>
+                  )}
+                  {selectedLeadInfo.business_type && (
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-semibold">
+                      {selectedLeadInfo.business_type}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-              {showUserDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded  shadow-lg z-10 max-h-48 overflow-y-auto">
-                  {users.map(user => (
-                    <button
-                      key={user.id}
-                      type="button"
-                      onClick={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          assigned_to: user.id.toString()
-                        }));
-                        setShowUserDropdown(false);
-                      }}
-                      className="w-full p-2 text-left hover:bg-gray-50 flex items-center gap-2 border-b border-gray-100 last:border-b-0"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-xs  flex-shrink-0">
-                        {getInitials(user.first_name, user.last_name)}
-                      </div>
-                      <div>
-                        <div className="text-xs    text-gray-900">{user.first_name} {user.last_name}</div>
-                        <div className="text-xs text-gray-500">{user.email || 'No email'}</div>
-                      </div>
-                    </button>
-                  ))}
+              {(selectedLeadInfo.service_needed || selectedLeadInfo.project_name) && (
+                <div className="p-2 bg-white/90 border border-blue-100 rounded text-[11px] space-y-1">
+                  {selectedLeadInfo.service_needed && (
+                    <div className="pt-1">
+                      <span className="text-blue-900 font-semibold block text-[11px] mb-1">
+                        Services Needed:
+                      </span>
+                      <ul className="space-y-1">
+                        {selectedLeadInfo.service_needed
+                          .split(',')
+                          .map(s => s.trim())
+                          .filter(Boolean)
+                          .map((srv, idx) => (
+                            <li key={idx} className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 text-emerald-800 font-medium border border-emerald-200 text-[11px]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                              <span>{srv}</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+                  {selectedLeadInfo.project_name && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-gray-500 shrink-0">Project Scope:</span>
+                      <strong className="text-gray-900">{selectedLeadInfo.project_name}</strong>
+                    </div>
+                  )}
                 </div>
               )}
+
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-700 pt-1.5 border-t border-blue-200/60">
+                <div>
+                  <span className="text-gray-500">Client / Company:</span>{' '}
+                  <strong className="text-gray-900">{selectedLeadInfo.company || 'N/A'}</strong>
+                </div>
+                <div>
+                  <span className="text-gray-500">Contact Person:</span>{' '}
+                  <strong className="text-gray-900">{selectedLeadInfo.name || 'N/A'}</strong>
+                </div>
+                <div>
+                  <span className="text-gray-500">Email:</span>{' '}
+                  <span className="text-gray-800">{selectedLeadInfo.email || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Phone:</span>{' '}
+                  <span className="text-gray-800">{selectedLeadInfo.phone || 'N/A'}</span>
+                </div>
+                {selectedLeadInfo.industry && (
+                  <div>
+                    <span className="text-gray-500">Industry:</span>{' '}
+                    <span className="text-gray-800">{selectedLeadInfo.industry}</span>
+                  </div>
+                )}
+                {selectedLeadInfo.business_type && (
+                  <div>
+                    <span className="text-gray-500">Business Type:</span>{' '}
+                    <span className="text-gray-800 font-medium">{selectedLeadInfo.business_type}</span>
+                  </div>
+                )}
+              </div>
             </div>
+          )}
+
+
+          <div>
+            <label className="block text-xs    text-gray-700 mb-2">
+              Status
+            </label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded  text-xs  bg-white focus:outline-none focus:border-blue-500 transition"
+            >
+              <option value="Draft">Draft</option>
+              <option value="Accepted">Accepted</option>
+              <option value="Declined">Declined</option>
+              <option value="Pending">Pending</option>
+            </select>
+          </div>
+
+          <div>
+            <SearchableSelect
+              label="Assigned to"
+              placeholder="Select"
+              options={userOptions}
+              value={formData.assigned_to}
+              onChange={(val) => setFormData(prev => ({ ...prev, assigned_to: val ? val.toString() : '' }))}
+              disabled={loadingData}
+            />
           </div>
 
           <div>
@@ -447,8 +676,14 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
               />
               <label htmlFor="file-upload" className="cursor-pointer">
                 <div className="flex flex-col items-center gap-2">
-                  <Upload size={32} className="text-[#1F2020]" />
-                  <p className="text-xs  text-gray-600">Drop your files here or <span className="text-blue-500 hover:underline">browse</span></p>
+                  <Upload size={32} className={`text-[#1F2020] ${isUploadingFile ? 'animate-bounce text-blue-600' : ''}`} />
+                  <p className="text-xs  text-gray-600">
+                    {isUploadingFile ? (
+                      <span className="text-blue-600 font-semibold">Uploading file to server...</span>
+                    ) : (
+                      <>Drop your files here or <span className="text-blue-500 hover:underline">browse</span></>
+                    )}
+                  </p>
                   <p className="text-xs text-gray-500">Maximum size: 50 MB</p>
                 </div>
               </label>
@@ -474,33 +709,6 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
             )}
           </div>
 
-          <div>
-            <label className="block text-xs    text-gray-700 mb-2">
-              Tags
-            </label>
-            <div className="flex flex-wrap gap-2 p-3 border border-gray-300 rounded  bg-white min-h-[40px]">
-              {formData.tags.map((tag, idx) => (
-                <span key={idx} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs  flex items-center gap-2 border border-gray-200">
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => removeTag(tag)}
-                    className="text-gray-500 hover:text-gray-700 "
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                placeholder="Enter value separated by comma"
-                className="flex-1 outline-none text-xs  min-w-[100px]"
-                onKeyPress={(e) => e.key === 'Enter' && addTag(e)}
-              />
-            </div>
-          </div>
 
           <div>
             <label className="block text-xs    text-gray-700 mb-2">
@@ -544,12 +752,13 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
             Cancel
           </button>
           <button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="p-2  bg-red-600 hover:bg-red-700 text-white  text-xs rounded  transition disabled:opacity-50"
-          >
-            {isLoading ? 'Creating...' : 'Create'}
-          </button>
+              type="submit"
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="px-4 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition font-medium disabled:opacity-50"
+            >
+              {isLoading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Proposal' : 'Create')}
+            </button>
         </div>
       </div>
     </div>

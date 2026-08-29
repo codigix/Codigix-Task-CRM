@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Edit2, Download, Send, CheckCircle, XCircle, Calendar, DollarSign, FileText } from 'lucide-react';
+import { ArrowLeft, Edit2, Download, Send, CheckCircle, XCircle, Calendar, FileText, Paperclip } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { proposalsAPI } from '../../services/api';
-import ProposalWorkflow from './ProposalWorkflow';
-import ProposalApprovalPanel from './ProposalApprovalPanel';
-import ProposalVersionHistory from './ProposalVersionHistory';
+import AddNewProposalModal from './AddNewProposalModal';
 
-const ProposalDetailsPage = ({ proposalId, onBack }) => {
+const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] }) => {
   const [proposal, setProposal] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState('details');
 
   useEffect(() => {
     loadProposal();
@@ -54,6 +52,24 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
     }
   };
 
+  const handleUpdateProposal = async (updatedData) => {
+    try {
+      console.log('🔄 Updating proposal:', updatedData);
+      await proposalsAPI.update(proposal.id, updatedData);
+      setIsEditing(false);
+      await loadProposal();
+      Swal.fire({
+        title: 'Success!',
+        text: 'Proposal updated successfully!',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      alert('Failed to update proposal: ' + (err.message || 'Error'));
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       'Accepted': 'bg-green-100 text-green-700',
@@ -65,6 +81,45 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
       'Rejected': 'bg-red-100 text-red-700'
     };
     return colors[status] || 'bg-gray-100 text-gray-700';
+  };
+
+  const parseServices = (val) => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+      return val.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [String(val)];
+  };
+
+  const parseAttachments = (val) => {
+    if (!val) return [];
+    let list = [];
+    if (Array.isArray(val)) {
+      list = val;
+    } else if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) list = parsed;
+      } catch (e) {}
+    }
+    return list.filter(f => f && (typeof f === 'string' || f.name || f.file_path || f.url));
+  };
+
+  const getFileUrl = (file) => {
+    if (!file) return '#';
+    const filePath = file.file_path || file.url || (typeof file === 'string' ? file : null);
+    if (!filePath) return '#';
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return filePath;
+    }
+    const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+    const baseUrl = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+    return `${baseUrl}${cleanPath}`;
   };
 
   if (isLoading) {
@@ -101,9 +156,8 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
     );
   }
 
-  const currency = proposal.currency || 'INR';
-  const lineItems = proposal.lineItems || [];
-  const history = proposal.history || [];
+  const servicesList = parseServices(proposal?.service_needed);
+  const attachmentsList = parseAttachments(proposal?.attachments);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -113,13 +167,15 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
           <div className="flex items-center gap-4">
             <button 
               onClick={onBack}
-              className="flex items-center gap-2 text-slate-700 hover:text-red-600 font-medium"
+              className="flex items-center gap-2 text-slate-700 hover:text-red-600 font-medium transition"
             >
               <ArrowLeft size={20} />
               Back
             </button>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{proposal.title}</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                {proposal.lead_name ? `${proposal.lead_name} (${proposal.client_name || 'Client'})` : (proposal.client_name || 'Proposal Details')}
+              </h1>
               <p className="text-xs text-gray-500 mt-1">{proposal.proposal_number}</p>
             </div>
           </div>
@@ -128,361 +184,332 @@ const ProposalDetailsPage = ({ proposalId, onBack }) => {
               {proposal.status}
             </span>
             <button 
-              onClick={() => setIsEditing(!isEditing)}
-              className="flex items-center gap-2 p-2 text-xs border border-gray-300 rounded hover:bg-gray-50 font-medium"
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700 font-medium transition shadow-sm"
             >
-              <Edit2 size={16} />
-              Edit
+              <Edit2 size={15} />
+              Edit Proposal
             </button>
             {proposal.status === 'Accepted' && (
               <button 
                 onClick={handleConvertToInvoice}
-                className="flex items-center gap-2 p-2 text-xs bg-red-600 text-white rounded hover:bg-red-700 font-medium"
+                className="flex items-center gap-2 px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 font-medium transition shadow-sm"
               >
-                <Download size={16} />
+                <Download size={15} />
                 Convert to Invoice
               </button>
             )}
           </div>
         </div>
-
-        {/* Tabs */}
-        <div className="border-t">
-          <div className="px-6 flex gap-2 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('workflow')}
-              className={`py-3 border-b-2 text-xs font-medium transition-colors whitespace-nowrap ${
-                activeTab === 'workflow'
-                  ? 'border-red-600 text-red-600 font-semibold'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Workflow
-            </button>
-            <button
-              onClick={() => setActiveTab('details')}
-              className={`py-3 border-b-2 text-xs font-medium transition-colors ${
-                activeTab === 'details'
-                  ? 'border-red-600 text-red-600 font-semibold'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Details
-            </button>
-            <button
-              onClick={() => setActiveTab('lineItems')}
-              className={`py-3 border-b-2 text-xs font-medium transition-colors ${
-                activeTab === 'lineItems'
-                  ? 'border-red-600 text-red-600 font-semibold'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Line Items
-            </button>
-            <button
-              onClick={() => setActiveTab('versions')}
-              className={`py-3 border-b-2 text-xs font-medium transition-colors whitespace-nowrap ${
-                activeTab === 'versions'
-                  ? 'border-red-600 text-red-600 font-semibold'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Version History
-            </button>
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`py-3 border-b-2 text-xs font-medium transition-colors ${
-                activeTab === 'history'
-                  ? 'border-red-600 text-red-600 font-semibold'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Activity Log
-            </button>
-          </div>
-        </div>
       </div>
 
-      {/* Content */}
+      {/* Main Content Details View */}
       <div className="p-6 max-w-6xl mx-auto">
-        {/* Workflow Tab */}
-        {activeTab === 'workflow' && (
-          <div className="space-y-6">
-            <ProposalWorkflow 
-              proposal={proposal}
-              onStatusChange={handleStatusChange}
-              onApprove={() => handleStatusChange('Approved')}
-              onReject={() => handleStatusChange('Rejected')}
-              onSend={() => handleStatusChange('Sent')}
-              onConvertToInvoice={handleConvertToInvoice}
-            />
-            <ProposalApprovalPanel 
-              proposal={proposal}
-              isManager={true}
-              onApprove={() => handleStatusChange('Approved')}
-              onReject={() => handleStatusChange('Rejected')}
-            />
-          </div>
-        )}
-
-        {/* Details Tab */}
-        {activeTab === 'details' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Main Info */}
-            <div className="md:col-span-2 space-y-6">
-              {/* Dates and Validity */}
-              <div className="bg-white rounded p-3  border">
-                <h2 className="text-md  text-gray-900 mb-4 flex items-center gap-2">
-                  <Calendar size={20} />
-                  Timeline
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left Column (Details, Description, Attachments) */}
+          <div className="md:col-span-2 space-y-6">
+            {/* Client & Lead Information Card */}
+            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                  Client & Lead Details
                 </h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs  text-gray-600">Proposal Date</p>
-                    <p className="text-lg   text-gray-900">
-                      {proposal.proposal_date ? new Date(proposal.proposal_date).toLocaleDateString() : 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs  text-gray-600">Validity Date</p>
-                    <p className="text-lg   text-gray-900">
-                      {proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}
-                    </p>
-                  </div>
-                </div>
+                {proposal.business_type && (
+                  <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs font-semibold">
+                    {proposal.business_type}
+                  </span>
+                )}
               </div>
 
-              {/* Description */}
-              {proposal.description && (
-                <div className="bg-white rounded p-3  border">
-                  <h2 className="text-md  text-gray-900 mb-4">Description</h2>
-                  <p className="text-gray-600">{proposal.description}</p>
+              <div className="grid grid-cols-2 gap-4 text-xs pt-2 border-t border-gray-100">
+                <div>
+                  <span className="text-gray-500">Client / Company:</span>{' '}
+                  <strong className="text-gray-900 text-sm block mt-0.5">{proposal.client_name || 'N/A'}</strong>
                 </div>
-              )}
-
-              {/* Terms & Conditions */}
-              {proposal.terms_conditions && (
-                <div className="bg-white rounded p-3  border">
-                  <h2 className="text-md  text-gray-900 mb-4">Terms & Conditions</h2>
-                  <p className="text-gray-600 whitespace-pre-wrap">{proposal.terms_conditions}</p>
+                <div>
+                  <span className="text-gray-500">Related Lead:</span>{' '}
+                  <strong className="text-gray-900 text-sm block mt-0.5">{proposal.lead_name || 'N/A'}</strong>
                 </div>
-              )}
+                {proposal.project_scope && (
+                  <div>
+                    <span className="text-gray-500">Project Scope:</span>{' '}
+                    <span className="text-gray-800 font-medium block mt-0.5">{proposal.project_scope}</span>
+                  </div>
+                )}
+                {proposal.assigned_to_name && (
+                  <div>
+                    <span className="text-gray-500">Assigned To:</span>{' '}
+                    <span className="text-gray-800 font-semibold block mt-0.5">{proposal.assigned_to_name}</span>
+                  </div>
+                )}
+              </div>
 
-              {/* Notes */}
-              {proposal.notes && (
-                <div className="bg-white rounded p-3  border">
-                  <h2 className="text-md  text-gray-900 mb-4">Notes</h2>
-                  <p className="text-gray-600">{proposal.notes}</p>
+              {/* Services List */}
+              {servicesList.length > 0 && (
+                <div className="pt-3 border-t border-gray-100">
+                  <p className="text-xs font-semibold text-gray-700 mb-2.5 flex items-center gap-1.5">
+                    <span>🎯</span> Services Needed ({servicesList.length})
+                  </p>
+                  <ul className="space-y-2">
+                    {servicesList.map((service, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-center gap-2.5 px-3 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded-lg text-xs font-medium text-emerald-900"
+                      >
+                        <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                          ✓
+                        </span>
+                        <span>{service}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Total Amount */}
-              <div className="bg-white rounded p-3  border">
-                <h2 className="text-md  text-gray-900 mb-4 flex items-center gap-2">
-                  <DollarSign size={20} />
-                  Amount
-                </h2>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-xs ">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="  text-gray-900">
-                      {currency} {((parseFloat(proposal.total_amount) || 0) + (parseFloat(proposal.discount_amount) || 0) - (parseFloat(proposal.tax_amount) || 0)).toFixed(2)}
-                    </span>
-                  </div>
-                  {(parseFloat(proposal.discount_amount) || 0) > 0 && (
-                    <div className="flex justify-between text-xs  text-orange-600">
-                      <span>Discount:</span>
-                      <span>-{currency} {(parseFloat(proposal.discount_amount) || 0).toFixed(2)}</span>
-                    </div>
-                  )}
-                  {(parseFloat(proposal.tax_amount) || 0) > 0 && (
-                    <div className="flex justify-between text-xs  text-green-600">
-                      <span>Tax:</span>
-                      <span>+{currency} {(parseFloat(proposal.tax_amount) || 0).toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="border-t pt-3 flex justify-between">
-                    <span className=" text-gray-900">Total:</span>
-                    <span className="text-xl font-bold text-slate-900">
-                      {currency} {(parseFloat(proposal.total_amount) || 0).toFixed(2)}
-                    </span>
-                  </div>
+            {/* Timeline Card */}
+            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+              <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Calendar size={18} className="text-blue-600" />
+                Timeline
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  <p className="text-xs text-gray-500">Proposal Date</p>
+                  <p className="text-base font-semibold text-gray-900 mt-1">
+                    {proposal.proposal_date ? new Date(proposal.proposal_date).toLocaleDateString() : 'N/A'}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  <p className="text-xs text-gray-500">Open Till</p>
+                  <p className="text-base font-semibold text-gray-900 mt-1">
+                    {proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}
+                  </p>
                 </div>
               </div>
+            </div>
 
-              {/* Status Actions */}
-              {proposal.status === 'Draft' && (
-                <div className="bg-white rounded p-3  border">
-                  <h2 className="text-md  text-gray-900 mb-4">Actions</h2>
-                  <button
-                    onClick={() => handleStatusChange('Submitted')}
-                    className="w-full p-2  bg-red-600  text-white rounded  hover:bg-blue-700 transition-colors"
-                  >
-                    Submit for Approval
-                  </button>
+            {/* Scope & Description Card */}
+            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm space-y-3">
+              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <FileText size={18} className="text-blue-600" />
+                Scope & Description
+              </h2>
+              {proposal.description ? (
+                <div
+                  className="text-xs text-gray-800 leading-relaxed bg-gray-50/70 p-4 rounded-lg border border-gray-200/70 whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{ __html: proposal.description }}
+                />
+              ) : (
+                <p className="text-xs text-gray-400 italic bg-gray-50/50 p-4 rounded-lg border border-gray-100">
+                  No detailed description provided for this proposal.
+                </p>
+              )}
+            </div>
+
+            {/* Attachments & Files Card */}
+            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm space-y-3">
+              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <Paperclip size={18} className="text-blue-600" />
+                Attachments & Files ({attachmentsList.length})
+              </h2>
+              {attachmentsList.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {attachmentsList.map((file, idx) => {
+                    const fileName = typeof file === 'string' ? file.split('/').pop() : (file.name || `Attachment ${idx + 1}`);
+                    const fileSize = file.size ? `${(file.size / 1024).toFixed(1)} KB` : null;
+                    const fileUrl = getFileUrl(file);
+                    const isClickable = fileUrl !== '#';
+
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs hover:border-blue-300 hover:bg-blue-50/20 transition group"
+                      >
+                        <a
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center gap-2.5 min-w-0 flex-1 ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
+                          onClick={(e) => {
+                            if (!isClickable) {
+                              e.preventDefault();
+                              alert('File URL is not available. Please edit this proposal to upload a new copy of the file.');
+                            }
+                          }}
+                        >
+                          <div className="w-8 h-8 rounded bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-base shrink-0 group-hover:bg-blue-600 group-hover:text-white transition">
+                            📄
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition" title={fileName}>
+                              {fileName}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {fileSize ? `${fileSize} • ` : ''}
+                              {isClickable ? 'Click to open' : 'No link attached'}
+                            </p>
+                          </div>
+                        </a>
+                        {isClickable && (
+                          <div className="flex items-center gap-1 ml-2 shrink-0">
+                            <a
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-1 bg-white border border-gray-200 text-blue-600 hover:bg-blue-50 rounded text-[11px] font-medium transition"
+                              title="Open in new tab"
+                            >
+                              Open
+                            </a>
+                            <a
+                              href={fileUrl}
+                              download={fileName}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-100/60 rounded transition"
+                              title="Download"
+                            >
+                              <Download size={14} />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic bg-gray-50/50 p-4 rounded-lg border border-gray-100">
+                  No attachments uploaded for this proposal. Click "Edit Proposal" to attach files.
+                </p>
+              )}
+            </div>
+
+            {/* Terms & Conditions (if present) */}
+            {proposal.terms_conditions && (
+              <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                <h2 className="text-sm font-bold text-gray-900 mb-3">Terms & Conditions</h2>
+                <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">{proposal.terms_conditions}</p>
+              </div>
+            )}
+
+            {/* Notes (if present) */}
+            {proposal.notes && (
+              <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                <h2 className="text-sm font-bold text-gray-900 mb-3">Internal Notes</h2>
+                <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">{proposal.notes}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column (Sidebar Actions & Summary) */}
+          <div className="space-y-6">
+            {/* Status Actions */}
+            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm space-y-3">
+              <h2 className="text-sm font-bold text-gray-900">Actions</h2>
+              {proposal.status === 'Draft' && (
+                <button
+                  onClick={() => handleStatusChange('Submitted')}
+                  className="w-full p-2.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition"
+                >
+                  Submit for Approval
+                </button>
               )}
 
               {proposal.status === 'Submitted' && (
-                <div className="bg-white rounded p-3  border space-y-2">
-                  <h2 className="text-md  text-gray-900 mb-4">Actions</h2>
+                <div className="space-y-2">
                   <button
                     onClick={() => handleStatusChange('Approved')}
-                    className="w-full p-2  bg-green-600 text-white rounded  hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                    className="w-full p-2.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2"
                   >
-                    <CheckCircle size={16} />
-                    Approve
+                    <CheckCircle size={15} />
+                    Approve Proposal
                   </button>
                   <button
                     onClick={() => handleStatusChange('Rejected')}
-                    className="w-full p-2  bg-red-600 text-white rounded  hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                    className="w-full p-2.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2"
                   >
-                    <XCircle size={16} />
+                    <XCircle size={15} />
                     Reject
                   </button>
                 </div>
               )}
 
               {proposal.status === 'Approved' && (
-                <div className="bg-white rounded p-3  border">
-                  <h2 className="text-md  text-gray-900 mb-4">Actions</h2>
-                  <button
-                    onClick={() => handleStatusChange('Sent')}
-                    className="w-full p-2  bg-red-600  text-white rounded  hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Send size={16} />
-                    Send to Client
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleStatusChange('Sent')}
+                  className="w-full p-2.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                >
+                  <Send size={15} />
+                  Send to Client
+                </button>
               )}
 
               {proposal.status === 'Sent' && (
-                <div className="bg-white rounded p-3  border">
-                  <h2 className="text-md  text-gray-900 mb-4">Actions</h2>
+                <div className="space-y-2">
                   <button
                     onClick={() => handleStatusChange('Accepted')}
-                    className="w-full p-2  bg-green-600 text-white rounded  hover:bg-green-700 transition-colors mb-2"
+                    className="w-full p-2.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 transition"
                   >
                     Mark as Accepted
                   </button>
                   <button
                     onClick={() => handleStatusChange('Declined')}
-                    className="w-full p-2  bg-red-600 text-white rounded  hover:bg-red-700 transition-colors"
+                    className="w-full p-2.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition"
                   >
                     Mark as Declined
                   </button>
                 </div>
               )}
 
-              {/* Client Info */}
-              <div className="bg-white rounded p-3  border">
-                <h2 className="text-md  text-gray-900 mb-4">Client</h2>
-                <p className="text-gray-600">{proposal.company_name || 'Unknown Company'}</p>
-                {proposal.first_name && proposal.last_name && (
-                  <p className="text-gray-600">{proposal.first_name} {proposal.last_name}</p>
-                )}
-              </div>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="w-full p-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
+              >
+                <Edit2 size={14} />
+                Edit Proposal Details
+              </button>
             </div>
-          </div>
-        )}
 
-        {/* Line Items Tab */}
-        {activeTab === 'lineItems' && (
-          <div className="bg-white rounded  border">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left px-4 py-3  text-gray-900">Item Name</th>
-                    <th className="text-left px-4 py-3  text-gray-900">Description</th>
-                    <th className="text-right px-4 py-3  text-gray-900">Qty</th>
-                    <th className="text-right px-4 py-3  text-gray-900">Rate</th>
-                    <th className="text-right px-4 py-3  text-gray-900">Discount</th>
-                    <th className="text-right px-4 py-3  text-gray-900">Tax</th>
-                    <th className="text-right px-4 py-3  text-gray-900">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lineItems.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" className="p-2  text-center text-gray-500">
-                        No line items
-                      </td>
-                    </tr>
-                  ) : (
-                    lineItems.map((item, index) => (
-                      <tr key={index} className="border-b hover:bg-gray-50">
-                        <td className="px-4 py-3   text-gray-900">{item.item_name}</td>
-                        <td className="px-4 py-3 text-gray-600">{item.description}</td>
-                        <td className="px-4 py-3 text-right text-gray-600">{item.quantity}</td>
-                        <td className="px-4 py-3 text-right text-gray-600">
-                          {currency} {(parseFloat(item.rate) || 0).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-orange-600">
-                          {currency} {(parseFloat(item.discount_amount) || 0).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-green-600">
-                          {currency} {(parseFloat(item.tax_amount) || 0).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-gray-900 font-semibold">
-                          {currency} {(parseFloat(item.total) || 0).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Version History Tab */}
-        {activeTab === 'versions' && (
-          <ProposalVersionHistory proposal={proposal} versions={[]} />
-        )}
-
-        {/* History Tab */}
-        {activeTab === 'history' && (
-          <div className="space-y-4">
-            {history.length === 0 ? (
-              <div className="bg-white rounded p-3  border text-center text-gray-500">
-                No history records
-              </div>
-            ) : (
-              history.map((record, index) => (
-                <div key={index} className="bg-white rounded  p-2 border">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className=" text-gray-900">{record.action}</p>
-                      <p className="text-xs  text-gray-600">
-                        {record.old_status && `From ${record.old_status}`}
-                        {record.old_status && record.new_status && ' → '}
-                        {record.new_status && `To ${record.new_status}`}
-                      </p>
-                      {record.comments && (
-                        <p className="text-xs  text-gray-600 mt-2">{record.comments}</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs  text-gray-600">
-                        {record.first_name && record.last_name
-                          ? `${record.first_name} ${record.last_name}`
-                          : 'System'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(record.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
+            {/* Client & Lead Summary Card */}
+            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm space-y-3">
+              <h2 className="text-sm font-bold text-gray-900">Client & Lead Overview</h2>
+              <div className="space-y-2 text-xs">
+                <div>
+                  <p className="text-[11px] text-gray-500">Client / Company</p>
+                  <p className="font-semibold text-gray-900">{proposal.client_name || 'N/A'}</p>
                 </div>
-              ))
-            )}
+                {proposal.lead_name && (
+                  <div>
+                    <p className="text-[11px] text-gray-500">Lead Contact Person</p>
+                    <p className="font-semibold text-gray-900">{proposal.lead_name}</p>
+                  </div>
+                )}
+                {proposal.assigned_to_name && (
+                  <div>
+                    <p className="text-[11px] text-gray-500">Assigned Salesperson</p>
+                    <p className="font-semibold text-gray-900">{proposal.assigned_to_name}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-[11px] text-gray-500">Created At</p>
+                  <p className="text-gray-700">{proposal.created_at ? new Date(proposal.created_at).toLocaleString() : 'N/A'}</p>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Edit Proposal Modal */}
+      <AddNewProposalModal
+        isOpen={isEditing}
+        onClose={() => setIsEditing(false)}
+        onSubmit={handleUpdateProposal}
+        companies={companies}
+        leads={leads}
+        initialData={proposal}
+      />
     </div>
   );
 };

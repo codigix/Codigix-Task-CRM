@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X, ChevronDown, Calendar, Clock, Link, MapPin, Repeat, CheckCircle,
   Video as VideoIcon, Phone, MessageSquare, Mail, Layout, Paperclip, Image as ImageIcon
@@ -8,7 +8,7 @@ import { generateMeetingCode, generateMeetingLink } from '../../utils/meetingUti
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null }) => {
+const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null, onCreateProposal = null }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [relatedRecords, setRelatedRecords] = useState([]);
@@ -17,6 +17,8 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null }) => 
   const [isFirstForClient, setIsFirstForClient] = useState(false);
   const [projects, setProjects] = useState([]);
   const [existingFiles, setExistingFiles] = useState([]);
+  const statusCompletionRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
   const [formData, setFormData] = useState({
     related_type: 'Lead',
@@ -60,6 +62,17 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null }) => 
     meeting: false,
     completion: false
   });
+
+  useEffect(() => {
+    if (openPanels.recurrence) {
+      const timer = setTimeout(() => {
+        if (statusCompletionRef.current) {
+          statusCompletionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [openPanels.recurrence]);
 
   useEffect(() => {
     if (isOpen) {
@@ -306,7 +319,17 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null }) => 
   };
 
   const togglePanel = (name) => {
-    setOpenPanels((p) => ({ ...p, [name]: !p[name] }));
+    setOpenPanels((p) => {
+      const willOpen = !p[name];
+      if (willOpen && name === 'recurrence') {
+        setTimeout(() => {
+          if (statusCompletionRef.current) {
+            statusCompletionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 150);
+      }
+      return { ...p, [name]: willOpen };
+    });
   };
 
   const handleInputChange = (e) => {
@@ -520,7 +543,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null }) => 
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
             {/* Related Information Panel */}
             <div className="border-b border-[#EAECF0]">
               <button
@@ -1012,7 +1035,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null }) => 
             </div>
 
             {/* Additional Options (Collapsible) */}
-            <div className="border-b border-[#EAECF0]">
+            <div ref={statusCompletionRef} className="border-b border-[#EAECF0]">
               <button
                 type="button"
                 onClick={() => togglePanel('recurrence')}
@@ -1020,9 +1043,9 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null }) => 
               >
                 <div className="flex items-center gap-3">
                   <div className="w-6 h-6 flex items-center justify-center rounded bg-green-500 text-white  shadow-green-100">
-                    <Repeat size={15} />
+                    <CheckCircle size={15} />
                   </div>
-                  <span className="text-gray-900text-md ">Recurrence & Completion</span>
+                  <span className="text-gray-900 text-sm font-medium">Status & Completion</span>
                 </div>
                 <ChevronDown
                   size={15}
@@ -1032,47 +1055,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null }) => 
 
               {openPanels.recurrence && (
                 <div className="p-2 space-y-2 bg-white animate-in fade-in duration-200">
-                  <div className="flex items-center gap-3 p-2 bg-gray-50 rounded border border-gray-100">
-                    <input
-                      type="checkbox"
-                      id="is_recurring"
-                      name="is_recurring"
-                      checked={formData.is_recurring}
-                      onChange={handleInputChange}
-                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                    />
-                    <label htmlFor="is_recurring" className="text-xs text-gray-700  cursor-pointer">Recurring Follow-up</label>
-                  </div>
-
-                  {formData.is_recurring && (
-                    <div className="grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-200">
-                      <div>
-                        <label className="block text-xs  text-gray-700 mb-1.5">Frequency</label>
-                        <select
-                          name="recurrence_frequency"
-                          value={formData.recurrence_frequency}
-                          onChange={handleInputChange}
-                          className="w-full p-2 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none"
-                        >
-                          <option value="Daily">Daily</option>
-                          <option value="Weekly">Weekly</option>
-                          <option value="Monthly">Monthly</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs  text-gray-700 mb-1.5">End Date</label>
-                        <input
-                          type="date"
-                          name="recurrence_end_date"
-                          value={formData.recurrence_end_date}
-                          onChange={handleInputChange}
-                          className="w-full p-2 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className=" border-t border-gray-100">
+                  <div>
                     <label className="block text-xs  text-gray-700 mb-1.5">Status</label>
                     <select
                       name="status"
@@ -1103,6 +1086,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null }) => 
                         >
                           <option value="">Select Outcome</option>
                           <option value="Interested">Interested</option>
+                          <option value="Proposal">Proposal</option>
                           <option value="Asking for Quotation">Asking for Quotation</option>
                           <option value="Revise Quotation">Revise Quotation</option>
                           <option value="Quotation Accepted">Quotation Accepted</option>

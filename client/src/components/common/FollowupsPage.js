@@ -4,13 +4,16 @@ import {
   Receipt, Calculator, Star, TrendingUp, Building2, User, Edit2, FileText,
   ChevronDown, MoreVertical, Plus, MessageCircle, Clock, AlertCircle, CheckCircle2,
   Trash2, RotateCcw, Filter, ExternalLink, Maximize, LayoutGrid, List, ChevronsUpDown,
-  ArrowLeft, Layout, PlusCircle
+  ArrowLeft, Layout, PlusCircle, Eye, Send
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { followupsAPI, leadsAPI, dealsAPI, estimationsAPI } from '../../services/api';
+import { followupsAPI, leadsAPI, dealsAPI, estimationsAPI, proposalsAPI, companiesAPI } from '../../services/api';
 import { generateMeetingLink } from '../../utils/meetingUtils';
 import AddFollowupModal from './AddFollowupModal';
 import AddNewEstimationModal from './AddNewEstimationModal';
+import AddNewProposalModal from './AddNewProposalModal';
+import SendProposalEmailModal from './SendProposalEmailModal';
+import ProposalDetailsPage from './ProposalDetailsPage';
 import { generateQuotationPDF } from '../../utils/generateQuotationPDF';
 import AdvancedDataTable from './AdvancedDataTable';
 import DateRangeDropdown from './DateRangeDropdown';
@@ -32,6 +35,13 @@ const FollowupsPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
   const [quotationInitialData, setQuotationInitialData] = useState(null);
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+  const [proposalInitialData, setProposalInitialData] = useState(null);
+  const [isSendProposalOpen, setIsSendProposalOpen] = useState(false);
+  const [sendProposalData, setSendProposalData] = useState(null);
+  const [viewingProposalId, setViewingProposalId] = useState(null);
+  const [allLeads, setAllLeads] = useState([]);
+  const [allCompanies, setAllCompanies] = useState([]);
   const [editingFollowup, setEditingFollowup] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('list');
@@ -68,6 +78,161 @@ const FollowupsPage = () => {
   const [expandedFilterSection, setExpandedFilterSection] = useState('status');
   const [isGroupedView, setIsGroupedView] = useState(true);
   const [expandedClients, setExpandedClients] = useState({});
+
+  useEffect(() => {
+    const loadAuxData = async () => {
+      try {
+        const [lRes, cRes] = await Promise.allSettled([
+          leadsAPI.getAll(),
+          companiesAPI.getAll()
+        ]);
+        if (lRes.status === 'fulfilled') {
+          setAllLeads(Array.isArray(lRes.value) ? lRes.value : (lRes.value?.data || []));
+        }
+        if (cRes.status === 'fulfilled') {
+          setAllCompanies(Array.isArray(cRes.value) ? cRes.value : (cRes.value?.data || []));
+        }
+      } catch (e) {
+        console.warn('Error loading auxiliary data in FollowupsPage:', e);
+      }
+    };
+    loadAuxData();
+  }, []);
+
+  const openProposalModalForFollowup = async (f) => {
+    if (!f) return;
+    try {
+      const realLeadId = f.related_type === 'Lead'
+        ? (Number(f.related_id) > 1000000 ? Number(f.related_id) - 1000000 : Number(f.related_id))
+        : (f.lead_id ? Number(f.lead_id) : null);
+
+      let leadInfo = null;
+      if (realLeadId) {
+        leadInfo = allLeads.find(l => Number(l.id) === Number(realLeadId));
+        if (!leadInfo) {
+          try {
+            leadInfo = await leadsAPI.getById(realLeadId);
+          } catch (e) {}
+        }
+      }
+
+      const servicesNeeded = leadInfo?.service_needed 
+        || leadInfo?.it_services 
+        || (Array.isArray(leadInfo?.marketing_services) ? leadInfo.marketing_services.join(', ') : leadInfo?.marketing_services) 
+        || '';
+
+      const autoTitle = servicesNeeded 
+        ? `${servicesNeeded} Proposal - ${leadInfo?.company || leadInfo?.lead_name || f.related_name}`
+        : `Proposal for ${leadInfo?.company || leadInfo?.lead_name || f.related_name}`;
+
+      setProposalInitialData({
+        lead_id: realLeadId ? String(realLeadId) : '',
+        lead_name: leadInfo?.lead_name || f.related_name || '',
+        client_id: leadInfo?.company_id ? String(leadInfo.company_id) : (f.client_id || f.company_id ? String(f.client_id || f.company_id) : ''),
+        client_name: leadInfo?.company || f.company_name || '',
+        client_email: leadInfo?.email || f.client_email || '',
+        client_phone: leadInfo?.phone || f.client_phone || '',
+        email: leadInfo?.email || f.client_email || '',
+        phone: leadInfo?.phone || f.client_phone || '',
+        industry: leadInfo?.industry || '',
+        lead_status: leadInfo?.lead_status || leadInfo?.status || '',
+        status_badge: leadInfo?.lead_status || leadInfo?.status || '',
+        assigned_to: leadInfo?.owner_id ? String(leadInfo.owner_id) : (f.assigned_to ? String(f.assigned_to) : ''),
+        business_type: leadInfo?.business_type || '',
+        service_needed: servicesNeeded,
+        project_scope: leadInfo?.project_name || '',
+        title: autoTitle,
+        status: 'Draft',
+        proposal_date: new Date().toISOString().split('T')[0]
+      });
+      setIsProposalModalOpen(true);
+    } catch (err) {
+      console.error('Error preparing proposal modal from followup:', err);
+    }
+  };
+
+  const openSendProposal = async (f) => {
+    if (!f) return;
+    try {
+      const propId = f.latest_proposal_id || f.proposal_id;
+      if (propId) {
+        try {
+          const res = await proposalsAPI.getById(propId);
+          if (res) {
+            setSendProposalData({
+              ...res,
+              client_email: res.client_email || res.lead_email || f.client_email,
+              client_phone: res.client_phone || res.lead_phone || f.client_phone,
+              client_name: res.client_name || res.lead_name || f.related_name
+            });
+            setIsSendProposalOpen(true);
+            return;
+          }
+        } catch (fetchErr) {
+          console.warn('Could not fetch proposal by ID:', fetchErr);
+        }
+      }
+
+      const realLeadId = f.related_type === 'Lead'
+        ? (Number(f.related_id) > 1000000 ? Number(f.related_id) - 1000000 : Number(f.related_id))
+        : (f.lead_id ? Number(f.lead_id) : null);
+
+      const allPropsRes = await proposalsAPI.getAll();
+      const propsList = Array.isArray(allPropsRes) ? allPropsRes : (allPropsRes?.data || []);
+      const matched = propsList.find(p => 
+        (realLeadId && Number(p.lead_id) === Number(realLeadId)) ||
+        (f.client_id && Number(p.client_id) === Number(f.client_id)) ||
+        (f.related_id && Number(p.client_id) === Number(f.related_id))
+      );
+
+      if (matched) {
+        setSendProposalData({
+          ...matched,
+          client_email: matched.client_email || matched.lead_email || f.client_email,
+          client_phone: matched.client_phone || matched.lead_phone || f.client_phone,
+          client_name: matched.client_name || matched.lead_name || f.related_name
+        });
+        setIsSendProposalOpen(true);
+      } else {
+        showErrorToast('No proposal found to send. Please create a proposal first.');
+      }
+    } catch (err) {
+      console.error('Error opening send proposal modal:', err);
+      showErrorToast('Failed to load proposal details');
+    }
+  };
+
+  const openViewProposal = async (f) => {
+    if (!f) return;
+    const propId = f.latest_proposal_id || f.proposal_id;
+    if (propId) {
+      setViewingProposalId(propId);
+      return;
+    }
+
+    const realLeadId = f.related_type === 'Lead'
+      ? (Number(f.related_id) > 1000000 ? Number(f.related_id) - 1000000 : Number(f.related_id))
+      : (f.lead_id ? Number(f.lead_id) : null);
+
+    try {
+      const allPropsRes = await proposalsAPI.getAll();
+      const propsList = Array.isArray(allPropsRes) ? allPropsRes : (allPropsRes?.data || []);
+      const matched = propsList.find(p => 
+        (realLeadId && Number(p.lead_id) === Number(realLeadId)) ||
+        (f.client_id && Number(p.client_id) === Number(f.client_id)) ||
+        (f.related_id && Number(p.client_id) === Number(f.related_id))
+      );
+
+      if (matched) {
+        setViewingProposalId(matched.id);
+      } else {
+        showErrorToast('No proposal found to view. Please create one first.');
+      }
+    } catch (err) {
+      console.error('Error opening view proposal:', err);
+      showErrorToast('Failed to load proposal');
+    }
+  };
 
   const openQuotationModal = async (f, openRevisionDirectly = false) => {
     if (!f) return;
@@ -762,7 +927,7 @@ const FollowupsPage = () => {
         let colorClass = 'text-gray-600 bg-gray-50 border-gray-100';
 
         // Positive outcomes
-        if (['Interested', 'Asking for Quotation', 'Meeting Scheduled', 'Converted to Deal', 'Useful', 'Accepted'].includes(outcome)) {
+        if (['Interested', 'Proposal', 'Proposal Sent', 'Asking for Quotation', 'Meeting Scheduled', 'Converted to Deal', 'Useful', 'Accepted'].includes(outcome)) {
           colorClass = 'text-green-700 bg-green-50 border-green-100';
         }
         // Neutral/Follow-up outcomes
@@ -798,6 +963,45 @@ const FollowupsPage = () => {
       label: 'Action',
       render: (_, row) => (
         <div className="flex items-center justify-end gap-1">
+          {(row.outcome && row.outcome.toLowerCase().includes('proposal')) && (
+            row.latest_proposal_id ? (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openViewProposal(row);
+                  }}
+                  title="View Proposal"
+                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-all flex items-center gap-1 font-medium shadow-sm"
+                >
+                  <Eye size={12} /> VIEW PROPOSAL
+                </button>
+                {row.latest_proposal_status !== 'Sent' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openSendProposal(row);
+                    }}
+                    title="Send Proposal via Email"
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-all flex items-center gap-1 font-medium shadow-sm"
+                  >
+                    <Send size={12} /> SEND PROPOSAL
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openProposalModalForFollowup(row);
+                }}
+                title="Create Proposal for this lead"
+                className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-all flex items-center gap-1 font-medium shadow-sm"
+              >
+                <FileText size={12} /> CREATE PROPOSAL
+              </button>
+            )
+          )}
           {row.outcome === 'Asking for Quotation' && (
             <button
               onClick={(e) => {
@@ -1507,8 +1711,27 @@ const FollowupsPage = () => {
                                       )}
                                     </div>
                                   )}
-                                  {!quotStatus && (entityStatus === 'Quotation' || entityStatus === 'Qualified') && (
+                                  {!quotStatus && !client.followups.some(f => (f.outcome && f.outcome.toLowerCase().includes('proposal')) || (f.subject && f.subject.toLowerCase().includes('proposal'))) && (entityStatus === 'Quotation' || entityStatus === 'Qualified') && (
                                     <span className="text-[9px] text-gray-400">No Quotation Created</span>
+                                  )}
+                                  {client.followups.some(f => (f.outcome && f.outcome.toLowerCase().includes('proposal'))) && (
+                                    (client.last_followup?.latest_proposal_id || client.followups.some(f => f.latest_proposal_id)) ? (
+                                      <span className={`text-[9px] ${client.last_followup?.latest_proposal_status === 'Sent' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'} px-1.5 py-0.5 rounded border font-medium w-fit mt-1`}>
+                                        Proposal: {client.last_followup?.latest_proposal_status || 'Created'}
+                                      </span>
+                                    ) : (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const propFollowup = client.followups.find(f => (f.outcome && f.outcome.toLowerCase().includes('proposal'))) || client.last_followup;
+                                          openProposalModalForFollowup(propFollowup);
+                                        }}
+                                        className="mt-1 px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-semibold flex items-center gap-1 w-fit transition-all shadow-sm"
+                                        title="Create Proposal for this client"
+                                      >
+                                        <FileText size={10} /> CREATE PROPOSAL
+                                      </button>
+                                    )
                                   )}
                                 </div>
                               );
@@ -1615,65 +1838,112 @@ const FollowupsPage = () => {
                                           <td className="p-2 text-right">
                                             <div className="flex items-center justify-end gap-1">
                                               {(() => {
-                                                 const isQuotationSentAttempt = f.outcome === 'Sent' || f.outcome === 'Revised' || (f.subject && f.subject.toLowerCase().includes('quotation sent'));
-                                                 const isAskingPending = f.outcome === 'Asking for Quotation' && (!Array.isArray(client.followups) || !client.followups.some((a, aIdx) => aIdx > idx && (a.outcome === 'Sent' || (a.subject && a.subject.toLowerCase().includes('quotation sent')))));
-                                                 const isRevisePending = f.outcome === 'Revise Quotation' && (!Array.isArray(client.followups) || !client.followups.some((a, aIdx) => aIdx > idx && (a.outcome === 'Revised' || (a.subject && a.subject.toLowerCase().includes('quotation sent')))));
+                                                  const isProposalAttempt = Boolean(f.outcome && f.outcome.toLowerCase() === 'proposal');
 
-                                                 if (isQuotationSentAttempt) {
-                                                   return (
-                                                     <div className="flex items-center gap-1">
-                                                       <span 
-                                                         onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
-                                                         className={`text-[9px] ${getAttemptQuotationStatus(f, client, idx) === 'Revised' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-green-50 text-green-700 border-green-200'} px-1.5 py-0.5 rounded border font-medium whitespace-nowrap cursor-pointer hover:underline`}
-                                                         title="Click to view quotation"
-                                                       >
-                                                         Quotation: {getAttemptQuotationStatus(f, client, idx)}
-                                                       </span>
-                                                       <span 
-                                                         onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
-                                                         className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-200 font-medium whitespace-nowrap cursor-pointer hover:bg-indigo-100"
-                                                         title="Click to view version history"
-                                                       >
-                                                         Rev: {getAttemptVersion(f, client.followups, idx)}
-                                                       </span>
-                                                       <button
-                                                         onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
-                                                         className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                                         title="View Quotation"
-                                                       >
-                                                         <Calculator size={12} />
-                                                       </button>
-                                                     </div>
-                                                   );
-                                                 }
+                                                  const isQuotationSentAttempt = !isProposalAttempt && (
+                                                    (f.outcome === 'Sent' && (!f.subject || !f.subject.toLowerCase().includes('proposal'))) ||
+                                                    f.outcome === 'Revised' ||
+                                                    (f.subject && f.subject.toLowerCase().includes('quotation sent'))
+                                                  );
+                                                  const isAskingPending = !isProposalAttempt && f.outcome === 'Asking for Quotation' && (!Array.isArray(client.followups) || !client.followups.some((a, aIdx) => aIdx > idx && (a.outcome === 'Sent' || (a.subject && a.subject.toLowerCase().includes('quotation sent')))));
+                                                  const isRevisePending = !isProposalAttempt && f.outcome === 'Revise Quotation' && (!Array.isArray(client.followups) || !client.followups.some((a, aIdx) => aIdx > idx && (a.outcome === 'Revised' || (a.subject && a.subject.toLowerCase().includes('quotation sent')))));
 
-                                                 if (isAskingPending) {
-                                                   return (
-                                                     <button
-                                                       onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
-                                                       className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
-                                                       title="Create Quotation"
-                                                     >
-                                                       <Calculator size={12} />
-                                                     </button>
-                                                   );
-                                                 }
+                                                  if (isProposalAttempt) {
+                                                    const propId = f.latest_proposal_id || client.last_followup?.latest_proposal_id;
+                                                    const propStatus = f.latest_proposal_status || client.last_followup?.latest_proposal_status;
+                                                    const isSent = propStatus === 'Sent';
 
-                                                 if (isRevisePending) {
-                                                   return (
-                                                     <button
-                                                       onClick={(e) => { e.stopPropagation(); openQuotationModal(f, true); }}
-                                                       className="p-1 text-orange-600 hover:bg-orange-50 border border-orange-200 rounded transition-colors flex items-center gap-1 text-[10px] font-medium"
-                                                       title="Create Revised Quotation"
-                                                     >
-                                                       <RotateCcw size={12} />
-                                                       <span>Revise</span>
-                                                     </button>
-                                                   );
-                                                 }
+                                                    if (propId || isSent) {
+                                                      return (
+                                                        <div className="flex items-center gap-1">
+                                                          <span className={`text-[9px] ${isSent ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'} px-1.5 py-0.5 rounded border font-medium whitespace-nowrap`}>
+                                                            Proposal: {isSent ? 'Sent' : (propStatus || 'Created')}
+                                                          </span>
+                                                          <button
+                                                            onClick={(e) => { e.stopPropagation(); openViewProposal(f); }}
+                                                            className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                            title="View Proposal"
+                                                          >
+                                                            <Eye size={12} />
+                                                          </button>
+                                                          {!isSent && (
+                                                            <button
+                                                              onClick={(e) => { e.stopPropagation(); openSendProposal(f); }}
+                                                              className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                              title="Send Proposal via Email"
+                                                            >
+                                                              <Send size={12} />
+                                                            </button>
+                                                          )}
+                                                        </div>
+                                                      );
+                                                    }
+                                                    return (
+                                                      <button
+                                                        onClick={(e) => { e.stopPropagation(); openProposalModalForFollowup(f); }}
+                                                        className="px-2 py-1 bg-red-600 text-white hover:bg-red-700 rounded text-xs transition-all flex items-center gap-1 font-medium shadow-sm"
+                                                        title="Create Proposal"
+                                                      >
+                                                        <FileText size={12} /> CREATE PROPOSAL
+                                                      </button>
+                                                    );
+                                                  }
 
-                                                 return null;
-                                               })()}
+                                                  if (isQuotationSentAttempt) {
+                                                    return (
+                                                      <div className="flex items-center gap-1">
+                                                        <span 
+                                                          onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
+                                                          className={`text-[9px] ${getAttemptQuotationStatus(f, client, idx) === 'Revised' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-green-50 text-green-700 border-green-200'} px-1.5 py-0.5 rounded border font-medium whitespace-nowrap cursor-pointer hover:underline`}
+                                                          title="Click to view quotation"
+                                                        >
+                                                          Quotation: {getAttemptQuotationStatus(f, client, idx)}
+                                                        </span>
+                                                        <span 
+                                                          onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
+                                                          className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-200 font-medium whitespace-nowrap cursor-pointer hover:bg-indigo-100"
+                                                          title="Click to view version history"
+                                                        >
+                                                          Rev: {getAttemptVersion(f, client.followups, idx)}
+                                                        </span>
+                                                        <button
+                                                          onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
+                                                          className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                          title="View Quotation"
+                                                        >
+                                                          <Calculator size={12} />
+                                                        </button>
+                                                      </div>
+                                                    );
+                                                  }
+
+                                                  if (isAskingPending) {
+                                                    return (
+                                                      <button
+                                                        onClick={(e) => { e.stopPropagation(); openQuotationModal(f, false); }}
+                                                        className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+                                                        title="Create Quotation"
+                                                      >
+                                                        <Calculator size={12} />
+                                                      </button>
+                                                    );
+                                                  }
+
+                                                  if (isRevisePending) {
+                                                    return (
+                                                      <button
+                                                        onClick={(e) => { e.stopPropagation(); openQuotationModal(f, true); }}
+                                                        className="p-1 text-orange-600 hover:bg-orange-50 border border-orange-200 rounded transition-colors flex items-center gap-1 text-[10px] font-medium"
+                                                        title="Create Revised Quotation"
+                                                      >
+                                                        <RotateCcw size={12} />
+                                                        <span>Revise</span>
+                                                      </button>
+                                                    );
+                                                  }
+
+                                                  return null;
+                                                })()}
                                               {f.status === 'Scheduled' && ['Google Meet', 'Zoom Meeting', 'Internal Video Call', 'Demo'].includes(f.type) && (
                                                 <button
                                                   onClick={(e) => handleJoinMeeting(e, f)}
@@ -1801,6 +2071,59 @@ const FollowupsPage = () => {
         initialData={quotationInitialData}
         onGeneratePDF={generateQuotationPDF}
       />
+
+      <AddNewProposalModal
+        isOpen={isProposalModalOpen}
+        onClose={() => {
+          setIsProposalModalOpen(false);
+          setProposalInitialData(null);
+        }}
+        onSubmit={async (proposalData) => {
+          try {
+            const finalPayload = {
+              ...proposalData,
+              proposal_number: proposalData.proposal_number || `PROP-${Date.now()}`
+            };
+            await proposalsAPI.create(finalPayload);
+            setIsProposalModalOpen(false);
+            setProposalInitialData(null);
+            showSuccessToast('Proposal created successfully!');
+            await fetchFollowups();
+          } catch (err) {
+            showErrorToast(err.message || 'Failed to create proposal');
+          }
+        }}
+        leads={allLeads}
+        companies={allCompanies}
+        initialData={proposalInitialData}
+      />
+
+      <SendProposalEmailModal
+        isOpen={isSendProposalOpen}
+        onClose={() => {
+          setIsSendProposalOpen(false);
+          setSendProposalData(null);
+        }}
+        proposal={sendProposalData}
+        onSuccess={async () => {
+          await fetchFollowups();
+        }}
+      />
+
+      {viewingProposalId && (
+        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in">
+          <div className="bg-white w-full max-w-5xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <ProposalDetailsPage
+                proposalId={viewingProposalId}
+                onBack={() => setViewingProposalId(null)}
+                companies={allCompanies}
+                leads={allLeads}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

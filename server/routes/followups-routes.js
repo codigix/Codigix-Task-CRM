@@ -64,6 +64,7 @@ module.exports = function setupFollowupsRoutes(app, pool) {
       case 'Meeting Scheduled':
       case 'Converted to Deal':
       case 'Asking for Quotation':
+      case 'Proposal':
       case 'Quotation': leadStatus = 'Qualified'; break;
       case 'Call Back Later':
       case 'Follow-up Required':
@@ -850,7 +851,16 @@ module.exports = function setupFollowupsRoutes(app, pool) {
                   COALESCE(MAX(CASE WHEN estimation_number LIKE '%-v%' THEN CAST(SUBSTRING_INDEX(estimation_number, '-v', -1) AS UNSIGNED) ELSE 1 END), 1),
                   COALESCE(COUNT(*), 1)
                 ) FROM estimations 
-                WHERE (deal_id = d.id OR (l.id IS NOT NULL AND lead_id = l.id) OR (f.related_type = 'Lead' AND lead_id = f.related_id) OR (f.related_type = 'Deal' AND deal_id = f.related_id))) as revision_count
+                WHERE (deal_id = d.id OR (l.id IS NOT NULL AND lead_id = l.id) OR (f.related_type = 'Lead' AND lead_id = f.related_id) OR (f.related_type = 'Deal' AND deal_id = f.related_id))) as revision_count,
+                 (SELECT status FROM proposals 
+                  WHERE (deal_id = d.id OR (l.id IS NOT NULL AND lead_id = l.id) OR (f.related_type = 'Lead' AND lead_id = f.related_id) OR (f.related_type = 'Deal' AND deal_id = f.related_id) OR (f.related_type = 'Customer' AND client_id = f.related_id)) 
+                  ORDER BY created_at DESC LIMIT 1) as latest_proposal_status,
+                 (SELECT id FROM proposals 
+                  WHERE (deal_id = d.id OR (l.id IS NOT NULL AND lead_id = l.id) OR (f.related_type = 'Lead' AND lead_id = f.related_id) OR (f.related_type = 'Deal' AND deal_id = f.related_id) OR (f.related_type = 'Customer' AND client_id = f.related_id)) 
+                  ORDER BY created_at DESC LIMIT 1) as latest_proposal_id,
+                 (SELECT proposal_number FROM proposals 
+                  WHERE (deal_id = d.id OR (l.id IS NOT NULL AND lead_id = l.id) OR (f.related_type = 'Lead' AND lead_id = f.related_id) OR (f.related_type = 'Deal' AND deal_id = f.related_id) OR (f.related_type = 'Customer' AND client_id = f.related_id)) 
+                  ORDER BY created_at DESC LIMIT 1) as latest_proposal_number
         FROM followups f
         LEFT JOIN leads l ON f.related_type = 'Lead' AND f.related_id = l.id
         LEFT JOIN deals d ON (f.related_type = 'Deal' AND f.related_id = d.id) OR f.deal_id = d.id

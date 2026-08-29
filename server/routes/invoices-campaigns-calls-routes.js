@@ -1810,7 +1810,17 @@ module.exports = function(app, pool) {
       const { skip = 0, limit = 50, status, search } = req.query;
       connection = await getConnection();
 
-      let query = 'SELECT p.*, c.company_name as client_name FROM proposals p LEFT JOIN companies c ON p.client_id = c.id WHERE 1=1';
+      let query = `
+        SELECT p.*,
+               c.company_name as client_name,
+               l.lead_name as lead_name,
+               CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) as assigned_to_name
+        FROM proposals p
+        LEFT JOIN companies c ON p.client_id = c.id
+        LEFT JOIN leads l ON p.lead_id = l.id
+        LEFT JOIN users u ON p.assigned_to = u.id
+        WHERE 1=1
+      `;
       const params = [];
 
       if (status) {
@@ -1819,9 +1829,9 @@ module.exports = function(app, pool) {
       }
 
       if (search) {
-        query += ' AND (p.proposal_number LIKE ? OR p.title LIKE ? OR c.company_name LIKE ?)';
+        query += ' AND (p.proposal_number LIKE ? OR p.title LIKE ? OR c.company_name LIKE ? OR l.lead_name LIKE ?)';
         const searchTerm = `%${search}%`;
-        params.push(searchTerm, searchTerm, searchTerm);
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
       }
 
       query += ' ORDER BY p.created_at DESC LIMIT ?, ?';
@@ -1841,21 +1851,101 @@ module.exports = function(app, pool) {
   app.post('/api/proposals', async (req, res) => {
     let connection;
     try {
-      const { proposal_number, title, client_id, contact_id, deal_id, amount, currency, proposal_date, validity_date, status, description, created_by } = req.body;
-
-      if (!proposal_number || !client_id) {
-        return res.status(400).json({ error: 'Proposal number and client ID required' });
-      }
+      const {
+        proposal_number,
+        title,
+        client_id,
+        lead_id,
+        contact_id,
+        deal_id,
+        assigned_to,
+        business_type,
+        service_needed,
+        project_scope,
+        amount,
+        currency,
+        proposal_date,
+        validity_date,
+        status,
+        description,
+        created_by,
+        attachments
+      } = req.body;
 
       connection = await getConnection();
+
+      let finalProposalNumber = proposal_number;
+      if (!finalProposalNumber) {
+        finalProposalNumber = `PROP-${Date.now()}`;
+      }
+
+      let finalClientId = client_id;
+      if (!finalClientId && lead_id) {
+        const [leads] = await connection.query('SELECT company_id, company, lead_name FROM leads WHERE id = ?', [lead_id]);
+        if (leads.length > 0) {
+          if (leads[0].company_id) {
+            finalClientId = leads[0].company_id;
+          } else {
+            const compName = leads[0].company || leads[0].lead_name || 'Client Company';
+            const [comps] = await connection.query('SELECT id FROM companies WHERE company_name = ? LIMIT 1', [compName]);
+            if (comps.length > 0) {
+              finalClientId = comps[0].id;
+            } else {
+              const [insComp] = await connection.query('INSERT INTO companies (company_name, created_at, updated_at) VALUES (?, NOW(), NOW())', [compName]);
+              finalClientId = insComp.insertId;
+            }
+          }
+        }
+      }
+
+      if (!finalClientId) {
+        const [defaultComp] = await connection.query('SELECT id FROM companies LIMIT 1');
+        if (defaultComp.length > 0) {
+          finalClientId = defaultComp[0].id;
+        } else {
+          connection.release();
+          return res.status(400).json({ error: 'Client ID required' });
+        }
+      }
+
       const [result] = await connection.query(
-        `INSERT INTO proposals (proposal_number, title, client_id, contact_id, deal_id, total_amount, currency, proposal_date, validity_date, status, description, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [proposal_number, title || null, client_id, contact_id || null, deal_id || null, amount || 0, currency || 'USD', proposal_date || null, validity_date || null, status || 'Draft', description || null, created_by || null]
+        `INSERT INTO proposals (
+          proposal_number, title, client_id, lead_id, contact_id, deal_id, assigned_to,
+          business_type, service_needed, project_scope,
+          total_amount, currency, proposal_date, validity_date, status, description, created_by, attachments
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          finalProposalNumber,
+          title || null,
+          finalClientId,
+          lead_id || null,
+          contact_id || null,
+          deal_id || null,
+          assigned_to || null,
+          business_type || null,
+          service_needed || null,
+          project_scope || null,
+          amount || 0,
+          currency || 'INR',
+          proposal_date || null,
+          validity_date || null,
+          status || 'Draft',
+          description || null,
+          created_by || null,
+          attachments ? JSON.stringify(attachments) : null
+        ]
       );
 
       const [proposal] = await connection.query(
-        'SELECT p.*, c.company_name as client_name FROM proposals p LEFT JOIN companies c ON p.client_id = c.id WHERE p.id = ?',
+        `SELECT p.*,
+                c.company_name as client_name,
+                l.lead_name as lead_name,
+                CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) as assigned_to_name
+         FROM proposals p
+         LEFT JOIN companies c ON p.client_id = c.id
+         LEFT JOIN leads l ON p.lead_id = l.id
+         LEFT JOIN users u ON p.assigned_to = u.id
+         WHERE p.id = ?`,
         [result.insertId]
       );
       connection.release();
@@ -1875,7 +1965,15 @@ module.exports = function(app, pool) {
       connection = await getConnection();
 
       const [proposals] = await connection.query(
-        'SELECT p.*, c.company_name as client_name FROM proposals p LEFT JOIN companies c ON p.client_id = c.id WHERE p.id = ?',
+        `SELECT p.*,
+                c.company_name as client_name,
+                l.lead_name as lead_name,
+                CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) as assigned_to_name
+         FROM proposals p
+         LEFT JOIN companies c ON p.client_id = c.id
+         LEFT JOIN leads l ON p.lead_id = l.id
+         LEFT JOIN users u ON p.assigned_to = u.id
+         WHERE p.id = ?`,
         [id]
       );
       connection.release();
@@ -1896,16 +1994,70 @@ module.exports = function(app, pool) {
     let connection;
     try {
       const { id } = req.params;
-      const { title, amount, status, validity_date, description } = req.body;
+      const {
+        title,
+        client_id,
+        lead_id,
+        assigned_to,
+        business_type,
+        service_needed,
+        project_scope,
+        amount,
+        currency,
+        status,
+        proposal_date,
+        validity_date,
+        description,
+        attachments
+      } = req.body;
       
       connection = await getConnection();
       await connection.query(
-        'UPDATE proposals SET title = ?, total_amount = ?, status = ?, validity_date = ?, description = ? WHERE id = ?',
-        [title || null, amount || null, status || null, validity_date || null, description || null, id]
+        `UPDATE proposals SET
+          title = COALESCE(?, title),
+          client_id = COALESCE(?, client_id),
+          lead_id = COALESCE(?, lead_id),
+          assigned_to = COALESCE(?, assigned_to),
+          business_type = COALESCE(?, business_type),
+          service_needed = COALESCE(?, service_needed),
+          project_scope = COALESCE(?, project_scope),
+          total_amount = COALESCE(?, total_amount),
+          currency = COALESCE(?, currency),
+          status = COALESCE(?, status),
+          proposal_date = COALESCE(?, proposal_date),
+          validity_date = COALESCE(?, validity_date),
+          description = COALESCE(?, description),
+          attachments = COALESCE(?, attachments)
+        WHERE id = ?`,
+        [
+          title || null,
+          client_id || null,
+          lead_id || null,
+          assigned_to || null,
+          business_type || null,
+          service_needed || null,
+          project_scope || null,
+          amount !== undefined ? amount : null,
+          currency || null,
+          status || null,
+          proposal_date || null,
+          validity_date || null,
+          description || null,
+          attachments ? JSON.stringify(attachments) : null,
+          id
+        ]
       );
 
       const [proposal] = await connection.query(
-        'SELECT p.*, c.company_name as client_name FROM proposals p LEFT JOIN companies c ON p.client_id = c.id WHERE p.id = ?',
+        `SELECT p.*,
+                c.company_name as client_name,
+                l.lead_name as lead_name,
+                CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) as assigned_to_name
+         FROM proposals p
+         LEFT JOIN companies c ON p.client_id = c.id
+         LEFT JOIN leads l ON p.lead_id = l.id
+         LEFT JOIN users u ON p.assigned_to = u.id
+         WHERE p.id = ?`,
         [id]
       );
       connection.release();
@@ -1966,42 +2118,200 @@ module.exports = function(app, pool) {
     }
   });
 
-  app.post('/api/proposals/:id/send', async (req, res) => {
+  const handleProposalSend = async (req, res) => {
     let connection;
     try {
       const { id } = req.params;
-      const { client_email } = req.body;
+      const { client_email, email: recipientEmail, subject: customSubject, message } = req.body;
 
       connection = await getConnection();
       
-      const [proposal] = await connection.query(
-        'SELECT * FROM proposals WHERE id = ?',
-        [id]
-      );
+      const [proposal] = await connection.query(`
+        SELECT p.*, 
+               c.company_name as client_name, c.email as client_email,
+               l.lead_name, l.email as lead_email, l.phone as lead_phone,
+               u.first_name as creator_first, u.last_name as creator_last, u.email as creator_email
+        FROM proposals p
+        LEFT JOIN companies c ON p.client_id = c.id
+        LEFT JOIN leads l ON p.lead_id = l.id
+        LEFT JOIN users u ON p.assigned_to = u.id
+        WHERE p.id = ?
+      `, [id]);
 
       if (proposal.length === 0) {
         connection.release();
         return res.status(404).json({ error: 'Proposal not found' });
       }
 
+      const prop = proposal[0];
+      const targetEmail = recipientEmail || client_email || prop.client_email || prop.lead_email;
+
       await connection.query(
         'UPDATE proposals SET status = ?, updated_at = NOW() WHERE id = ?',
         ['Sent', id]
       );
 
-      console.log(`✓ Proposal ${proposal[0].proposal_number} marked as sent`);
+      // Update lead status if exists
+      if (prop.lead_id) {
+        try {
+          await connection.query(
+            "UPDATE leads SET lead_status = 'Proposal', updated_at = NOW() WHERE id = ?",
+            [prop.lead_id]
+          );
+        } catch (lErr) {
+          console.warn('Could not update lead status:', lErr);
+        }
+      }
+
+      // Send Email via nodemailer
+      if (targetEmail) {
+        try {
+          const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER || process.env.SMTP_USER,
+              pass: (process.env.EMAIL_PASS || process.env.SMTP_PASS)?.trim()
+            }
+          });
+
+          const emailSubject = customSubject || `Proposal #${prop.proposal_number || id} - ${prop.client_name || prop.lead_name || 'Valued Client'} - Codigix Infotech`;
+
+          let attachments = [];
+          if (prop.attachments) {
+            try {
+              const attList = typeof prop.attachments === 'string' ? JSON.parse(prop.attachments) : prop.attachments;
+              if (Array.isArray(attList)) {
+                const path = require('path');
+                attList.forEach(att => {
+                  if (att.file_path) {
+                    const fullPath = path.resolve(__dirname, '..', att.file_path.replace(/^\//, ''));
+                    attachments.push({
+                      filename: att.name || 'Attachment',
+                      path: fullPath
+                    });
+                  }
+                });
+              }
+            } catch (e) {}
+          }
+
+          const htmlContent = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+              <div style="background-color: #DC2626; padding: 24px 30px; text-align: left; color: #ffffff;">
+                <div style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">Codigix Infotech</div>
+                <div style="font-size: 12px; color: #fecaca; margin-top: 4px;">Business Proposal #${prop.proposal_number || id}</div>
+              </div>
+              <div style="padding: 30px; color: #334155; line-height: 1.6; font-size: 14px;">
+                <p style="margin-top: 0; font-size: 15px; font-weight: 600; color: #0f172a;">
+                  Dear ${prop.client_name || prop.lead_name || 'Valued Client'},
+                </p>
+                <p style="color: #334155; margin-bottom: 20px;">
+                  ${message || `We are pleased to submit our formal proposal <strong>#${prop.proposal_number || id}</strong> (${prop.title || 'Project Proposal'}) for your review.`}
+                </p>
+                ${prop.service_needed ? `
+                  <div style="background-color: #f8fafc; border-left: 4px solid #DC2626; padding: 14px; border-radius: 6px; margin-bottom: 20px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Services Included:</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #0f172a; margin-top: 4px;">${prop.service_needed}</div>
+                  </div>
+                ` : ''}
+                ${prop.description ? `
+                  <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; padding: 14px; border-radius: 6px; margin-bottom: 20px; font-size: 13px;">
+                    <strong>Scope & Details:</strong><br/>
+                    <p style="margin: 6px 0 0 0; white-space: pre-line; color: #4b5563;">${prop.description}</p>
+                  </div>
+                ` : ''}
+                <p style="color: #475569;">
+                  Please feel free to reach out to us if you have any questions or would like to schedule a discussion.
+                </p>
+                <p style="color: #475569; margin-top: 24px;">
+                  Warm regards,<br>
+                  <strong style="color: #0f172a;">${prop.creator_first ? `${prop.creator_first} ${prop.creator_last || ''}` : 'Codigix Infotech Sales Team'}</strong><br>
+                  <span style="font-size: 12px; color: #64748b;">Codigix Infotech | +91 7066556768</span>
+                </p>
+              </div>
+              <div style="background-color: #f1f5f9; padding: 16px 30px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
+                Office 309, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18 | Codigixinfotech@gmail.com
+              </div>
+            </div>
+          `;
+
+          await transporter.sendMail({
+            from: `"Codigix Proposals" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER}>`,
+            to: targetEmail,
+            subject: emailSubject,
+            html: htmlContent,
+            attachments: attachments
+          });
+          console.log(`✅ Proposal email sent successfully to ${targetEmail}`);
+        } catch (mailErr) {
+          console.error('Failed to send proposal email via transporter:', mailErr);
+        }
+      }
+
+      // Automatically generate follow-up records against this proposal
+      const relatedType = prop.lead_id ? 'Lead' : (prop.client_id ? 'Customer' : 'Lead');
+      const relatedId = prop.lead_id || prop.client_id;
+      const clientName = prop.lead_name || prop.client_name || 'Client';
+      const assignedName = prop.creator_first ? `${prop.creator_first} ${prop.creator_last || ''}`.trim() : null;
+
+      if (relatedId) {
+        try {
+          // Scheduled next follow-up: Call in 2 days
+          await connection.query(`
+            INSERT INTO followups (
+              related_type, related_id, type, subject, status, outcome,
+              scheduled_date, scheduled_time, assigned_to, assigned_to_name,
+              client_email, client_phone, created_at, updated_at
+            ) VALUES (
+              ?, ?, 'Call', ?, 'Scheduled', NULL,
+              DATE_ADD(CURDATE(), INTERVAL 2 DAY), '10:00:00',
+              ?, ?, ?, ?, NOW(), NOW()
+            )
+          `, [
+            relatedType, relatedId, `Follow-up on Sent Proposal (${prop.proposal_number || id})`,
+            prop.assigned_to || null, assignedName,
+            targetEmail || null, prop.lead_phone || null
+          ]);
+
+          console.log(`✓ Automatically created scheduled follow-up for sent proposal #${prop.proposal_number}`);
+        } catch (fErr) {
+          console.error('Failed to auto-generate follow-ups for sent proposal:', fErr);
+        }
+
+        // 3) Log activity
+        try {
+          await connection.query(`
+            INSERT INTO activities (
+              activity_type, title, description, status, priority, 
+              lead_id, company_id, created_at, updated_at
+            ) VALUES (
+              'Email', ?, ?, 'Completed', 'Medium', ?, ?, NOW(), NOW()
+            )
+          `, [
+            `Proposal Sent: ${prop.proposal_number || id}`,
+            `Proposal ${prop.proposal_number || id} was sent to ${targetEmail || clientName}`,
+            prop.lead_id || null, prop.client_id || null
+          ]);
+        } catch (actErr) {
+          console.error('Failed to log activity for proposal sent:', actErr);
+        }
+      }
+
       connection.release();
 
       return res.json({
-        message: 'Proposal sent successfully',
-        proposal_number: proposal[0].proposal_number
+        success: true,
+        message: targetEmail ? `Proposal sent to ${targetEmail}` : 'Proposal marked as sent',
+        proposal_number: prop.proposal_number
       });
     } catch (err) {
-      responseError(res, 500, 'Failed to send proposal', err);
-    } finally {
       if (connection) connection.release();
+      responseError(res, 500, 'Failed to send proposal', err);
     }
-  });
+  };
+
+  app.post('/api/proposals/:id/send', handleProposalSend);
+  app.post('/api/proposals/:id/send-email', handleProposalSend);
 
   app.post('/api/proposals/:id/convert-to-invoice', async (req, res) => {
     let connection;

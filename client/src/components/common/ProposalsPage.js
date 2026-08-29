@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MoreVertical, Plus, Grid3x3, List, Download, Send, CheckCircle, XCircle, Edit2, Eye } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { proposalsAPI, companiesAPI, contactsAPI, dealsAPI } from '../../services/api';
+import { proposalsAPI, companiesAPI, contactsAPI, dealsAPI, leadsAPI } from '../../services/api';
 import AddNewProposalModal from './AddNewProposalModal';
 import ProposalDetailsPage from './ProposalDetailsPage';
 
@@ -16,6 +16,7 @@ const ProposalsPage = ({ onViewDetails }) => {
   const [companies, setCompanies] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [deals, setDeals] = useState([]);
+  const [leads, setLeads] = useState([]);
   const [showActionMenu, setShowActionMenu] = useState(null);
   const [selectedProposalId, setSelectedProposalId] = useState(null);
 
@@ -37,6 +38,7 @@ const ProposalsPage = ({ onViewDetails }) => {
       let companiesData = [];
       let contactsData = [];
       let dealsData = [];
+      let leadsData = [];
 
       try {
         proposalsData = await proposalsAPI.getAll(filters);
@@ -70,17 +72,27 @@ const ProposalsPage = ({ onViewDetails }) => {
         dealsData = [];
       }
 
+      try {
+        leadsData = await leadsAPI.getAll();
+        console.log('✅ Leads loaded:', leadsData?.length);
+      } catch (err) {
+        console.warn('⚠️ Leads fetch failed:', err.message);
+        leadsData = [];
+      }
+
       console.log('📊 Final data summary:', {
         proposals: proposalsData?.length,
         companies: companiesData?.length,
         contacts: contactsData?.length,
-        deals: dealsData?.length
+        deals: dealsData?.length,
+        leads: leadsData?.length
       });
 
       setProposals(proposalsData);
       setCompanies(companiesData);
       setContacts(contactsData);
       setDeals(dealsData);
+      setLeads(leadsData);
     } catch (err) {
       const errorMsg = err.message || 'Unknown error';
       setError('Failed to load proposals: ' + errorMsg);
@@ -282,7 +294,9 @@ const ProposalsPage = ({ onViewDetails }) => {
 
   const ProposalCard = ({ proposal }) => {
     const company = companies.find(c => c.id === proposal.client_id);
+    const clientName = proposal.client_name || company?.company_name || 'Client Unassigned';
     const currency = proposal.currency || 'INR';
+    const amount = parseFloat(proposal.total_amount) || 0;
 
     const getCompanyInitials = (name) => {
       return name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'CP';
@@ -295,16 +309,21 @@ const ProposalsPage = ({ onViewDetails }) => {
 
     const cleanText = (str) => {
       if (!str) return 'No detailed scope description provided.';
-      return str.replace(/[#*`~>_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+      return str.replace(/<[^>]*>?/gm, '').replace(/[#*`~>_-]+/g, ' ').replace(/\s+/g, ' ').trim();
     };
 
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
-              {proposal.proposal_number || `PROP-${proposal.id}`}
-            </span>
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                {proposal.proposal_number || `PROP-${proposal.id}`}
+              </span>
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${getStatusColor(proposal.status)}`}>
+                {proposal.status || 'Draft'}
+              </span>
+            </div>
             <div className="relative">
               <button
                 onClick={() => setShowActionMenu(showActionMenu === proposal.id ? null : proposal.id)}
@@ -367,49 +386,87 @@ const ProposalsPage = ({ onViewDetails }) => {
             </div>
           </div>
 
-          <h3
-            className="font-semibold text-gray-900 text-sm mb-1 truncate cursor-pointer hover:text-blue-600 transition-colors"
-            title={proposal.title}
+          <div
+            className="cursor-pointer group mb-2"
             onClick={() => setSelectedProposalId(proposal.id)}
           >
-            {proposal.title}
-          </h3>
-          <p className="text-xs text-gray-500 mb-3 line-clamp-2 min-h-[2.25rem] leading-relaxed" title={cleanText(proposal.description)}>
-            {cleanText(proposal.description)}
-          </p>
+            <h3 className="font-bold text-gray-900 text-sm group-hover:text-blue-600 transition-colors truncate" title={proposal.lead_name || clientName}>
+              {proposal.lead_name || clientName}
+            </h3>
+            {proposal.lead_name && clientName && (
+              <p className="text-[11px] text-gray-500 truncate">{clientName}</p>
+            )}
+          </div>
 
-          <div className="space-y-1.5 mb-4 text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Date:</span>
-              <span className="font-medium">{new Date(proposal.proposal_date).toLocaleDateString()}</span>
+          {(proposal.service_needed || proposal.business_type || proposal.project_scope) && (
+            <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
+              {proposal.service_needed && (
+                proposal.service_needed
+                  .split(',')
+                  .map(s => s.trim())
+                  .filter(Boolean)
+                  .map((srv, idx) => (
+                    <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10px] font-medium truncate max-w-full">
+                      <span>🎯</span>
+                      <span className="truncate">{srv}</span>
+                    </span>
+                  ))
+              )}
+              {proposal.business_type && (
+                <span className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[10px] font-semibold">
+                  {proposal.business_type}
+                </span>
+              )}
+              {proposal.project_scope && (
+                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-medium truncate max-w-full">
+                  📁 {proposal.project_scope}
+                </span>
+              )}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Valid Till:</span>
+          )}
+
+          {proposal.description && cleanText(proposal.description) !== 'No detailed scope description provided.' && (
+            <p className="text-xs text-gray-500 mb-3 line-clamp-2 min-h-[1.75rem] leading-relaxed" title={cleanText(proposal.description)}>
+              {cleanText(proposal.description)}
+            </p>
+          )}
+
+          <div className="space-y-1.5 mb-3 text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-gray-400">Date:</span>
+              <span className="font-medium text-gray-800">{proposal.proposal_date ? new Date(proposal.proposal_date).toLocaleDateString() : 'N/A'}</span>
+            </div>
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-gray-400">Open Till:</span>
               <span className="font-medium text-slate-700">{proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}</span>
             </div>
           </div>
         </div>
 
         <div className="border-t border-gray-100 pt-3">
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className={`w-9 h-9 rounded-full ${getCompanyColor(company?.id)} text-white flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-sm`}>
-              {company ? getCompanyInitials(company.company_name) : 'CP'}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className={`w-7 h-7 rounded-full ${getCompanyColor(proposal.client_id)} text-white flex items-center justify-center text-[10px] font-bold shrink-0 shadow-sm`}>
+                {getCompanyInitials(clientName)}
+              </div>
+              <div className="min-w-0">
+                <p className="font-medium text-gray-900 text-xs truncate" title={clientName}>
+                  {clientName}
+                </p>
+                <p className="text-[10px] text-gray-400">Client Account</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-900 text-xs truncate" title={company?.company_name || 'Client'}>
-                {company?.company_name || 'Client Unassigned'}
-              </p>
-              <p className="text-[11px] text-gray-400">Client Account</p>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between pt-1">
-            <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${getStatusColor(proposal.status)}`}>
-              {proposal.status}
-            </span>
-            <span className="text-sm font-bold text-gray-900">
-              {currency} {(proposal.total_amount || 0).toLocaleString()}
-            </span>
+            {proposal.assigned_to_name && (
+              <div className="flex items-center gap-1.5 shrink-0 bg-gray-50 px-2 py-1 rounded-full border border-gray-200" title={`Assigned to: ${proposal.assigned_to_name}`}>
+                <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] font-semibold">
+                  {getCompanyInitials(proposal.assigned_to_name)}
+                </div>
+                <span className="text-[10px] font-medium text-gray-700 truncate max-w-[90px]">
+                  {proposal.assigned_to_name}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -418,7 +475,9 @@ const ProposalsPage = ({ onViewDetails }) => {
 
   const ProposalRow = ({ proposal }) => {
     const company = companies.find(c => c.id === proposal.client_id);
+    const clientName = proposal.client_name || company?.company_name || 'Client Unassigned';
     const currency = proposal.currency || 'INR';
+    const amount = parseFloat(proposal.total_amount) || 0;
 
     return (
       <tr className="border-b hover:bg-gray-50 transition-colors">
@@ -428,15 +487,35 @@ const ProposalsPage = ({ onViewDetails }) => {
           </div>
           <div className="text-xs text-gray-500 font-medium truncate max-w-xs">{proposal.title}</div>
         </td>
-        <td className="p-3 text-xs text-gray-700 font-medium">{company?.company_name || 'Client Unassigned'}</td>
-        <td className="p-3 text-xs font-bold text-gray-900">
-          {currency} {(proposal.total_amount || 0).toLocaleString()}
+        <td className="p-3 text-xs">
+          <div className="font-medium text-gray-900">{proposal.lead_name || '—'}</div>
+          {proposal.project_scope && <div className="text-[10px] text-gray-400 truncate max-w-[140px]">{proposal.project_scope}</div>}
+        </td>
+        <td className="p-3 text-xs text-gray-700 font-medium">{clientName}</td>
+        <td className="p-3 text-xs">
+          {proposal.service_needed ? (
+            <span className="inline-flex items-center px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10px] font-medium truncate max-w-[160px]">
+              🎯 {proposal.service_needed}
+            </span>
+          ) : (
+            <span className="text-gray-400">—</span>
+          )}
+        </td>
+        <td className="p-3 text-xs">
+          {proposal.assigned_to_name ? (
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] font-bold">
+                {proposal.assigned_to_name.slice(0, 2).toUpperCase()}
+              </div>
+              <span className="text-gray-700 text-xs font-medium">{proposal.assigned_to_name}</span>
+            </div>
+          ) : (
+            <span className="text-gray-400">—</span>
+          )}
         </td>
         <td className="p-3 text-xs text-gray-600">
-          {new Date(proposal.proposal_date).toLocaleDateString()}
-        </td>
-        <td className="p-3 text-xs text-gray-600">
-          {proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}
+          <div>{proposal.proposal_date ? new Date(proposal.proposal_date).toLocaleDateString() : 'N/A'}</div>
+          <div className="text-[10px] text-gray-400">Till: {proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}</div>
         </td>
         <td className="p-3 text-xs">
           <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${getStatusColor(proposal.status)}`}>
@@ -517,6 +596,8 @@ const ProposalsPage = ({ onViewDetails }) => {
           setSelectedProposalId(null);
           loadInitialData();
         }}
+        companies={companies}
+        leads={leads}
       />
     );
   }
@@ -530,6 +611,7 @@ const ProposalsPage = ({ onViewDetails }) => {
         companies={companies}
         contacts={contacts}
         deals={deals}
+        leads={leads}
       />
 
       {/* Header */}
@@ -605,9 +687,7 @@ const ProposalsPage = ({ onViewDetails }) => {
             <div>
               <p className="text-xs text-gray-500 font-medium">Total Proposals</p>
               <h3 className="text-xl font-bold text-gray-900 mt-1">{proposals.length}</h3>
-              <p className="text-xs text-gray-400 mt-1">
-                Value: INR {proposals.reduce((sum, p) => sum + (parseFloat(p.total_amount) || 0), 0).toLocaleString()}
-              </p>
+              <p className="text-xs text-gray-400 mt-1">Active Pipeline</p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
               📄
@@ -633,9 +713,7 @@ const ProposalsPage = ({ onViewDetails }) => {
               <h3 className="text-xl font-bold text-emerald-600 mt-1">
                 {proposals.filter(p => p.status === 'Accepted').length}
               </h3>
-              <p className="text-xs text-emerald-600 font-medium mt-1">
-                INR {proposals.filter(p => p.status === 'Accepted').reduce((sum, p) => sum + (parseFloat(p.total_amount) || 0), 0).toLocaleString()}
-              </p>
+              <p className="text-xs text-emerald-600 font-medium mt-1">Won Proposals</p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
               🏆
@@ -685,10 +763,11 @@ const ProposalsPage = ({ onViewDetails }) => {
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="text-left px-4 py-3  text-gray-900">Proposal</th>
+                  <th className="text-left px-4 py-3  text-gray-900">Lead</th>
                   <th className="text-left px-4 py-3  text-gray-900">Client</th>
-                  <th className="text-right px-4 py-3  text-gray-900">Amount</th>
-                  <th className="text-left px-4 py-3  text-gray-900">Date</th>
-                  <th className="text-left px-4 py-3  text-gray-900">Valid Till</th>
+                  <th className="text-left px-4 py-3  text-gray-900">Service Needed</th>
+                  <th className="text-left px-4 py-3  text-gray-900">Assigned To</th>
+                  <th className="text-left px-4 py-3  text-gray-900">Dates</th>
                   <th className="text-left px-4 py-3  text-gray-900">Status</th>
                   <th className="text-center px-4 py-3  text-gray-900">Actions</th>
                 </tr>
