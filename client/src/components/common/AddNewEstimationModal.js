@@ -2,8 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, RotateCcw, Mail, FileText } from 'lucide-react';
 import { dealsAPI, companiesAPI, leadsAPI, contactsAPI, projectAPI, usersAPI, estimationsAPI } from '../../services/api';
 import { generateQuotationPDF, generateQuotationPDFBase64 } from '../../utils/generateQuotationPDF';
+import CreateEstimationModal from './CreateEstimationModal';
 
-const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGeneratePDF }) => {
+const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGeneratePDF, mode, isEstimation = false }) => {
+  if (mode === 'estimation' || isEstimation) {
+    return <CreateEstimationModal isOpen={isOpen} onClose={onClose} onSubmit={onSubmit} initialData={initialData} />;
+  }
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingData, setLoadingData] = useState(false);
@@ -192,12 +196,27 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
     isFetchingDataRef.current = true;
     setLoadingData(true);
     try {
+      const currentUserData = (() => {
+        try {
+          return JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('user'));
+        } catch (e) { return null; }
+      })();
+      const authFilters = {};
+      if (currentUserData) {
+        authFilters.user_id = currentUserData.id || currentUserData.userId;
+        authFilters.role = currentUserData.role_name || currentUserData.role || currentUserData.userRole;
+        authFilters.department = currentUserData.department || currentUserData.department_name;
+      }
+      const isManagerOrAdmin = authFilters.role && (authFilters.role.toLowerCase().includes('admin') || authFilters.role.toLowerCase().includes('manager'));
+      const leadFilters = isManagerOrAdmin ? { status: 'Qualified' } : { status: 'Qualified', ...authFilters };
+      const dealFilters = isManagerOrAdmin ? {} : authFilters;
+
       const [clientsData, projectsData, usersData, leadsData, dealsData] = await Promise.all([
         companiesAPI.getAll(),
         projectAPI.getAll(),
         usersAPI.getAll(),
-        leadsAPI.getAll({ status: 'Qualified' }),
-        dealsAPI.getAll()
+        leadsAPI.getAll(leadFilters),
+        dealsAPI.getAll(dealFilters)
       ]);
 
       setClients(Array.isArray(clientsData) ? clientsData : (clientsData?.data || []));
@@ -544,6 +563,17 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
   useEffect(() => {
     if (isOpen) {
       fetchClientsAndProjects();
+      const currentUserData = (() => {
+        try {
+          return JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('user'));
+        } catch (e) { return null; }
+      })();
+      if (!initialData && currentUserData?.id) {
+        setFormData(prev => ({
+          ...prev,
+          assignedExecutiveId: prev.assignedExecutiveId || currentUserData.id.toString()
+        }));
+      }
       if (initialData) {
         const isQuotation = initialData.estimation_number || initialData.quotation_number;
         const deal_id = initialData.deal_id ? initialData.deal_id.toString() : (initialData.lead_id ? (Number(initialData.lead_id) + 1000000).toString() : (!isQuotation && Number(initialData.id) <= 1000000 ? initialData.id.toString() : ''));

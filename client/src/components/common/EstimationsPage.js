@@ -1,15 +1,17 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Download, Plus, MoreVertical, FileText, Send, Copy, Trash2, Eye, Edit2, FileJson, LayoutGrid, List, ChevronDown, RotateCcw, Maximize, Search, Star, Filter, ChevronsUpDown, Printer, Calendar, Hash, CircleDollarSign, Sparkles, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Download, Plus, MoreVertical, FileText, Send, Copy, Trash2, Eye, Edit2, FileJson, LayoutGrid, List, ChevronDown, RotateCcw, Maximize, Search, Star, Filter, ChevronsUpDown, Printer, Calendar, Hash, CircleDollarSign, Sparkles, CheckCircle, XCircle, Clock, Lock } from 'lucide-react';
 import Swal from 'sweetalert2';
-import AddNewEstimationModal from './AddNewEstimationModal';
+import CreateEstimationModal from './CreateEstimationModal';
 import ReviseQuotationModal from '../sales/ReviseQuotationModal';
 import DateRangeDropdown from './DateRangeDropdown';
 import EstimationDetailsPage from './EstimationDetailsPage';
 import { estimationsAPI, dealsAPI, leadsAPI, activitiesAPI } from '../../services/api';
 import { generateQuotationPDF } from '../../utils/generateQuotationPDF';
 import { showSuccessToast } from '../../utils/toast';
+import { useAuth } from '../../hooks/useAuth';
 
 const EstimationsPage = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState('kanban');
@@ -58,8 +60,7 @@ const EstimationsPage = () => {
     { id: 'Sent', name: 'Sent', color: '#3B82F6' },
     { id: 'Revised', name: 'Revised', color: '#6366F1' },
     { id: 'Accepted', name: 'Accepted', color: '#10B981' },
-    { id: 'Rejected', name: 'Rejected / Declined', color: '#EF4444' },
-    { id: 'Expired', name: 'Expired / Cancelled', color: '#6B7280' },
+    { id: 'Declined', name: 'Rejected / Declined', color: '#EF4444' },
   ];
 
   const getStatusColor = (status) => {
@@ -69,6 +70,7 @@ const EstimationsPage = () => {
       'Revised': '#6366F1',
       'Accepted': '#10B981',
       'Declined': '#EF4444',
+      'Rejected': '#EF4444',
     };
     return colors[status] || '#6B7280';
   };
@@ -76,21 +78,53 @@ const EstimationsPage = () => {
   const getCardValue = (item, field) => {
     const fieldMap = {
       company: () => {
-        const name = item.company || item.company_name || item.client_name || item.lead_name || item.contact_name;
-        return name && name !== 'N/A' ? name : 'N/A';
+        const name = item.client_name || item.company || item.company_name || item.lead_name || item.contact_name;
+        return name && name !== 'N/A' ? name : 'Unknown Client';
       },
-      type: () => item.type || item.project_name || 'N/A',
-      desc: () => item.desc || item.description || 'N/A',
-      estimateId: () => item.estimateId || item.estimate_id || item.estimation_number || 'N/A',
-      amount: () => item.amount ? `${item.currency || '$'}${parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A',
-      date: () => item.date || item.estimate_date || 'N/A',
-      expiry: () => item.expiry || item.expiry_date || 'N/A',
-      avatar: () => item.avatar || (item.company || item.company_name || item.client_name || 'N')[0],
+      type: () => {
+        if (item.description) {
+          try {
+            const p = JSON.parse(item.description);
+            if (p && p.title) return p.title;
+          } catch (e) {}
+        }
+        return item.project_name || item.business_type || item.type || '';
+      },
+      desc: () => {
+        if (item.description) {
+          try {
+            const p = JSON.parse(item.description);
+            if (p && p.requirementSummary) return p.requirementSummary;
+          } catch (e) {}
+        }
+        return item.description || item.desc || '';
+      },
+      estimateId: () => item.estimation_number || item.estimateId || item.estimate_id || 'N/A',
+      amount: () => item.amount != null ? `${item.currency || 'INR '}${parseFloat(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'INR 0.00',
+      date: () => {
+        const val = item.estimate_date || item.date;
+        if (!val || val === 'N/A') return 'Not set';
+        try {
+          const d = new Date(val);
+          if (isNaN(d.getTime())) return val;
+          return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        } catch (e) { return val; }
+      },
+      expiry: () => {
+        const val = item.expiry_date || item.expiry;
+        if (!val || val === 'N/A') return 'Not set';
+        try {
+          const d = new Date(val);
+          if (isNaN(d.getTime())) return val;
+          return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        } catch (e) { return val; }
+      },
+      avatar: () => item.avatar || (item.client_name || item.company || item.company_name || 'U')[0],
       owner: () => {
-        const firstName = item.owner || item.creator_first_name;
+        const firstName = item.creator_first_name || item.owner;
         const lastName = item.creator_last_name;
         if (firstName && lastName) return `${firstName} ${lastName}`;
-        return firstName || 'N/A';
+        return firstName || 'Unassigned';
       },
       status: () => item.status || 'Draft',
       id: () => item.id || 0,
@@ -106,10 +140,10 @@ const EstimationsPage = () => {
       if (!isLoadingEstimations && !draggedEstimation && !draggedItemRef.current && !isUpdating) {
         fetchEstimations(true);
       }
-    }, 10000); // Increased to 10s for better stability
+    }, 15000);
 
     return () => clearInterval(interval);
-  }, [isLoadingEstimations, draggedEstimation, isUpdating]);
+  }, [user]);
 
   const isWithinDateRange = (dateStr, rangeType) => {
     if (rangeType === 'All Time' || !dateStr) return true;
@@ -159,18 +193,70 @@ const EstimationsPage = () => {
 
     if (!isSilent) setIsLoadingEstimations(true);
     try {
-      const data = await estimationsAPI.getAll();
+      const currentUserData = user || (() => {
+        try {
+          return JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('user'));
+        } catch (e) { return null; }
+      })();
+
+      const authFilters = {};
+      if (currentUserData) {
+        authFilters.user_id = currentUserData.id || currentUserData.userId;
+        authFilters.role = currentUserData.role_name || currentUserData.role || currentUserData.userRole;
+        authFilters.department = currentUserData.department || currentUserData.department_name;
+      }
+
+      const [estimationsRes, dealsRes, leadsRes] = await Promise.all([
+        estimationsAPI.getAll(authFilters),
+        dealsAPI.getAll(authFilters),
+        leadsAPI.getAll(authFilters)
+      ]);
+
+      const data = Array.isArray(estimationsRes) ? estimationsRes : [];
+      const deals = Array.isArray(dealsRes) ? dealsRes : (dealsRes?.data || []);
+      const leads = Array.isArray(leadsRes) ? leadsRes : [];
+
+      const joinedData = data.map(est => {
+        const linkedDeal = est.deal_id ? deals.find(d => d.id.toString() === est.deal_id.toString()) : null;
+        const linkedLead = est.lead_id ? leads.find(l => l.id.toString() === est.lead_id.toString()) : null;
+
+        const projectName = est.project_name || (linkedDeal ? (linkedDeal.project_name || linkedDeal.deal_name || linkedDeal.company_name) : '') || (linkedLead ? linkedLead.project_name : '') || '';
+        const clientName = est.client_name || est.company || (linkedDeal ? (linkedDeal.client_name || linkedDeal.company_name) : '') || (linkedLead ? (linkedLead.lead_name || linkedLead.name) : '') || 'Unknown Client';
+        const businessType = est.business_type || (linkedDeal ? linkedDeal.business_type : '') || (linkedLead ? linkedLead.business_type : '') || '';
+        const desc = est.description || (linkedDeal ? linkedDeal.description : '') || (linkedLead ? (linkedLead.notes || linkedLead.description) : '') || '';
+
+        return {
+          ...est,
+          project_name: projectName,
+          client_name: clientName,
+          company: clientName,
+          business_type: businessType,
+          description: desc,
+          desc: desc
+        };
+      });
+
+      // Role-based client-side guardrail
+      const role = authFilters.role || '';
+      const isManager = role.toLowerCase().includes('admin') || role.toLowerCase().includes('manager');
+      let finalEstimations = joinedData;
+      if (!isManager && currentUserData?.id) {
+        const currentUid = Number(currentUserData.id);
+        finalEstimations = joinedData.filter(q => {
+          const estimateBy = q.estimate_by != null ? Number(q.estimate_by) : null;
+          const leadOwnerId = q.lead_owner_id != null ? Number(q.lead_owner_id) : (q.owner_id != null ? Number(q.owner_id) : null);
+          const dealAssigneeId = q.deal_assignee_id != null ? Number(q.deal_assignee_id) : (q.assignee_id != null ? Number(q.assignee_id) : null);
+          return estimateBy === currentUid || leadOwnerId === currentUid || dealAssigneeId === currentUid;
+        });
+      }
 
       // Additional safety check for silent updates to prevent race conditions
-      // Ignore silent updates during a "grace period" after a manual update
       const timeSinceUpdate = Date.now() - lastUpdateRef.current;
       if (isSilent && (isUpdating || draggedEstimation || draggedItemRef.current || timeSinceUpdate < 3000)) {
-        console.log('📋 Skipping silent update to prevent state overwrite (Grace period)');
         return;
       }
 
-      console.log('📋 Estimations fetched:', Array.isArray(data) ? data.length : 0, 'estimations');
-      setEstimations(Array.isArray(data) ? data : []);
+      setEstimations(finalEstimations);
     } catch (err) {
       console.error('Error fetching estimations:', err);
       if (!isSilent) setEstimations([]);
@@ -185,9 +271,27 @@ const EstimationsPage = () => {
   };
 
   const filteredEstimations = useMemo(() => {
-    // Only show the latest version of each quotation chain
-    const parentIds = new Set(estimations.map(q => q.parent_id).filter(id => id !== null && id !== undefined));
-    const latestEstimations = estimations.filter(q => !parentIds.has(q.id));
+    // Group all estimations by root number so only the latest active estimation per chain is displayed
+    const groups = {};
+    estimations.forEach(est => {
+      const estNum = est.estimation_number || est.estimateId || '';
+      const rootNum = estNum.replace(/-v\d+$/i, '').trim();
+      const key = rootNum || (est.lead_id ? `lead_${est.lead_id}` : `id_${est.id}`);
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(est);
+    });
+
+    const latestEstimations = Object.values(groups).map(versionList => {
+      versionList.sort((a, b) => {
+        const vA = parseInt(a.estimation_number?.match(/-v(\d+)$/i)?.[1] || a.version || 1);
+        const vB = parseInt(b.estimation_number?.match(/-v(\d+)$/i)?.[1] || b.version || 1);
+        if (vB !== vA) return vB - vA;
+        return (b.id || 0) - (a.id || 0);
+      });
+      return versionList[0];
+    });
 
     let result = latestEstimations.filter(est => {
       const searchLower = searchTerm.toLowerCase();
@@ -238,18 +342,18 @@ const EstimationsPage = () => {
 
   const handleAddEstimation = async (formData) => {
     try {
-      const tagsString = formData.tags.length > 0 ? JSON.stringify(formData.tags) : null;
+      const tagsString = formData.tags ? (Array.isArray(formData.tags) ? JSON.stringify(formData.tags) : formData.tags) : null;
       const isVirtualDeal = formData.deal_id && !isNaN(formData.deal_id) && Number(formData.deal_id) > 1000000;
       const estimationData = {
-        estimation_number: formData.quotationNumber || formData.estimation_number || null,
+        estimation_number: formData.estimation_number || formData.quotationNumber || null,
         client_id: formData.client_id || (formData.client && !isNaN(formData.client) ? parseInt(formData.client) : null),
         lead_id: (formData.lead_id && !isNaN(formData.lead_id)) ? parseInt(formData.lead_id) : (isVirtualDeal ? (Number(formData.deal_id) - 1000000) : null),
         deal_id: isVirtualDeal ? null : (formData.deal_id || null),
         project_id: formData.project_id || formData.project || null,
         bill_to: formData.billTo || null,
         ship_to: formData.shipTo || null,
-        amount: parseFloat(formData.amount || 0),
-        currency: formData.currency,
+        amount: parseFloat(formData.amount || formData.total || 0),
+        currency: formData.currency || 'INR',
         estimate_date: formData.estimate_date || formData.estimateDate || formData.quotationDate || null,
         expiry_date: formData.expiry_date || formData.expiryDate || formData.validUntil || null,
         status: formData.status || 'Draft',
@@ -260,8 +364,8 @@ const EstimationsPage = () => {
         discount_amount: parseFloat(formData.discount_amount || formData.discount || 0),
         tax_percentage: parseFloat(formData.tax_percentage || 10),
         tax_amount: parseFloat(formData.tax_amount || 0),
-        subtotal: parseFloat(formData.subtotal || 0),
-        total: parseFloat(formData.amount || 0),
+        subtotal: parseFloat(formData.subtotal || formData.amount || 0),
+        total: parseFloat(formData.total || formData.amount || 0),
       };
 
       if (selectedEstimation && isEditModalOpen) {
@@ -1070,15 +1174,37 @@ const EstimationsPage = () => {
 
 
   const summaryMetrics = useMemo(() => {
-    const totalCount = estimations.length;
-    const draftCount = estimations.filter(e => (e.status || '').toLowerCase() === 'draft').length;
-    const sentCount = estimations.filter(e => (e.status || '').toLowerCase() === 'sent').length;
-    const revisedCount = estimations.filter(e => (e.status || '').toLowerCase() === 'revised' || (e.version || 1) > 1).length;
-    const acceptedCount = estimations.filter(e => (e.status || '').toLowerCase() === 'accepted').length;
-    const rejectedCount = estimations.filter(e => (e.status || '').toLowerCase() === 'rejected' || (e.status || '').toLowerCase() === 'declined').length;
+    // Group all estimations by root number so metrics only count the latest active estimation per chain
+    const groups = {};
+    estimations.forEach(est => {
+      const estNum = est.estimation_number || est.estimateId || '';
+      const rootNum = estNum.replace(/-v\d+$/i, '').trim();
+      const key = rootNum || (est.lead_id ? `lead_${est.lead_id}` : `id_${est.id}`);
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(est);
+    });
+
+    const latestEstimations = Object.values(groups).map(versionList => {
+      versionList.sort((a, b) => {
+        const vA = parseInt(a.estimation_number?.match(/-v(\d+)$/i)?.[1] || a.version || 1);
+        const vB = parseInt(b.estimation_number?.match(/-v(\d+)$/i)?.[1] || b.version || 1);
+        if (vB !== vA) return vB - vA;
+        return (b.id || 0) - (a.id || 0);
+      });
+      return versionList[0];
+    });
+
+    const totalCount = latestEstimations.length;
+    const draftCount = latestEstimations.filter(e => (e.status || '').toLowerCase() === 'draft').length;
+    const sentCount = latestEstimations.filter(e => (e.status || '').toLowerCase() === 'sent').length;
+    const revisedCount = latestEstimations.filter(e => (e.status || '').toLowerCase() === 'revised' || (e.status || '').toLowerCase() === 'under review').length;
+    const acceptedCount = latestEstimations.filter(e => (e.status || '').toLowerCase() === 'accepted' || (e.status || '').toLowerCase() === 'approved internally').length;
+    const rejectedCount = latestEstimations.filter(e => (e.status || '').toLowerCase() === 'rejected' || (e.status || '').toLowerCase() === 'declined' || (e.status || '').toLowerCase() === 'archived').length;
     
-    const totalVal = estimations.reduce((sum, e) => sum + (parseFloat(e.amount || e.total) || 0), 0);
-    const acceptedVal = estimations.filter(e => (e.status || '').toLowerCase() === 'accepted').reduce((sum, e) => sum + (parseFloat(e.amount || e.total) || 0), 0);
+    const totalVal = latestEstimations.reduce((sum, e) => sum + (parseFloat(e.amount || e.total) || 0), 0);
+    const acceptedVal = latestEstimations.filter(e => (e.status || '').toLowerCase() === 'accepted' || (e.status || '').toLowerCase() === 'approved internally').reduce((sum, e) => sum + (parseFloat(e.amount || e.total) || 0), 0);
     const convRate = totalCount > 0 ? Math.round((acceptedCount / totalCount) * 100) : 0;
 
     return { totalCount, draftCount, sentCount, revisedCount, acceptedCount, rejectedCount, totalVal, acceptedVal, convRate };
@@ -1106,16 +1232,23 @@ const EstimationsPage = () => {
       <div className="bg-white border-b border-gray-200 p-4">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2 flex-wrap">
               Estimations Management
               <span className="inline-block px-2.5 py-0.5 bg-red-50 text-red-600 text-xs font-semibold rounded-full border border-red-100">
                 {filteredEstimations.length}
               </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-sm">
+                <Lock size={12} className="text-amber-700" />
+                INTERNAL DOCUMENT
+              </span>
             </h1>
-            <nav className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+            <p className="text-xs text-slate-500 mt-1">
+              This estimation contains internal cost, resource, effort, and pricing calculations. <strong>It is not intended for direct client sharing.</strong>
+            </p>
+            <nav className="text-xs text-gray-400 mt-1 flex items-center gap-1">
               <span>Sales Workspace</span>
               <span className="text-gray-300 mx-1">›</span>
-              <span className="text-gray-900 font-medium">Estimations</span>
+              <span className="text-gray-700 font-medium">Internal Estimations</span>
             </nav>
           </div>
           <div className="flex items-center gap-2">
@@ -1315,14 +1448,14 @@ const EstimationsPage = () => {
               const columnEstimations = filteredEstimations.filter((item) => {
                 const status = (item.status || '').toLowerCase();
                 const colId = col.id.toLowerCase();
-                const isRevision = (item.version || 1) > 1 || item.parent_id;
 
-                if (colId === 'sent') {
-                  return status === 'sent' && !isRevision;
+                if (colId === 'declined' || colId === 'rejected') {
+                  return status === 'declined' || status === 'rejected' || status === 'archived';
                 }
-                if (colId === 'revised') {
-                  return status === 'revised' || (status === 'sent' && isRevision);
-                }
+                if (colId === 'draft') return status === 'draft';
+                if (colId === 'sent') return status === 'sent';
+                if (colId === 'revised') return status === 'revised' || status === 'under review';
+                if (colId === 'accepted') return status === 'accepted' || status === 'approved internally';
                 return status === colId;
               });
               return (
@@ -1383,14 +1516,14 @@ const EstimationsPage = () => {
                                       {getCardValue(item, 'company')}
                                     </h3>
                                   )}
-                                  {visibleColumns['Project'] && (
+                                  {visibleColumns['Project'] && getCardValue(item, 'type') && getCardValue(item, 'type') !== 'N/A' && (
                                     <p className="text-[11px] text-slate-500 truncate">{getCardValue(item, 'type')}</p>
                                   )}
                                 </div>
                               </div>
                               <div className="relative pointer-events-auto flex items-center gap-1">
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                  v{item.version || 1}
+                                  v{item.estimation_number?.match(/-v(\d+)$/i)?.[1] || item.version || 1}
                                 </span>
                                 {visibleColumns['Action'] && (
                                   <button
@@ -1412,7 +1545,9 @@ const EstimationsPage = () => {
                               </div>
                             </div>
 
-                            <p className="text-xs text-slate-600 mb-3 line-clamp-2 leading-relaxed">{getCardValue(item, 'desc')}</p>
+                            {getCardValue(item, 'desc') && getCardValue(item, 'desc') !== 'N/A' && (
+                              <p className="text-xs text-slate-600 mb-3 line-clamp-2 leading-relaxed">{getCardValue(item, 'desc')}</p>
+                            )}
 
                             <div className="space-y-1.5 text-xs text-slate-700 bg-slate-50 rounded-lg p-2.5 border border-slate-100 mb-3">
                               {visibleColumns['Estimations ID'] && (
@@ -1572,7 +1707,7 @@ const EstimationsPage = () => {
                         <div className="flex items-center gap-1.5">
                           <span>{getCardValue(item, 'estimateId')}</span>
                           <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                            v{item.version || 1}
+                            v{item.estimation_number?.match(/-v(\d+)$/i)?.[1] || item.version || 1}
                           </span>
                         </div>
                       </td>
@@ -1612,8 +1747,8 @@ const EstimationsPage = () => {
                           } else if (diffDays <= 3) {
                             return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">In {diffDays}d</span>;
                           }
-                          return new Date(item.expiry_date).toLocaleDateString();
-                        })() : 'N/A'}
+                          return new Date(item.expiry_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                        })() : 'Not set'}
                       </td>
                     )}
                     {visibleColumns['Estimation By'] && (
@@ -1705,7 +1840,7 @@ const EstimationsPage = () => {
         </div>
       </div>
 
-      <AddNewEstimationModal
+      <CreateEstimationModal
         isOpen={isModalOpen || isEditModalOpen}
         onClose={() => {
           setIsModalOpen(false);
@@ -1713,31 +1848,6 @@ const EstimationsPage = () => {
           setSelectedEstimation(null);
         }}
         onSubmit={handleAddEstimation}
-        onGeneratePDF={(data) => {
-          const quotationToView = {
-            ...data,
-            id: data.id || 'NEW',
-            estimation_number: data.quotationNumber,
-            estimate_date: data.quotationDate,
-            expiry_date: data.validUntil,
-            client_name: data.client,
-            business_type: data.businessType,
-            amount: data.total,
-            tax_amount: data.tax,
-            discount_amount: data.discount,
-            client_email: data.client_email,
-            client_phone: data.client_phone,
-            business_description: data.business_description,
-            referral_name: data.referral_name,
-            items: data.items.map(item => ({
-              ...item,
-              item_name: item.productName,
-              total: item.quantity * item.rate
-            }))
-          };
-          setSelectedEstimation(quotationToView);
-          setIsViewModalOpen(true);
-        }}
         initialData={selectedEstimation}
       />
 

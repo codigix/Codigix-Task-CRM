@@ -79,16 +79,18 @@ const ContractsPage = () => {
         subject: formData.subject,
         start_date: formData.start_date,
         end_date: formData.end_date,
-        client_id: formData.client,
+        client_id: formData.client_id || formData.client,
+        deal_id: formData.deal_id || null,
         contract_type: formData.contract_type,
         contract_value: formData.contract_value,
         description: formData.description,
-        status: 'Draft',
+        status: formData.status || 'Draft',
+        files: formData.files || (formData.attachment ? [formData.attachment] : null)
       };
 
       await createContract(contractData);
       setIsModalOpen(false);
-      fetchContracts();
+      await fetchContracts();
     } catch (err) {
       console.error('Error creating contract:', err);
       throw err;
@@ -279,10 +281,17 @@ const ContractsPage = () => {
         </div>
       </div>
 
-      <h3 className=" text-gray-900 mb-1 truncate">{contract.subject || 'Unnamed Contract'}</h3>
-      <p className="text-xs text-gray-500 mb-3 truncate">{contract.contract_type || 'N/A'}</p>
+      <h3 className="text-sm font-bold text-gray-900 mb-1 truncate">{contract.subject || 'Unnamed Contract'}</h3>
+      <p className="text-xs text-gray-500 mb-2 truncate">{contract.contract_type || 'N/A'}</p>
 
-      <div className="space-y-1 mb-4 text-xs text-gray-600">
+      {contract.deal_name && (
+        <div className="flex items-center gap-1.5 mb-2.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 text-xs font-semibold truncate">
+          <span>🎯</span>
+          <span className="truncate">Deal: {contract.deal_name}</span>
+        </div>
+      )}
+
+      <div className="space-y-1 mb-3 text-xs text-gray-600">
         <div className="flex items-center gap-2">
           <span>📅</span>
           <span>{formatDate(contract.start_date)}</span>
@@ -293,14 +302,26 @@ const ContractsPage = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100 text-xs">
-        <span>🏢</span>
-        <span className="  text-gray-900 truncate">{getCompanyName(contract.client_id)}</span>
+      <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-gray-100 text-xs">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span>🏢</span>
+          <span className="text-gray-900 font-medium truncate">{contract.client_name || getCompanyName(contract.client_id)}</span>
+        </div>
+        {contract.files && (
+          <span className="text-[11px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded shrink-0 font-medium">
+            📎 {(() => {
+              try {
+                const f = typeof contract.files === 'string' ? JSON.parse(contract.files) : contract.files;
+                return Array.isArray(f) ? `${f.length} file${f.length > 1 ? 's' : ''}` : 'Files';
+              } catch (e) { return 'Files'; }
+            })()}
+          </span>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-xs bg-blue-100 text-white  p-1  rounded  ">
-          💰 ${formatContractValue(contract.contract_value)}
+        <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded border border-blue-200">
+          ₹{formatContractValue(contract.contract_value)}
         </span>
       </div>
     </div>

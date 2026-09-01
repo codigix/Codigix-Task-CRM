@@ -104,7 +104,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null, onCre
           next_followup_date: formatDateForInput(initialData.next_followup_date)
         };
 
-        const userStr = localStorage.getItem('user');
+        const userStr = localStorage.getItem('currentUser') || localStorage.getItem('user');
         let userEmail = '';
         if (userStr) {
           try {
@@ -126,7 +126,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null, onCre
       } else {
         const isSeoGmb = window.location.pathname.includes('seo-gmb');
         const workflowContext = isSeoGmb ? (window.location.pathname.includes('gmb') ? 'GMB' : 'SEO') : '';
-        const userStr = localStorage.getItem('user');
+        const userStr = localStorage.getItem('currentUser') || localStorage.getItem('user');
         let userId = '';
         let userName = '';
         let userEmail = '';
@@ -136,7 +136,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null, onCre
             const user = JSON.parse(userStr);
             setCurrentUser(user); // Set the state so it can be used elsewhere
             userId = user.id || user.userId || '';
-            userName = user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : (user.username || '');
+            userName = user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : (user.name || user.username || '');
             userEmail = user.email || '';
           } catch (e) {
             console.error('Error parsing user from localStorage');
@@ -295,13 +295,18 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null, onCre
       let data = [];
       const filters = {};
       const userRole = currentUser?.role_name || currentUser?.role || currentUser?.userRole;
-      const isSalesExecutive = userRole === 'Sales Executive';
+      const isManagerOrAdmin = userRole && (userRole.toLowerCase().includes('admin') || userRole.toLowerCase().includes('manager'));
+      const isExecutive = !isManagerOrAdmin;
 
-      if (isSalesExecutive && currentUser?.id) {
+      if (isExecutive && currentUser?.id) {
         if (formData.related_type === 'Lead') {
           filters.owner_id = currentUser.id;
+          filters.user_id = currentUser.id;
+          filters.role = userRole;
         } else if (formData.related_type === 'Deal') {
           filters.assignee_id = currentUser.id;
+          filters.user_id = currentUser.id;
+          filters.role = userRole;
         }
       }
 

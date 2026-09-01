@@ -370,10 +370,26 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
               </div>
             </div>
 
+            {/* Linked Deal */}
+            {(contract.deal_name || contract.deal_id) && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Linked Deal / Converted Lead
+                </label>
+                <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center gap-2.5">
+                  <span className="text-lg">🎯</span>
+                  <div>
+                    <p className="text-xs font-bold text-indigo-950">{contract.deal_name || `Deal #${contract.deal_id}`}</p>
+                    <p className="text-[11px] text-indigo-600">Contract originated from this sales deal conversion</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Description */}
             <div>
-              <label className="block text-xs    text-gray-700 mb-2">
-                Description
+              <label className="block text-xs font-semibold text-gray-700 mb-2">
+                Description & Terms
               </label>
               {isEditing ? (
                 <textarea
@@ -381,12 +397,58 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
                   value={formData.description}
                   onChange={handleInputChange}
                   rows="4"
-                  className="w-full p-2  border border-gray-300 rounded  text-xs  focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                  className="w-full p-2.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                 />
               ) : (
-                <p className="text-gray-900 whitespace-pre-wrap">{formData.description || 'No description'}</p>
+                <p className="text-gray-900 whitespace-pre-wrap text-xs leading-relaxed">{formData.description || 'No description'}</p>
               )}
             </div>
+
+            {/* Attached Files & Documents */}
+            {contract.files && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Attached Files & Legal Documents
+                </label>
+                {(() => {
+                  let filesList = [];
+                  try {
+                    filesList = typeof contract.files === 'string' ? JSON.parse(contract.files) : contract.files;
+                  } catch (e) { filesList = []; }
+                  
+                  if (!Array.isArray(filesList) || filesList.length === 0) {
+                    return <p className="text-xs text-gray-500 italic">No files attached</p>;
+                  }
+
+                  return (
+                    <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                      {filesList.map((file, idx) => (
+                        <div key={idx} className="p-2.5 flex items-center justify-between gap-3 hover:bg-gray-50 transition">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="text-base">📄</span>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-gray-900 truncate">{file.name}</p>
+                              <span className="text-[10px] text-gray-400 font-medium">
+                                {file.category || 'Contract Document'} • {file.size ? (file.size / 1024).toFixed(1) + ' KB' : ''}
+                              </span>
+                            </div>
+                          </div>
+                          {file.dataUrl && (
+                            <a
+                              href={file.dataUrl}
+                              download={file.name}
+                              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs font-medium flex items-center gap-1 transition"
+                            >
+                              <Download size={13} /> Download
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Additional Info */}
