@@ -17,6 +17,8 @@ const BoardTabs = ({ department, spaceName }) => {
   const base = `/${isMarketing ? 'marketing' : 'it'}/${designation}/${username}`;
 
   const canPlanSprints = isManagerDesignation(designation);
+  // Sales staff work deals/leads, not delivery projects — no Projects tab for them.
+  const isSalesUser = String(designation || '').toLowerCase().includes('sales');
 
   const tabs = [
     { key: 'dashboard', label: 'Summary', icon: Globe },
@@ -24,7 +26,7 @@ const BoardTabs = ({ department, spaceName }) => {
     { key: 'kanban', label: 'Board', icon: Columns },
     // Sprint planning is a manager activity, so employees get no Backlog tab.
     { key: 'backlog', label: 'Backlog', icon: Rows3, hidden: !canPlanSprints },
-    { key: 'projects', label: 'Projects', icon: Folder },
+    { key: 'projects', label: 'Projects', icon: Folder, hidden: isSalesUser },
     // Planning views are for managers; an employee works from the Board and List.
     { key: 'calendar', label: 'Calendar', icon: Calendar, hidden: !canPlanSprints },
     // Both departments now share the workload report at /reports.

@@ -668,7 +668,8 @@ Acceptance Criteria
   app.get('/api/it-kanban/issues', async (req, res) => {
     try {
       const { department } = req.query;
-      // Join the linked project so the details panel can show a real Parent instead of "None".
+      // Join the linked project so the details panel can show a real Parent instead of "None",
+      // and join users to detect assignee/reporter departments for cross-department visibility.
       let query = `
         SELECT i.*,
                p.name AS parent_project_name,
@@ -677,18 +678,48 @@ Acceptance Criteria
                -- label and goes stale the moment an item moves, so anything showing a sprint
                -- should read this instead.
                s.name AS sprint_name,
-               s.status AS sprint_status
+               s.status AS sprint_status,
+               u_assignee.department AS assignee_department,
+               u_reporter.department AS reporter_department
         FROM it_kanban_issues i
         LEFT JOIN projects p ON p.id = COALESCE(i.parent_id, i.project_id)
         LEFT JOIN sprints s ON s.id = i.sprint_id
+        LEFT JOIN users u_assignee ON (
+          u_assignee.id = (
+            SELECT id FROM users u
+            WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+               OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+               OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+            LIMIT 1
+          )
+        )
+        LEFT JOIN users u_reporter ON (
+          u_reporter.id = (
+            SELECT id FROM users u
+            WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+               OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+               OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+            LIMIT 1
+          )
+        )
       `;
       const params = [];
 
-      // Removed department-based validation so everyone can view tasks of everyone
-      /* if (department) {
-        query += ' WHERE i.department = ? OR (i.department IS NULL AND ? = "IT")';
-        params.push(department, department);
-      } */
+      // Department scoping with cross-department collaboration:
+      // A department can see its own tasks, plus any tasks cross-assigned to or requested by its members.
+      if (department) {
+        const deptNorm = department.toLowerCase().trim();
+        const deptPattern = `%${deptNorm}%`;
+        query += `
+          WHERE (
+            LOWER(i.department) LIKE ?
+            OR (i.department IS NULL AND ? = 'it')
+            OR LOWER(COALESCE(u_assignee.department, '')) LIKE ?
+            OR LOWER(COALESCE(u_reporter.department, '')) LIKE ?
+          )
+        `;
+        params.push(deptPattern, deptNorm, deptPattern, deptPattern);
+      }
       // Rank first, so the List and Board show the priority order set by dragging in the
       // Backlog. Unranked rows keep the old newest-first behaviour at the end.
       query += ' ORDER BY i.rank_order IS NULL, i.rank_order ASC, i.created_at DESC';

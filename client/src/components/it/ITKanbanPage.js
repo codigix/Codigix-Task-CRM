@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   Search, Bell, HelpCircle, Settings, ChevronDown, ChevronRight,
   Share2, Download, MoreHorizontal, LayoutList, Plus, AlertCircle, ArrowUp, ArrowDown, CheckSquare,
-  Trash2, User, Check, Megaphone, Palette, Video, FileText, IterationCw
+  Trash2, User, Check, Megaphone, Palette, Video, FileText, IterationCw, Calendar
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ITCreateIssueDrawer from './ITCreateIssueDrawer';
@@ -13,6 +13,7 @@ import MarketingCreateIssueDrawer from '../marketing/MarketingCreateIssueDrawer'
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
 import BoardTabs from '../common/BoardTabs';
 import CompleteSprintModal from '../common/CompleteSprintModal';
+import SearchableSelect from '../common/SearchableSelect';
 import Swal from 'sweetalert2';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -77,6 +78,22 @@ const localMidnight = (value) => {
   const d = new Date(value);
   if (isNaN(d.getTime())) return null;
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+};
+
+const formatDate = (v) => {
+  if (!v) return null;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+};
+
+const isPastDate = (v) => {
+  if (!v) return false;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return false;
+  const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const now = new Date();
+  return day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
 };
 
 const formatSprintDate = (value) => {
@@ -151,11 +168,19 @@ const ITKanbanPage = ({ department }) => {
   const deptConfig = DEPARTMENT_KANBAN_CONFIG[currentDept] || DEPARTMENT_KANBAN_CONFIG['IT'];
   const deptIssueTypes = deptConfig.issueTypes.map(t => t.name);
 
-  const isManager = designation ? (
-    designation.toLowerCase().includes('manager') ||
-    designation.toLowerCase().includes('admin') ||
-    designation.toLowerCase().includes('lead')
-  ) : false;
+  const isManager = Boolean(
+    (designation && (
+      designation.toLowerCase().includes('manager') ||
+      designation.toLowerCase().includes('admin') ||
+      designation.toLowerCase().includes('lead')
+    )) ||
+    (user?.role && (
+      user.role.toLowerCase().includes('manager') ||
+      user.role.toLowerCase().includes('admin') ||
+      user.role.toLowerCase().includes('lead') ||
+      user.role.toLowerCase().includes('hr')
+    ))
+  );
 
   const userSearchTerms = React.useMemo(() => {
     const terms = new Set();
@@ -358,7 +383,10 @@ const ITKanbanPage = ({ department }) => {
     fetch(`${API_BASE_URL}/projects?department=${currentDept}`)
       .then(res => res.json())
       .then(data => {
-        const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+        let list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+        if (currentDept === 'IT') {
+          list = list.filter(p => p.workflow_type === 'IT' || p.category === 'IT' || p.project_type === 'IT' || p.category === 'Software');
+        }
         setProjectsList(list);
       })
       .catch(err => console.error('Error fetching projects for kanban filter:', err));
@@ -403,19 +431,22 @@ const ITKanbanPage = ({ department }) => {
     });
 
     let filtered = allRawIssues.filter(issue => {
-      // Removed department-based validation so everyone can view tasks of everyone
-      /* if (currentDept === 'Marketing') {
-        return issue.department === 'Marketing' || (issue.issue_key && !issue.issue_key.startsWith('WR-'));
-      }
-      return issue.department !== 'Marketing' && (!issue.issue_key || !issue.issue_key.startsWith('MKT')); */
-      return true;
+      const target = currentDept.toLowerCase();
+      const issueDept = (issue.department || 'IT').toLowerCase();
+      if (issueDept.includes(target)) return true;
+      if (issue.assignee_department && issue.assignee_department.toLowerCase().includes(target)) return true;
+      if (issue.reporter_department && issue.reporter_department.toLowerCase().includes(target)) return true;
+      return false;
     });
 
-    // Scrum rule: the board shows the running sprints only — all of them, since sprints can
-    // run in parallel. Everything else lives in the Backlog until its sprint is started.
+    // Board shows tasks in running sprints as well as individual standalone tasks (created without a sprint)
     if (activeSprints.length > 0) {
       const runningIds = new Set(activeSprints.map(s => Number(s.id)));
-      filtered = filtered.filter(issue => runningIds.has(Number(issue.sprint_id)));
+      filtered = filtered.filter(issue => 
+        !issue.sprint_id ||
+        runningIds.has(Number(issue.sprint_id)) || 
+        issue.sprint_status === 'Active'
+      );
     }
 
     if (selectedProjectId !== 'ALL') {
@@ -441,27 +472,28 @@ const ITKanbanPage = ({ department }) => {
         });
       });
     }
-    const isUserTask = (issue) => {
+    const isAssignedToMe = (issue) => {
+      const assigneeNorm = normalizePerson(issue.assignee);
+      if (assigneeNorm && myIdentities.includes(assigneeNorm)) return true;
       const assigneeStr = (issue.assignee || '').toLowerCase();
-      const reporterStr = (issue.reporter || '').toLowerCase();
-      return userSearchTerms.some(term => assigneeStr.includes(term) || reporterStr.includes(term));
+      return userSearchTerms.some(term => assigneeStr.includes(term));
     };
 
-    // The employee gate is an access boundary, not a convenience filter, so it matches the
-    // person exactly. Substring matching would leak: two staff share the surname "khedekar",
-    // two share "patil", and one has the last name "IT", which appears inside plenty of
-    // unrelated names.
-    const isMine = (issue) =>
-      myIdentities.includes(normalizePerson(issue.assignee)) ||
-      myIdentities.includes(normalizePerson(issue.reporter));
+    const isTaskAssigned = (issue) => {
+      if (!issue || !issue.assignee) return false;
+      const a = String(issue.assignee).trim().toLowerCase();
+      return a !== '' && a !== 'unassigned' && a !== 'automatic' && a !== 'none' && a !== 'null' && a !== 'undefined';
+    };
 
-    // Employees get a personal board: their own work from the running sprints, nothing else.
-    // Managers keep the whole board and can narrow it with the "Only My Issues" toggle.
-    // Removed isManager validation so everyone can view tasks of everyone
-    /* if (!isManager) {
-      filtered = filtered.filter(issue => isMine(issue));
-    } else */ if (onlyMyIssues) {
-      filtered = filtered.filter(issue => isUserTask(issue));
+    // Managers see all tasks (both assigned and unassigned), and can narrow with the "Only My Tasks" toggle.
+    // Employees / non-managers only see tasks that are assigned to someone (unassigned tasks are hidden).
+    if (!isManager) {
+      filtered = filtered.filter(issue => isTaskAssigned(issue));
+      if (onlyMyIssues) {
+        filtered = filtered.filter(issue => isAssignedToMe(issue));
+      }
+    } else if (onlyMyIssues) {
+      filtered = filtered.filter(issue => isAssignedToMe(issue));
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -791,7 +823,13 @@ const ITKanbanPage = ({ department }) => {
       {currentDept === 'Marketing' ? (
         <MarketingCreateIssueDrawer isOpen={isCreateDrawerOpen} onIssueCreated={fetchKanbanData} onClose={() => setIsCreateDrawerOpen(false)} />
       ) : (
-        <ITCreateIssueDrawer department={currentDept} isOpen={isCreateDrawerOpen} onIssueCreated={fetchKanbanData} onClose={() => setIsCreateDrawerOpen(false)} />
+        <ITCreateIssueDrawer
+          department={currentDept}
+          isOpen={isCreateDrawerOpen}
+          projectId={selectedProjectId !== 'ALL' ? selectedProjectId : null}
+          onIssueCreated={fetchKanbanData}
+          onClose={() => setIsCreateDrawerOpen(false)}
+        />
       )}
       <div className="flex w-full h-full max-h-full bg-white overflow-hidden font-sans">
         <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -887,56 +925,20 @@ const ITKanbanPage = ({ department }) => {
                       )}
                     </div>
 
-                    {/* Project Filter Dropdown */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'project' ? null : 'project')}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedProjectId !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700'}`}
-                      >
-                        Project: {selectedProjectId !== 'ALL' ? (projectsList.find(p => Number(p.id) === Number(selectedProjectId))?.name || 'Selected') : 'All Projects'} <ChevronDown size={14} />
-                      </button>
-                      {activeFilterDropdown === 'project' && (
-                        <div className="absolute left-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-md shadow-xl py-1 z-50 text-xs text-gray-700 max-h-60 overflow-y-auto">
-                          <div
-                            onClick={() => { setSelectedProjectId('ALL'); setActiveFilterDropdown(null); }}
-                            className={`px-3 py-2 hover:bg-gray-100 cursor-pointer font-medium border-b border-gray-100 ${selectedProjectId === 'ALL' ? 'text-blue-600 font-bold bg-blue-50' : ''}`}
-                          >
-                            All Projects
-                          </div>
-                          {projectsList.map(p => (
-                            <div
-                              key={p.id}
-                              onClick={() => { setSelectedProjectId(p.id); setActiveFilterDropdown(null); }}
-                              className={`px-3 py-2 hover:bg-gray-100 cursor-pointer truncate ${Number(selectedProjectId) === Number(p.id) ? 'text-blue-600 font-bold bg-blue-50' : ''}`}
-                            >
-                              {p.name}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Type Filter Dropdown */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'type' ? null : 'type')}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedType !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700'}`}
-                      >
-                        Type: {selectedType !== 'ALL' ? selectedType : 'All'} <ChevronDown size={14} />
-                      </button>
-                      {activeFilterDropdown === 'type' && (
-                        <div className="absolute left-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-xl py-1 z-50 text-xs text-gray-700">
-                          {['ALL', ...deptIssueTypes].map(t => (
-                            <div
-                              key={t}
-                              onClick={() => { setSelectedType(t); setActiveFilterDropdown(null); }}
-                              className={`px-3 py-1.5 hover:bg-gray-100 cursor-pointer ${selectedType === t ? 'text-blue-600 font-bold bg-blue-50' : ''}`}
-                            >
-                              {t === 'ALL' ? 'All Types' : t}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                    {/* Project Filter (Searchable Select) */}
+                    <div className="w-52">
+                      <SearchableSelect
+                        prefix="Project:"
+                        buttonClassName={`p-2 rounded text-xs font-medium border transition-colors ${selectedProjectId !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                        dropdownClassName="w-64"
+                        options={[
+                          { value: 'ALL', label: 'All Projects' },
+                          ...projectsList.map(p => ({ value: String(p.id), label: p.name }))
+                        ]}
+                        value={String(selectedProjectId)}
+                        onChange={(val) => setSelectedProjectId(val || 'ALL')}
+                        placeholder="All Projects"
+                      />
                     </div>
 
                     {/* Status Filter Dropdown */}
@@ -985,72 +987,44 @@ const ITKanbanPage = ({ department }) => {
                       )}
                     </div>
 
-                    {/* Assignee Filter Dropdown */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'assignee' ? null : 'assignee')}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedAssignees.length > 0 ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700'}`}
-                      >
-                        Assignee: {selectedAssignees.length === 0 ? 'All' : selectedAssignees.length === 1 ? selectedAssignees[0] : `${selectedAssignees.length} Selected`} <ChevronDown size={14} />
-                      </button>
-                      {activeFilterDropdown === 'assignee' && (
-                        <div className="absolute left-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-md shadow-xl py-1 z-50 text-xs text-gray-700 max-h-60 overflow-y-auto">
-                          <div
-                            onClick={() => { setSelectedAssignees([]); setActiveFilterDropdown(null); }}
-                            className={`px-3 py-2 hover:bg-gray-100 cursor-pointer font-medium border-b border-gray-100 ${selectedAssignees.length === 0 ? 'text-blue-600 font-bold bg-blue-50' : ''}`}
-                          >
-                            All Assignees
-                          </div>
-                          <div
-                            onClick={() => {
-                              if (selectedAssignees.includes('UNASSIGNED')) {
-                                setSelectedAssignees(prev => prev.filter(a => a !== 'UNASSIGNED'));
-                              } else {
-                                setSelectedAssignees(prev => [...prev, 'UNASSIGNED']);
-                              }
-                            }}
-                            className={`px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 ${selectedAssignees.includes('UNASSIGNED') ? 'text-blue-600 font-bold bg-blue-50' : ''}`}
-                          >
-                            Unassigned
-                          </div>
-                          {usersList.map(u => {
+                    {/* Assignee Filter (Searchable Select) */}
+                    <div className="w-52">
+                      <SearchableSelect
+                        prefix="Assignee:"
+                        multiple={true}
+                        buttonClassName={`p-2 rounded text-xs font-medium border transition-colors ${selectedAssignees.length > 0 ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                        dropdownClassName="w-64"
+                        options={[
+                          { value: 'ALL', label: 'All Assignees' },
+                          ...(isManager ? [{ value: 'UNASSIGNED', label: 'Unassigned' }] : []),
+                          ...usersList.map(u => {
                             const uName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
                             if (!uName) return null;
-                            const isSelected = selectedAssignees.includes(uName);
-                            return (
-                              <div
-                                key={u.id || uName}
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setSelectedAssignees(prev => prev.filter(a => a !== uName));
-                                  } else {
-                                    setSelectedAssignees(prev => [...prev, uName]);
-                                  }
-                                }}
-                                className={`px-3 py-2 hover:bg-gray-100 cursor-pointer truncate ${isSelected ? 'text-blue-600 font-bold bg-blue-50' : ''}`}
-                              >
-                                {uName}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                            return {
+                              value: uName,
+                              label: uName,
+                              avatar: getInitials(uName)
+                            };
+                          }).filter(Boolean)
+                        ]}
+                        value={selectedAssignees}
+                        onChange={(val) => setSelectedAssignees(Array.isArray(val) ? val : (val && val !== 'ALL' ? [val] : []))}
+                        placeholder="All"
+                      />
                     </div>
 
-                    {/* Only My Issues Quick Filter Pill — Only visible to Managers */}
-                    {isManager && (
-                      <button
-                        onClick={() => setOnlyMyIssues(!onlyMyIssues)}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-semibold border transition-all cursor-pointer ${onlyMyIssues
-                          ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                          : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        title="Show only tasks assigned to or reported by me"
-                      >
-                        <User size={13} />
-                        Only My Issues
-                      </button>
-                    )}
+                    {/* Only My Tasks Quick Filter Pill — Visible to All */}
+                    <button
+                      onClick={() => setOnlyMyIssues(!onlyMyIssues)}
+                      className={`flex items-center gap-1.5 p-2 rounded text-xs font-semibold border transition-all cursor-pointer ${onlyMyIssues
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                        : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      title="Show only tasks assigned to me"
+                    >
+                      <User size={13} />
+                      Only My Tasks
+                    </button>
 
                     {/* Clear Filters reset button */}
                     {(selectedProjectId !== 'ALL' || selectedType !== 'ALL' || selectedStatus !== 'ALL' || selectedPriority !== 'ALL' || selectedAssignees.length > 0 || onlyMyIssues || searchQuery) && (
@@ -1220,7 +1194,32 @@ const ITKanbanPage = ({ department }) => {
                                                     <Trash2 size={13} />
                                                   </button>
                                                   {/* Jira strikes through the key of a finished work item. */}
-                                                  <div className={`text-blue-600 text-xs hover:underline mb-1 font-medium cursor-pointer ${isDoneStatus(card.status) ? 'line-through' : ''}`} onClick={(e) => { e.stopPropagation(); setSelectedIssue(card.key); }}>{card.key}</div>
+                                                   <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                                     <span className={`text-blue-600 text-xs hover:underline font-medium cursor-pointer ${isDoneStatus(card.status) ? 'line-through' : ''}`} onClick={(e) => { e.stopPropagation(); setSelectedIssue(card.key); }}>{card.key}</span>
+                                                     {(() => {
+                                                       const isMktBoard = currentDept.toLowerCase() === 'marketing';
+                                                       const isITBoard = currentDept.toLowerCase() === 'it';
+                                                       const cardDept = String(card.department || '').toLowerCase();
+                                                       const assigneeDept = String(card.assignee_department || '').toLowerCase();
+                                                       const reporterDept = String(card.reporter_department || '').toLowerCase();
+
+                                                       if (isMktBoard && (cardDept.includes('it') || reporterDept.includes('it'))) {
+                                                         return (
+                                                           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200" title="Cross-department task from IT Department">
+                                                             IT Department
+                                                           </span>
+                                                         );
+                                                       }
+                                                       if (isITBoard && (cardDept.includes('marketing') || assigneeDept.includes('marketing'))) {
+                                                         return (
+                                                           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" title="Cross-department task from Marketing Department">
+                                                             Marketing Department
+                                                           </span>
+                                                         );
+                                                       }
+                                                       return null;
+                                                     })()}
+                                                   </div>
                                                   <div className="text-xs text-gray-900 font-medium mb-3 leading-snug cursor-grab active:cursor-grabbing">{card.title}</div>
 
                                                   {/* JIRA INLINE EXPANDABLE SUBTASKS LIST */}
@@ -1318,7 +1317,29 @@ const ITKanbanPage = ({ department }) => {
                                                       {PRIORITY_ICONS[card.priority]}
                                                       <span className="text-xs text-gray-600">{card.priority}</span>
                                                     </div>
-                                                    {col === 'DONE' ? (
+                                                    <div className="flex items-center gap-2">
+                                                      {/* Due / Start Date Badge */}
+                                                      {(() => {
+                                                        const value = card.due_date || card.start_date;
+                                                        const text = formatDate(value);
+                                                        if (!text) return null;
+                                                        const isDue = !!card.due_date;
+                                                        const overdue = isDue && !isDoneStatus(card.status) && isPastDate(value);
+                                                        return (
+                                                          <span
+                                                            title={`${isDue ? 'Due' : 'Starts'} ${text}${overdue ? ' — overdue' : ''}`}
+                                                            className={`shrink-0 inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border ${overdue
+                                                              ? 'bg-red-50 text-red-700 border-red-200 font-medium'
+                                                              : 'bg-gray-50 text-gray-600 border-gray-200'
+                                                              }`}
+                                                          >
+                                                            <Calendar size={11} className={overdue ? 'text-red-500' : 'text-gray-500'} />
+                                                            {text}
+                                                          </span>
+                                                        );
+                                                      })()}
+
+                                                      {col === 'DONE' ? (
                                                       <CheckCircleIcon className="text-green-500" size={16} />
                                                     ) : (
                                                       <div className="relative card-assignee-dropdown">
@@ -1460,6 +1481,7 @@ const ITKanbanPage = ({ department }) => {
                                                         )}
                                                       </div>
                                                     )}
+                                                    </div>
                                                   </div>
                                                 </div>
                                               )}

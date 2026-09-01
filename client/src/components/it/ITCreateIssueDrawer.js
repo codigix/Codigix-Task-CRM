@@ -174,8 +174,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
   // the embedded link still resolves after the issue is saved and reopened.
   const descriptionFileMeta = () => ({
     userId: user?.id,
-    project_id: (formData.space && formData.space.id !== 1 ? formData.space.id : null)
-      || formData.parent?.id || projectId || undefined
+    project_id: formData.space?.id || formData.parent?.id || projectId || undefined
   });
 
   const handleToolbarFileUpload = async (filesList) => {
@@ -202,7 +201,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
   });
 
   const [formData, setFormData] = useState({
-    space: { id: 1, name: 'My Kanban Space (KAN)', code: 'KAN' },
+    space: null,
     workType: 'Task',
     status: 'To Do',
     summary: '',
@@ -290,24 +289,39 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
         })
         .catch(err => console.error('Error fetching users:', err));
 
-      // Fetch Real Projects (Spaces/Parents) — scoped to this department so an IT board
-      // never offers Marketing projects (and vice versa).
-      fetch(`${API_BASE_URL}/projects?department=${encodeURIComponent(currentDept)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.data) {
-            setProjects(data.data);
-          } else if (Array.isArray(data)) {
-            setProjects(data);
+      // Fetch Real Projects and Sprints — scoped to this department.
+      // Automatically preselects the active sprint so newly created work appears directly on the board.
+      Promise.all([
+        fetch(`${API_BASE_URL}/projects?department=${encodeURIComponent(currentDept)}`).then(r => r.json()),
+        fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept)}`).then(r => r.json())
+      ])
+        .then(([projData, sprintData]) => {
+          let list = Array.isArray(projData?.data) ? projData.data : (Array.isArray(projData) ? projData : []);
+          if (currentDept === 'IT') {
+            list = list.filter(p => p.workflow_type === 'IT' || p.category === 'IT' || p.project_type === 'IT' || p.category === 'Software');
           }
-        })
-        .catch(err => console.error('Error fetching projects:', err));
+          setProjects(list);
 
-      // Real sprints for this board, so work can be created straight into one.
-      fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept)}`)
-        .then(res => res.json())
-        .then(data => setSprints(Array.isArray(data?.sprints) ? data.sprints : []))
-        .catch(err => console.error('Error fetching sprints:', err));
+          const sprintList = Array.isArray(sprintData?.sprints) ? sprintData.sprints : [];
+          setSprints(sprintList);
+
+          const chosenProj = (projectId ? list.find(p => Number(p.id) === Number(projectId)) : null) || list[0] || null;
+          let matchedSprint = null;
+          if (chosenProj && chosenProj.id) {
+            const owning = sprintList.filter(sp => Number(sp.project_id) === Number(chosenProj.id));
+            matchedSprint = owning.find(sp => sp.status === 'Active') || owning[0] || null;
+          }
+          if (!matchedSprint) {
+            matchedSprint = sprintData?.activeSprint || sprintList.find(sp => sp.status === 'Active') || null;
+          }
+
+          setFormData(prev => ({
+            ...prev,
+            space: prev.space || chosenProj,
+            sprint: prev.sprint !== undefined && prev.sprint !== null ? prev.sprint : matchedSprint
+          }));
+        })
+        .catch(err => console.error('Error fetching projects and sprints:', err));
     }
   }, [isOpen, currentDept]);
 
@@ -520,7 +534,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
           body: JSON.stringify(projectPayload)
         });
       } else {
-        const selectedProjId = (formData.space && formData.space.id !== 1 ? formData.space.id : null) || (formData.parent ? formData.parent.id : null);
+        const selectedProjId = (formData.space ? formData.space.id : null) || (formData.parent ? formData.parent.id : null);
 
         const currentUserName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : (username || 'Unassigned');
 
@@ -690,7 +704,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
             <div>
               <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Space <span className="text-red-500">*</span></label>
               <SearchableDropdown
-                options={[{ id: 1, name: 'My Kanban Space (KAN)', code: 'KAN' }, ...projects]}
+                options={projects}
                 value={formData.space}
                 onSelect={(v) => {
                   let matchedTeam = formData.team;
@@ -714,8 +728,8 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
                   setFormData(prev => ({ ...prev, space: v, team: matchedTeam, sprint: matchedSprint }));
                 }}
                 placeholder="Select space"
-                labelRenderer={(p) => p.name}
-                iconRenderer={(p) => p ? <div className="w-5 h-5 bg-indigo-600 rounded flex items-center justify-center text-white text-xs ">{p.code ? p.code[0] : p.name.charAt(0)}</div> : null}
+                labelRenderer={(p) => p ? (p.project_id_code ? `${p.name} (${p.project_id_code})` : p.name) : ''}
+                iconRenderer={(p) => p ? <div className="w-5 h-5 bg-indigo-600 rounded flex items-center justify-center text-white text-xs ">{p.project_id_code ? p.project_id_code[0] : (p.name ? p.name.charAt(0) : 'P')}</div> : null}
               />
             </div>
 

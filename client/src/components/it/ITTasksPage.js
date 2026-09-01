@@ -60,7 +60,19 @@ const ALL_COLUMNS = [
 const ITTasksPage = () => {
   const { user } = useAuth();
   const { designation, username } = useParams();
-  const isManager = designation ? designation.toLowerCase().includes('manager') || designation.toLowerCase().includes('admin') : true;
+  const isManager = Boolean(
+    (designation && (
+      designation.toLowerCase().includes('manager') ||
+      designation.toLowerCase().includes('admin') ||
+      designation.toLowerCase().includes('lead')
+    )) ||
+    (user?.role && (
+      user.role.toLowerCase().includes('manager') ||
+      user.role.toLowerCase().includes('admin') ||
+      user.role.toLowerCase().includes('lead') ||
+      user.role.toLowerCase().includes('hr')
+    ))
+  );
 
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
@@ -113,11 +125,11 @@ const ITTasksPage = () => {
     });
   }, [usersList]);
 
+  const currentDept = window.location.pathname.toLowerCase().includes('/marketing') ? 'Marketing' : 'IT';
+
   const fetchTasks = async () => {
     try {
-      // Scoped to this department. Without it the IT list showed Marketing work too — the
-      // two departments are separate workspaces and shouldn't see each other's tickets.
-      const res = await fetch(`${API_BASE_URL}/it-kanban/issues?department=IT`);
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues?department=${currentDept}`);
       if (res.ok) {
         const data = await res.json();
         setTasks(data);
@@ -175,7 +187,18 @@ const ITTasksPage = () => {
       return userSearchTerms.some(term => assigneeStr.includes(term) || reporterStr.includes(term));
     };
 
-    if (onlyMyIssues) {
+    const isTaskAssigned = (issue) => {
+      if (!issue || !issue.assignee) return false;
+      const a = String(issue.assignee).trim().toLowerCase();
+      return a !== '' && a !== 'unassigned' && a !== 'automatic' && a !== 'none' && a !== 'null' && a !== 'undefined';
+    };
+
+    if (!isManager) {
+      result = result.filter(issue => isTaskAssigned(issue));
+      if (onlyMyIssues) {
+        result = result.filter(issue => isUserTask(issue));
+      }
+    } else if (onlyMyIssues) {
       result = result.filter(issue => isUserTask(issue));
     }
     if (searchQuery.trim()) {

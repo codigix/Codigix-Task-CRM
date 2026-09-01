@@ -9,7 +9,11 @@ const SearchableSelect = ({
   label,
   required = false,
   disabled = false,
-  className = '' 
+  className = '',
+  buttonClassName = '',
+  dropdownClassName = '',
+  prefix = '',
+  multiple = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,7 +57,31 @@ const SearchableSelect = ({
   const selectedOption = normalizedOptions.find(opt => opt.value === String(value)) ||
     normalizedOptions.find(opt => opt.label === String(value));
 
-  const displayLabel = selectedOption ? selectedOption.label : '';
+  let displayLabel = '';
+  if (multiple) {
+    const arr = Array.isArray(value) ? value : (value ? [String(value)] : []);
+    if (arr.length === 0 || (arr.length === 1 && arr[0] === 'ALL')) {
+      displayLabel = 'All';
+    } else if (arr.length === 1) {
+      const found = normalizedOptions.find(o => o.value === String(arr[0]) || o.label === String(arr[0]));
+      displayLabel = found ? found.label : String(arr[0]);
+    } else {
+      displayLabel = `${arr.length} Selected`;
+    }
+  } else {
+    displayLabel = selectedOption ? selectedOption.label : '';
+  }
+
+  const isItemChecked = (opt) => {
+    if (multiple) {
+      const arr = Array.isArray(value) ? value : (value ? [String(value)] : []);
+      if (opt.value === 'ALL') {
+        return arr.length === 0 || (arr.length === 1 && arr[0] === 'ALL');
+      }
+      return arr.some(v => String(v).toLowerCase() === opt.value.toLowerCase() || String(v).toLowerCase() === opt.label.toLowerCase());
+    }
+    return selectedOption && selectedOption.value === opt.value;
+  };
 
   return (
     <div className={`flex flex-col relative w-full ${className}`} ref={dropdownRef}>
@@ -66,7 +94,7 @@ const SearchableSelect = ({
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-2 border border-gray-300 rounded text-xs bg-white text-gray-700 focus:outline-none focus:border-blue-500 transition disabled:opacity-50 text-left"
+        className={`w-full flex items-center justify-between p-2 border rounded text-xs transition disabled:opacity-50 text-left ${buttonClassName || 'border-gray-300 bg-white text-gray-700 focus:outline-none focus:border-blue-500'}`}
       >
         <div className="flex items-center gap-2 truncate">
           {selectedOption?.avatar && (
@@ -74,7 +102,8 @@ const SearchableSelect = ({
               {selectedOption.avatar}
             </div>
           )}
-          <span className={`truncate ${!displayLabel ? 'text-gray-400' : 'text-gray-900'}`}>
+          <span className={`truncate ${!displayLabel ? 'text-gray-400' : ''}`}>
+            {prefix && <span className="font-semibold mr-1">{prefix}</span>}
             {displayLabel || placeholder}
           </span>
         </div>
@@ -82,7 +111,7 @@ const SearchableSelect = ({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg z-50 overflow-hidden">
+        <div className={`absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-50 overflow-hidden ${dropdownClassName || 'w-full'}`}>
           <div className="p-2 border-b border-gray-100 relative">
             <Search size={14} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
@@ -97,28 +126,44 @@ const SearchableSelect = ({
           <div className="max-h-60 overflow-y-auto custom-scrollbar p-1">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt, idx) => {
-                const isSelected = selectedOption && selectedOption.value === opt.value;
+                const isSelected = isItemChecked(opt);
                 return (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => {
-                      const returnVal = opt.raw && typeof opt.raw === 'object'
-                        ? (opt.raw.value !== undefined ? opt.raw.value : opt.raw.id)
-                        : opt.value;
-                      onChange(returnVal, opt.raw);
-                      setIsOpen(false);
-                      setSearchTerm('');
+                      if (multiple) {
+                        if (opt.value === 'ALL') {
+                          onChange([]);
+                        } else {
+                          const arr = Array.isArray(value) ? [...value] : (value ? [String(value)] : []);
+                          const exists = arr.some(v => String(v).toLowerCase() === opt.value.toLowerCase() || String(v).toLowerCase() === opt.label.toLowerCase());
+                          let next;
+                          if (exists) {
+                            next = arr.filter(v => String(v).toLowerCase() !== opt.value.toLowerCase() && String(v).toLowerCase() !== opt.label.toLowerCase());
+                          } else {
+                            next = [...arr.filter(v => v !== 'ALL'), opt.value];
+                          }
+                          onChange(next, opt.raw);
+                        }
+                      } else {
+                        const returnVal = opt.raw && typeof opt.raw === 'object'
+                          ? (opt.raw.value !== undefined ? opt.raw.value : opt.raw.id)
+                          : opt.value;
+                        onChange(returnVal, opt.raw);
+                        setIsOpen(false);
+                        setSearchTerm('');
+                      }
                     }}
                     className={`w-full flex items-center justify-between p-2 text-xs rounded transition-colors text-left ${
                       isSelected
-                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        ? 'bg-blue-50 text-blue-700 font-semibold'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 truncate">
                       {opt.avatar && (
-                        <div className="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center text-xs font-medium shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                           {opt.avatar}
                         </div>
                       )}
