@@ -64,11 +64,32 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
   const { designation, username } = useParams();
   const config = DEPARTMENT_KANBAN_CONFIG[department] || DEPARTMENT_KANBAN_CONFIG['IT'];
 
-  const isManager = designation ? (
-    designation.toLowerCase().includes('manager') ||
-    designation.toLowerCase().includes('admin') ||
-    designation.toLowerCase().includes('lead')
-  ) : false;
+  const isManager = Boolean(
+    (designation && (
+      designation.toLowerCase().includes('manager') ||
+      designation.toLowerCase().includes('admin') ||
+      designation.toLowerCase().includes('lead') ||
+      designation.toLowerCase().includes('management') ||
+      designation.toLowerCase().includes('director') ||
+      designation.toLowerCase().includes('head')
+    )) ||
+    (user?.role && (
+      user.role.toLowerCase().includes('manager') ||
+      user.role.toLowerCase().includes('admin') ||
+      user.role.toLowerCase().includes('lead') ||
+      user.role.toLowerCase().includes('management') ||
+      user.role.toLowerCase().includes('hr') ||
+      user.role.toLowerCase().includes('director') ||
+      user.role.toLowerCase().includes('head')
+    )) ||
+    (user?.designation && (
+      user.designation.toLowerCase().includes('manager') ||
+      user.designation.toLowerCase().includes('admin') ||
+      user.designation.toLowerCase().includes('lead') ||
+      user.designation.toLowerCase().includes('management') ||
+      user.designation.toLowerCase().includes('head')
+    ))
+  );
 
   const userSearchTerms = React.useMemo(() => {
     const terms = new Set();
@@ -85,16 +106,27 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
     return Array.from(terms);
   }, [username, user]);
 
-  const [boardData, setBoardData] = useState({
-    'TO DO': [],
-    'IN PROGRESS': [],
-    'IN REVIEW': [],
-    'TESTING': [],
-    'DONE': []
+  const isMarketing = String(department || '').toLowerCase().includes('market') || String(department || '').toLowerCase().includes('seo');
+  const defaultCols = isMarketing 
+    ? ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'DONE'] 
+    : ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'];
+
+  const [boardData, setBoardData] = useState(() => {
+    const init = {};
+    defaultCols.forEach(c => { init[c] = []; });
+    return init;
   });
   const [columnOrder, setColumnOrder] = useState(() => {
     const saved = localStorage.getItem(`${department}_kanbanColumnOrder`);
-    return saved ? JSON.parse(saved) : ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return isMarketing ? parsed.filter(c => c !== 'TESTING') : parsed;
+        }
+      } catch (e) {}
+    }
+    return defaultCols;
   });
 
   const [allRawIssues, setAllRawIssues] = useState([]);
@@ -108,7 +140,11 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedPriority, setSelectedPriority] = useState('ALL');
   const [selectedAssignee, setSelectedAssignee] = useState('ALL');
-  const [onlyMyIssues, setOnlyMyIssues] = useState(false);
+  const [onlyMyIssues, setOnlyMyIssues] = useState(!isManager);
+
+  useEffect(() => {
+    setOnlyMyIssues(!isManager);
+  }, [isManager]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilterDropdown, setActiveFilterDropdown] = useState(null);
 
@@ -241,7 +277,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
   };
 
   const fetchKanbanData = () => {
-    fetch(`${API_BASE_URL}/it-kanban/issues?department=${department}`)
+    fetch(`${API_BASE_URL}/it-kanban/issues`)
       .then(res => res.json())
       .then(data => {
         setAllRawIssues(Array.isArray(data) ? data : []);
@@ -252,7 +288,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
   useEffect(() => {
     fetchKanbanData();
 
-    fetch(`${API_BASE_URL}/projects?department=${department}`)
+    fetch(`${API_BASE_URL}/projects`)
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);

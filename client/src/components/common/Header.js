@@ -89,8 +89,18 @@ const Header = ({ toggleSidebar }) => {
 
   useEffect(() => {
     loadNotifications();
-    const timer = setInterval(loadNotifications, 30000);
-    return () => clearInterval(timer);
+    const timer = setInterval(loadNotifications, 10000);
+    const handleFocus = () => loadNotifications();
+    const handleCustomRefresh = () => loadNotifications();
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('crm-refresh-notifications', handleCustomRefresh);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('crm-refresh-notifications', handleCustomRefresh);
+    };
   }, [loadNotifications]);
 
   const markNotificationRead = async (id) => {

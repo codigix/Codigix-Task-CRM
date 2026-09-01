@@ -129,7 +129,7 @@ const ITTasksPage = () => {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/it-kanban/issues?department=${currentDept}`);
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues`);
       if (res.ok) {
         const data = await res.json();
         setTasks(data);

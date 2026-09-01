@@ -15,7 +15,6 @@ import {
 
 import { useAuth } from '../../hooks/useAuth';
 import { isSidebarItemVisible, isModuleAccessible, getMenuItemAccess } from '../../utils/roleBasedAccess';
-import { showInfoToast } from '../../utils/toast';
 
 const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const { user } = useAuth();
@@ -63,8 +62,6 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
     }
 
     const handleClick = () => {
-      showInfoToast(`Navigating to ${label}...`);
-
       let finalPage = page;
 
       // Helper to determine department prefix based on current context

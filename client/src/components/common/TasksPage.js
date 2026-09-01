@@ -68,7 +68,7 @@ const TasksPage = ({ department }) => {
   // an empty table beneath hardcoded totals.
   const fetchTasks = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/it-kanban/issues?department=${encodeURIComponent(currentDept)}`);
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues`);
       if (res.ok) {
         const data = await res.json();
         setTasks(Array.isArray(data) ? data : []);

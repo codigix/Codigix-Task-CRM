@@ -217,13 +217,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
         .then(res => res.json())
         .then(data => {
           const userList = Array.isArray(data?.value) ? data.value : (Array.isArray(data) ? data : []);
-          const marketingUsers = userList.filter(u => {
-            const dept = (u.department || '').toLowerCase();
-            const role = (u.role_name || u.role || '').toLowerCase();
-            return dept.includes('marketing') || dept.includes('seo') || role.includes('marketing') || role.includes('designer') || role.includes('video') || role.includes('seo') || role.includes('ppc') || role.includes('wordpress');
-          });
-          const finalUsers = marketingUsers.length > 0 ? marketingUsers : userList;
-          setUsers(finalUsers);
+          setUsers(userList);
 
           if (user) {
             const currentReporter = {
@@ -264,17 +258,12 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
         .then(data => setKnownLabels(Array.isArray(data) ? data.map(d => d.label) : []))
         .catch(err => console.error('Error fetching labels:', err));
 
-      // Fetch the real Marketing teams so tickets attach to an actual team, not a placeholder.
-      // Falls back to the built-in division list when none are set up yet.
+      // Fetch teams across organization so any team can be selected
       fetch(`${API_BASE_URL}/teams`)
         .then(res => res.json())
         .then(data => {
           const raw = Array.isArray(data) ? data : (data.data || []);
-          // Only Marketing teams belong on this board. The API exposes department_name /
-          // department_id (not `department`), so match on those.
-          const formatted = raw
-            .filter(t => String(t.department_name || '').toLowerCase().includes('marketing'))
-            .map(t => ({ id: t.id, name: t.name }));
+          const formatted = raw.map(t => ({ id: t.id, name: t.name }));
           setTeams(formatted);
           setFormData(prev => ({
             ...prev,

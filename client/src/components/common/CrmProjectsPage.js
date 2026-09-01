@@ -4,13 +4,17 @@ import { Search, Filter, Download, MoreHorizontal, Plus, Star, Eye, Edit, Trash2
 import AddProjectModal from './AddProjectModal';
 import { projectAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
+import { canViewProjectFinancialsAndManage } from '../../utils/access';
 
 const CrmProjectsPage = ({ department }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isManager = user?.role && (user.role.toLowerCase().includes('admin') || user.role.toLowerCase().includes('manager'));
+  const pathParts = location.pathname.toLowerCase().split('/').filter(Boolean);
+  const currentDesignation = pathParts.length >= 2 ? pathParts[1] : '';
+  const canManageProjects = canViewProjectFinancialsAndManage(user, currentDesignation);
+  const isManager = canManageProjects;
 
   const navigateToProject = (id) => {
     const parts = location.pathname.split('/').filter(Boolean);
@@ -137,6 +141,7 @@ const CrmProjectsPage = ({ department }) => {
   };
 
   const handleAssignTeamOpen = async (project) => {
+    if (!canManageProjects) return;
     setSelectedProjectToAssign(project);
     setIsAssignTeamModalOpen(true);
     setAssignTeamId(project.team_id || '');
@@ -328,12 +333,16 @@ const CrmProjectsPage = ({ department }) => {
             <span className="bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full">{filteredProjects.length} Projects</span>
           </div>
           <div className="flex items-center gap-3 my-4">
-            <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 p-2 rounded hover:bg-gray-50 transition">
-              <Import size={14} /> Import
-            </button>
-            <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 p-2 rounded hover:bg-gray-50 transition">
-              <Download size={14} /> Export
-            </button>
+            {canManageProjects && (
+              <>
+                <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 p-2 rounded hover:bg-gray-50 transition">
+                  <Import size={14} /> Import
+                </button>
+                <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 p-2 rounded hover:bg-gray-50 transition">
+                  <Download size={14} /> Export
+                </button>
+              </>
+            )}
             <div className="relative">
               <button
                 onClick={() => setShowColumnsMenu(!showColumnsMenu)}
@@ -497,9 +506,13 @@ const CrmProjectsPage = ({ department }) => {
                     {visibleColumns.includes('Actions') && <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={(e) => { e.stopPropagation(); navigateToProject(project.id); }} title="View" className="text-gray-400 hover:text-blue-600"><Eye size={16} /></button>
-                        <button onClick={(e) => { e.stopPropagation(); handleEditProject(project); }} title="Edit" className="text-gray-400 hover:text-green-600"><Edit size={16} /></button>
-                        <button onClick={(e) => { e.stopPropagation(); handleAssignTeamOpen(project); }} title="Assign Team" className="text-gray-400 hover:text-purple-600"><Network size={16} /></button>
-                        <button onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id); }} title="Delete" className="text-gray-400 hover:text-red-600"><Trash2 size={16} /></button>
+                        {canManageProjects && (
+                          <>
+                            <button onClick={(e) => { e.stopPropagation(); handleEditProject(project); }} title="Edit" className="text-gray-400 hover:text-green-600"><Edit size={16} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); handleAssignTeamOpen(project); }} title="Assign Team" className="text-gray-400 hover:text-purple-600"><Network size={16} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id); }} title="Delete" className="text-gray-400 hover:text-red-600"><Trash2 size={16} /></button>
+                          </>
+                        )}
                       </div>
                     </td>}
                   </tr>

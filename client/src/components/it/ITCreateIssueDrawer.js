@@ -1015,7 +1015,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
             <div>
               <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Reporter <span className="text-red-500">*</span></label>
               <SearchableDropdown
-                options={(teamMembers.length > 0) ? teamMembers : users}
+                options={users}
                 value={formData.reporter}
                 onSelect={(v) => setFormData({ ...formData, reporter: v })}
                 placeholder="Select reporter"

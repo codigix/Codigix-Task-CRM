@@ -141,30 +141,13 @@ module.exports = function setupSprintsRoutes(app, pool) {
       const department = deptFilter(req.query.department);
       const includeCompleted = req.query.includeCompleted === 'true';
 
-      const deptPattern = `%${department.toLowerCase()}%`;
       let sql = `
         SELECT DISTINCT s.* FROM sprints s
-        LEFT JOIN it_kanban_issues i ON i.sprint_id = s.id
-        LEFT JOIN users u_assignee ON (
-          u_assignee.id = (
-            SELECT id FROM users u
-            WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
-               OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
-               OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
-            LIMIT 1
-          )
-        )
-        WHERE (
-          s.department = ? 
-          OR (s.department IS NULL AND ? = "IT")
-          OR LOWER(COALESCE(u_assignee.department, '')) LIKE ?
-        )
       `;
-      const params = [department, department, deptPattern];
-      if (!includeCompleted) sql += " AND s.status <> 'Completed'";
+      if (!includeCompleted) sql += " WHERE s.status <> 'Completed'";
       sql += " ORDER BY FIELD(s.status,'Active','Planned','Completed'), s.sort_order ASC, s.id ASC";
 
-      const [sprints] = await db.query(sql, params);
+      const [sprints] = await db.query(sql);
 
       // Attach each sprint's items plus a To Do / In Progress / Done breakdown.
       for (const s of sprints) {
@@ -193,15 +176,9 @@ module.exports = function setupSprintsRoutes(app, pool) {
             )
           )
           WHERE i.sprint_id = ?
-            AND (
-              LOWER(i.department) LIKE ?
-              OR (i.department IS NULL AND ? = 'IT')
-              OR LOWER(COALESCE(u_assignee.department, '')) LIKE ?
-              OR LOWER(COALESCE(u_reporter.department, '')) LIKE ?
-            )
           ORDER BY i.rank_order IS NULL, i.rank_order ASC, i.id ASC
         `;
-        const [items] = await db.query(itemsQuery, [s.id, deptPattern, department, deptPattern, deptPattern]);
+        const [items] = await db.query(itemsQuery, [s.id]);
         s.issues = items;
         s.counts = items.reduce((acc, i) => {
           const st = String(i.status || '').toUpperCase();
@@ -238,14 +215,8 @@ module.exports = function setupSprintsRoutes(app, pool) {
           )
         )
         WHERE i.sprint_id IS NULL
-          AND (
-            LOWER(i.department) LIKE ?
-            OR (i.department IS NULL AND ? = 'IT')
-            OR LOWER(COALESCE(u_assignee.department, '')) LIKE ?
-            OR LOWER(COALESCE(u_reporter.department, '')) LIKE ?
-          )
         ORDER BY i.rank_order IS NULL, i.rank_order ASC, i.id ASC
-      `, [deptPattern, department, deptPattern, deptPattern]);
+      `);
 
       // A board can run several sprints at once, so the board filters on the whole set.
       // `activeSprint` stays for callers that only care about the first one.

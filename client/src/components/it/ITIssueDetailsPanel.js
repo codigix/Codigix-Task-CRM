@@ -132,6 +132,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const [activeTab, setActiveTab] = useState('Comments');
   const [collapsedSections, setCollapsedSections] = useState({ details: false, development: false, automation: false });
   const [usersList, setUsersList] = useState(DEFAULT_USERS);
+  const [allUsersList, setAllUsersList] = useState(DEFAULT_USERS);
   const [teamsList, setTeamsList] = useState([]);
   const [duplicateWarning, setDuplicateWarning] = useState([]);
   const [docsData, setDocsData] = useState(null);
@@ -146,10 +147,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const issueDepartment = issue?.department || '';
 
   useEffect(() => {
-    const params = new URLSearchParams({ limit: '200', excludeSystem: 'true' });
-    if (issueDepartment) params.set('department', issueDepartment);
-
-    fetch(`${API_BASE_URL}/users?${params.toString()}`)
+    fetch(`${API_BASE_URL}/users?limit=300&excludeSystem=true`)
       .then(res => res.json())
       .then(data => {
         const raw = Array.isArray(data?.value) ? data.value : (Array.isArray(data) ? data : []);
@@ -158,29 +156,25 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
             id: u.id,
             name: u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'User'
           }));
+          setAllUsersList(formatted);
           setUsersList(formatted);
         } else {
+          setAllUsersList(DEFAULT_USERS);
           setUsersList(DEFAULT_USERS);
         }
       })
       .catch(err => {
         console.error('Error fetching users:', err);
+        setAllUsersList(DEFAULT_USERS);
         setUsersList(DEFAULT_USERS);
       });
 
-    // Only this issue's own department's teams. The endpoint returns every team with a
-    // department_name, so without filtering a Marketing ticket could be handed to an IT team.
+    // Fetch all teams across the organization so any team can be selected
     fetch(`${API_BASE_URL}/teams`)
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data)) return;
-        const target = String(issueDepartment || '').replace(/\s*department\s*$/i, '').trim().toLowerCase();
-        const ofDept = data.filter(t => {
-          const dept = String(t.department_name || '').replace(/\s*department\s*$/i, '').trim().toLowerCase();
-          // Teams with no department stay visible rather than becoming unreachable.
-          return !target || !dept || dept === target;
-        });
-        setTeamsList(ofDept);
+        setTeamsList(data);
       })
       .catch(console.error);
 
@@ -304,9 +298,12 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     loadWorklogs();
   }, [loadHistory, loadWorklogs]);
 
-  // Filter user list to ONLY show team members of the current task's team
+  // Prioritize team members at the top of assignee list when a team is chosen, but keep all users selectable
   useEffect(() => {
-    if (!team && !issue?.team_id) return;
+    if (!team && !issue?.team_id) {
+      setUsersList(allUsersList);
+      return;
+    }
     const targetTeam = teamsList.find(t => t.name === team || t.id === issue?.team_id);
     if (targetTeam && targetTeam.id) {
       fetch(`${API_BASE_URL}/teams/${targetTeam.id}/members`)
@@ -317,12 +314,18 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               id: m.user_id || m.id,
               name: `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.email || 'Team Member'
             }));
-            setUsersList(teamUsers);
+            const teamIds = new Set(teamUsers.map(u => String(u.id)));
+            const otherUsers = allUsersList.filter(u => !teamIds.has(String(u.id)));
+            setUsersList([...teamUsers, ...otherUsers]);
+          } else {
+            setUsersList(allUsersList);
           }
         })
-        .catch(console.error);
+        .catch(() => setUsersList(allUsersList));
+    } else {
+      setUsersList(allUsersList);
     }
-  }, [team, teamsList, issue]);
+  }, [team, teamsList, issue?.team_id, allUsersList]);
 
   // Click outside to close dropdowns
   useEffect(() => {
@@ -860,6 +863,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
             remainingEstimate={remainingEstimate}
             setRemainingEstimate={setRemainingEstimate}
             usersList={usersList}
+            reportersList={allUsersList}
             teamsList={teamsList}
             sprintsList={sprintsList}
             handleUpdate={handleUpdate}

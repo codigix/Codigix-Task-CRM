@@ -57,6 +57,7 @@ const ITIssueDetailsSidebar = ({
   remainingEstimate,
   setRemainingEstimate,
   usersList,
+  reportersList,
   teamsList,
   sprintsList,
   handleUpdate,
@@ -376,7 +377,7 @@ const ITIssueDetailsSidebar = ({
                     className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer min-w-0 flex-1"
                   >
                     <option value="">Unassigned</option>
-                    {usersList.map(u => <option key={u.id || u.name} value={u.name}>{u.name}</option>)}
+                    {(reportersList && reportersList.length > 0 ? reportersList : usersList).map(u => <option key={u.id || u.name} value={u.name}>{u.name}</option>)}
                   </select>
                 </div>
               </div>

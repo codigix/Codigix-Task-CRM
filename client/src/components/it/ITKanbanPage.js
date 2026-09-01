@@ -133,12 +133,9 @@ const AlertTriangleIcon = ({ size = 16, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" className={className} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
 );
 
-const INITIAL_KANBAN_DATA = {
-  'TO DO': [],
-  'IN PROGRESS': [],
-  'IN REVIEW': [],
-  'TESTING': [],
-  'DONE': []
+const DEPARTMENT_KANBAN_COLUMNS = {
+  'IT': ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'],
+  'Marketing': ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'DONE']
 };
 
 const ITKanbanPage = ({ department }) => {
@@ -172,13 +169,26 @@ const ITKanbanPage = ({ department }) => {
     (designation && (
       designation.toLowerCase().includes('manager') ||
       designation.toLowerCase().includes('admin') ||
-      designation.toLowerCase().includes('lead')
+      designation.toLowerCase().includes('lead') ||
+      designation.toLowerCase().includes('management') ||
+      designation.toLowerCase().includes('director') ||
+      designation.toLowerCase().includes('head')
     )) ||
     (user?.role && (
       user.role.toLowerCase().includes('manager') ||
       user.role.toLowerCase().includes('admin') ||
       user.role.toLowerCase().includes('lead') ||
-      user.role.toLowerCase().includes('hr')
+      user.role.toLowerCase().includes('management') ||
+      user.role.toLowerCase().includes('hr') ||
+      user.role.toLowerCase().includes('director') ||
+      user.role.toLowerCase().includes('head')
+    )) ||
+    (user?.designation && (
+      user.designation.toLowerCase().includes('manager') ||
+      user.designation.toLowerCase().includes('admin') ||
+      user.designation.toLowerCase().includes('lead') ||
+      user.designation.toLowerCase().includes('management') ||
+      user.designation.toLowerCase().includes('head')
     ))
   );
 
@@ -210,17 +220,38 @@ const ITKanbanPage = ({ department }) => {
     return Array.from(ids);
   }, [username, user]);
 
-  const [boardData, setBoardData] = useState({
-    'TO DO': [],
-    'IN PROGRESS': [],
-    'IN REVIEW': [],
-    'TESTING': [],
-    'DONE': []
+  const defaultDeptColumns = DEPARTMENT_KANBAN_COLUMNS[currentDept] || DEPARTMENT_KANBAN_COLUMNS['IT'];
+  const [boardData, setBoardData] = useState(() => {
+    const init = {};
+    defaultDeptColumns.forEach(c => { init[c] = []; });
+    return init;
   });
   const [columnOrder, setColumnOrder] = useState(() => {
     const saved = localStorage.getItem(`${currentDept}_kanbanColumnOrder`);
-    return saved ? JSON.parse(saved) : Object.keys(INITIAL_KANBAN_DATA);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return currentDept === 'Marketing' ? parsed.filter(c => c !== 'TESTING') : parsed;
+        }
+      } catch (e) {}
+    }
+    return defaultDeptColumns;
   });
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`${currentDept}_kanbanColumnOrder`);
+    let cols = defaultDeptColumns;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          cols = currentDept === 'Marketing' ? parsed.filter(c => c !== 'TESTING') : parsed;
+        }
+      } catch (e) {}
+    }
+    setColumnOrder(cols);
+  }, [currentDept]);
 
   const [allRawIssues, setAllRawIssues] = useState([]);
   const [projectsList, setProjectsList] = useState([]);
@@ -230,7 +261,11 @@ const ITKanbanPage = ({ department }) => {
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedPriority, setSelectedPriority] = useState('ALL');
   const [selectedAssignees, setSelectedAssignees] = useState([]);
-  const [onlyMyIssues, setOnlyMyIssues] = useState(false);
+  const [onlyMyIssues, setOnlyMyIssues] = useState(!isManager);
+
+  useEffect(() => {
+    setOnlyMyIssues(!isManager);
+  }, [isManager]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilterDropdown, setActiveFilterDropdown] = useState(null);
   const [openCardAssigneeDropdown, setOpenCardAssigneeDropdown] = useState(null);
@@ -359,7 +394,7 @@ const ITKanbanPage = ({ department }) => {
 
   const fetchKanbanData = () => {
     // Which sprints are running determines what the board is allowed to show.
-    fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept)}`)
+    fetch(`${API_BASE_URL}/sprints`)
       .then(res => res.json())
       .then(data => {
         const running = data.activeSprints || (data.activeSprint ? [data.activeSprint] : []);
@@ -368,7 +403,7 @@ const ITKanbanPage = ({ department }) => {
       })
       .catch(err => console.error('Error fetching active sprints:', err));
 
-    fetch(`${API_BASE_URL}/it-kanban/issues?department=${currentDept}`)
+    fetch(`${API_BASE_URL}/it-kanban/issues`)
       .then(res => res.json())
       .then(data => {
         setAllRawIssues(Array.isArray(data) ? data : []);
@@ -379,14 +414,11 @@ const ITKanbanPage = ({ department }) => {
   useEffect(() => {
     fetchKanbanData();
 
-    // Fetch projects list for filter dropdown
-    fetch(`${API_BASE_URL}/projects?department=${currentDept}`)
+    // Fetch projects list for filter dropdown across all projects
+    fetch(`${API_BASE_URL}/projects`)
       .then(res => res.json())
       .then(data => {
-        let list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
-        if (currentDept === 'IT') {
-          list = list.filter(p => p.workflow_type === 'IT' || p.category === 'IT' || p.project_type === 'IT' || p.category === 'Software');
-        }
+        const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
         setProjectsList(list);
       })
       .catch(err => console.error('Error fetching projects for kanban filter:', err));
@@ -419,25 +451,13 @@ const ITKanbanPage = ({ department }) => {
 
   // Re-build board data whenever issues or filters change
   useEffect(() => {
-    const newBoard = {
-      'TO DO': [],
-      'IN PROGRESS': [],
-      'IN REVIEW': [],
-      'TESTING': [],
-      'DONE': []
-    };
+    const newBoard = {};
     columnOrder.forEach(col => {
-      if (!newBoard[col]) newBoard[col] = [];
+      newBoard[col] = [];
     });
 
-    let filtered = allRawIssues.filter(issue => {
-      const target = currentDept.toLowerCase();
-      const issueDept = (issue.department || 'IT').toLowerCase();
-      if (issueDept.includes(target)) return true;
-      if (issue.assignee_department && issue.assignee_department.toLowerCase().includes(target)) return true;
-      if (issue.reporter_department && issue.reporter_department.toLowerCase().includes(target)) return true;
-      return false;
-    });
+    // Full transparency: show all tasks without department partition
+    let filtered = [...allRawIssues];
 
     // Board shows tasks in running sprints as well as individual standalone tasks (created without a sprint)
     if (activeSprints.length > 0) {
@@ -554,8 +574,9 @@ const ITKanbanPage = ({ department }) => {
 
 
   useEffect(() => {
-    localStorage.setItem('kanbanColumnOrder', JSON.stringify(columnOrder));
-  }, [columnOrder]);
+    const colsToSave = currentDept === 'Marketing' ? columnOrder.filter(c => c !== 'TESTING') : columnOrder;
+    localStorage.setItem(`${currentDept}_kanbanColumnOrder`, JSON.stringify(colsToSave));
+  }, [columnOrder, currentDept]);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
 
@@ -718,7 +739,9 @@ const ITKanbanPage = ({ department }) => {
         body: JSON.stringify(updates)
       });
 
-      if (!res.ok) {
+      if (res.ok) {
+        window.dispatchEvent(new Event('crm-refresh-notifications'));
+      } else {
         const data = await res.json().catch(() => ({}));
         // The optimistic move already happened, so refetch to put the card back where the
         // server says it belongs rather than leaving the board showing a change that failed.
@@ -951,7 +974,7 @@ const ITKanbanPage = ({ department }) => {
                       </button>
                       {activeFilterDropdown === 'status' && (
                         <div className="absolute left-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-xl py-1 z-50 text-xs text-gray-700">
-                          {['ALL', 'TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'].map(s => (
+                          {['ALL', ...columnOrder].map(s => (
                             <div
                               key={s}
                               onClick={() => { setSelectedStatus(s); setActiveFilterDropdown(null); }}
@@ -1196,29 +1219,6 @@ const ITKanbanPage = ({ department }) => {
                                                   {/* Jira strikes through the key of a finished work item. */}
                                                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                                                      <span className={`text-blue-600 text-xs hover:underline font-medium cursor-pointer ${isDoneStatus(card.status) ? 'line-through' : ''}`} onClick={(e) => { e.stopPropagation(); setSelectedIssue(card.key); }}>{card.key}</span>
-                                                     {(() => {
-                                                       const isMktBoard = currentDept.toLowerCase() === 'marketing';
-                                                       const isITBoard = currentDept.toLowerCase() === 'it';
-                                                       const cardDept = String(card.department || '').toLowerCase();
-                                                       const assigneeDept = String(card.assignee_department || '').toLowerCase();
-                                                       const reporterDept = String(card.reporter_department || '').toLowerCase();
-
-                                                       if (isMktBoard && (cardDept.includes('it') || reporterDept.includes('it'))) {
-                                                         return (
-                                                           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200" title="Cross-department task from IT Department">
-                                                             IT Department
-                                                           </span>
-                                                         );
-                                                       }
-                                                       if (isITBoard && (cardDept.includes('marketing') || assigneeDept.includes('marketing'))) {
-                                                         return (
-                                                           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" title="Cross-department task from Marketing Department">
-                                                             Marketing Department
-                                                           </span>
-                                                         );
-                                                       }
-                                                       return null;
-                                                     })()}
                                                    </div>
                                                   <div className="text-xs text-gray-900 font-medium mb-3 leading-snug cursor-grab active:cursor-grabbing">{card.title}</div>
 
