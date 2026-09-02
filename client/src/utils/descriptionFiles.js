@@ -12,7 +12,6 @@ import { API_BASE_URL, BASE_SERVER_URL } from '../config/environment';
 /** Turn a stored file_path (`/uploads/x.pdf` or `/api/uploads/x.pdf`) into an absolute, openable URL. */
 export const toAbsoluteFileUrl = (filePath) => {
   if (!filePath) return '';
-  let cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
 
   // If already an absolute URL:
   if (/^https?:\/\//i.test(filePath)) {
@@ -28,6 +27,11 @@ export const toAbsoluteFileUrl = (filePath) => {
       } catch (e) {}
     }
     return filePath;
+  }
+
+  let cleanPath = filePath;
+  if (!cleanPath.startsWith('/uploads/') && !cleanPath.startsWith('/api/uploads/')) {
+    cleanPath = cleanPath.startsWith('/') ? `/uploads${cleanPath}` : `/uploads/${cleanPath}`;
   }
 
   // If running in a remote browser (live site):

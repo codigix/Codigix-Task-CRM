@@ -40,6 +40,30 @@ const getInitials = (name) => {
   return name.slice(0, 2).toUpperCase();
 };
 
+const showSuccessToast = (title) => {
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title,
+    showConfirmButton: false,
+    timer: 2000,
+    timerProgressBar: true
+  });
+};
+
+const showErrorToast = (title) => {
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'error',
+    title,
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+  });
+};
+
 
 // Formats a stored date for <input type="date">, which requires YYYY-MM-DD.
 // Uses local date parts on purpose: a DATE column serialises as UTC (e.g.
@@ -298,10 +322,38 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       .catch(err => console.error('Failed to load work logs:', err));
   }, [issueKey]);
 
+  // Load stored attachments for this issue so they persist across page refreshes
+  const loadAttachments = React.useCallback(() => {
+    if (!issueKey) {
+      setAttachments([]);
+      return;
+    }
+    fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/attachments?_t=${Date.now()}`, { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAttachments(data.map(a => ({
+            id: a.id,
+            name: a.file_name,
+            size: a.file_size,
+            url: a.file_path,
+            type: a.file_type
+          })));
+        } else {
+          setAttachments([]);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load attachments:', err);
+        setAttachments([]);
+      });
+  }, [issueKey]);
+
   useEffect(() => {
     loadHistory();
     loadWorklogs();
-  }, [loadHistory, loadWorklogs]);
+    loadAttachments();
+  }, [loadHistory, loadWorklogs, loadAttachments]);
 
   // Prioritize team members at the top of assignee list when a team is chosen, but keep all users selectable
   useEffect(() => {
@@ -479,29 +531,59 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     handleUpdate({ description: finalHtml });
   };
 
-  // Upload attachments to the server so their URLs survive a reload, instead of using
-  // session-only blob URLs that break as soon as the panel is closed.
+  // Upload attachments to the server and persist in it_kanban_attachments so they survive a reload
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
     for (const f of files) {
       try {
-        const saved = await uploadDescriptionFile(f, { project_id: issue?.project_id || undefined });
-        setAttachments(prev => [...prev, {
-          name: saved.name,
-          size: formatFileSize(saved.sizeBytes),
-          url: saved.url,
-          type: saved.mimeType
-        }]);
+        const saved = await uploadDescriptionFile(f, {
+          project_id: issue?.project_id || undefined,
+          task_id: issue?.id || undefined
+        });
+
+        if (issueKey) {
+          const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/attachments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              file_name: saved.name,
+              file_path: saved.url,
+              file_size: formatFileSize(saved.sizeBytes),
+              file_type: saved.mimeType || 'document',
+              issue_id: issue?.id || null
+            })
+          });
+          if (res.ok) {
+            const created = await res.json();
+            setAttachments(prev => [{
+              id: created.id,
+              name: saved.name,
+              size: formatFileSize(saved.sizeBytes),
+              url: saved.url,
+              type: saved.mimeType
+            }, ...prev]);
+            showSuccessToast('Attachment added');
+          }
+        }
       } catch (err) {
-        Swal.fire('Upload failed', err.message, 'error');
+        showErrorToast(err.message || 'Upload failed');
       }
     }
     if (e.target) e.target.value = '';
   };
 
-  const handleRemoveAttachment = (idx) => {
+  const handleRemoveAttachment = async (idx) => {
+    const target = attachments[idx];
+    if (target?.id) {
+      try {
+        await fetch(`${API_BASE_URL}/it-kanban/attachments/${target.id}`, { method: 'DELETE' });
+        showSuccessToast('Attachment deleted');
+      } catch (err) {
+        console.error('Failed to delete attachment:', err);
+      }
+    }
     setAttachments(prev => prev.filter((_, i) => i !== idx));
   };
 

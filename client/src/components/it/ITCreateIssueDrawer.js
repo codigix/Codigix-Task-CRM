@@ -612,7 +612,9 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
             if (createdTaskId) fd.append('task_id', createdTaskId);
             if (projectId) fd.append('project_id', projectId);
             fd.append('userId', '1');
-            await fetch(API_BASE_URL + '/files/upload', { method: 'POST', body: fd });
+            const uploadRes = await fetch(API_BASE_URL + '/files/upload', { method: 'POST', body: fd });
+            let savedData = null;
+            try { savedData = await uploadRes.json(); } catch (_) { }
 
             if (issueKey) {
               await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/attachments`, {
@@ -620,7 +622,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   file_name: file.name,
-                  file_path: file.name,
+                  file_path: savedData?.file_path || file.name,
                   file_size: `${(file.size / 1024).toFixed(1)} KB`,
                   file_type: file.type || 'document'
                 })

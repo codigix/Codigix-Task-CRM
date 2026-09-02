@@ -947,10 +947,13 @@ Acceptance Criteria
   // GET attachments for an issue by key
   app.get('/api/it-kanban/issues/:key/attachments', async (req, res) => {
     try {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       const { key } = req.params;
       const [attachments] = await db.query(
-        'SELECT * FROM it_kanban_attachments WHERE issue_key = ? ORDER BY uploaded_at DESC',
-        [key]
+        'SELECT * FROM it_kanban_attachments WHERE issue_key = ? OR issue_id = ? ORDER BY uploaded_at DESC',
+        [key, parseInt(key) || 0]
       );
       res.json(attachments);
     } catch (error) {
@@ -962,12 +965,12 @@ Acceptance Criteria
   app.post('/api/it-kanban/issues/:key/attachments', async (req, res) => {
     try {
       const { key } = req.params;
-      const { file_name, file_path, file_size, file_type } = req.body;
+      const { file_name, file_path, file_size, file_type, issue_id } = req.body;
       const [result] = await db.query(
-        'INSERT INTO it_kanban_attachments (issue_key, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?)',
-        [key, file_name, file_path || '', file_size || '0 KB', file_type || 'document']
+        'INSERT INTO it_kanban_attachments (issue_key, issue_id, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?, ?)',
+        [key, issue_id || null, file_name, file_path || '', file_size || '0 KB', file_type || 'document']
       );
-      res.status(201).json({ id: result.insertId, issue_key: key, file_name, file_path, file_size, file_type });
+      res.status(201).json({ id: result.insertId, issue_key: key, issue_id, file_name, file_path, file_size, file_type });
     } catch (error) {
       responseError(res, 500, 'Failed to save attachment', error);
     }

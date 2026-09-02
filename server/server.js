@@ -453,11 +453,12 @@ app.use((err, req, res, next) => {
 
 const server = app.listen(PORT, async () => {
   console.log('================================================');
-  console.log(`🚀 CRM Backend Server is now LIVE!`);
+  console.log(`🚀 CRM Backend Server has STARTED!`);
   console.log(`📡 Port: ${PORT}`);
   console.log(`🌍 Environment: ${NODE_ENV}`);
+  console.log(`📁 Upload Directory: ${UPLOAD_DIR}`);
   console.log(`🔗 API Base: http://localhost:${PORT}/api`);
-  console.log(`🔐 CORS allowed for: ${process.env.CORS_ORIGIN}`);
+  console.log(`🔐 CORS Allowed: ${process.env.CORS_ORIGIN}`);
   console.log('================================================');
   await testConnection();
   
