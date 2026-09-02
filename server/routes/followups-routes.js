@@ -1328,7 +1328,7 @@ module.exports = function setupFollowupsRoutes(app, pool) {
         return res.status(400).json({ error: 'No recording file provided' });
       }
 
-      const recordingUrl = `/uploads/recordings/${req.file.filename}`;
+      const recordingUrl = `/api/uploads/recordings/${req.file.filename}`;
 
       connection = await getConnection();
       await connection.query(

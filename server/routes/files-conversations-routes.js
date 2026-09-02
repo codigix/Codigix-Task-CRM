@@ -126,7 +126,7 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
       }
 
       const { userId, project_id, lead_id, contact_id, company_id, deal_id, task_id, folderId } = req.body;
-      const filePath = `/uploads/${req.file.filename}`;
+      const filePath = `/api/uploads/${req.file.filename}`;
 
       connection = await getConnection();
       const [result] = await connection.query(`
@@ -505,7 +505,7 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
         file_name = req.file.originalname;
         file_size = req.file.size;
         file_type = req.file.mimetype;
-        file_path = `/uploads/${req.file.filename}`;
+        file_path = `/api/uploads/${req.file.filename}`;
       }
 
       if (!sender_id || (!receiver_id && !group_id) || (!message_text && !file_name)) {

@@ -30,20 +30,26 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 // Serve static files strictly from UPLOAD_DIR defined in .env (no optional fallback paths)
 const { UPLOAD_DIR } = require('./config/upload');
 app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/api/uploads', express.static(UPLOAD_DIR));
 
-// Resolving uploads matching original filenames within UPLOAD_DIR
-app.get('/uploads/:filename', async (req, res, next) => {
+// Resolving uploads matching original filenames within UPLOAD_DIR without path-to-regexp syntax errors
+app.use(['/uploads', '/api/uploads'], async (req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
   const fs = require('fs');
-  const exactPath = path.join(UPLOAD_DIR, req.params.filename);
-  
-  if (fs.existsSync(exactPath)) {
+  const filename = path.basename(req.path);
+  if (!filename) return next();
+
+  const relativePath = req.path.replace(/^\//, '');
+  const exactPath = path.join(UPLOAD_DIR, relativePath);
+
+  if (fs.existsSync(exactPath) && fs.statSync(exactPath).isFile()) {
     return res.sendFile(exactPath);
   }
-  
+
   try {
     if (fs.existsSync(UPLOAD_DIR)) {
       const files = await fs.promises.readdir(UPLOAD_DIR);
-      const suffix = '-' + req.params.filename;
+      const suffix = '-' + filename;
       const matchedFile = files.find(f => f.endsWith(suffix));
       if (matchedFile) {
         return res.sendFile(path.join(UPLOAD_DIR, matchedFile));

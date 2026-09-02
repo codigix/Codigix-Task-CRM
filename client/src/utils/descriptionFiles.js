@@ -9,10 +9,10 @@ import { API_BASE_URL, BASE_SERVER_URL } from '../config/environment';
  * makes a pasted/attached file actually openable later (the Jira behaviour).
  */
 
-/** Turn a stored file_path (`/uploads/x.pdf`) into an absolute, openable URL. */
+/** Turn a stored file_path (`/uploads/x.pdf` or `/api/uploads/x.pdf`) into an absolute, openable URL. */
 export const toAbsoluteFileUrl = (filePath) => {
   if (!filePath) return '';
-  const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+  let cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
 
   // If already an absolute URL:
   if (/^https?:\/\//i.test(filePath)) {
@@ -20,29 +20,39 @@ export const toAbsoluteFileUrl = (filePath) => {
     if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       try {
         const parsed = new URL(filePath);
-        if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
-          return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+        let pathname = parsed.pathname;
+        if (pathname.startsWith('/uploads/')) {
+          pathname = `/api${pathname}`;
         }
+        return `${window.location.origin}${pathname}${parsed.search}`;
       } catch (e) {}
     }
     return filePath;
   }
 
-  const base = (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
-    ? window.location.origin
-    : BASE_SERVER_URL;
+  // If running in a remote browser (live site):
+  // Nginx only proxies /api to Node.js backend. Route /uploads/ through /api/uploads/ so it reaches Node without Nginx edits!
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    if (cleanPath.startsWith('/uploads/')) {
+      cleanPath = `/api${cleanPath}`;
+    }
+    return `${window.location.origin}${cleanPath}`;
+  }
 
-  return `${base}${cleanPath}`;
+  return `${BASE_SERVER_URL}${cleanPath}`;
 };
 
 /**
  * Normalizes description HTML by replacing any stale localhost/127.0.0.1 upload URLs
- * with the active origin when running on a live/production domain.
+ * with the active origin when running on a live/production domain, and routing /uploads/ through /api/uploads/.
  */
 export const normalizeDescriptionHtml = (html) => {
   if (!html || typeof html !== 'string') return html;
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return html.replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/uploads\//g, `${window.location.origin}/uploads/`);
+    return html
+      .replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/uploads\//g, `${window.location.origin}/api/uploads/`)
+      .replace(/(src|href)=["']\/uploads\//g, `$1="${window.location.origin}/api/uploads/`)
+      .replace(/(src|href)=["']https?:\/\/[^/]+\/uploads\//g, `$1="${window.location.origin}/api/uploads/`);
   }
   return html;
 };
