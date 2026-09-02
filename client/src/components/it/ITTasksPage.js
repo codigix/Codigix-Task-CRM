@@ -10,6 +10,8 @@ import ITCreateIssueDrawer from './ITCreateIssueDrawer';
 import ITIssueDetailsPanel from './ITIssueDetailsPanel';
 import BoardTabs from '../common/BoardTabs';
 import DataTable from '../common/DataTable';
+import Swal from 'sweetalert2';
+import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -249,11 +251,14 @@ const ITTasksPage = () => {
 
   const deleteIssue = async (key) => {
     try {
-      await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete issue');
       setTasks(prev => prev.filter(t => t.issue_key !== key && t.key !== key));
       setSelectedIssue(null);
+      showSuccessToast(`Task ${key} deleted successfully`);
     } catch (err) {
       console.error('Failed to delete issue', err);
+      showErrorToast(err.message || 'Could not delete task');
     }
   };
 
@@ -403,10 +408,38 @@ const tableColumns = React.useMemo(() => {
             </div>
           );
           break;
+        case 'actions':
+          renderFn = (val, row) => (
+            <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  Swal.fire({
+                    title: 'Delete Task?',
+                    text: `Are you sure you want to delete ${row.issue_key || row.key}?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Delete'
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      deleteIssue(row.issue_key || row.key);
+                    }
+                  });
+                }}
+                className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"
+                title="Delete task"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          );
+          break;
         default:
           renderFn = (val, row) => <span className="text-gray-500">{val || '-'}</span>;
       }
-      return { ...col, sortable: true, render: renderFn };
+      return { ...col, sortable: col.key !== 'actions', render: renderFn };
     });
   }, [deleteIssue]);
 

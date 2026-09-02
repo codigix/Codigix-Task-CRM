@@ -82,15 +82,20 @@ module.exports = function setupItKanbanRoutes(app, pool) {
     if (!assigneeName || assigneeName === 'Unassigned') return null;
     if (assigneeName.includes('@')) return assigneeName;
     try {
+      const cleanAssignee = assigneeName.trim();
       const [users] = await db.query(
-        "SELECT email, department, username FROM users WHERE CONCAT(first_name, ' ', last_name) = ? OR first_name = ? OR email = ? OR username = ?",
-        [assigneeName, assigneeName, assigneeName, assigneeName]
+        `SELECT email, department, username, first_name, last_name FROM users 
+         WHERE TRIM(LOWER(CONCAT(TRIM(first_name), ' ', TRIM(COALESCE(last_name, ''))))) = TRIM(LOWER(?))
+            OR TRIM(LOWER(first_name)) = TRIM(LOWER(?))
+            OR TRIM(LOWER(email)) = TRIM(LOWER(?))
+            OR TRIM(LOWER(username)) = TRIM(LOWER(?))`,
+        [cleanAssignee, cleanAssignee, cleanAssignee, cleanAssignee]
       );
       if (users.length === 0) return null;
       if (users.length === 1) return users[0].email;
 
       // Exact match on username
-      const byUser = users.find(u => u.username && u.username.toLowerCase() === assigneeName.toLowerCase());
+      const byUser = users.find(u => u.username && u.username.toLowerCase() === cleanAssignee.toLowerCase());
       if (byUser) return byUser.email;
 
       const norm = (d) => String(d || '').replace(/\s*department\s*$/i, '').trim().toLowerCase();

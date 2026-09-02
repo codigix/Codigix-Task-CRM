@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   Search, ChevronDown, ChevronRight,
   Share2, Download, MoreHorizontal, LayoutList,
-  CheckSquare, Plus, AlertCircle, ArrowUp, ArrowDown
+  CheckSquare, Plus, AlertCircle, ArrowUp, ArrowDown, Trash2
 } from 'lucide-react';
 import ITCreateIssueDrawer from '../it/ITCreateIssueDrawer';
 import ITIssueDetailsPanel from '../it/ITIssueDetailsPanel';
 import BoardTabs from './BoardTabs';
 import { useAuth } from '../../hooks/useAuth';
+import Swal from 'sweetalert2';
+import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
 // Matches the server's definition of finished work.
 const isDoneStatus = (s) => ['DONE', 'COMPLETED', 'CLOSED'].includes(String(s || '').toUpperCase().trim());
@@ -141,7 +143,38 @@ const TasksPage = ({ department }) => {
       });
     } catch (err) {
       console.error('Failed to update issue', err);
+      showErrorToast(err.message || 'Failed to update task');
     }
+  };
+
+  const deleteIssue = async (key) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete issue');
+      setTasks(prev => prev.filter(t => t.issue_key !== key && t.key !== key));
+      if (selectedIssue === key) setSelectedIssue(null);
+      showSuccessToast(`Task ${key} deleted successfully`);
+    } catch (err) {
+      console.error('Failed to delete issue', err);
+      showErrorToast(err.message || 'Could not delete task');
+    }
+  };
+
+  const confirmDeleteTask = (e, key) => {
+    e.stopPropagation();
+    Swal.fire({
+      title: 'Delete Task?',
+      text: `Are you sure you want to delete ${key}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Delete'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        deleteIssue(key);
+      }
+    });
   };
 
   // Close dropdowns on outside click
@@ -318,6 +351,7 @@ const TasksPage = ({ department }) => {
                         <th className="p-3">Labels</th>
                         <th className="p-3">Sprint</th>
                         <th className="p-3">Due date</th>
+                        <th className="p-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-xs text-gray-700">
@@ -375,12 +409,21 @@ const TasksPage = ({ department }) => {
                               : <span className="text-gray-400">Backlog</span>}
                           </td>
                           <td className="p-3 text-gray-500 text-xs">{due}</td>
+                          <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={(e) => confirmDeleteTask(e, rowKey)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"
+                              title="Delete task"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
                         </tr>
                         );
                       })}
                       {pagedTasks.length === 0 && (
                         <tr>
-                          <td colSpan="10" className="p-8 text-center text-gray-400 text-xs">
+                          <td colSpan="11" className="p-8 text-center text-gray-400 text-xs">
                             {tasks.length === 0 ? `No ${currentDept} issues yet. Create one to get started.` : 'No issues match your filters.'}
                           </td>
                         </tr>
@@ -425,7 +468,9 @@ const TasksPage = ({ department }) => {
             <ITIssueDetailsPanel
               issue={tasks.find(r => (r.issue_key || r.key) === selectedIssue)}
               updateIssue={updateIssue}
+              deleteIssue={deleteIssue}
               onClose={() => setSelectedIssue(null)}
+              onIssueCreated={fetchTasks}
             />
 
           </div>
