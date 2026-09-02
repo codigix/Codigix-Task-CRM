@@ -1160,6 +1160,7 @@ model it_kanban_issues {
   parent_id          Int?
   sprint_id          Int?
   rank_order         Int?
+  test_migration_field String?   @db.VarChar(255)
 
   @@index([rank_order], map: "idx_rank_order")
   @@index([sprint_id], map: "idx_sprint_id")
