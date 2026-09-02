@@ -539,8 +539,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     for (const f of files) {
       try {
         const saved = await uploadDescriptionFile(f, {
-          project_id: issue?.project_id || undefined,
-          task_id: issue?.id || undefined
+          project_id: issue?.project_id || undefined
         });
 
         if (issueKey) {

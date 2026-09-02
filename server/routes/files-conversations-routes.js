@@ -129,6 +129,56 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
       const filePath = `/api/uploads/${req.file.filename}`;
 
       connection = await getConnection();
+
+      // Safely validate foreign keys so files can be uploaded from any module without FK crashes
+      let validUserId = 1;
+      if (userId) {
+        const [u] = await connection.query('SELECT id FROM users WHERE id = ?', [parseInt(userId)]);
+        if (u.length > 0) validUserId = parseInt(userId);
+      }
+
+      let validTaskId = null;
+      if (task_id) {
+        const [t] = await connection.query('SELECT id FROM general_tasks WHERE id = ?', [parseInt(task_id)]);
+        if (t.length > 0) validTaskId = parseInt(task_id);
+      }
+
+      let validProjectId = null;
+      if (project_id) {
+        const [p] = await connection.query('SELECT id FROM projects WHERE id = ?', [parseInt(project_id)]);
+        if (p.length > 0) validProjectId = parseInt(project_id);
+      }
+
+      let validLeadId = null;
+      if (lead_id) {
+        const [l] = await connection.query('SELECT id FROM leads WHERE id = ?', [parseInt(lead_id)]);
+        if (l.length > 0) validLeadId = parseInt(lead_id);
+      }
+
+      let validCompanyId = null;
+      if (company_id) {
+        const [c] = await connection.query('SELECT id FROM companies WHERE id = ?', [parseInt(company_id)]);
+        if (c.length > 0) validCompanyId = parseInt(company_id);
+      }
+
+      let validContactId = null;
+      if (contact_id) {
+        const [ct] = await connection.query('SELECT id FROM contacts WHERE id = ?', [parseInt(contact_id)]);
+        if (ct.length > 0) validContactId = parseInt(contact_id);
+      }
+
+      let validDealId = null;
+      if (deal_id) {
+        const [d] = await connection.query('SELECT id FROM deals WHERE id = ?', [parseInt(deal_id)]);
+        if (d.length > 0) validDealId = parseInt(deal_id);
+      }
+
+      let validFolderId = null;
+      if (folderId) {
+        const [f] = await connection.query('SELECT id FROM file_folders WHERE id = ?', [parseInt(folderId)]);
+        if (f.length > 0) validFolderId = parseInt(folderId);
+      }
+
       const [result] = await connection.query(`
         INSERT INTO files (
           user_id, folder_id, name, file_type, size_bytes, mime_type, storage_type, file_path,
@@ -136,17 +186,17 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        userId ? parseInt(userId) : 1, 
-        folderId ? parseInt(folderId) : null, 
+        validUserId, 
+        validFolderId, 
         req.file.originalname, 
         path.extname(req.file.originalname).substring(1).toUpperCase() || 'FILE', 
         req.file.size, req.file.mimetype, 'Internal', filePath,
-        lead_id ? parseInt(lead_id) : null, 
-        contact_id ? parseInt(contact_id) : null, 
-        company_id ? parseInt(company_id) : null, 
-        deal_id ? parseInt(deal_id) : null, 
-        project_id ? parseInt(project_id) : null, 
-        task_id ? parseInt(task_id) : null
+        validLeadId, 
+        validContactId, 
+        validCompanyId, 
+        validDealId, 
+        validProjectId, 
+        validTaskId
       ]);
 
       const [file] = await connection.query('SELECT * FROM files WHERE id = ?', [result.insertId]);

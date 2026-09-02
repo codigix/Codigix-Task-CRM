@@ -609,7 +609,6 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
           try {
             const fd = new FormData();
             fd.append('file', file);
-            if (createdTaskId) fd.append('task_id', createdTaskId);
             if (projectId) fd.append('project_id', projectId);
             fd.append('userId', '1');
             const uploadRes = await fetch(API_BASE_URL + '/files/upload', { method: 'POST', body: fd });
