@@ -101,7 +101,10 @@ const ProfileSettingsPage = () => {
   const [activitySearch, setActivitySearch] = useState('');
   const [activities, setActivities] = useState([]);
 
-  const [invoices, setInvoices] = useState([]); // New state for invoices
+  const [invoices, setInvoices] = useState([]);
+  const [teamWorkload, setTeamWorkload] = useState([]);
+  const [teamSize, setTeamSize] = useState(0);
+  const [reportsTo, setReportsTo] = useState({ title: 'Management', name: 'Executive Leadership' });
 
   const fileInputRef = useRef(null);
 
@@ -113,23 +116,30 @@ const ProfileSettingsPage = () => {
     tickets.forEach(t => {
       if (t.createdAt && t.createdAt !== '-') {
         const date = new Date(t.createdAt);
-        const monthName = date.toLocaleString('default', { month: 'short' });
-        const mData = data.find(d => d.name === monthName);
-        if (mData) {
-          mData.Created += 1;
-          if (t.status === 'Resolved' || t.status === 'Completed' || t.status === 'In Progress') mData.Completed += 1;
-          if (t.status === 'Closed') mData.Closed += 1;
+        if (!isNaN(date.getTime())) {
+          const monthName = date.toLocaleString('default', { month: 'short' });
+          const mData = data.find(d => d.name === monthName);
+          if (mData) {
+            mData.Created += 1;
+            const st = String(t.status || '').toUpperCase().trim();
+            if (['DONE', 'RESOLVED', 'CLOSED', 'COMPLETED'].includes(st)) {
+              mData.Completed += 1;
+            }
+            if (['CLOSED'].includes(st)) {
+              mData.Closed += 1;
+            }
+          }
         }
       }
     });
-    // Return last 6-7 months with data to keep the chart clean, or just all months if needed
     return data;
   }, [tickets]);
 
   const categoriesData = React.useMemo(() => {
     const cats = {};
     tickets.forEach(t => {
-      cats[t.category] = (cats[t.category] || 0) + 1;
+      const cat = t.category || 'Task';
+      cats[cat] = (cats[cat] || 0) + 1;
     });
     const colors = ['#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#10B981'];
     const total = tickets.length || 1;
@@ -139,7 +149,46 @@ const ProfileSettingsPage = () => {
       value: Math.round((count / total) * 100),
       color: colors[i % colors.length]
     })).sort((a, b) => b.count - a.count);
-    return result.length > 0 ? result : [{ name: 'None', count: 0, value: 100, color: '#E5E7EB' }];
+    return result.length > 0 ? result : [{ name: 'General', count: total, value: 100, color: '#3B82F6' }];
+  }, [tickets]);
+
+  const kpiStats = React.useMemo(() => {
+    const total = tickets.length;
+    const isDone = (s) => ['DONE', 'RESOLVED', 'CLOSED', 'COMPLETED'].includes(String(s || '').toUpperCase().trim());
+    const isOpen = (s) => ['TO DO', 'OPEN'].includes(String(s || '').toUpperCase().trim());
+    const isInProg = (s) => ['IN PROGRESS', 'IN REVIEW', 'TESTING'].includes(String(s || '').toUpperCase().trim());
+
+    const completed = tickets.filter(t => isDone(t.status)).length;
+    const open = tickets.filter(t => isOpen(t.status)).length;
+    const inProgress = tickets.filter(t => isInProg(t.status)).length;
+    const overdue = tickets.filter(t => {
+      if (!t.dueDate || t.dueDate === '-' || isDone(t.status)) return false;
+      const d = new Date(t.dueDate);
+      return !isNaN(d.getTime()) && d < new Date();
+    }).length;
+
+    const sla = total > 0 ? Math.max(0, Math.min(100, Math.round(((total - overdue) / total) * 100))) : 100;
+
+    return {
+      total,
+      completed,
+      open,
+      inProgress,
+      overdue,
+      sla
+    };
+  }, [tickets]);
+
+  const priorityData = React.useMemo(() => {
+    const high = tickets.filter(t => ['HIGH', 'CRITICAL', 'URGENT'].includes(String(t.priority || '').toUpperCase())).length;
+    const medium = tickets.filter(t => ['MEDIUM', 'NORMAL'].includes(String(t.priority || '').toUpperCase())).length;
+    const low = tickets.filter(t => ['LOW'].includes(String(t.priority || '').toUpperCase())).length;
+    const total = tickets.length || 1;
+    return [
+      { name: 'High', value: Math.round((high / total) * 100) || 0, color: '#EF4444' },
+      { name: 'Medium', value: Math.round((medium / total) * 100) || 0, color: '#3B82F6' },
+      { name: 'Low', value: Math.round((low / total) * 100) || 0, color: '#10B981' }
+    ];
   }, [tickets]);
 
   const heatmapGrid = React.useMemo(() => {
@@ -148,14 +197,18 @@ const ProfileSettingsPage = () => {
     const grid = Array.from({ length: days }, () => Array(weeks).fill(0));
 
     const now = new Date();
-    activities.forEach(a => {
-      const date = new Date(a.time);
+    const eventDates = [
+      ...activities.map(a => new Date(a.time)),
+      ...tickets.map(t => t.createdAt ? new Date(t.createdAt) : null)
+    ].filter(Boolean);
+
+    eventDates.forEach(date => {
       if (!isNaN(date.getTime())) {
         const diffTime = Math.abs(now - date);
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays < 91) { // 13 weeks = 91 days
+        if (diffDays < 91) {
           const week = 12 - Math.floor(diffDays / 7);
-          const day = date.getDay(); // 0 is Sunday, we can map to rows
+          const day = date.getDay();
           if (week >= 0 && week < weeks && day >= 0 && day < days) {
             grid[day][week] += 1;
           }
@@ -173,10 +226,10 @@ const ProfileSettingsPage = () => {
       }
     }
     return grid;
-  }, [activities]);
+  }, [activities, tickets]);
 
   const progressData = React.useMemo(() => {
-    const completed = tasks.filter(t => t.status === 'Completed').length;
+    const completed = tasks.filter(t => ['DONE', 'COMPLETED', 'RESOLVED'].includes(String(t.status || '').toUpperCase())).length;
     const total = tasks.length || 1;
     const compPct = Math.round((completed / total) * 100);
     return [
@@ -186,7 +239,7 @@ const ProfileSettingsPage = () => {
   }, [tasks]);
 
   const slaData = React.useMemo(() => {
-    const compliant = tickets.filter(t => t.priority !== 'High' || t.status === 'Closed' || t.status === 'Resolved').length;
+    const compliant = tickets.filter(t => t.priority !== 'High' || ['DONE', 'RESOLVED', 'CLOSED', 'COMPLETED'].includes(String(t.status || '').toUpperCase())).length;
     const total = tickets.length || 1;
     const compPct = Math.round((compliant / total) * 100);
     return [
@@ -197,56 +250,155 @@ const ProfileSettingsPage = () => {
 
   useEffect(() => {
     if (user) {
+      const realRole = user.job_title || user.designation || user.department_role || user.role_name || 'Staff';
+      const realDept = user.department || 'Marketing';
+      const realTags = [realDept, realRole].filter(Boolean);
+
       setProfile({
         id: user.id || 1,
-        firstName: user.first_name || user.name?.split(' ')[0] || 'User',
+        firstName: user.first_name || user.name?.split(' ')[0] || user.username || 'User',
         lastName: user.last_name || user.name?.split(' ')[1] || '',
         email: user.email || '',
         phone: user.phone1 || user.phone || '',
-        location: user.location || 'Unknown',
-        role: user.role_name || user.designation || 'Staff',
-        department: user.department || 'General',
-        reportsTo: 'Admin',
-        teamSize: 'N/A',
-        memberSince: user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A',
+        location: user.location && user.location !== 'Unknown' ? user.location : '',
+        role: realRole,
+        department: realDept,
+        reportsTo: 'Management',
+        teamSize: '1',
+        memberSince: user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Active',
         memberDuration: 'Active',
-        tags: ['Team Member'],
-        avatarUrl: user.avatar || 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-21.jpg',
-        bio: 'Professional bio not set.',
-        jobTitle: user.role_name || 'Staff',
-        company: 'Enterprise'
+        tags: realTags,
+        avatarUrl: user.avatar || null,
+        bio: user.bio || 'Enterprise CRM Team Member',
+        jobTitle: realRole,
+        company: 'Codigix'
       });
       setEditForm({
         id: user.id || 1,
-        firstName: user.first_name || user.name?.split(' ')[0] || 'User',
+        firstName: user.first_name || user.name?.split(' ')[0] || user.username || 'User',
         lastName: user.last_name || user.name?.split(' ')[1] || '',
         email: user.email || '',
         phone: user.phone1 || user.phone || '',
-        location: user.location || 'Unknown',
-        role: user.role_name || user.designation || 'Staff',
-        department: user.department || 'General',
-        reportsTo: 'Admin',
-        teamSize: 'N/A',
-        memberSince: user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A',
+        location: user.location && user.location !== 'Unknown' ? user.location : '',
+        role: realRole,
+        department: realDept,
+        reportsTo: 'Management',
+        teamSize: '1',
+        memberSince: user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Active',
         memberDuration: 'Active',
-        tags: ['Team Member'],
-        avatarUrl: user.avatar || 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-21.jpg',
-        bio: 'Professional bio not set.',
-        jobTitle: user.role_name || 'Staff',
-        company: 'Enterprise'
+        tags: realTags,
+        avatarUrl: user.avatar || null,
+        bio: user.bio || 'Enterprise CRM Team Member',
+        jobTitle: realRole,
+        company: 'Codigix'
       });
     }
 
     const fetchData = async () => {
       try {
-        const [projRes, tasksRes, issuesRes, activitiesRes, invoicesRes] = await Promise.all([
+        const [projRes, tasksRes, issuesRes, activitiesRes, invoicesRes, usersRes] = await Promise.all([
           axios.get(API_BASE_URL + '/projects').catch(() => ({ data: [] })),
           axios.get(API_BASE_URL + '/tasks').catch(() => ({ data: [] })),
           axios.get(API_BASE_URL + '/it-kanban/issues').catch(() => ({ data: [] })),
           axios.get(API_BASE_URL + '/activities').catch(() => ({ data: [] })),
-          axios.get(API_BASE_URL + '/invoices').catch(() => ({ data: [] }))
+          axios.get(API_BASE_URL + '/invoices').catch(() => ({ data: [] })),
+          axios.get(API_BASE_URL + '/users').catch(() => ({ data: [] }))
         ]);
 
+        const allUsers = Array.isArray(usersRes.data) ? usersRes.data : [];
+        const allIssues = Array.isArray(issuesRes.data) ? issuesRes.data : [];
+        const allProjects = Array.isArray(projRes.data) ? projRes.data : [];
+
+        // Normalize department and calculate team
+        const norm = (d) => String(d || '').replace(/\s*department\s*$/i, '').trim().toLowerCase();
+        const myDept = norm(user?.department);
+        const deptUsers = allUsers.filter(u => norm(u.department) === myDept);
+        const activeCount = deptUsers.length > 0 ? deptUsers.length : allUsers.length;
+        setTeamSize(activeCount);
+
+        // Reports To logic
+        const userRoleLower = (user?.role_name || user?.designation || user?.department_role || user?.job_title || '').toLowerCase();
+        const isManager = Boolean(userRoleLower.match(/(manager|lead|admin|director|head|executive)/));
+        if (isManager) {
+          setReportsTo({ title: 'Executive', name: 'Management' });
+        } else {
+          const lead = deptUsers.find(u => (u.job_title || u.department_role || '').toLowerCase().includes('manager'));
+          if (lead) {
+            setReportsTo({
+              title: lead.job_title || 'Department Lead',
+              name: `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || lead.username
+            });
+          } else {
+            setReportsTo({ title: 'Lead', name: 'Management' });
+          }
+        }
+
+        // Real team workload
+        const teamForWorkload = deptUsers.length > 0 ? deptUsers : allUsers;
+        const computedWorkload = teamForWorkload
+          .filter(u => !['system', 'admin'].includes((u.username || '').toLowerCase()))
+          .map(u => {
+            const uName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username;
+            const userTasks = allIssues.filter(i => {
+              const a = (i.assignee || '').toLowerCase();
+              return a.includes(uName.toLowerCase()) || (u.first_name && a.includes((u.first_name || '').toLowerCase()));
+            });
+            const totalIssues = allIssues.length || 1;
+            const pct = Math.round((userTasks.length / totalIssues) * 100);
+            return {
+              name: uName,
+              role: u.job_title || u.department_role || u.designation || 'Team Member',
+              department: u.department || 'General',
+              workload: pct,
+              taskCount: userTasks.length,
+              avatar: u.avatar
+            };
+          })
+          .sort((a, b) => b.taskCount - a.taskCount)
+          .slice(0, 5);
+        setTeamWorkload(computedWorkload);
+
+        // Map real tickets from it_kanban_issues
+        const mappedTickets = allIssues.map(i => ({
+          id: i.issue_key || `#IT-${i.id}`,
+          subject: i.title || 'No Title',
+          status: i.status || 'TO DO',
+          priority: i.priority || 'Medium',
+          category: i.type || 'Task',
+          assignedTo: i.assignee || 'Unassigned',
+          reporter: i.reporter || 'System',
+          department: i.department || 'General',
+          dueDate: i.due_date ? new Date(i.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+          createdAt: i.created_at ? new Date(i.created_at).toISOString() : null
+        }));
+        setTickets(mappedTickets);
+
+        // Map real tasks
+        setTasks(allIssues.map(i => ({
+          id: i.issue_key || `#IT-${i.id}`,
+          name: i.title || 'No Title',
+          project: i.department ? `${i.department} Workspace` : 'General',
+          status: i.status || 'TO DO',
+          priority: i.priority || 'Medium',
+          dueDate: i.due_date ? new Date(i.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+          assignedTo: i.assignee || 'Unassigned',
+          reporter: i.reporter || 'System',
+          createdAt: i.created_at ? new Date(i.created_at).toISOString() : null
+        })));
+
+        // Map real projects
+        setProjects(allProjects.map(p => ({
+          id: p.id,
+          name: p.name || 'Unnamed Project',
+          status: p.status || 'Active',
+          progress: p.progress || 0,
+          startDate: p.start_date ? new Date(p.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+          dueDate: p.end_date ? new Date(p.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+          manager: p.project_manager || p.client_name || 'Management',
+          avatar: null
+        })));
+
+        // Map activities
         const userNameMatches = (nameField) => {
           if (!nameField || !user) return false;
           const search = nameField.toLowerCase();
@@ -254,48 +406,8 @@ const ProfileSettingsPage = () => {
           const fn = (user.first_name || '').toLowerCase();
           const ln = (user.last_name || '').toLowerCase();
           const full = `${fn} ${ln}`.trim();
-          
-          return (un && search.includes(un)) || 
-                 (full && search.includes(full)) ||
-                 (fn && search.includes(fn));
+          return (un && search.includes(un)) || (full && search.includes(full)) || (fn && search.includes(fn));
         };
-
-        setProjects(projRes.data
-          .filter(p => userNameMatches(p.project_manager))
-          .map(p => ({
-            name: p.name || 'Unnamed Project',
-            status: p.status || 'Active',
-            progress: p.progress || 0,
-            startDate: p.start_date ? new Date(p.start_date).toLocaleDateString() : '-',
-            dueDate: p.end_date ? new Date(p.end_date).toLocaleDateString() : '-',
-            manager: p.project_manager || 'Admin',
-            avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg'
-        })));
-
-        setTasks(tasksRes.data
-          .filter(t => userNameMatches(t.assigned_to))
-          .map(t => ({
-            name: t.title || 'Unnamed Task',
-            project: t.project || 'General',
-            status: t.status || 'To Do',
-            priority: t.priority || 'Medium',
-            dueDate: t.due_date ? new Date(t.due_date).toLocaleDateString() : '-',
-            assignedTo: t.assigned_to || 'Unassigned',
-            avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg'
-        })));
-
-        setTickets(issuesRes.data
-          .filter(i => userNameMatches(i.assigned_to) || userNameMatches(i.reporter))
-          .map(i => ({
-            id: `#IT-${i.id}`,
-            subject: i.title || 'No Title',
-            status: i.status || 'Open',
-            priority: i.priority || 'Medium',
-            category: i.category || 'General',
-            assignedTo: i.assigned_to || 'Unassigned',
-            avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg',
-            createdAt: i.created_at ? new Date(i.created_at).toISOString() : null
-        })));
 
         setActivities(activitiesRes.data
           .filter(a => userNameMatches(a.created_by_name) || userNameMatches(a.created_by))
@@ -315,7 +427,7 @@ const ProfileSettingsPage = () => {
             date: i.invoice_date ? new Date(i.invoice_date).toLocaleDateString() : '-',
             amount: `$${parseFloat(i.amount || 0).toFixed(2)}`,
             status: i.status || 'Draft',
-            client: i.bill_to || 'Unknown Client'
+            client: i.bill_to || 'Client'
         })));
 
       } catch (err) {
@@ -390,47 +502,18 @@ const ProfileSettingsPage = () => {
   };
 
   const handleCreateMockTicket = () => {
-    const nextId = `#IT-${1250 + tickets.length + 1}`;
-    const newTick = {
-      id: nextId,
-      subject: `New reported ticket issue ${tickets.length + 1}`,
-      status: 'Open',
-      priority: 'Medium',
-      category: 'Support',
-      assignedTo: 'You',
-      avatar: profile.avatarUrl,
-      createdAt: '20 May 2026'
-    };
-    setTickets([newTick, ...tickets]);
-    showSuccessToast(`Created ticket ${nextId}`);
+    setActiveTab('Tickets');
+    showInfoToast('Viewing workspace tickets.');
   };
 
   const handleCreateMockProject = () => {
-    const newProj = {
-      name: `New CRM Feature Project ${projects.length + 1}`,
-      status: 'In Progress',
-      progress: 10,
-      startDate: '20 May 2026',
-      dueDate: '31 Dec 2026',
-      manager: 'You',
-      avatar: profile.avatarUrl
-    };
-    setProjects([newProj, ...projects]);
-    showSuccessToast('Created new CRM project!');
+    setActiveTab('Projects');
+    showInfoToast('Viewing workspace projects.');
   };
 
   const handleCreateMockTask = () => {
-    const newTask = {
-      name: `Mock Task - Setup milestone ${tasks.length + 1}`,
-      project: 'CRM Integration',
-      status: 'To Do',
-      priority: 'Medium',
-      dueDate: '25 May 2026',
-      assignedTo: 'You',
-      avatar: profile.avatarUrl
-    };
-    setTasks([newTask, ...tasks]);
-    showSuccessToast('Task added to your list!');
+    setActiveTab('Tasks');
+    showInfoToast('Viewing workspace tasks.');
   };
 
   const handleDayShift = (direction) => {
@@ -492,32 +575,50 @@ const ProfileSettingsPage = () => {
         <div className="xl:col-span-6 bg-white border border-gray-100 rounded p-4  flex flex-col md:flex-row items-center md:items-start gap-4">
           <div className="relative">
             <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-50 shadow-inner flex-shrink-0">
-              <img
-                src={profile.avatarUrl}
-                alt="Profile"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=faces";
-                }}
-              />
+              {profile.avatarUrl && !profile.avatarUrl.includes('preadmin') ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl font-bold tracking-wider select-none">
+                  {((profile.firstName?.[0] || '') + (profile.lastName?.[0] || '')).toUpperCase() || (profile.email?.[0] || 'U').toUpperCase()}
+                </div>
+              )}
             </div>
             <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-white rounded-full"></span>
           </div>
 
           <div className="flex-1 text-center md:text-left">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-              <h2 className="text-xl  text-gray-900">{profile.firstName} {profile.lastName}</h2>
-              <span className="px-2.5 py-0.5 bg-red-50 text-red-600 text-xs  rounded-md border border-red-100">
-                Administrator
+              <h2 className="text-xl font-bold text-gray-900">{profile.firstName} {profile.lastName}</h2>
+              <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-md border border-indigo-100">
+                {profile.role || 'Team Member'}
               </span>
             </div>
 
             <p className="text-xs text-gray-500 mt-1 flex flex-col sm:flex-row justify-center md:justify-start items-center gap-x-3 gap-y-1">
               <span>{profile.email}</span>
-              <span className="hidden sm:inline text-gray-300">•</span>
-              <span>{profile.phone}</span>
-              <span className="hidden sm:inline text-gray-300">•</span>
-              <span>{profile.location}</span>
+              {profile.phone ? (
+                <>
+                  <span className="hidden sm:inline text-gray-300">•</span>
+                  <span>{profile.phone}</span>
+                </>
+              ) : null}
+              {profile.department ? (
+                <>
+                  <span className="hidden sm:inline text-gray-300">•</span>
+                  <span>{profile.department}</span>
+                </>
+              ) : null}
+              {profile.location && profile.location !== 'Unknown' ? (
+                <>
+                  <span className="hidden sm:inline text-gray-300">•</span>
+                  <span>{profile.location}</span>
+                </>
+              ) : null}
             </p>
 
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 mt-3.5">
@@ -563,11 +664,11 @@ const ProfileSettingsPage = () => {
               <div className="w-8 h-8 rounded bg-cyan-50 text-cyan-600 flex items-center justify-center">
                 <User size={16} />
               </div>
-              <span className="text-xs text-gray-560   tracking-wider">Reports To</span>
+              <span className="text-xs text-gray-500   tracking-wider">Reports To</span>
             </div>
             <div className="mt-2">
-              <h4 className="text-sm  text-gray-800">CTO</h4>
-              <p className="text-xs text-gray-400 mt-0.5">John Smith*</p>
+              <h4 className="text-sm font-semibold text-gray-800">{reportsTo.title}</h4>
+              <p className="text-xs text-gray-400 mt-0.5">{reportsTo.name}</p>
             </div>
           </div>
 
@@ -576,11 +677,11 @@ const ProfileSettingsPage = () => {
               <div className="w-8 h-8 rounded bg-purple-50 text-purple-600 flex items-center justify-center">
                 <Users size={16} />
               </div>
-              <span className="text-xs text-gray-565   tracking-wider">Team Size</span>
+              <span className="text-xs text-gray-500   tracking-wider">Team Size</span>
             </div>
             <div className="mt-2">
-              <h4 className="text-sm  text-gray-800">{profile.teamSize}</h4>
-              <p className="text-xs text-gray-400 mt-0.5">Active Members</p>
+              <h4 className="text-sm font-semibold text-gray-800">{teamSize > 0 ? `${teamSize} Members` : '1 Member'}</h4>
+              <p className="text-xs text-gray-400 mt-0.5">Active in Department</p>
             </div>
           </div>
         </div>
@@ -619,11 +720,10 @@ const ProfileSettingsPage = () => {
 
             <div className="bg-white border border-gray-100 rounded p-4  flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-550   tracking-wider">Total Tickets</p>
-                <h3 className="text-2xl font-extrabold text-gray-900 mt-2">{tickets.length}</h3>
-                <div className="flex items-center gap-1 text-xs text-green-600  mt-1">
-                  <ArrowUpRight size={12} />
-                  <span>18% vs last month</span>
+                <p className="text-xs text-gray-500   tracking-wider">Total Tickets</p>
+                <h3 className="text-2xl font-extrabold text-gray-900 mt-2">{kpiStats.total}</h3>
+                <div className="flex items-center gap-1 text-xs text-blue-600 font-medium mt-1">
+                  <span>Workspace tasks</span>
                 </div>
               </div>
               <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -633,13 +733,12 @@ const ProfileSettingsPage = () => {
 
             <div className="bg-white border border-gray-100 rounded p-4  flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-550   tracking-wider">Completed Tickets</p>
+                <p className="text-xs text-gray-500   tracking-wider">Completed Tickets</p>
                 <h3 className="text-2xl font-extrabold text-gray-900 mt-2">
-                  {tickets.filter(t => t.status === 'Resolved' || t.status === 'Closed').length}
+                  {kpiStats.completed}
                 </h3>
-                <div className="flex items-center gap-1 text-xs text-green-600  mt-1">
-                  <ArrowUpRight size={12} />
-                  <span>22% vs last month</span>
+                <div className="flex items-center gap-1 text-xs text-green-600 font-medium mt-1">
+                  <span>{kpiStats.completed} of {kpiStats.total} done</span>
                 </div>
               </div>
               <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
@@ -649,13 +748,12 @@ const ProfileSettingsPage = () => {
 
             <div className="bg-white border border-gray-100 rounded p-4  flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-555   tracking-wider">Open Tickets</p>
+                <p className="text-xs text-gray-500   tracking-wider">Open Tickets</p>
                 <h3 className="text-2xl font-extrabold text-gray-900 mt-2">
-                  {tickets.filter(t => t.status === 'Open').length}
+                  {kpiStats.open}
                 </h3>
-                <div className="flex items-center gap-1 text-xs text-red-600  mt-1">
-                  <ArrowDownRight size={12} />
-                  <span>8% vs last month</span>
+                <div className="flex items-center gap-1 text-xs text-amber-600 font-medium mt-1">
+                  <span>Pending start</span>
                 </div>
               </div>
               <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
@@ -665,13 +763,12 @@ const ProfileSettingsPage = () => {
 
             <div className="bg-white border border-gray-100 rounded p-4  flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-560   tracking-wider">In Progress</p>
+                <p className="text-xs text-gray-500   tracking-wider">In Progress</p>
                 <h3 className="text-2xl font-extrabold text-gray-900 mt-2">
-                  {tickets.filter(t => t.status === 'In Progress').length}
+                  {kpiStats.inProgress}
                 </h3>
-                <div className="flex items-center gap-1 text-xs text-green-600  mt-1">
-                  <ArrowUpRight size={12} />
-                  <span>5% vs last month</span>
+                <div className="flex items-center gap-1 text-xs text-blue-600 font-medium mt-1">
+                  <span>Active working</span>
                 </div>
               </div>
               <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -681,11 +778,10 @@ const ProfileSettingsPage = () => {
 
             <div className="bg-white border border-gray-100 rounded p-4  flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-565   tracking-wider">Overdue Tasks</p>
-                <h3 className="text-2xl font-extrabold text-gray-900 mt-2">12</h3>
-                <div className="flex items-center gap-1 text-xs text-red-600  mt-1">
-                  <ArrowDownRight size={12} />
-                  <span>15% vs last month</span>
+                <p className="text-xs text-gray-500   tracking-wider">Overdue Tasks</p>
+                <h3 className="text-2xl font-extrabold text-gray-900 mt-2">{kpiStats.overdue}</h3>
+                <div className="flex items-center gap-1 text-xs text-red-600 font-medium mt-1">
+                  <span>{kpiStats.overdue > 0 ? `${kpiStats.overdue} past target` : 'On schedule'}</span>
                 </div>
               </div>
               <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
@@ -695,10 +791,12 @@ const ProfileSettingsPage = () => {
 
             <div className="bg-white border border-gray-100 rounded p-4  flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-570   tracking-wider">SLA Compliance</p>
+                <p className="text-xs text-gray-500   tracking-wider">SLA Compliance</p>
                 <div className="flex items-center gap-2 mt-2">
-                  <h3 className="text-2xl font-extrabold text-gray-900">92%</h3>
-                  <span className="text-[9px] bg-green-50 text-green-600 border border-green-150 px-1 py-0.5 rounded ">Good</span>
+                  <h3 className="text-2xl font-extrabold text-gray-900">{kpiStats.sla}%</h3>
+                  <span className={`text-[9px] px-1 py-0.5 rounded font-medium ${kpiStats.sla >= 85 ? 'bg-green-50 text-green-600 border border-green-150' : 'bg-amber-50 text-amber-600 border border-amber-150'}`}>
+                    {kpiStats.sla >= 85 ? 'Good' : 'Tracked'}
+                  </span>
                 </div>
               </div>
               <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -797,31 +895,40 @@ const ProfileSettingsPage = () => {
                   <span className="text-xs text-gray-400">Current Assignments</span>
                 </div>
                 <div className="space-y-4">
-                  {[
-                    { name: 'You', role: profile.role, workload: (tasks.filter(t => t.assignedTo === 'You' || t.assignedTo === profile.firstName).length / (tasks.length || 1) * 100).toFixed(0), color: 'bg-blue-600', avatar: profile.avatarUrl },
-                    { name: 'Emma Johnson', role: 'Project Manager', workload: 65, color: 'bg-emerald-500', avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg' },
-                    { name: 'Michael Brown', role: 'DevOps Engineer', workload: 58, color: 'bg-purple-500', avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-03.jpg' },
-                    { name: 'Sophia Davis', role: 'System Analyst', workload: 42, color: 'bg-amber-500', avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-04.jpg' },
-                    { name: 'Daniel Martinez', role: 'Tech Lead', workload: 27, color: 'bg-red-500', avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-07.jpg' },
-                  ].map((user, idx) => (
-                    <div key={idx} className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-gray-200"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-xs  text-gray-800 truncate">{user.name}</h4>
-                          <p className="text-xs text-gray-400 truncate">{user.role}</p>
+                  {teamWorkload.length > 0 ? (
+                    teamWorkload.map((userItem, idx) => (
+                      <div key={idx} className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          {userItem.avatar && !userItem.avatar.includes('preadmin') ? (
+                            <img
+                              src={userItem.avatar}
+                              alt={userItem.name}
+                              className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-gray-200"
+                            />
+                          ) : (
+                            <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                              {userItem.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-xs text-gray-800 truncate font-medium">{userItem.name}</h4>
+                            <p className="text-[11px] text-gray-400 truncate">{userItem.role}</p>
+                          </div>
+                          <span className="text-xs font-semibold text-gray-700">{userItem.workload}% ({userItem.taskCount} {userItem.taskCount === 1 ? 'task' : 'tasks'})</span>
                         </div>
-                        <span className="text-xs  text-gray-700">{user.workload}%</span>
+                        <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              idx === 0 ? 'bg-blue-600' : idx === 1 ? 'bg-emerald-500' : idx === 2 ? 'bg-purple-500' : idx === 3 ? 'bg-amber-500' : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(userItem.workload, userItem.taskCount > 0 ? 10 : 0))}%` }}
+                          ></div>
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                        <div className={`h-full ${user.color} rounded-full`} style={{ width: `${user.workload}%` }}></div>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-xs text-gray-400 py-4 text-center">No active team members.</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -895,22 +1002,22 @@ const ProfileSettingsPage = () => {
 
             <div className="bg-white border border-gray-100 rounded p-4 ">
               <span className="text-xs text-gray-400   tracking-wider">Total Tickets</span>
-              <h3 className="text-2xl font-black text-gray-800 mt-1">{tickets.length}</h3>
-              <p className="text-xs text-gray-400 mt-2 font-medium">Assigned in department</p>
+              <h3 className="text-2xl font-black text-gray-800 mt-1">{kpiStats.total}</h3>
+              <p className="text-xs text-gray-400 mt-2 font-medium">Assigned in workspace</p>
             </div>
 
             <div className="bg-white border border-gray-100 rounded p-4 ">
               <span className="text-xs text-amber-500   tracking-wider">Open Tickets</span>
               <h3 className="text-2xl font-black text-amber-500 mt-1">
-                {tickets.filter(t => t.status === 'Open').length}
+                {kpiStats.open}
               </h3>
-              <p className="text-xs text-gray-400 mt-2 font-medium">Require immediate review</p>
+              <p className="text-xs text-gray-400 mt-2 font-medium">Pending start</p>
             </div>
 
             <div className="bg-white border border-gray-100 rounded p-4 ">
               <span className="text-xs text-blue-500   tracking-wider">In Progress</span>
               <h3 className="text-2xl font-black text-blue-500 mt-1">
-                {tickets.filter(t => t.status === 'In Progress').length}
+                {kpiStats.inProgress}
               </h3>
               <p className="text-xs text-gray-400 mt-2 font-medium">Actively working on</p>
             </div>
@@ -918,17 +1025,17 @@ const ProfileSettingsPage = () => {
             <div className="bg-white border border-gray-100 rounded p-4 ">
               <span className="text-xs text-green-500   tracking-wider">Resolved Tickets</span>
               <h3 className="text-2xl font-black text-green-500 mt-1">
-                {tickets.filter(t => t.status === 'Resolved').length}
+                {kpiStats.completed}
               </h3>
-              <p className="text-xs text-gray-400 mt-2 font-medium">Waiting client approval</p>
+              <p className="text-xs text-gray-400 mt-2 font-medium">Completed in sprint</p>
             </div>
 
             <div className="bg-white border border-gray-100 rounded p-4  col-span-2 md:col-span-1">
               <span className="text-xs text-gray-500   tracking-wider">Closed Tickets</span>
               <h3 className="text-2xl font-black text-gray-500 mt-1">
-                {tickets.filter(t => t.status === 'Closed').length}
+                {tickets.filter(t => String(t.status || '').toUpperCase() === 'CLOSED').length}
               </h3>
-              <p className="text-xs text-gray-400 mt-2 font-medium">Archived this sprint</p>
+              <p className="text-xs text-gray-400 mt-2 font-medium">Archived</p>
             </div>
 
           </div>
@@ -1086,7 +1193,9 @@ const ProfileSettingsPage = () => {
 
             <div className="bg-white border border-gray-100 rounded p-4  col-span-2 md:col-span-1">
               <span className="text-xs text-red-500   tracking-wider">Overdue</span>
-              <h3 className="text-2xl font-black text-red-500 mt-1">3</h3>
+              <h3 className="text-2xl font-black text-red-500 mt-1">
+                {projects.filter(p => p.dueDate && p.dueDate !== '-' && new Date(p.dueDate) < new Date() && p.status !== 'Completed').length}
+              </h3>
               <p className="text-xs text-gray-400 mt-2 font-medium">Past target dates</p>
             </div>
 
@@ -1224,27 +1333,27 @@ const ProfileSettingsPage = () => {
               <h3 className="text-2xl font-black text-gray-800 mt-1">{tasks.length}</h3>
             </div>
             <div className="bg-white p-4 border border-gray-100 rounded ">
-              <span className="text-xs text-amber-550   tracking-wider">To Do</span>
-              <h3 className="text-2xl font-black text-amber-550 mt-1">
-                {tasks.filter(t => t.status === 'To Do').length}
+              <span className="text-xs text-amber-500   tracking-wider">To Do</span>
+              <h3 className="text-2xl font-black text-amber-500 mt-1">
+                {tasks.filter(t => ['TO DO', 'OPEN'].includes(String(t.status || '').toUpperCase())).length}
               </h3>
             </div>
             <div className="bg-white p-4 border border-gray-100 rounded ">
               <span className="text-xs text-blue-500   tracking-wider">In Progress</span>
               <h3 className="text-2xl font-black text-blue-500 mt-1">
-                {tasks.filter(t => t.status === 'In Progress').length}
+                {tasks.filter(t => ['IN PROGRESS'].includes(String(t.status || '').toUpperCase())).length}
               </h3>
             </div>
             <div className="bg-white p-4 border border-gray-100 rounded ">
               <span className="text-xs text-purple-500   tracking-wider">In Review</span>
               <h3 className="text-2xl font-black text-purple-500 mt-1">
-                {tasks.filter(t => t.status === 'Review').length}
+                {tasks.filter(t => ['IN REVIEW', 'TESTING', 'REVIEW'].includes(String(t.status || '').toUpperCase())).length}
               </h3>
             </div>
             <div className="bg-white p-4 border border-gray-100 rounded  col-span-2 md:col-span-1">
               <span className="text-xs text-green-500   tracking-wider">Completed</span>
               <h3 className="text-2xl font-black text-green-500 mt-1">
-                {tasks.filter(t => t.status === 'Completed').length}
+                {tasks.filter(t => ['DONE', 'RESOLVED', 'CLOSED', 'COMPLETED'].includes(String(t.status || '').toUpperCase())).length}
               </h3>
             </div>
           </div>
@@ -1306,9 +1415,11 @@ const ProfileSettingsPage = () => {
 
                       // Task subtab logic filters
                       let matchesSub = true;
-                      if (taskSubTab === 'My Tasks') matchesSub = t.assignedTo === 'You';
-                      if (taskSubTab === 'Assigned To Me') matchesSub = t.assignedTo !== 'You';
-                      if (taskSubTab === 'Completed') matchesSub = t.status === 'Completed';
+                      const myName = (user?.first_name || user?.username || '').toLowerCase();
+                      const assigneeLower = (t.assignedTo || '').toLowerCase();
+                      if (taskSubTab === 'My Tasks') matchesSub = myName && assigneeLower.includes(myName);
+                      if (taskSubTab === 'Assigned To Me') matchesSub = myName && assigneeLower.includes(myName);
+                      if (taskSubTab === 'Completed') matchesSub = ['DONE', 'RESOLVED', 'CLOSED', 'COMPLETED'].includes(String(t.status || '').toUpperCase());
 
                       return matchesSearch && matchesFilter && matchesSub;
                     })
@@ -1490,32 +1601,32 @@ const ProfileSettingsPage = () => {
             <div className="bg-white p-4 border border-gray-100 rounded ">
               <span className="text-xs text-gray-450   tracking-wider block">Tickets Resolved</span>
               <div className="flex items-center gap-2 mt-1">
-                <h3 className="text-2xl font-black text-gray-800 ">198</h3>
-                <span className="text-xs text-green-650 bg-green-50 px-1 py-0.5 rounded ">▲ 22%</span>
+                <h3 className="text-2xl font-black text-gray-800 ">{kpiStats.completed}</h3>
+                <span className="text-xs text-green-600 bg-green-50 px-1 py-0.5 rounded ">Active</span>
               </div>
             </div>
 
             <div className="bg-white p-4 border border-gray-100 rounded ">
-              <span className="text-xs text-gray-455   tracking-wider block">Avg. Resolution Time</span>
+              <span className="text-xs text-gray-455   tracking-wider block">In Progress</span>
               <div className="flex items-center gap-2 mt-1 ">
-                <h3 className="text-2xl font-black text-gray-800">18.6 hrs</h3>
-                <span className="text-xs text-green-655 bg-green-50 px-1 py-0.5 rounded ">▼ 12%</span>
+                <h3 className="text-2xl font-black text-gray-800">{kpiStats.inProgress}</h3>
+                <span className="text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded ">Active</span>
               </div>
             </div>
 
             <div className="bg-white p-4 border border-gray-100 rounded ">
               <span className="text-xs text-gray-460   tracking-wider block">SLA Met</span>
               <div className="flex items-center gap-2 mt-1 ">
-                <h3 className="text-2xl font-black text-gray-800">92%</h3>
-                <span className="text-xs text-green-655 bg-green-50 px-1 py-0.5 rounded ">▲ 8%</span>
+                <h3 className="text-2xl font-black text-gray-800">{kpiStats.sla}%</h3>
+                <span className="text-xs text-green-600 bg-green-50 px-1 py-0.5 rounded ">On Track</span>
               </div>
             </div>
 
             <div className="bg-white p-4 border border-gray-100 rounded ">
-              <span className="text-xs text-gray-465   tracking-wider block">Customer Satisfaction</span>
+              <span className="text-xs text-gray-465   tracking-wider block">Total Work Items</span>
               <div className="flex items-center gap-2 mt-1 ">
-                <h3 className="text-2xl font-black text-gray-850">4.6 / 5</h3>
-                <span className="text-xs text-red-600 bg-red-50 px-1 py-0.5 rounded ">▼ 5%</span>
+                <h3 className="text-2xl font-black text-gray-800">{kpiStats.total}</h3>
+                <span className="text-xs text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded ">Workspace</span>
               </div>
             </div>
 
@@ -1530,11 +1641,11 @@ const ProfileSettingsPage = () => {
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={[
-                    { name: 'Created', count: 256, fill: '#3B82F6' },
-                    { name: 'Resolved', count: 198, fill: '#10B981' },
-                    { name: 'Closed', count: 166, fill: '#8B5CF6' },
-                    { name: 'Open', count: 58, fill: '#F59E0B' },
-                    { name: 'In Progress', count: 34, fill: '#EF4444' }
+                    { name: 'Total', count: kpiStats.total, fill: '#3B82F6' },
+                    { name: 'Completed', count: kpiStats.completed, fill: '#10B981' },
+                    { name: 'In Progress', count: kpiStats.inProgress, fill: '#8B5CF6' },
+                    { name: 'Open', count: kpiStats.open, fill: '#F59E0B' },
+                    { name: 'Overdue', count: kpiStats.overdue, fill: '#EF4444' }
                   ]} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
                     <XAxis dataKey="name" fontSize={11} stroke="#9CA3AF" tickLine={false} />
@@ -1661,26 +1772,30 @@ const ProfileSettingsPage = () => {
             <div className="bg-white border border-gray-150 rounded p-2 ">
               <h3 className=" text-gray-800 text-sm sm:text-base mb-4">Top Performing Agents</h3>
               <div className="space-y-4">
-                {[
-                  { name: 'Michael Brown', role: 'DevOps Engineer', performance: 94, avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-03.jpg' },
-                  { name: 'Emma Johnson', role: 'Project Manager', performance: 92, avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg' },
-                  { name: 'Sophia Davis', role: 'System Analyst', performance: 85, avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-04.jpg' },
-                  { name: 'Daniel Martinez', role: 'Tech Lead', performance: 80, avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-07.jpg' },
-                  { name: 'Olivia Taylor', role: 'Support Specialist', performance: 85, avatar: 'https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-08.jpg' },
-                ].map((agent, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
-                    <img src={agent.avatar} className="w-8 h-8 rounded-full object-cover border border-gray-100" alt="avatar" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between text-xs  mb-1">
-                        <span className="text-gray-900">{agent.name}</span>
-                        <span className="text-red-650">{agent.performance}%</span>
-                      </div>
-                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                        <div className="h-full bg-red-500 rounded-full" style={{ width: `${agent.performance}%` }}></div>
+                {teamWorkload.length > 0 ? (
+                  teamWorkload.map((agent, idx) => (
+                    <div key={idx} className="flex items-center gap-3">
+                      {agent.avatar && !agent.avatar.includes('preadmin') ? (
+                        <img src={agent.avatar} className="w-8 h-8 rounded-full object-cover border border-gray-100" alt="avatar" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold">
+                          {agent.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="text-gray-900 font-medium truncate">{agent.name}</span>
+                          <span className="text-indigo-600 font-semibold">{agent.workload}% ({agent.taskCount} tasks)</span>
+                        </div>
+                        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(100, Math.max(agent.workload, 10))}%` }}></div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="text-xs text-gray-400 py-4 text-center">No agent data available.</div>
+                )}
               </div>
             </div>
 
@@ -1693,11 +1808,7 @@ const ProfileSettingsPage = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={[
-                            { name: 'High', value: 22, color: '#EF4444' },
-                            { name: 'Medium', value: 48, color: '#3B82F6' },
-                            { name: 'Low', value: 30, color: '#10B981' }
-                          ]}
+                          data={priorityData}
                           cx="50%"
                           cy="50%"
                           innerRadius={42}
@@ -1705,32 +1816,26 @@ const ProfileSettingsPage = () => {
                           paddingAngle={3}
                           dataKey="value"
                         >
-                          <Cell fill="#EF4444" />
-                          <Cell fill="#3B82F6" />
-                          <Cell fill="#10B981" />
+                          {priorityData.map((p, idx) => (
+                            <Cell key={idx} fill={p.color} />
+                          ))}
                         </Pie>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="absolute flex flex-col items-center justify-center text-center">
-                    <span className="text-xl font-black text-gray-800">89</span>
+                    <span className="text-xl font-black text-gray-800">{kpiStats.total}</span>
                     <span className="text-[9px] text-gray-400   tracking-wider">Total Tasks</span>
                   </div>
                 </div>
 
                 <div className="flex justify-center items-center gap-6 mt-4 text-xs  text-gray-600 border-t border-gray-50 pt-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                    <span>High (22%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                    <span>Medium (48%)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
-                    <span>Low (30%)</span>
-                  </div>
+                  {priorityData.map((p, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }}></span>
+                      <span>{p.name} ({p.value}%)</span>
+                    </div>
+                  ))}
                 </div>
 
               </div>

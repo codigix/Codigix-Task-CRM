@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   Search, ChevronDown, ChevronRight,
   Share2, Download, MoreHorizontal, LayoutList,
-  CheckSquare, Plus, AlertCircle, ArrowUp, ArrowDown, Trash2
+  CheckSquare, Plus, AlertCircle, ArrowUp, ArrowDown, Trash2, User
 } from 'lucide-react';
 import ITCreateIssueDrawer from './ITCreateIssueDrawer';
 import ITIssueDetailsPanel from './ITIssueDetailsPanel';
@@ -131,7 +131,7 @@ const ITTasksPage = () => {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/it-kanban/issues`);
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues?_t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setTasks(data);
@@ -306,14 +306,19 @@ const tableColumns = React.useMemo(() => {
           };
           break;
         case 'assignee':
-          renderFn = (val, row) => (
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] ">
-                {(row.assignee ? row.assignee.charAt(0) : "U")}
+          renderFn = (val, row) => {
+            const isUnass = !row.assignee || row.assignee.toLowerCase() === 'unassigned' || row.assignee.toLowerCase() === 'none';
+            return (
+              <div className="flex items-center gap-2">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${isUnass ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
+                  {isUnass ? <User size={11} className="text-gray-500" /> : (row.assignee ? row.assignee.charAt(0).toUpperCase() : "U")}
+                </div>
+                <span className={isUnass ? 'text-gray-500 font-normal' : 'text-gray-900 font-medium'}>
+                  {isUnass ? 'Unassigned' : row.assignee}
+                </span>
               </div>
-              <span>{row.assignee || "Unassigned"}</span>
-            </div>
-          );
+            );
+          };
           break;
         case 'reporter':
           renderFn = (val, row) => (

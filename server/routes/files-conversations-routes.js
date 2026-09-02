@@ -1,17 +1,17 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { UPLOAD_DIR } = require('../config/upload');
 
 module.exports = function setupFilesConversationsRoutes(app, pool) {
 
-  // Configure storage
+  // Configure storage strictly using UPLOAD_DIR from .env
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      const uploadDir = path.join(__dirname, '..', 'uploads');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      if (!fs.existsSync(UPLOAD_DIR)) {
+        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
       }
-      cb(null, uploadDir);
+      cb(null, UPLOAD_DIR);
     },
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

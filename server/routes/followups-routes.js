@@ -4,16 +4,17 @@ const fs = require('fs');
 const { google } = require('googleapis');
 const OpenAI = require('openai');
 const nodemailer = require('nodemailer');
+const { UPLOAD_DIR } = require('../config/upload');
 
 module.exports = function setupFollowupsRoutes(app, pool) {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
   });
 
-  // Configure multer for recording uploads
+  // Configure multer for recording uploads strictly inside UPLOAD_DIR
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      const dir = 'uploads/recordings';
+      const dir = path.join(UPLOAD_DIR, 'recordings');
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }

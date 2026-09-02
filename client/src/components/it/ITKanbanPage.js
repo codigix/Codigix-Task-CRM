@@ -15,6 +15,7 @@ import BoardTabs from '../common/BoardTabs';
 import CompleteSprintModal from '../common/CompleteSprintModal';
 import SearchableSelect from '../common/SearchableSelect';
 import Swal from 'sweetalert2';
+import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -368,33 +369,46 @@ const ITKanbanPage = ({ department }) => {
   };
 
   const handleUpdateCardAssignee = async (issueKey, newAssignee) => {
-    setAllRawIssues(prev => prev.map(t => (t.issue_key === issueKey || t.key === issueKey) ? { ...t, assignee: newAssignee } : t));
+    const normAssignee = (!newAssignee || newAssignee === 'Unassigned' || newAssignee === 'Automatic') ? 'Unassigned' : newAssignee;
+    // 1. Optimistically update both allRawIssues and boardData immediately
+    setAllRawIssues(prev => prev.map(t => (t.issue_key === issueKey || t.key === issueKey) ? { ...t, assignee: normAssignee } : t));
+    setBoardData(prev => {
+      const next = { ...prev };
+      for (const col of Object.keys(next)) {
+        next[col] = next[col].map(c => (c.key === issueKey || c.issue_key === issueKey) ? { ...c, assignee: normAssignee } : c);
+      }
+      return next;
+    });
     setOpenCardAssigneeDropdown(null);
+
     try {
       const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          // Without this the assignment notification reads "Someone assigned you…" instead
-          // of naming the manager who did it.
           'x-user-name': user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : (username || 'System')
         },
-        body: JSON.stringify({ assignee: newAssignee })
+        body: JSON.stringify({ assignee: normAssignee })
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        fetchKanbanData(); // The optimistic change didn't stick; show what the server has.
-        Swal.fire('Could not assign', data.error || 'Update rejected by the server', 'error');
+        fetchKanbanData(); // Revert optimistic change if server rejected
+        showErrorToast(data.error || 'Update rejected by the server');
+      } else {
+        showSuccessToast(normAssignee === 'Unassigned' ? 'Task unassigned successfully' : `Assigned to ${normAssignee}`);
+        fetchKanbanData();
       }
     } catch (err) {
       console.error('Failed to update assignee', err);
       fetchKanbanData();
+      showErrorToast('Failed to update assignee');
     }
   };
 
   const fetchKanbanData = () => {
+    const bust = Date.now();
     // Which sprints are running determines what the board is allowed to show.
-    fetch(`${API_BASE_URL}/sprints`)
+    fetch(`${API_BASE_URL}/sprints?_t=${bust}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         const running = data.activeSprints || (data.activeSprint ? [data.activeSprint] : []);
@@ -403,7 +417,7 @@ const ITKanbanPage = ({ department }) => {
       })
       .catch(err => console.error('Error fetching active sprints:', err));
 
-    fetch(`${API_BASE_URL}/it-kanban/issues`)
+    fetch(`${API_BASE_URL}/it-kanban/issues?_t=${bust}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         setAllRawIssues(Array.isArray(data) ? data : []);
@@ -727,6 +741,9 @@ const ITKanbanPage = ({ department }) => {
       }
       return next;
     });
+
+    // Also keep allRawIssues synchronized with updates
+    setAllRawIssues(prev => prev.map(t => (t.issue_key === key || t.key === key) ? { ...t, ...updates } : t));
 
     try {
       const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, {
@@ -1379,24 +1396,39 @@ const ITKanbanPage = ({ department }) => {
                                                                   autoFocus
                                                                   value={assigneeSearchQuery}
                                                                   onChange={(e) => setAssigneeSearchQuery(e.target.value)}
-                                                                  placeholder={card.assignee || "Search users..."}
-                                                                  className="w-full px-3 py-1.5 text-xs border-2 border-blue-500 rounded-md focus:outline-none bg-white text-gray-900 font-medium"
+                                                                  placeholder="Search users..."
+                                                                  className="w-full px-3 py-1.5 text-xs border-2 border-blue-500 rounded-md focus:outline-none bg-white text-gray-900 font-medium placeholder:text-gray-400"
                                                                 />
                                                               </div>
+                                                              {card.assignee && card.assignee !== 'Unassigned' && (
+                                                                <div className="mt-1.5 px-0.5 flex items-center justify-between text-[11px] text-gray-500">
+                                                                  <span className="truncate">Current: <strong className="text-gray-800 font-semibold">{card.assignee}</strong></span>
+                                                                  <button
+                                                                    type="button"
+                                                                    onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned')}
+                                                                    className="text-red-600 hover:text-red-700 hover:underline font-semibold ml-2 shrink-0 cursor-pointer"
+                                                                  >
+                                                                    Clear / Unassign
+                                                                  </button>
+                                                                </div>
+                                                              )}
                                                             </div>
 
                                                             <div className="max-h-60 overflow-y-auto py-1 custom-scrollbar">
                                                               {/* Unassigned Option */}
-                                                              <div
-                                                                onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned')}
-                                                                className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee === 'Unassigned' || !card.assignee ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
-                                                                  }`}
-                                                              >
-                                                                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
-                                                                  <User size={13} className="text-gray-600" />
+                                                              {(!assigneeSearchQuery.trim() || 'unassigned'.includes(assigneeSearchQuery.toLowerCase().trim())) && (
+                                                                <div
+                                                                  onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned')}
+                                                                  className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee === 'Unassigned' || !card.assignee ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
+                                                                    }`}
+                                                                >
+                                                                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
+                                                                    <User size={13} className="text-gray-600" />
+                                                                  </div>
+                                                                  <span className="text-xs font-medium">Unassigned</span>
+                                                                  {(card.assignee === 'Unassigned' || !card.assignee) && <Check size={14} className="text-blue-600 ml-auto shrink-0" />}
                                                                 </div>
-                                                                <span className="text-xs font-medium">Unassigned</span>
-                                                              </div>
+                                                              )}
 
                                                               {/* Automatic Option */}
                                                               <div

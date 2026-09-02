@@ -210,8 +210,13 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     setPriority(issue.priority || 'Medium');
     setDescription(issue.description || '');
 
-    const ass = issue.assignee || 'Unassigned';
-    setAssignee({ name: ass, initial: getInitials(ass), color: ass === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-600 text-white' });
+    const ass = issue.assignee;
+    const isUnass = !ass || ass.toLowerCase() === 'unassigned' || ass.toLowerCase() === 'none';
+    setAssignee({
+      name: isUnass ? 'Unassigned' : ass,
+      initial: isUnass ? 'U' : getInitials(ass),
+      color: isUnass ? 'bg-gray-200 text-gray-500' : 'bg-blue-600 text-white'
+    });
 
     const rep = issue.reporter || loggedUser;
     setReporter({ name: rep, initial: getInitials(rep), color: 'bg-blue-100 text-blue-700' });
@@ -838,6 +843,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
                 handleUpdate({ subtasks: updatedSubtasks });
               } else {
                 setAssignee(newAss);
+                const assName = typeof newAss === 'string' ? newAss : (newAss.name || 'Unassigned');
+                handleUpdate({ assignee: assName });
               }
             }}
             reporter={reporter}

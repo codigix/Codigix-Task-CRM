@@ -490,7 +490,7 @@ const BacklogPage = ({ department }) => {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept)}`);
+      const res = await fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept)}&_t=${Date.now()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to load backlog');
       const data = await res.json();
       setSprints(data.sprints || []);
@@ -602,6 +602,9 @@ const BacklogPage = ({ department }) => {
         const err = new Error(data.error || 'Update rejected by the server');
         err.openSubtasks = data.openSubtasks;
         throw err;
+      }
+      if (updates.assignee !== undefined) {
+        showSuccessToast(updates.assignee === 'Unassigned' || !updates.assignee ? 'Task unassigned successfully' : `Assigned to ${updates.assignee}`);
       }
     } catch (err) {
       console.error('Failed to update work item:', err);

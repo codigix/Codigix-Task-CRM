@@ -11,6 +11,7 @@ import UniversalCreateIssueDrawer from './UniversalCreateIssueDrawer';
 import ITIssueDetailsPanel from '../it/ITIssueDetailsPanel';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
 import { API_BASE_URL } from '../../config/environment';
+import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
 function BookmarkIcon(props) {
   return <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" {...props}><path d="M5 3v18l7-4.5 7 4.5V3z" /></svg>;
@@ -263,21 +264,40 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
   };
 
   const handleUpdateCardAssignee = async (issueKey, newAssignee) => {
-    setAllRawIssues(prev => prev.map(t => (t.issue_key === issueKey || t.key === issueKey) ? { ...t, assignee: newAssignee } : t));
+    const normAssignee = (!newAssignee || newAssignee === 'Unassigned' || newAssignee === 'Automatic') ? 'Unassigned' : newAssignee;
+    setAllRawIssues(prev => prev.map(t => (t.issue_key === issueKey || t.key === issueKey) ? { ...t, assignee: normAssignee } : t));
+    setBoardData(prev => {
+      const next = { ...prev };
+      for (const col of Object.keys(next)) {
+        next[col] = next[col].map(c => (c.key === issueKey || c.issue_key === issueKey) ? { ...c, assignee: normAssignee } : c);
+      }
+      return next;
+    });
     setOpenCardAssigneeDropdown(null);
+
     try {
-      await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}`, {
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignee: newAssignee })
+        body: JSON.stringify({ assignee: normAssignee })
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        fetchKanbanData();
+        showErrorToast(data.error || 'Failed to update assignee');
+      } else {
+        showSuccessToast(normAssignee === 'Unassigned' ? 'Task unassigned successfully' : `Assigned to ${normAssignee}`);
+        fetchKanbanData();
+      }
     } catch (err) {
       console.error('Failed to update assignee', err);
+      fetchKanbanData();
+      showErrorToast('Failed to update assignee');
     }
   };
 
   const fetchKanbanData = () => {
-    fetch(`${API_BASE_URL}/it-kanban/issues`)
+    fetch(`${API_BASE_URL}/it-kanban/issues?_t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         setAllRawIssues(Array.isArray(data) ? data : []);
@@ -815,10 +835,10 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                                                 {/* ASSIGNEE AVATAR POPOVER TRIGGER */}
                                                 <button
                                                   onClick={(e) => handleOpenCardAssignee(e, cardKey)}
-                                                  className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px] hover:ring-2 hover:ring-blue-400 transition"
+                                                  className={`w-6 h-6 rounded-full font-bold flex items-center justify-center text-[10px] hover:ring-2 hover:ring-blue-400 transition ${!card.assignee || card.assignee === 'Unassigned' ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}
                                                   title={`Assigned to: ${card.assignee || 'Unassigned'}`}
                                                 >
-                                                  {getInitials(card.assignee)}
+                                                  {!card.assignee || card.assignee === 'Unassigned' ? <User size={12} className="text-gray-500" /> : getInitials(card.assignee)}
                                                 </button>
                                               </div>
                                             </div>

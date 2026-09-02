@@ -772,6 +772,9 @@ Acceptance Criteria
 
   app.get('/api/it-kanban/issues', async (req, res) => {
     try {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       const { department } = req.query;
       // Join the linked project so the details panel can show a real Parent instead of "None",
       // and join users to detect assignee/reporter departments for cross-department visibility.
