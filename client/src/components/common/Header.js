@@ -1,8 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Menu, Search, Bell, Settings, Moon, Grid, Maximize2, HelpCircle, PieChart, MessageSquare, LogOut, User, Bell as BellIcon } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Menu, Search, Bell, Settings, Moon, Grid, Maximize2, HelpCircle, PieChart, MessageSquare, LogOut, User, Bell as BellIcon, Volume2, VolumeX, Smartphone, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config/environment';
+import {
+  showDeviceNotification,
+  requestNotificationPermission,
+  getNotificationPermission,
+  isDeviceNotificationEnabled,
+  setDeviceNotificationEnabled,
+  isSoundEnabled,
+  setSoundEnabled,
+  sendTestDeviceNotification
+} from '../../services/deviceNotification';
 
 // "5 minutes ago" style stamps for the notification list.
 const relativeTime = (value) => {
@@ -59,6 +69,11 @@ const Header = ({ toggleSidebar }) => {
 
   const [notificationsData, setNotificationsData] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [devicePermission, setDevicePermission] = useState(getNotificationPermission());
+  const [soundOn, setSoundOn] = useState(isSoundEnabled());
+  const [dismissBanner, setDismissBanner] = useState(false);
+  const seenNotificationIdsRef = useRef(new Set());
+  const isInitialLoadRef = useRef(true);
 
   // Poll for new notifications. No websocket layer, so a light interval keeps the
   // bell current without adding infrastructure.
@@ -68,7 +83,35 @@ const Header = ({ toggleSidebar }) => {
       const res = await fetch(`${API_BASE_URL}/notifications?user_id=${user.id}&limit=15`);
       if (!res.ok) return;
       const data = await res.json();
-      setNotificationsData((data.notifications || []).map(n => ({
+      const rawList = data.notifications || [];
+
+      // Detect newly arrived unread notifications and dispatch native device notifications
+      const unreadList = rawList.filter(n => !n.is_read);
+      if (!isInitialLoadRef.current) {
+        for (const notif of unreadList) {
+          if (!seenNotificationIdsRef.current.has(notif.id)) {
+            seenNotificationIdsRef.current.add(notif.id);
+
+            const target = notificationTarget({
+              entityKey: notif.entity_key,
+              entityType: notif.entity_type,
+              link: notif.link
+            });
+
+            showDeviceNotification({
+              title: notif.title || '🔔 Codigix CRM Alert',
+              body: notif.message || (notif.actor_name ? `${notif.actor_name}: You have a new update` : 'New notification in CRM'),
+              tag: `notif-${notif.id}`,
+              url: target ? (window.location.origin + target) : window.location.href
+            });
+          }
+        }
+      } else {
+        unreadList.forEach(n => seenNotificationIdsRef.current.add(n.id));
+        isInitialLoadRef.current = false;
+      }
+
+      setNotificationsData(rawList.map(n => ({
         id: n.id,
         avatar: initialsOf(n.actor_name || n.title),
         avatarColor: colorForName(n.actor_name || n.title),
@@ -128,6 +171,29 @@ const Header = ({ toggleSidebar }) => {
     // Ignore legacy links that are just a bare department prefix and route nowhere.
     if (notif.link && notif.link.split('/').filter(Boolean).length > 1) return notif.link;
     return null;
+  };
+
+  const handleEnableDeviceAlerts = async () => {
+    const perm = await requestNotificationPermission();
+    setDevicePermission(perm);
+    if (perm === 'granted') {
+      showDeviceNotification({
+        title: '🔔 Device Alerts Activated',
+        body: 'You will now receive native system notifications for new tasks and assignments!',
+        url: window.location.href
+      });
+    }
+  };
+
+  const handleTestDeviceAlert = async () => {
+    await sendTestDeviceNotification();
+    setDevicePermission(getNotificationPermission());
+  };
+
+  const handleToggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    setSoundEnabled(next);
   };
 
   const markAllNotificationsRead = async () => {
@@ -420,16 +486,17 @@ const Header = ({ toggleSidebar }) => {
               </button>
 
               {showNotifications && (
-                <div className="dropdown-menu absolute right-0 mt-2 w-80 bg-white z-50 rounded shadow-xl border border-gray-100 py-1">
-                  <div className="p-3 border-b border-gray-100 flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-gray-900">
-                      Notifications {unreadCount > 0 && <span className="text-red-500">({unreadCount})</span>}
+                <div className="dropdown-menu absolute right-0 mt-2 w-84 bg-white z-50 rounded-lg shadow-2xl border border-gray-100 py-1 overflow-hidden animate-in fade-in zoom-in duration-150">
+                  <div className="p-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                    <h3 className="text-xs font-semibold text-gray-900 flex items-center gap-1.5">
+                      <Bell size={14} className="text-gray-700" />
+                      Notifications {unreadCount > 0 && <span className="text-red-500 font-bold">({unreadCount})</span>}
                     </h3>
                     <div className="flex items-center gap-2">
                       {unreadCount > 0 && (
                         <button
                           onClick={markAllNotificationsRead}
-                          className="text-[10px] text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                          className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold transition-colors"
                         >
                           Mark all read
                         </button>
@@ -439,10 +506,50 @@ const Header = ({ toggleSidebar }) => {
                           navigate('/notifications');
                           setShowNotifications(false);
                         }}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        className="text-gray-400 hover:text-gray-600 transition-colors p-0.5 rounded hover:bg-gray-100"
+                        title="Notification Settings"
                       >
-                        <Settings size={15} />
+                        <Settings size={14} />
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Native Device Notifications Control Bar */}
+                  <div className="px-3 py-2 bg-gradient-to-r from-blue-50/60 to-indigo-50/60 border-b border-blue-100/60 flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-1.5 text-gray-700 font-medium min-w-0">
+                      <Smartphone size={13} className="text-blue-600 shrink-0" />
+                      <span className="truncate">
+                        {devicePermission === 'granted' ? 'Device Alerts: Active' : devicePermission === 'denied' ? 'Alerts Blocked in Browser' : 'Device Alerts: Off'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {devicePermission === 'granted' ? (
+                        <>
+                          <button
+                            onClick={handleTestDeviceAlert}
+                            className="px-2 py-0.5 bg-blue-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition-colors shadow-xs"
+                            title="Send a test notification to your screen"
+                          >
+                            Test Alert
+                          </button>
+                          <button
+                            onClick={handleToggleSound}
+                            className={`p-1 rounded transition-colors ${soundOn ? 'text-blue-600 hover:bg-blue-100' : 'text-gray-400 hover:bg-gray-200'}`}
+                            title={soundOn ? 'Sound alerts on (click to mute)' : 'Sound alerts muted (click to unmute)'}
+                          >
+                            {soundOn ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                          </button>
+                        </>
+                      ) : devicePermission === 'denied' ? (
+                        <span className="text-[10px] text-amber-600 font-medium">Allow in site settings</span>
+                      ) : (
+                        <button
+                          onClick={handleEnableDeviceAlerts}
+                          className="px-2.5 py-1 bg-blue-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition-colors shadow-xs animate-pulse"
+                        >
+                          Enable Alerts
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="max-h-80 overflow-y-auto">
@@ -578,6 +685,34 @@ const Header = ({ toggleSidebar }) => {
           </div>
         </div>
       </div>
+
+      {/* Floating Device Alert Activation Banner (shows if not yet enabled and not dismissed) */}
+      {devicePermission === 'default' && !dismissBanner && (
+        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white px-4 py-2 text-xs flex items-center justify-between shadow-md">
+          <div className="flex items-center gap-2">
+            <span className="p-1 bg-white/20 rounded-full flex items-center justify-center">
+              <Bell size={13} className="text-white animate-bounce" />
+            </span>
+            <span>
+              <strong className="font-semibold">Enable System Notifications:</strong> Get real-time alerts on your Windows screen whenever tasks are assigned or updated.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleEnableDeviceAlerts}
+              className="px-3 py-1 bg-white text-blue-700 font-bold rounded shadow-xs hover:bg-blue-50 active:scale-95 transition-all text-xs"
+            >
+              Allow Notifications
+            </button>
+            <button
+              onClick={() => setDismissBanner(true)}
+              className="text-white/80 hover:text-white p-1 text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
