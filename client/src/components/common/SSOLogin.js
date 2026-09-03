@@ -9,7 +9,7 @@ export default function SSOLogin() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/dashboard');
       return;
     }
 
@@ -54,7 +54,7 @@ export default function SSOLogin() {
             avatar: userData.avatar,
           });
 
-          navigate('/'); // Go to CRM dashboard
+          navigate('/dashboard'); // Go to CRM dashboard
         } else if (data.success && data.action === 'register') {
           navigate('/signup', { state: { prefillData: data.prefillData } });
         } else {

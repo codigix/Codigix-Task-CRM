@@ -16,7 +16,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
@@ -73,7 +73,7 @@ const LoginPage = () => {
         avatar: userData.avatar,
       });
 
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Failed to login. Please try again.');
       console.error('Login error:', err);
@@ -136,7 +136,7 @@ const LoginPage = () => {
         avatar: userData.avatar,
       });
 
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Demo login failed. Please try the regular login form.');
       console.error('Demo login error:', err);

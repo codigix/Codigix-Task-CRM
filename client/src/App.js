@@ -14,6 +14,7 @@ import LeadsDashboard from './components/sales/LeadsDashboard';
 import ProjectsDashboard from './components/common/ProjectsDashboard';
 import ProjectDetailsPage from './components/common/ProjectDetailsPage';
 import ContactsPage from './components/common/ContactsPage';
+import LandingPage from './components/landing/LandingPage';
 import CrmCompaniesPage from './components/common/CrmCompaniesPage';
 import AddCompanyPage from './components/common/AddCompanyPage';
 import CrmDealsPage from './components/sales/CrmDealsPage';
@@ -425,6 +426,7 @@ function AppContent() {
     >
       <Routes>
         <Route path="/" element={<DashboardRouter />} />
+        <Route path="/dashboard" element={<DashboardRouter />} />
         <Route path="/deals/:designation/:username/dashboard" element={<DealsDashboard />} />
         <Route path="/deals/:designation/:username/kanban" element={<DealsKanbanBoard onDealClick={handleViewDealDetails} />} />
         <Route path="/deals/:designation/:username/analytics" element={<RevenueForecastPage />} />
@@ -685,6 +687,8 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/landing" element={<LandingPage />} />
           <Route path="/sso-login" element={<SSOLogin />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
