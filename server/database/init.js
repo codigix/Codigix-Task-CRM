@@ -5,7 +5,7 @@ async function initializeDatabase() {
   let connection;
   try {
     connection = await pool.getConnection();
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -35,7 +35,7 @@ async function initializeDatabase() {
         INDEX idx_department_id (department_id)
       )
     `);
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS departments (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -118,7 +118,7 @@ async function initializeDatabase() {
         INDEX idx_created_at (created_at)
       )
     `);
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS roles (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -129,7 +129,7 @@ async function initializeDatabase() {
         INDEX idx_name (name)
       )
     `);
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS permissions (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -145,7 +145,7 @@ async function initializeDatabase() {
         INDEX idx_role_id (role_id)
       )
     `);
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS delete_requests (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -161,7 +161,7 @@ async function initializeDatabase() {
         INDEX idx_status (status)
       )
     `);
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS modules (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -170,7 +170,7 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS general_tasks (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -573,7 +573,7 @@ async function initializeDatabase() {
     try {
       const [columns] = await connection.query('SHOW COLUMNS FROM leads');
       const columnNames = columns.map(c => c.Field);
-      
+
       if (!columnNames.includes('business_type')) {
         await connection.query('ALTER TABLE leads ADD COLUMN business_type VARCHAR(100)');
         console.log('✓ Added business_type to leads');
@@ -696,7 +696,7 @@ async function initializeDatabase() {
     try {
       // Make company_id nullable in deals
       await connection.query('ALTER TABLE deals MODIFY COLUMN company_id INT NULL');
-      
+
       // Update foreign key to SET NULL instead of CASCADE for company_id
       try {
         // Find existing constraint name
@@ -707,7 +707,7 @@ async function initializeDatabase() {
           AND COLUMN_NAME = 'company_id' 
           AND REFERENCED_TABLE_NAME = 'companies'
         `);
-        
+
         if (constraints.length > 0) {
           const constraintName = constraints[0].CONSTRAINT_NAME;
           await connection.query(`ALTER TABLE deals DROP FOREIGN KEY ${constraintName}`);
@@ -717,7 +717,7 @@ async function initializeDatabase() {
       } catch (fkErr) {
         console.warn('Could not update foreign key in deals:', fkErr.message);
       }
-      
+
       console.log('✓ Made company_id nullable in deals');
     } catch (err) {
       console.warn('Could not update company_id in deals:', err.message);
@@ -879,13 +879,13 @@ async function initializeDatabase() {
     try {
       const [columns] = await connection.query('SHOW COLUMNS FROM estimations');
       const columnNames = columns.map(c => c.Field);
-      
+
       if (!columnNames.includes('lead_id')) {
         await connection.query('ALTER TABLE estimations ADD COLUMN lead_id INT AFTER client_id');
         await connection.query('ALTER TABLE estimations ADD CONSTRAINT fk_estimations_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL');
         console.log('✓ Added lead_id to estimations');
       }
-      
+
       if (!columnNames.includes('parent_id')) {
         await connection.query('ALTER TABLE estimations ADD COLUMN parent_id INT AFTER project_id');
         await connection.query('ALTER TABLE estimations ADD COLUMN version INT DEFAULT 1 AFTER parent_id');
@@ -897,7 +897,7 @@ async function initializeDatabase() {
         await connection.query('ALTER TABLE estimations ADD COLUMN discount_percentage DECIMAL(5, 2) DEFAULT 0');
         console.log('✓ Added discount_percentage to estimations table');
       }
-      
+
       if (!columnNames.includes('discount_amount')) {
         await connection.query('ALTER TABLE estimations ADD COLUMN discount_amount DECIMAL(15, 2) DEFAULT 0');
         console.log('✓ Added discount_amount to estimations table');
@@ -930,10 +930,10 @@ async function initializeDatabase() {
 
       // Update status ENUM if necessary
       await connection.query("ALTER TABLE estimations MODIFY COLUMN status ENUM('Draft', 'Sent', 'Accepted', 'Declined', 'Revised', 'Finalized') DEFAULT 'Draft'");
-      
+
       // Make client_id nullable if lead_id is present
       await connection.query("ALTER TABLE estimations MODIFY COLUMN client_id INT NULL");
-      
+
     } catch (err) {
       console.warn('⚠️ Could not update estimations columns:', err.message);
     }
@@ -957,7 +957,7 @@ async function initializeDatabase() {
         SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
         WHERE TABLE_NAME = 'pipeline_stages' AND COLUMN_NAME IN ('probability', 'status')
       `);
-      
+
       if (columns.length < 2) {
         await connection.query('SET FOREIGN_KEY_CHECKS = 0');
         await connection.query('DROP TABLE IF EXISTS pipeline_stages');
@@ -975,7 +975,7 @@ async function initializeDatabase() {
         console.warn('⚠️ Could not force drop pipeline_stages:', dropErr.message);
       }
     }
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS pipeline_stages (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1053,7 +1053,7 @@ async function initializeDatabase() {
         INDEX idx_created_at (created_at)
       )
     `);
-    
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS user_notes (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1440,7 +1440,7 @@ async function initializeDatabase() {
     try {
       const [columns] = await connection.query('SHOW COLUMNS FROM followups');
       const columnNames = columns.map(c => c.Field);
-      
+
       const newCols = [
         { name: 'recording_url', type: 'VARCHAR(500)' },
         { name: 'transcript', type: 'LONGTEXT' },
@@ -1455,7 +1455,7 @@ async function initializeDatabase() {
         { name: 'formal_message', type: 'TEXT' },
         { name: 'assigned_to_email', type: 'VARCHAR(150)' }
       ];
-      
+
       for (const col of newCols) {
         if (!columnNames.includes(col.name)) {
           await connection.query(`ALTER TABLE followups ADD COLUMN ${col.name} ${col.type}`);
@@ -1482,13 +1482,13 @@ async function initializeDatabase() {
       await connection.query('ALTER TABLE activities ADD COLUMN lead_id INT AFTER company_id');
       await connection.query('ALTER TABLE activities ADD CONSTRAINT fk_activities_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL');
       await connection.query('ALTER TABLE activities ADD INDEX idx_lead_id (lead_id)');
-    } catch (err) {}
+    } catch (err) { }
 
     try {
       await connection.query('ALTER TABLE activities ADD COLUMN task_id INT AFTER lead_id');
       await connection.query('ALTER TABLE activities ADD CONSTRAINT fk_activities_task FOREIGN KEY (task_id) REFERENCES general_tasks(id) ON DELETE SET NULL');
       await connection.query('ALTER TABLE activities ADD INDEX idx_task_id (task_id)');
-    } catch (err) {}
+    } catch (err) { }
 
     try {
       const [columns] = await connection.query('SHOW COLUMNS FROM activities LIKE "scheduled_time"');
@@ -1574,13 +1574,13 @@ async function initializeDatabase() {
       await connection.query('ALTER TABLE entity_notes ADD COLUMN lead_id INT AFTER project_id');
       await connection.query('ALTER TABLE entity_notes ADD CONSTRAINT fk_notes_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL');
       await connection.query('ALTER TABLE entity_notes ADD INDEX idx_lead_id (lead_id)');
-    } catch (err) {}
+    } catch (err) { }
 
     try {
       await connection.query('ALTER TABLE entity_notes ADD COLUMN task_id INT AFTER lead_id');
       await connection.query('ALTER TABLE entity_notes ADD CONSTRAINT fk_notes_task FOREIGN KEY (task_id) REFERENCES general_tasks(id) ON DELETE SET NULL');
       await connection.query('ALTER TABLE entity_notes ADD INDEX idx_task_id (task_id)');
-    } catch (err) {}
+    } catch (err) { }
 
     await connection.query(`
       CREATE TABLE IF NOT EXISTS company_plans (
@@ -1890,7 +1890,7 @@ async function initializeDatabase() {
         INDEX idx_created_at (created_at)
       )
     `);
-    
+
     try {
       await connection.query('ALTER TABLE users ADD COLUMN department VARCHAR(100)');
       console.log('✓ Added department column to users table');
@@ -1932,7 +1932,7 @@ async function initializeDatabase() {
     }
 
     console.log('✓ All tables initialized successfully');
-    
+
     const [existingRoles] = await connection.query('SELECT COUNT(*) as count FROM roles');
     if (existingRoles[0].count === 0) {
       const defaultRoles = [
@@ -1959,11 +1959,11 @@ async function initializeDatabase() {
       const [roles] = await connection.query('SELECT id, name FROM roles ORDER BY id');
       console.log('✓ Existing roles found:', roles.map(r => `${r.id}: ${r.name}`).join(', '));
     }
-    
+
     const [existingDepts] = await connection.query('SELECT COUNT(*) as count FROM departments');
     if (existingDepts[0].count === 0) {
       const defaultDepts = [
-        'Admin', 'Leads Management', 'Deals Management', 'Sales Department', 
+        'Admin', 'Leads Management', 'Deals Management', 'Sales Department',
         'Marketing Department', 'IT Department', 'Accounting Department'
       ];
       for (const name of defaultDepts) {
@@ -2067,281 +2067,281 @@ async function initializeDatabase() {
         console.log('✓ Demo companies created');
       }
 
-    // Fetch company IDs for subsequent seeding
-    const [companies] = await connection.query('SELECT id FROM companies LIMIT 10');
-    const companyIds = companies.map(c => c.id);
-    const mainCompanyId = companyIds[0] || null;
+      // Fetch company IDs for subsequent seeding
+      const [companies] = await connection.query('SELECT id FROM companies LIMIT 10');
+      const companyIds = companies.map(c => c.id);
+      const mainCompanyId = companyIds[0] || null;
 
-    const [existingProjects] = await connection.query('SELECT COUNT(*) as count FROM projects');
-    if (existingProjects[0].count === 0) {
-      const demoProjects = [
-        { name: 'Website SEO & GMB Optimization', company_id: mainCompanyId, budget: 15000, status: 'Execution', start_date: new Date() },
-        { name: 'Digital Marketing Campaign Q3', company_id: companyIds[1] || mainCompanyId, budget: 25000, status: 'Planning', start_date: new Date() },
-        { name: 'App Development - Phase 1', company_id: companyIds[2] || mainCompanyId, budget: 45000, status: 'Execution', start_date: new Date() }
-      ];
-      for (const project of demoProjects) {
-        await connection.query(
-          'INSERT INTO projects (name, company_id, budget, status, start_date, created_by) VALUES (?, ?, ?, ?, ?, ?)',
-          [project.name, project.company_id, project.budget, project.status, project.start_date, adminId]
-        );
-      }
-      console.log('✓ Demo projects created');
-    }
-
-    const [projects] = await connection.query('SELECT id FROM projects LIMIT 10');
-    const projectIds = projects.map(p => p.id);
-
-    const [existingActivities] = await connection.query('SELECT COUNT(*) as count FROM activities');
-    if (existingActivities[0].count === 0) {
-      const demoActivities = [
-        { activity_type: 'Meeting', title: 'We scheduled a meeting for next week', status: 'Pending', priority: 'High', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-        { activity_type: 'Calls', title: 'Had conversation with Fred regarding task', status: 'Completed', priority: 'Medium', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) },
-        { activity_type: 'Email', title: 'Analysing latest time estimation for new project', status: 'Pending', priority: 'Medium', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000) },
-        { activity_type: 'Task', title: 'Store and manage contact data', status: 'Pending', priority: 'High', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000) },
-        { activity_type: 'Meeting', title: 'Will have a meeting before project start', status: 'Pending', priority: 'Medium', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000) },
-        { activity_type: 'Calls', title: 'Call John and discuss about project', status: 'Pending', priority: 'Low', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000) },
-        { activity_type: 'Task', title: 'Built landing pages', status: 'Completed', priority: 'High', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) },
-        { activity_type: 'Email', title: 'Regarding latest updates in project', status: 'Pending', priority: 'Medium', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) },
-        { activity_type: 'Calls', title: 'Discussed budget proposal with Edwin', status: 'Completed', priority: 'High', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 23 * 24 * 60 * 60 * 1000) },
-        { activity_type: 'Email', title: 'Attach final proposal for upcoming project', status: 'Pending', priority: 'High', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) }
-      ];
-      for (const activity of demoActivities) {
-        await connection.query(
-          'INSERT INTO activities (activity_type, title, status, priority, assigned_to, created_by, scheduled_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
-          [activity.activity_type, activity.title, activity.status, activity.priority, activity.assigned_to, activity.created_by, activity.scheduled_date]
-        );
-      }
-      console.log('✓ Demo activities created');
-    }
-
-    const [existingPipelines] = await connection.query('SELECT COUNT(*) as count FROM pipeline');
-    if (existingPipelines[0].count === 0) {
-      const demoPipelines = [
-        { name: 'Sales Pipeline', description: 'Main sales pipeline for B2B deals', position: 1, status: 'Active' },
-        { name: 'Project Pipeline', description: 'Pipeline for project-based sales', position: 2, status: 'Active' },
-        { name: 'Support Pipeline', description: 'Support and maintenance contracts', position: 3, status: 'Active' }
-      ];
-      for (const pipeline of demoPipelines) {
-        await connection.query(
-          'INSERT INTO pipeline (name, description, position, status) VALUES (?, ?, ?, ?)',
-          [pipeline.name, pipeline.description, pipeline.position, pipeline.status]
-        );
-      }
-      console.log('✓ Demo pipelines created');
-    }
-
-    const stages = [
-      { name: 'New', probability: 10, position: 1, description: 'New opportunity entered' },
-      { name: 'Discovery', probability: 20, position: 2, description: 'Initial discovery phase' },
-      { name: 'Follow Up', probability: 30, position: 3, description: 'Follow-up conversations' },
-      { name: 'Inpipeline', probability: 40, position: 4, description: 'In the pipeline' },
-      { name: 'Conversation', probability: 50, position: 5, description: 'Active conversations' },
-      { name: 'Proposal Sent', probability: 60, position: 6, description: 'Proposal sent to client' },
-      { name: 'Negotiation', probability: 75, position: 7, description: 'In negotiation phase' },
-      { name: 'Qualified To Buy', probability: 90, position: 8, description: 'Qualified to buy' },
-      { name: 'Won', probability: 100, position: 9, description: 'Deal won' },
-      { name: 'Lost', probability: 0, position: 10, description: 'Deal lost' }
-    ];
-    
-    for (const stage of stages) {
-      const [existing] = await connection.query(
-        'SELECT id FROM pipeline_stages WHERE name = ?',
-        [stage.name]
-      );
-      
-      if (existing.length > 0) {
-        await connection.query(
-          'UPDATE pipeline_stages SET probability = ?, position = ?, description = ?, status = ? WHERE name = ?',
-          [stage.probability, stage.position, stage.description, 'Active', stage.name]
-        );
-      } else {
-        await connection.query(
-          'INSERT INTO pipeline_stages (name, probability, position, description, status) VALUES (?, ?, ?, ?, ?)',
-          [stage.name, stage.probability, stage.position, stage.description, 'Active']
-        );
-      }
-    }
-    console.log('✓ Pipeline stages synced with probabilities');
-
-    const [existingContracts] = await connection.query('SELECT COUNT(*) as count FROM contracts');
-    if (existingContracts[0].count === 0 && mainCompanyId && adminId) {
-      const demoContracts = [
-        { subject: 'Service Agreement - 2024', start_date: new Date(), end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), client_id: mainCompanyId, contract_type: 'Service Agreement', contract_value: 50000, status: 'Active', created_by: adminId },
-        { subject: 'Software License Agreement', start_date: new Date(), end_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000), client_id: companyIds[1] || mainCompanyId, contract_type: 'License Agreement', contract_value: 25000, status: 'Draft', created_by: adminId },
-        { subject: 'Maintenance Contract - Annual', start_date: new Date(), end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), client_id: companyIds[2] || mainCompanyId, contract_type: 'Maintenance', contract_value: 15000, status: 'Active', created_by: userIds[1] || adminId }
-      ];
-      for (const contract of demoContracts) {
-        await connection.query(
-          'INSERT INTO contracts (subject, start_date, end_date, client_id, contract_type, contract_value, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [contract.subject, contract.start_date, contract.end_date, contract.client_id, contract.contract_type, contract.contract_value, contract.status, contract.created_by]
-        );
-      }
-      console.log('✓ Demo contracts created');
-    }
-
-    const [existingEstimations] = await connection.query('SELECT COUNT(*) as count FROM estimations');
-    if (existingEstimations[0].count === 0 && mainCompanyId) {
-      const demoEstimations = [
-        { estimation_number: 'EST-001', client_id: mainCompanyId, amount: 35000, currency: 'INR', status: 'Draft', estimate_date: new Date(), expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
-        { estimation_number: 'EST-002', client_id: companyIds[1] || mainCompanyId, amount: 18000, currency: 'INR', status: 'Sent', estimate_date: new Date(), expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
-        { estimation_number: 'EST-003', client_id: companyIds[2] || mainCompanyId, amount: 12000, currency: 'INR', status: 'Accepted', estimate_date: new Date(), expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) }
-      ];
-      for (const estimation of demoEstimations) {
-        await connection.query(
-          'INSERT INTO estimations (estimation_number, client_id, amount, currency, status, estimate_date, expiry_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [estimation.estimation_number, estimation.client_id, estimation.amount, estimation.currency, estimation.status, estimation.estimate_date, estimation.expiry_date]
-        );
-      }
-      console.log('✓ Demo estimations created');
-    }
-
-    const [existingTasks] = await connection.query('SELECT COUNT(*) as count FROM general_tasks');
-    if (existingTasks[0].count === 0) {
-      const demoTasks = [
-        { title: 'Review client feedback', description: 'Go through the latest feedback from client meetings', status: 'Open', priority: 'High', due_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) },
-        { title: 'Update project documentation', description: 'Make sure all project docs are current', status: 'In Progress', priority: 'Medium', due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) },
-        { title: 'Prepare presentation for stakeholders', description: 'Create slides for Q1 review meeting', status: 'Open', priority: 'High', due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-        { title: 'Budget review meeting', description: 'Schedule and conduct budget review with finance team', status: 'Completed', priority: 'Medium', due_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
-        { title: 'Team training session', description: 'Conduct training on new tools and procedures', status: 'Open', priority: 'Low', due_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) }
-      ];
-      for (const task of demoTasks) {
-        await connection.query(
-          'INSERT INTO general_tasks (title, description, status, priority, due_date, linked_type) VALUES (?, ?, ?, ?, ?, ?)',
-          [task.title, task.description, task.status, task.priority, task.due_date, 'General']
-        );
-      }
-      console.log('✓ Demo general tasks created');
-    }
-
-    const [existingProposals] = await connection.query('SELECT COUNT(*) as count FROM proposals');
-    if (existingProposals[0].count === 0 && mainCompanyId) {
-      const demoProposals = [
-        { proposal_number: 'PROP-001', title: 'Web Development Project Proposal', client_id: mainCompanyId, total_amount: 45000, currency: 'INR', status: 'Submitted', proposal_date: new Date(), validity_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
-        { proposal_number: 'PROP-002', title: 'Mobile App Development Proposal', client_id: companyIds[1] || mainCompanyId, total_amount: 65000, currency: 'INR', status: 'Draft', proposal_date: new Date(), validity_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
-        { proposal_number: 'PROP-003', title: 'Cloud Infrastructure Proposal', client_id: companyIds[2] || mainCompanyId, total_amount: 28000, currency: 'INR', status: 'Approved', proposal_date: new Date(), validity_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) }
-      ];
-      for (const proposal of demoProposals) {
-        await connection.query(
-          'INSERT INTO proposals (proposal_number, title, client_id, total_amount, currency, status, proposal_date, validity_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [proposal.proposal_number, proposal.title, proposal.client_id, proposal.total_amount, proposal.currency, proposal.status, proposal.proposal_date, proposal.validity_date]
-        );
-      }
-      console.log('✓ Demo proposals created');
-    }
-
-    const [existingSeo] = await connection.query('SELECT COUNT(*) as count FROM seo_management');
-    if (existingSeo[0].count === 0 && projectIds.length > 0) {
-      const demoSeo = [
-        { project_id: projectIds[0], keyword: 'crm software for small business', target_url: 'https://novawave.com/crm', current_ranking: 5, target_ranking: 1, search_volume: 1200, competition: 'Medium' },
-        { project_id: projectIds[0], keyword: 'best deals dashboard 2024', target_url: 'https://novawave.com/dashboard', current_ranking: 12, target_ranking: 3, search_volume: 850, competition: 'High' },
-        { project_id: projectIds[1] || projectIds[0], keyword: 'enterprise software solutions', target_url: 'https://silverhawk.com/solutions', current_ranking: 2, target_ranking: 1, search_volume: 3200, competition: 'High' }
-      ];
-      for (const seo of demoSeo) {
-        await connection.query(
-          'INSERT INTO seo_management (project_id, keyword, target_url, current_ranking, target_ranking, search_volume, competition, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
-          [seo.project_id, seo.keyword, seo.target_url, seo.current_ranking, seo.target_ranking, seo.search_volume, seo.competition]
-        );
-      }
-      console.log('✓ Demo SEO records created');
-    }
-
-    const [existingGmb] = await connection.query('SELECT COUNT(*) as count FROM gmb_management');
-    if (existingGmb[0].count === 0 && projectIds.length > 0) {
-      const demoGmb = [
-        { project_id: projectIds[0], location_name: 'NovaWave HQ - Silicon Valley', map_url: 'https://maps.google.com/?cid=123', average_rating: 4.8, total_reviews: 156, status: 'Active' },
-        { project_id: projectIds[1] || projectIds[0], location_name: 'Silver Hawk Software - Austin', map_url: 'https://maps.google.com/?cid=456', average_rating: 4.2, total_reviews: 89, status: 'Needs Optimization' }
-      ];
-      for (const gmb of demoGmb) {
-        await connection.query(
-          'INSERT INTO gmb_management (project_id, location_name, map_url, average_rating, total_reviews, status, last_post_date) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-          [gmb.project_id, gmb.location_name, gmb.map_url, gmb.average_rating, gmb.total_reviews, gmb.status]
-        );
-      }
-      console.log('✓ Demo GMB records created');
-    }
-
-    const [existingConversations] = await connection.query('SELECT COUNT(*) as count FROM conversations');
-    if (existingConversations[0].count === 0 && userIds.length >= 2) {
-      const demoConversations = [
-        { participant1_id: userIds[0], participant2_id: userIds[1], last_message_text: 'Hey, how are you doing?', last_message_timestamp: new Date() },
-        { participant1_id: userIds[0], participant2_id: userIds[2] || userIds[1], last_message_text: 'Let\'s sync up next week', last_message_timestamp: new Date() },
-        { participant1_id: userIds[1], participant2_id: userIds[2] || userIds[0], last_message_text: 'Sounds good to me', last_message_timestamp: new Date() }
-      ];
-      for (const conversation of demoConversations) {
-        if (conversation.participant1_id !== conversation.participant2_id) {
-          await connection.query(
-            'INSERT IGNORE INTO conversations (participant1_id, participant2_id, last_message_text, last_message_timestamp) VALUES (?, ?, ?, ?)',
-            [conversation.participant1_id, conversation.participant2_id, conversation.last_message_text, conversation.last_message_timestamp]
-          );
-        }
-      }
-      console.log('✓ Demo conversations created');
-    }
-
-    const [existingMessages] = await connection.query('SELECT COUNT(*) as count FROM messages');
-    if (existingMessages[0].count === 0) {
-      const [conversations] = await connection.query('SELECT * FROM conversations LIMIT 3');
-      
-      if (conversations.length > 0) {
-        const demoMessages = [
-          { conversation_id: conversations[0].id, sender_id: conversations[0].participant1_id, receiver_id: conversations[0].participant2_id, message_text: 'Hi there!' },
-          { conversation_id: conversations[0].id, sender_id: conversations[0].participant2_id, receiver_id: conversations[0].participant1_id, message_text: 'Hey! How are you?' },
-          { conversation_id: conversations[0].id, sender_id: conversations[0].participant1_id, receiver_id: conversations[0].participant2_id, message_text: 'Great! How about you?' },
-          { conversation_id: conversations.length > 1 ? conversations[1].id : conversations[0].id, sender_id: conversations.length > 1 ? conversations[1].participant1_id : conversations[0].participant1_id, receiver_id: conversations.length > 1 ? conversations[1].participant2_id : conversations[0].participant2_id, message_text: 'Let\'s schedule a call' },
-          { conversation_id: conversations.length > 1 ? conversations[1].id : conversations[0].id, sender_id: conversations.length > 1 ? conversations[1].participant2_id : conversations[0].participant2_id, receiver_id: conversations.length > 1 ? conversations[1].participant1_id : conversations[0].participant1_id, message_text: 'Sure, how about Tuesday?' }
+      const [existingProjects] = await connection.query('SELECT COUNT(*) as count FROM projects');
+      if (existingProjects[0].count === 0) {
+        const demoProjects = [
+          { name: 'Website SEO & GMB Optimization', company_id: mainCompanyId, budget: 15000, status: 'Execution', start_date: new Date() },
+          { name: 'Digital Marketing Campaign Q3', company_id: companyIds[1] || mainCompanyId, budget: 25000, status: 'Planning', start_date: new Date() },
+          { name: 'App Development - Phase 1', company_id: companyIds[2] || mainCompanyId, budget: 45000, status: 'Execution', start_date: new Date() }
         ];
-        for (const message of demoMessages) {
+        for (const project of demoProjects) {
           await connection.query(
-            'INSERT INTO messages (conversation_id, sender_id, receiver_id, message_text) VALUES (?, ?, ?, ?)',
-            [message.conversation_id, message.sender_id, message.receiver_id, message.message_text]
+            'INSERT INTO projects (name, company_id, budget, status, start_date, created_by) VALUES (?, ?, ?, ?, ?, ?)',
+            [project.name, project.company_id, project.budget, project.status, project.start_date, adminId]
           );
         }
-        console.log('✓ Demo messages created');
+        console.log('✓ Demo projects created');
       }
-    }
 
-    const [existingFiles] = await connection.query('SELECT COUNT(*) as count FROM files');
-    if (existingFiles[0].count === 0 && adminId) {
-      const demoFiles = [
-        { user_id: adminId, name: 'Project Proposal.pdf', file_type: 'pdf', size_bytes: 2048000, mime_type: 'application/pdf', storage_type: 'Internal' },
-        { user_id: adminId, name: 'Budget Spreadsheet.xlsx', file_type: 'xlsx', size_bytes: 512000, mime_type: 'application/vnd.ms-excel', storage_type: 'Internal' },
-        { user_id: userIds[1] || adminId, name: 'Meeting Notes.docx', file_type: 'docx', size_bytes: 256000, mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', storage_type: 'Google Drive' },
-        { user_id: userIds[1] || adminId, name: 'Client Presentation.pptx', file_type: 'pptx', size_bytes: 4096000, mime_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', storage_type: 'Internal' },
-        { user_id: userIds[2] || adminId, name: 'Design Assets.zip', file_type: 'zip', size_bytes: 10485760, mime_type: 'application/zip', storage_type: 'Dropbox' }
-      ];
-      for (const file of demoFiles) {
-        await connection.query(
-          'INSERT INTO files (user_id, name, file_type, size_bytes, mime_type, storage_type) VALUES (?, ?, ?, ?, ?, ?)',
-          [file.user_id, file.name, file.file_type, file.size_bytes, file.mime_type, file.storage_type]
-        );
-      }
-      console.log('✓ Demo files created');
-    }
+      const [projects] = await connection.query('SELECT id FROM projects LIMIT 10');
+      const projectIds = projects.map(p => p.id);
 
-    const [existingItServices] = await connection.query('SELECT COUNT(*) as count FROM it_services');
-    if (existingItServices[0].count === 0) {
-      const demoItServices = [
-        'AI Solutions',
-        'Industrial IoT',
-        'ERP software',
-        'CRM software',
-        'Machine Learning',
-        'Custom Software Engineering',
-        'Predictive Analytics',
-        'Web Development',
-        'Web CSM',
-        'Cloud Applications',
-        'Other'
-      ];
-      for (const service of demoItServices) {
-        await connection.query(
-          'INSERT IGNORE INTO it_services (name) VALUES (?)',
-          [service]
-        );
+      const [existingActivities] = await connection.query('SELECT COUNT(*) as count FROM activities');
+      if (existingActivities[0].count === 0) {
+        const demoActivities = [
+          { activity_type: 'Meeting', title: 'We scheduled a meeting for next week', status: 'Pending', priority: 'High', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+          { activity_type: 'Calls', title: 'Had conversation with Fred regarding task', status: 'Completed', priority: 'Medium', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) },
+          { activity_type: 'Email', title: 'Analysing latest time estimation for new project', status: 'Pending', priority: 'Medium', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000) },
+          { activity_type: 'Task', title: 'Store and manage contact data', status: 'Pending', priority: 'High', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000) },
+          { activity_type: 'Meeting', title: 'Will have a meeting before project start', status: 'Pending', priority: 'Medium', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000) },
+          { activity_type: 'Calls', title: 'Call John and discuss about project', status: 'Pending', priority: 'Low', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000) },
+          { activity_type: 'Task', title: 'Built landing pages', status: 'Completed', priority: 'High', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) },
+          { activity_type: 'Email', title: 'Regarding latest updates in project', status: 'Pending', priority: 'Medium', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) },
+          { activity_type: 'Calls', title: 'Discussed budget proposal with Edwin', status: 'Completed', priority: 'High', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 23 * 24 * 60 * 60 * 1000) },
+          { activity_type: 'Email', title: 'Attach final proposal for upcoming project', status: 'Pending', priority: 'High', assigned_to: adminId, created_by: adminId, scheduled_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) }
+        ];
+        for (const activity of demoActivities) {
+          await connection.query(
+            'INSERT INTO activities (activity_type, title, status, priority, assigned_to, created_by, scheduled_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+            [activity.activity_type, activity.title, activity.status, activity.priority, activity.assigned_to, activity.created_by, activity.scheduled_date]
+          );
+        }
+        console.log('✓ Demo activities created');
       }
-      console.log('✓ Demo IT services created');
+
+      const [existingPipelines] = await connection.query('SELECT COUNT(*) as count FROM pipeline');
+      if (existingPipelines[0].count === 0) {
+        const demoPipelines = [
+          { name: 'Sales Pipeline', description: 'Main sales pipeline for B2B deals', position: 1, status: 'Active' },
+          { name: 'Project Pipeline', description: 'Pipeline for project-based sales', position: 2, status: 'Active' },
+          { name: 'Support Pipeline', description: 'Support and maintenance contracts', position: 3, status: 'Active' }
+        ];
+        for (const pipeline of demoPipelines) {
+          await connection.query(
+            'INSERT INTO pipeline (name, description, position, status) VALUES (?, ?, ?, ?)',
+            [pipeline.name, pipeline.description, pipeline.position, pipeline.status]
+          );
+        }
+        console.log('✓ Demo pipelines created');
+      }
+
+      const stages = [
+        { name: 'New', probability: 10, position: 1, description: 'New opportunity entered' },
+        { name: 'Discovery', probability: 20, position: 2, description: 'Initial discovery phase' },
+        { name: 'Follow Up', probability: 30, position: 3, description: 'Follow-up conversations' },
+        { name: 'Inpipeline', probability: 40, position: 4, description: 'In the pipeline' },
+        { name: 'Conversation', probability: 50, position: 5, description: 'Active conversations' },
+        { name: 'Proposal Sent', probability: 60, position: 6, description: 'Proposal sent to client' },
+        { name: 'Negotiation', probability: 75, position: 7, description: 'In negotiation phase' },
+        { name: 'Qualified To Buy', probability: 90, position: 8, description: 'Qualified to buy' },
+        { name: 'Won', probability: 100, position: 9, description: 'Deal won' },
+        { name: 'Lost', probability: 0, position: 10, description: 'Deal lost' }
+      ];
+
+      for (const stage of stages) {
+        const [existing] = await connection.query(
+          'SELECT id FROM pipeline_stages WHERE name = ?',
+          [stage.name]
+        );
+
+        if (existing.length > 0) {
+          await connection.query(
+            'UPDATE pipeline_stages SET probability = ?, position = ?, description = ?, status = ? WHERE name = ?',
+            [stage.probability, stage.position, stage.description, 'Active', stage.name]
+          );
+        } else {
+          await connection.query(
+            'INSERT INTO pipeline_stages (name, probability, position, description, status) VALUES (?, ?, ?, ?, ?)',
+            [stage.name, stage.probability, stage.position, stage.description, 'Active']
+          );
+        }
+      }
+      console.log('✓ Pipeline stages synced with probabilities');
+
+      const [existingContracts] = await connection.query('SELECT COUNT(*) as count FROM contracts');
+      if (existingContracts[0].count === 0 && mainCompanyId && adminId) {
+        const demoContracts = [
+          { subject: 'Service Agreement - 2024', start_date: new Date(), end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), client_id: mainCompanyId, contract_type: 'Service Agreement', contract_value: 50000, status: 'Active', created_by: adminId },
+          { subject: 'Software License Agreement', start_date: new Date(), end_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000), client_id: companyIds[1] || mainCompanyId, contract_type: 'License Agreement', contract_value: 25000, status: 'Draft', created_by: adminId },
+          { subject: 'Maintenance Contract - Annual', start_date: new Date(), end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), client_id: companyIds[2] || mainCompanyId, contract_type: 'Maintenance', contract_value: 15000, status: 'Active', created_by: userIds[1] || adminId }
+        ];
+        for (const contract of demoContracts) {
+          await connection.query(
+            'INSERT INTO contracts (subject, start_date, end_date, client_id, contract_type, contract_value, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [contract.subject, contract.start_date, contract.end_date, contract.client_id, contract.contract_type, contract.contract_value, contract.status, contract.created_by]
+          );
+        }
+        console.log('✓ Demo contracts created');
+      }
+
+      const [existingEstimations] = await connection.query('SELECT COUNT(*) as count FROM estimations');
+      if (existingEstimations[0].count === 0 && mainCompanyId) {
+        const demoEstimations = [
+          { estimation_number: 'EST-001', client_id: mainCompanyId, amount: 35000, currency: 'INR', status: 'Draft', estimate_date: new Date(), expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
+          { estimation_number: 'EST-002', client_id: companyIds[1] || mainCompanyId, amount: 18000, currency: 'INR', status: 'Sent', estimate_date: new Date(), expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
+          { estimation_number: 'EST-003', client_id: companyIds[2] || mainCompanyId, amount: 12000, currency: 'INR', status: 'Accepted', estimate_date: new Date(), expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) }
+        ];
+        for (const estimation of demoEstimations) {
+          await connection.query(
+            'INSERT INTO estimations (estimation_number, client_id, amount, currency, status, estimate_date, expiry_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [estimation.estimation_number, estimation.client_id, estimation.amount, estimation.currency, estimation.status, estimation.estimate_date, estimation.expiry_date]
+          );
+        }
+        console.log('✓ Demo estimations created');
+      }
+
+      const [existingTasks] = await connection.query('SELECT COUNT(*) as count FROM general_tasks');
+      if (existingTasks[0].count === 0) {
+        const demoTasks = [
+          { title: 'Review client feedback', description: 'Go through the latest feedback from client meetings', status: 'Open', priority: 'High', due_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) },
+          { title: 'Update project documentation', description: 'Make sure all project docs are current', status: 'In Progress', priority: 'Medium', due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) },
+          { title: 'Prepare presentation for stakeholders', description: 'Create slides for Q1 review meeting', status: 'Open', priority: 'High', due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+          { title: 'Budget review meeting', description: 'Schedule and conduct budget review with finance team', status: 'Completed', priority: 'Medium', due_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+          { title: 'Team training session', description: 'Conduct training on new tools and procedures', status: 'Open', priority: 'Low', due_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) }
+        ];
+        for (const task of demoTasks) {
+          await connection.query(
+            'INSERT INTO general_tasks (title, description, status, priority, due_date, linked_type) VALUES (?, ?, ?, ?, ?, ?)',
+            [task.title, task.description, task.status, task.priority, task.due_date, 'General']
+          );
+        }
+        console.log('✓ Demo general tasks created');
+      }
+
+      const [existingProposals] = await connection.query('SELECT COUNT(*) as count FROM proposals');
+      if (existingProposals[0].count === 0 && mainCompanyId) {
+        const demoProposals = [
+          { proposal_number: 'PROP-001', title: 'Web Development Project Proposal', client_id: mainCompanyId, total_amount: 45000, currency: 'INR', status: 'Submitted', proposal_date: new Date(), validity_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
+          { proposal_number: 'PROP-002', title: 'Mobile App Development Proposal', client_id: companyIds[1] || mainCompanyId, total_amount: 65000, currency: 'INR', status: 'Draft', proposal_date: new Date(), validity_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
+          { proposal_number: 'PROP-003', title: 'Cloud Infrastructure Proposal', client_id: companyIds[2] || mainCompanyId, total_amount: 28000, currency: 'INR', status: 'Approved', proposal_date: new Date(), validity_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) }
+        ];
+        for (const proposal of demoProposals) {
+          await connection.query(
+            'INSERT INTO proposals (proposal_number, title, client_id, total_amount, currency, status, proposal_date, validity_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [proposal.proposal_number, proposal.title, proposal.client_id, proposal.total_amount, proposal.currency, proposal.status, proposal.proposal_date, proposal.validity_date]
+          );
+        }
+        console.log('✓ Demo proposals created');
+      }
+
+      const [existingSeo] = await connection.query('SELECT COUNT(*) as count FROM seo_management');
+      if (existingSeo[0].count === 0 && projectIds.length > 0) {
+        const demoSeo = [
+          { project_id: projectIds[0], keyword: 'crm software for small business', target_url: 'https://novawave.com/crm', current_ranking: 5, target_ranking: 1, search_volume: 1200, competition: 'Medium' },
+          { project_id: projectIds[0], keyword: 'best deals dashboard 2024', target_url: 'https://novawave.com/dashboard', current_ranking: 12, target_ranking: 3, search_volume: 850, competition: 'High' },
+          { project_id: projectIds[1] || projectIds[0], keyword: 'enterprise software solutions', target_url: 'https://silverhawk.com/solutions', current_ranking: 2, target_ranking: 1, search_volume: 3200, competition: 'High' }
+        ];
+        for (const seo of demoSeo) {
+          await connection.query(
+            'INSERT INTO seo_management (project_id, keyword, target_url, current_ranking, target_ranking, search_volume, competition, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+            [seo.project_id, seo.keyword, seo.target_url, seo.current_ranking, seo.target_ranking, seo.search_volume, seo.competition]
+          );
+        }
+        console.log('✓ Demo SEO records created');
+      }
+
+      const [existingGmb] = await connection.query('SELECT COUNT(*) as count FROM gmb_management');
+      if (existingGmb[0].count === 0 && projectIds.length > 0) {
+        const demoGmb = [
+          { project_id: projectIds[0], location_name: 'NovaWave HQ - Silicon Valley', map_url: 'https://maps.google.com/?cid=123', average_rating: 4.8, total_reviews: 156, status: 'Active' },
+          { project_id: projectIds[1] || projectIds[0], location_name: 'Silver Hawk Software - Austin', map_url: 'https://maps.google.com/?cid=456', average_rating: 4.2, total_reviews: 89, status: 'Needs Optimization' }
+        ];
+        for (const gmb of demoGmb) {
+          await connection.query(
+            'INSERT INTO gmb_management (project_id, location_name, map_url, average_rating, total_reviews, status, last_post_date) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+            [gmb.project_id, gmb.location_name, gmb.map_url, gmb.average_rating, gmb.total_reviews, gmb.status]
+          );
+        }
+        console.log('✓ Demo GMB records created');
+      }
+
+      const [existingConversations] = await connection.query('SELECT COUNT(*) as count FROM conversations');
+      if (existingConversations[0].count === 0 && userIds.length >= 2) {
+        const demoConversations = [
+          { participant1_id: userIds[0], participant2_id: userIds[1], last_message_text: 'Hey, how are you doing?', last_message_timestamp: new Date() },
+          { participant1_id: userIds[0], participant2_id: userIds[2] || userIds[1], last_message_text: 'Let\'s sync up next week', last_message_timestamp: new Date() },
+          { participant1_id: userIds[1], participant2_id: userIds[2] || userIds[0], last_message_text: 'Sounds good to me', last_message_timestamp: new Date() }
+        ];
+        for (const conversation of demoConversations) {
+          if (conversation.participant1_id !== conversation.participant2_id) {
+            await connection.query(
+              'INSERT IGNORE INTO conversations (participant1_id, participant2_id, last_message_text, last_message_timestamp) VALUES (?, ?, ?, ?)',
+              [conversation.participant1_id, conversation.participant2_id, conversation.last_message_text, conversation.last_message_timestamp]
+            );
+          }
+        }
+        console.log('✓ Demo conversations created');
+      }
+
+      const [existingMessages] = await connection.query('SELECT COUNT(*) as count FROM messages');
+      if (existingMessages[0].count === 0) {
+        const [conversations] = await connection.query('SELECT * FROM conversations LIMIT 3');
+
+        if (conversations.length > 0) {
+          const demoMessages = [
+            { conversation_id: conversations[0].id, sender_id: conversations[0].participant1_id, receiver_id: conversations[0].participant2_id, message_text: 'Hi there!' },
+            { conversation_id: conversations[0].id, sender_id: conversations[0].participant2_id, receiver_id: conversations[0].participant1_id, message_text: 'Hey! How are you?' },
+            { conversation_id: conversations[0].id, sender_id: conversations[0].participant1_id, receiver_id: conversations[0].participant2_id, message_text: 'Great! How about you?' },
+            { conversation_id: conversations.length > 1 ? conversations[1].id : conversations[0].id, sender_id: conversations.length > 1 ? conversations[1].participant1_id : conversations[0].participant1_id, receiver_id: conversations.length > 1 ? conversations[1].participant2_id : conversations[0].participant2_id, message_text: 'Let\'s schedule a call' },
+            { conversation_id: conversations.length > 1 ? conversations[1].id : conversations[0].id, sender_id: conversations.length > 1 ? conversations[1].participant2_id : conversations[0].participant2_id, receiver_id: conversations.length > 1 ? conversations[1].participant1_id : conversations[0].participant1_id, message_text: 'Sure, how about Tuesday?' }
+          ];
+          for (const message of demoMessages) {
+            await connection.query(
+              'INSERT INTO messages (conversation_id, sender_id, receiver_id, message_text) VALUES (?, ?, ?, ?)',
+              [message.conversation_id, message.sender_id, message.receiver_id, message.message_text]
+            );
+          }
+          console.log('✓ Demo messages created');
+        }
+      }
+
+      const [existingFiles] = await connection.query('SELECT COUNT(*) as count FROM files');
+      if (existingFiles[0].count === 0 && adminId) {
+        const demoFiles = [
+          { user_id: adminId, name: 'Project Proposal.pdf', file_type: 'pdf', size_bytes: 2048000, mime_type: 'application/pdf', storage_type: 'Internal' },
+          { user_id: adminId, name: 'Budget Spreadsheet.xlsx', file_type: 'xlsx', size_bytes: 512000, mime_type: 'application/vnd.ms-excel', storage_type: 'Internal' },
+          { user_id: userIds[1] || adminId, name: 'Meeting Notes.docx', file_type: 'docx', size_bytes: 256000, mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', storage_type: 'Google Drive' },
+          { user_id: userIds[1] || adminId, name: 'Client Presentation.pptx', file_type: 'pptx', size_bytes: 4096000, mime_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', storage_type: 'Internal' },
+          { user_id: userIds[2] || adminId, name: 'Design Assets.zip', file_type: 'zip', size_bytes: 10485760, mime_type: 'application/zip', storage_type: 'Dropbox' }
+        ];
+        for (const file of demoFiles) {
+          await connection.query(
+            'INSERT INTO files (user_id, name, file_type, size_bytes, mime_type, storage_type) VALUES (?, ?, ?, ?, ?, ?)',
+            [file.user_id, file.name, file.file_type, file.size_bytes, file.mime_type, file.storage_type]
+          );
+        }
+        console.log('✓ Demo files created');
+      }
+
+      const [existingItServices] = await connection.query('SELECT COUNT(*) as count FROM it_services');
+      if (existingItServices[0].count === 0) {
+        const demoItServices = [
+          'AI Solutions',
+          'Industrial IoT',
+          'ERP software',
+          'CRM software',
+          'Machine Learning',
+          'Custom Software Engineering',
+          'Predictive Analytics',
+          'Web Development',
+          'Web CSM',
+          'Cloud Applications',
+          'Other'
+        ];
+        for (const service of demoItServices) {
+          await connection.query(
+            'INSERT IGNORE INTO it_services (name) VALUES (?)',
+            [service]
+          );
+        }
+        console.log('✓ Demo IT services created');
+      }
     }
-}
 
 
     connection.release();
@@ -2354,12 +2354,13 @@ async function initializeDatabase() {
 async function testConnection() {
   try {
     const conn = await pool.getConnection();
-    await conn.query('SELECT 1');
+    const [rows] = await conn.query('SELECT DATABASE() AS current_db');
+    const dbName = rows[0]?.current_db || process.env.DB_NAME;
     conn.release();
-    console.log('✓ Database connection successful');
+    console.log(`connected to database - ${dbName} `);
     await initializeDatabase();
   } catch (err) {
-    console.error('✗ Database connection failed:', err.code || err.message);
+    console.error(`✗ Failed to connect to database - ${process.env.DB_NAME} -:`, err.code || err.message);
   }
 }
 

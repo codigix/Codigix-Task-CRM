@@ -4,12 +4,14 @@ import { useAuth } from '../../context/AuthContext';
 import {
   Search, ChevronDown, ChevronRight,
   Share2, Download, MoreHorizontal, LayoutList,
-  CheckSquare, Plus, AlertCircle, ArrowUp, ArrowDown, Trash2
+  CheckSquare, Plus, AlertCircle, ArrowUp, ArrowDown, Trash2, User
 } from 'lucide-react';
 import ITCreateIssueDrawer from './ITCreateIssueDrawer';
 import ITIssueDetailsPanel from './ITIssueDetailsPanel';
 import BoardTabs from '../common/BoardTabs';
 import DataTable from '../common/DataTable';
+import Swal from 'sweetalert2';
+import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -60,7 +62,19 @@ const ALL_COLUMNS = [
 const ITTasksPage = () => {
   const { user } = useAuth();
   const { designation, username } = useParams();
-  const isManager = designation ? designation.toLowerCase().includes('manager') || designation.toLowerCase().includes('admin') : true;
+  const isManager = Boolean(
+    (designation && (
+      designation.toLowerCase().includes('manager') ||
+      designation.toLowerCase().includes('admin') ||
+      designation.toLowerCase().includes('lead')
+    )) ||
+    (user?.role && (
+      user.role.toLowerCase().includes('manager') ||
+      user.role.toLowerCase().includes('admin') ||
+      user.role.toLowerCase().includes('lead') ||
+      user.role.toLowerCase().includes('hr')
+    ))
+  );
 
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
@@ -113,11 +127,11 @@ const ITTasksPage = () => {
     });
   }, [usersList]);
 
+  const currentDept = window.location.pathname.toLowerCase().includes('/marketing') ? 'Marketing' : 'IT';
+
   const fetchTasks = async () => {
     try {
-      // Scoped to this department. Without it the IT list showed Marketing work too — the
-      // two departments are separate workspaces and shouldn't see each other's tickets.
-      const res = await fetch(`${API_BASE_URL}/it-kanban/issues?department=IT`);
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues?_t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setTasks(data);
@@ -175,7 +189,18 @@ const ITTasksPage = () => {
       return userSearchTerms.some(term => assigneeStr.includes(term) || reporterStr.includes(term));
     };
 
-    if (onlyMyIssues) {
+    const isTaskAssigned = (issue) => {
+      if (!issue || !issue.assignee) return false;
+      const a = String(issue.assignee).trim().toLowerCase();
+      return a !== '' && a !== 'unassigned' && a !== 'automatic' && a !== 'none' && a !== 'null' && a !== 'undefined';
+    };
+
+    if (!isManager) {
+      result = result.filter(issue => isTaskAssigned(issue));
+      if (onlyMyIssues) {
+        result = result.filter(issue => isUserTask(issue));
+      }
+    } else if (onlyMyIssues) {
       result = result.filter(issue => isUserTask(issue));
     }
     if (searchQuery.trim()) {
@@ -226,11 +251,14 @@ const ITTasksPage = () => {
 
   const deleteIssue = async (key) => {
     try {
-      await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete issue');
       setTasks(prev => prev.filter(t => t.issue_key !== key && t.key !== key));
       setSelectedIssue(null);
+      showSuccessToast(`Task ${key} deleted successfully`);
     } catch (err) {
       console.error('Failed to delete issue', err);
+      showErrorToast(err.message || 'Could not delete task');
     }
   };
 
@@ -278,14 +306,19 @@ const tableColumns = React.useMemo(() => {
           };
           break;
         case 'assignee':
-          renderFn = (val, row) => (
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] ">
-                {(row.assignee ? row.assignee.charAt(0) : "U")}
+          renderFn = (val, row) => {
+            const isUnass = !row.assignee || row.assignee.toLowerCase() === 'unassigned' || row.assignee.toLowerCase() === 'none';
+            return (
+              <div className="flex items-center gap-2">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${isUnass ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
+                  {isUnass ? <User size={11} className="text-gray-500" /> : (row.assignee ? row.assignee.charAt(0).toUpperCase() : "U")}
+                </div>
+                <span className={isUnass ? 'text-gray-500 font-normal' : 'text-gray-900 font-medium'}>
+                  {isUnass ? 'Unassigned' : row.assignee}
+                </span>
               </div>
-              <span>{row.assignee || "Unassigned"}</span>
-            </div>
-          );
+            );
+          };
           break;
         case 'reporter':
           renderFn = (val, row) => (
@@ -380,10 +413,38 @@ const tableColumns = React.useMemo(() => {
             </div>
           );
           break;
+        case 'actions':
+          renderFn = (val, row) => (
+            <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  Swal.fire({
+                    title: 'Delete Task?',
+                    text: `Are you sure you want to delete ${row.issue_key || row.key}?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Delete'
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      deleteIssue(row.issue_key || row.key);
+                    }
+                  });
+                }}
+                className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"
+                title="Delete task"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          );
+          break;
         default:
           renderFn = (val, row) => <span className="text-gray-500">{val || '-'}</span>;
       }
-      return { ...col, sortable: true, render: renderFn };
+      return { ...col, sortable: col.key !== 'actions', render: renderFn };
     });
   }, [deleteIssue]);
 

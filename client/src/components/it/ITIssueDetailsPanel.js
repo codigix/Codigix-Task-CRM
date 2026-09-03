@@ -40,6 +40,30 @@ const getInitials = (name) => {
   return name.slice(0, 2).toUpperCase();
 };
 
+const showSuccessToast = (title) => {
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title,
+    showConfirmButton: false,
+    timer: 2000,
+    timerProgressBar: true
+  });
+};
+
+const showErrorToast = (title) => {
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'error',
+    title,
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+  });
+};
+
 
 // Formats a stored date for <input type="date">, which requires YYYY-MM-DD.
 // Uses local date parts on purpose: a DATE column serialises as UTC (e.g.
@@ -132,6 +156,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const [activeTab, setActiveTab] = useState('Comments');
   const [collapsedSections, setCollapsedSections] = useState({ details: false, development: false, automation: false });
   const [usersList, setUsersList] = useState(DEFAULT_USERS);
+  const [allUsersList, setAllUsersList] = useState(DEFAULT_USERS);
   const [teamsList, setTeamsList] = useState([]);
   const [duplicateWarning, setDuplicateWarning] = useState([]);
   const [docsData, setDocsData] = useState(null);
@@ -146,10 +171,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const issueDepartment = issue?.department || '';
 
   useEffect(() => {
-    const params = new URLSearchParams({ limit: '200', excludeSystem: 'true' });
-    if (issueDepartment) params.set('department', issueDepartment);
-
-    fetch(`${API_BASE_URL}/users?${params.toString()}`)
+    fetch(`${API_BASE_URL}/users?limit=300&excludeSystem=true`)
       .then(res => res.json())
       .then(data => {
         const raw = Array.isArray(data?.value) ? data.value : (Array.isArray(data) ? data : []);
@@ -158,29 +180,25 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
             id: u.id,
             name: u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'User'
           }));
+          setAllUsersList(formatted);
           setUsersList(formatted);
         } else {
+          setAllUsersList(DEFAULT_USERS);
           setUsersList(DEFAULT_USERS);
         }
       })
       .catch(err => {
         console.error('Error fetching users:', err);
+        setAllUsersList(DEFAULT_USERS);
         setUsersList(DEFAULT_USERS);
       });
 
-    // Only this issue's own department's teams. The endpoint returns every team with a
-    // department_name, so without filtering a Marketing ticket could be handed to an IT team.
+    // Fetch all teams across the organization so any team can be selected
     fetch(`${API_BASE_URL}/teams`)
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data)) return;
-        const target = String(issueDepartment || '').replace(/\s*department\s*$/i, '').trim().toLowerCase();
-        const ofDept = data.filter(t => {
-          const dept = String(t.department_name || '').replace(/\s*department\s*$/i, '').trim().toLowerCase();
-          // Teams with no department stay visible rather than becoming unreachable.
-          return !target || !dept || dept === target;
-        });
-        setTeamsList(ofDept);
+        setTeamsList(data);
       })
       .catch(console.error);
 
@@ -216,8 +234,13 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     setPriority(issue.priority || 'Medium');
     setDescription(issue.description || '');
 
-    const ass = issue.assignee || 'Unassigned';
-    setAssignee({ name: ass, initial: getInitials(ass), color: ass === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-600 text-white' });
+    const ass = issue.assignee;
+    const isUnass = !ass || ass.toLowerCase() === 'unassigned' || ass.toLowerCase() === 'none';
+    setAssignee({
+      name: isUnass ? 'Unassigned' : ass,
+      initial: isUnass ? 'U' : getInitials(ass),
+      color: isUnass ? 'bg-gray-200 text-gray-500' : 'bg-blue-600 text-white'
+    });
 
     const rep = issue.reporter || loggedUser;
     setReporter({ name: rep, initial: getInitials(rep), color: 'bg-blue-100 text-blue-700' });
@@ -299,14 +322,45 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       .catch(err => console.error('Failed to load work logs:', err));
   }, [issueKey]);
 
+  // Load stored attachments for this issue so they persist across page refreshes
+  const loadAttachments = React.useCallback(() => {
+    if (!issueKey) {
+      setAttachments([]);
+      return;
+    }
+    fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/attachments?_t=${Date.now()}`, { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAttachments(data.map(a => ({
+            id: a.id,
+            name: a.file_name,
+            size: a.file_size,
+            url: a.file_path,
+            type: a.file_type
+          })));
+        } else {
+          setAttachments([]);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load attachments:', err);
+        setAttachments([]);
+      });
+  }, [issueKey]);
+
   useEffect(() => {
     loadHistory();
     loadWorklogs();
-  }, [loadHistory, loadWorklogs]);
+    loadAttachments();
+  }, [loadHistory, loadWorklogs, loadAttachments]);
 
-  // Filter user list to ONLY show team members of the current task's team
+  // Prioritize team members at the top of assignee list when a team is chosen, but keep all users selectable
   useEffect(() => {
-    if (!team && !issue?.team_id) return;
+    if (!team && !issue?.team_id) {
+      setUsersList(allUsersList);
+      return;
+    }
     const targetTeam = teamsList.find(t => t.name === team || t.id === issue?.team_id);
     if (targetTeam && targetTeam.id) {
       fetch(`${API_BASE_URL}/teams/${targetTeam.id}/members`)
@@ -317,12 +371,18 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               id: m.user_id || m.id,
               name: `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.email || 'Team Member'
             }));
-            setUsersList(teamUsers);
+            const teamIds = new Set(teamUsers.map(u => String(u.id)));
+            const otherUsers = allUsersList.filter(u => !teamIds.has(String(u.id)));
+            setUsersList([...teamUsers, ...otherUsers]);
+          } else {
+            setUsersList(allUsersList);
           }
         })
-        .catch(console.error);
+        .catch(() => setUsersList(allUsersList));
+    } else {
+      setUsersList(allUsersList);
     }
-  }, [team, teamsList, issue]);
+  }, [team, teamsList, issue?.team_id, allUsersList]);
 
   // Click outside to close dropdowns
   useEffect(() => {
@@ -471,29 +531,58 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     handleUpdate({ description: finalHtml });
   };
 
-  // Upload attachments to the server so their URLs survive a reload, instead of using
-  // session-only blob URLs that break as soon as the panel is closed.
+  // Upload attachments to the server and persist in it_kanban_attachments so they survive a reload
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
     for (const f of files) {
       try {
-        const saved = await uploadDescriptionFile(f, { project_id: issue?.project_id || undefined });
-        setAttachments(prev => [...prev, {
-          name: saved.name,
-          size: formatFileSize(saved.sizeBytes),
-          url: saved.url,
-          type: saved.mimeType
-        }]);
+        const saved = await uploadDescriptionFile(f, {
+          project_id: issue?.project_id || undefined
+        });
+
+        if (issueKey) {
+          const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/attachments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              file_name: saved.name,
+              file_path: saved.url,
+              file_size: formatFileSize(saved.sizeBytes),
+              file_type: saved.mimeType || 'document',
+              issue_id: issue?.id || null
+            })
+          });
+          if (res.ok) {
+            const created = await res.json();
+            setAttachments(prev => [{
+              id: created.id,
+              name: saved.name,
+              size: formatFileSize(saved.sizeBytes),
+              url: saved.url,
+              type: saved.mimeType
+            }, ...prev]);
+            showSuccessToast('Attachment added');
+          }
+        }
       } catch (err) {
-        Swal.fire('Upload failed', err.message, 'error');
+        showErrorToast(err.message || 'Upload failed');
       }
     }
     if (e.target) e.target.value = '';
   };
 
-  const handleRemoveAttachment = (idx) => {
+  const handleRemoveAttachment = async (idx) => {
+    const target = attachments[idx];
+    if (target?.id) {
+      try {
+        await fetch(`${API_BASE_URL}/it-kanban/attachments/${target.id}`, { method: 'DELETE' });
+        showSuccessToast('Attachment deleted');
+      } catch (err) {
+        console.error('Failed to delete attachment:', err);
+      }
+    }
     setAttachments(prev => prev.filter((_, i) => i !== idx));
   };
 
@@ -835,6 +924,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
                 handleUpdate({ subtasks: updatedSubtasks });
               } else {
                 setAssignee(newAss);
+                const assName = typeof newAss === 'string' ? newAss : (newAss.name || 'Unassigned');
+                handleUpdate({ assignee: assName });
               }
             }}
             reporter={reporter}
@@ -860,6 +951,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
             remainingEstimate={remainingEstimate}
             setRemainingEstimate={setRemainingEstimate}
             usersList={usersList}
+            reportersList={allUsersList}
             teamsList={teamsList}
             sprintsList={sprintsList}
             handleUpdate={handleUpdate}

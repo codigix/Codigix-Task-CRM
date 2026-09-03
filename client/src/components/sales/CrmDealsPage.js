@@ -139,10 +139,16 @@ const CrmDealsPage = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      const currentUserData = user || (() => {
+        try {
+          return JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('user'));
+        } catch (e) { return null; }
+      })();
+
       const authFilters = {
-        department: user?.department || '',
-        user_id: user?.id || '',
-        role: user?.role || ''
+        department: currentUserData?.department || currentUserData?.department_name || '',
+        user_id: currentUserData?.id || currentUserData?.userId || '',
+        role: currentUserData?.role_name || currentUserData?.role || currentUserData?.userRole || ''
       };
 
       const [dealsRes, contactsRes, companiesRes, projectsRes, stagesRes, leadsRes] = await Promise.all([
@@ -218,14 +224,27 @@ const CrmDealsPage = () => {
 
       const allDeals = [...actualDeals, ...filteredVirtualDeals];
 
-      if (allDeals.length > 0) {
+      // Client-side guardrail: non-admin and non-manager only see deals assigned to them or converted from leads they own
+      const role = authFilters.role || '';
+      const isManager = role.toLowerCase().includes('admin') || role.toLowerCase().includes('manager');
+      let visibleDeals = allDeals;
+      if (!isManager && currentUserData?.id) {
+        const currentUid = Number(currentUserData.id);
+        visibleDeals = allDeals.filter(d => {
+          const assigneeId = d.assignee_id != null ? Number(d.assignee_id) : null;
+          const leadOwnerId = d.lead_owner_id != null ? Number(d.lead_owner_id) : (d.owner_id != null ? Number(d.owner_id) : null);
+          return assigneeId === currentUid || leadOwnerId === currentUid;
+        });
+      }
+
+      if (visibleDeals.length > 0) {
         const getStageProb = (stageName) => {
           if (!stageName) return 10;
           const stage = stagesRes?.find(s => s.name === stageName);
           return stage ? stage.probability : 10;
         };
 
-        const formattedDeals = allDeals.map(deal => {
+        const formattedDeals = visibleDeals.map(deal => {
           let stage = deal.pipeline || deal.deal_stage || 'Converted Lead';
           // Consolidate Revised Quotation into Quotation
           if (stage === 'Revised Quotation') stage = 'Quotation';
@@ -310,7 +329,7 @@ const CrmDealsPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = () => setActiveMenuDealId(null);

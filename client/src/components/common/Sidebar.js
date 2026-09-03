@@ -6,7 +6,7 @@ import {
   MessageSquare, HelpCircle, Lock, Layout, TrendingUp, Search,
   Database, Code, Terminal, Palette, Megaphone, Receipt, Wallet,
   PieChart, Activity, CheckCircle, AlertCircle, Calendar, FileCheck, Layers,
-  ClipboardList, Target, Percent, Bell, UserCircle, FileStack, Inbox,
+  ClipboardList, Target, Percent, Bell, UserCircle, FileStack,
   Workflow, Zap, ShieldCheck, BarChart, HardDrive, Cpu, Bug, GitBranch,
   Rocket, Gauge, AlertTriangle, FileBarChart, CreditCard, Banknote,
   Scale, History, Eye, SearchCode, Star, Globe, Link, Image, Map, BookOpen,
@@ -15,7 +15,6 @@ import {
 
 import { useAuth } from '../../hooks/useAuth';
 import { isSidebarItemVisible, isModuleAccessible, getMenuItemAccess } from '../../utils/roleBasedAccess';
-import { showInfoToast } from '../../utils/toast';
 
 const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const { user } = useAuth();
@@ -63,8 +62,6 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
     }
 
     const handleClick = () => {
-      showInfoToast(`Navigating to ${label}...`);
-
       let finalPage = page;
 
       // Helper to determine department prefix based on current context
@@ -221,6 +218,10 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   // not any other department.
   const isMarketingDept = userDept.toLowerCase().includes('marketing');
   const hideForMarketingManager = isMarketingDept && isManager && !isSuperAdmin;
+  // Sales staff manage deals/leads, not delivery projects — never surface a Projects tab for
+  // them, whichever department sidebar they land in. Keyed on department, with a role fallback
+  // for accounts whose department is set to a delivery team but whose role is still Sales.
+  const isSalesUser = !isSuperAdmin && (userDept === 'Sales Department' || userRole.toLowerCase().includes('sales'));
   // Per-role sidebar trimming. Add or remove a role in these lists rather than editing the
   // sections themselves, so the underlying role gating stays intact and reversible.
   const HIDE_CREATIVE_ROLES = ['Graphics Designer', 'Video Editor'];
@@ -237,9 +238,6 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       <SubmenuItem label="Dashboard" page="dashboard" icon={Layout} />
       <SubmenuItem label="Daily Task" page="tasks" icon={ClipboardList} />
       <SubmenuItem label="Kanban Board" page="kanban" icon={Layers} />
-      {/* Sprint planning is manager-only, matching the workspace tab strip and the Backlog
-          page's own guard. This sidebar link was the one route in that hadn't been gated. */}
-      {isManager && <SubmenuItem label="Backlog" page="backlog" icon={Inbox} />}
       {isManager && <SubmenuItem label="Calendar" page="calendar" icon={Calendar} />}
     </>
   );
@@ -308,7 +306,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const renderITPages = () => (
     <>
       <div className="p-2 text-xs  text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">IT Operations</div>
-      <SubmenuItem label="All Projects" page="projects" icon={Briefcase} prefix="/it" />
+      {!isSalesUser && <SubmenuItem label="All Projects" page="projects" icon={Briefcase} prefix="/it" />}
       <SubmenuItem label="Repositories" page="repositories" icon={GitBranch} prefix="/it" />
       <SubmenuItem label="Activity Stream" page="activities" icon={Activity} prefix="/it" />
       <SubmenuItem label="Notes & Wiki" page="notes" icon={FileText} prefix="/it" />
@@ -350,7 +348,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
     return (
       <>
         <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Marketing Operations</div>
-        <SubmenuItem label="All Projects" page="projects" icon={FolderOpen} prefix="/marketing" />
+        {!isSalesUser && <SubmenuItem label="All Projects" page="projects" icon={FolderOpen} prefix="/marketing" />}
 
         {/* HIDDEN FOR THE MARKETING MANAGER ONLY (hideForMarketingManager).
             Every other role — Graphics Designer, Video Editor, Social Media Marketing,
@@ -411,7 +409,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const renderSEOGMBPages = () => (
     <>
       <div className="p-2 text-xs  text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">SEO Management</div>
-      <SubmenuItem label="All Projects" page="projects" icon={Briefcase} prefix="/seo-gmb" />
+      {!isSalesUser && <SubmenuItem label="All Projects" page="projects" icon={Briefcase} prefix="/seo-gmb" />}
       <SubmenuItem label="Project Setup" page="project-setup" icon={Settings} prefix="/seo-gmb" />
       <SubmenuItem label="Website Audit" page="website-audit" icon={Activity} prefix="/seo-gmb" />
       <SubmenuItem label="Keyword Management" page="keyword-management" icon={Search} prefix="/seo-gmb" />

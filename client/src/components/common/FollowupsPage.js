@@ -18,9 +18,11 @@ import { generateQuotationPDF } from '../../utils/generateQuotationPDF';
 import AdvancedDataTable from './AdvancedDataTable';
 import DateRangeDropdown from './DateRangeDropdown';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import { useAuth } from '../../hooks/useAuth';
 
 const FollowupsPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('All Follow-Ups');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -82,8 +84,20 @@ const FollowupsPage = () => {
   useEffect(() => {
     const loadAuxData = async () => {
       try {
+        const currentUserData = user || (() => {
+          try {
+            return JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('user'));
+          } catch (e) { return null; }
+        })();
+        const authFilters = {};
+        if (currentUserData) {
+          authFilters.user_id = currentUserData.id || currentUserData.userId;
+          authFilters.role = currentUserData.role_name || currentUserData.role || currentUserData.userRole;
+          authFilters.department = currentUserData.department || currentUserData.department_name;
+        }
+
         const [lRes, cRes] = await Promise.allSettled([
-          leadsAPI.getAll(),
+          leadsAPI.getAll(authFilters),
           companiesAPI.getAll()
         ]);
         if (lRes.status === 'fulfilled') {
@@ -97,7 +111,7 @@ const FollowupsPage = () => {
       }
     };
     loadAuxData();
-  }, []);
+  }, [user]);
 
   const openProposalModalForFollowup = async (f) => {
     if (!f) return;
@@ -430,17 +444,51 @@ const FollowupsPage = () => {
   const fetchFollowups = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await followupsAPI.getAll();
-      setFollowups(Array.isArray(data) ? data : (data.data || []));
+      const currentUserData = user || (() => {
+        try {
+          return JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('user'));
+        } catch (e) { return null; }
+      })();
+
+      const authFilters = {};
+      if (currentUserData) {
+        authFilters.user_id = currentUserData.id || currentUserData.userId;
+        authFilters.role = currentUserData.role_name || currentUserData.role || currentUserData.userRole;
+        authFilters.department = currentUserData.department || currentUserData.department_name;
+      }
+
+      const data = await followupsAPI.getAll(authFilters);
+      let list = Array.isArray(data) ? data : (data.data || []);
+
+      // Client-side guardrail: non-admin and non-manager users only see their assigned follow-ups
+      const role = authFilters.role || '';
+      const isManager = role.toLowerCase().includes('admin') || role.toLowerCase().includes('manager');
+      if (!isManager && currentUserData?.id) {
+        const currentUid = Number(currentUserData.id);
+        list = list.filter(f => {
+          if (f.related_type === 'Lead') {
+            const leadOwnerId = f.lead_owner_id != null ? Number(f.lead_owner_id) : (f.owner_id != null ? Number(f.owner_id) : null);
+            return leadOwnerId === currentUid;
+          }
+          if (f.related_type === 'Deal') {
+            const dealAssigneeId = f.deal_assignee_id != null ? Number(f.deal_assignee_id) : (f.assignee_id != null ? Number(f.assignee_id) : null);
+            const leadOwnerId = f.lead_owner_id != null ? Number(f.lead_owner_id) : null;
+            return dealAssigneeId === currentUid || leadOwnerId === currentUid;
+          }
+          const assignedToId = f.assigned_to ? Number(f.assigned_to) : null;
+          return assignedToId === currentUid;
+        });
+      }
+
+      setFollowups(list);
 
       // Fetch metrics
       try {
-        const metricsData = await followupsAPI.getMetrics();
+        const metricsData = await followupsAPI.getMetrics(authFilters);
         setMetrics(metricsData);
       } catch (err) {
         console.warn('Failed to fetch metrics, calculating locally');
         // Fallback local calculation
-        const list = Array.isArray(data) ? data : (data.data || []);
         const today = new Date().toISOString().split('T')[0];
         setMetrics({
           today: list.filter(f => f.scheduled_date === today && f.status !== 'Completed').length,
@@ -455,7 +503,7 @@ const FollowupsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchFollowups();

@@ -549,8 +549,63 @@ module.exports = function setupEntitiesRoutes(app, pool) {
 
   app.get('/api/deals', async (req, res) => {
     try {
-      const { skip = 0, limit = 50, search, status, assignee_id } = req.query;
-      // Connection handled by db.query
+      const { skip = 0, limit = 50, search, status, assignee_id, user_id, role, department } = req.query;
+      const headerUserId = req.headers['x-user-id'];
+      const headerUserRole = req.headers['x-user-role'];
+      let currentUserId = user_id || headerUserId;
+      let currentUserRole = role || headerUserRole;
+
+      if (currentUserId && !currentUserRole) {
+        try {
+          const [uRows] = await db.query(
+            'SELECT r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
+            [currentUserId]
+          );
+          if (uRows.length > 0) {
+            currentUserRole = uRows[0].role_name;
+          }
+        } catch (e) {}
+      }
+
+      const isSuperAdmin = currentUserRole && (currentUserRole === 'Super Admin' || currentUserRole === 'Admin');
+      const isManager = currentUserRole && currentUserRole.toLowerCase().includes('manager');
+
+      const params1 = [];
+      let part1Where = 'WHERE 1=1';
+      if (search) {
+        part1Where += ' AND d.deal_name LIKE ?';
+        params1.push(`%${search}%`);
+      }
+      if (status) {
+        part1Where += ' AND d.status = ?';
+        params1.push(status);
+      }
+      if (assignee_id) {
+        part1Where += ' AND (d.assignee_id = ? OR l.owner_id = ?)';
+        params1.push(assignee_id, assignee_id);
+      }
+      if (!isSuperAdmin && !isManager && currentUserId) {
+        part1Where += ' AND (d.assignee_id = ? OR l.owner_id = ?)';
+        params1.push(currentUserId, currentUserId);
+      }
+
+      const params2 = [];
+      let part2Where = `WHERE l.lead_status IN ('Qualified', 'Converted Lead', 'Quotation', 'Revised Quotation', 'Finalized Deal', 'Converted to Deal', 'Won')
+        AND l.converted_deal_id IS NULL
+        AND NOT EXISTS (SELECT 1 FROM deals d2 WHERE d2.deal_name = l.lead_name AND (d2.company_id = l.company_id OR (d2.company_id IS NULL AND l.company_id IS NULL)))
+        AND NOT EXISTS (SELECT 1 FROM deals d3 WHERE d3.company_id = l.company_id AND l.company_id IS NOT NULL)`;
+      if (search) {
+        part2Where += ' AND l.lead_name LIKE ?';
+        params2.push(`%${search}%`);
+      }
+      if (assignee_id) {
+        part2Where += ' AND l.owner_id = ?';
+        params2.push(assignee_id);
+      }
+      if (!isSuperAdmin && !isManager && currentUserId) {
+        part2Where += ' AND l.owner_id = ?';
+        params2.push(currentUserId);
+      }
 
       let query = `
         SELECT 
@@ -558,7 +613,7 @@ module.exports = function setupEntitiesRoutes(app, pool) {
           d.assignee_id, d.service_category_id, d.pipeline, d.deal_stage, d.probability, d.expected_close_date, 
           d.created_at, d.updated_at, c.company_name, ct.email AS contact_email, ct.phone AS contact_phone, 
           ct.first_name AS contact_first_name, ct.last_name AS contact_last_name, u.first_name AS assignee_first_name, 
-          u.last_name AS assignee_last_name, sc.name AS service_name, l.id AS lead_id, l.project_name, 
+          u.last_name AS assignee_last_name, sc.name AS service_name, l.id AS lead_id, l.owner_id AS lead_owner_id, l.project_name, 
           l.business_type, l.marketing_services, l.it_services, l.it_services_other, l.referral_name, 'Deal' as record_type
         FROM deals d 
         LEFT JOIN companies c ON d.company_id = c.id 
@@ -566,10 +621,7 @@ module.exports = function setupEntitiesRoutes(app, pool) {
         LEFT JOIN users u ON d.assignee_id = u.id 
         LEFT JOIN service_categories sc ON d.service_category_id = sc.id
         LEFT JOIN leads l ON l.converted_deal_id = d.id
-        WHERE 1=1
-        ${search ? ' AND d.deal_name LIKE ?' : ''}
-        ${status ? ' AND d.status = ?' : ''}
-        ${assignee_id ? ' AND d.assignee_id = ?' : ''}
+        ${part1Where}
         
         UNION ALL
         
@@ -580,32 +632,18 @@ module.exports = function setupEntitiesRoutes(app, pool) {
           null as expected_close_date, l.created_at, l.updated_at, COALESCE(c.company_name, l.company) as company_name, 
           l.email AS contact_email, l.phone AS contact_phone, null AS contact_first_name, null AS contact_last_name, 
           u.first_name AS assignee_first_name, u.last_name AS assignee_last_name, sc.name AS service_name, 
-          l.id AS lead_id, l.project_name, l.business_type, l.marketing_services, l.it_services, 
+          l.id AS lead_id, l.owner_id AS lead_owner_id, l.project_name, l.business_type, l.marketing_services, l.it_services, 
           l.it_services_other, l.referral_name, 'Converted Lead' as record_type
         FROM leads l
         LEFT JOIN companies c ON l.company_id = c.id
         LEFT JOIN users u ON l.owner_id = u.id
         LEFT JOIN service_categories sc ON l.service_category_id = sc.id
-        WHERE l.lead_status IN ('Qualified', 'Converted Lead', 'Quotation', 'Revised Quotation', 'Finalized Deal', 'Converted to Deal', 'Won')
-        AND l.converted_deal_id IS NULL
-        AND NOT EXISTS (SELECT 1 FROM deals d2 WHERE d2.deal_name = l.lead_name AND (d2.company_id = l.company_id OR (d2.company_id IS NULL AND l.company_id IS NULL)))
-        AND NOT EXISTS (SELECT 1 FROM deals d3 WHERE d3.company_id = l.company_id AND l.company_id IS NOT NULL)
-        ${search ? ' AND l.lead_name LIKE ?' : ''}
-        ${assignee_id ? ' AND l.owner_id = ?' : ''}
+        ${part2Where}
         
         ORDER BY created_at DESC LIMIT ?, ?`;
-      
-      const params = [];
-      if (search) params.push(`%${search}%`);
-      if (status) params.push(status);
-      if (assignee_id) params.push(assignee_id);
-      
-      if (search) params.push(`%${search}%`);
-      if (assignee_id) params.push(assignee_id);
-      
-      params.push(parseInt(skip), parseInt(limit));
 
-      const [deals] = await db.query(query, params);
+      const allParams = [...params1, ...params2, parseInt(skip), parseInt(limit)];
+      const [deals] = await db.query(query, allParams);
 
       return res.json(deals);
     } catch (err) {

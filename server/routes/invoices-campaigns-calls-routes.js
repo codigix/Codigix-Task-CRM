@@ -715,7 +715,12 @@ module.exports = function(app, pool) {
       const { skip = 0, limit = 50, status, search } = req.query;
       connection = await getConnection();
 
-      let query = 'SELECT c.*, co.company_name as client_name, u.first_name as created_by_name FROM contracts c LEFT JOIN companies co ON c.client_id = co.id LEFT JOIN users u ON c.created_by = u.id WHERE 1=1';
+      let query = `SELECT c.*, co.company_name as client_name, d.deal_name, u.first_name as created_by_name 
+                   FROM contracts c 
+                   LEFT JOIN companies co ON c.client_id = co.id 
+                   LEFT JOIN deals d ON c.deal_id = d.id 
+                   LEFT JOIN users u ON c.created_by = u.id 
+                   WHERE 1=1`;
       const params = [];
 
       if (status) {
@@ -724,9 +729,9 @@ module.exports = function(app, pool) {
       }
 
       if (search) {
-        query += ' AND (c.subject LIKE ? OR co.company_name LIKE ?)';
+        query += ' AND (c.subject LIKE ? OR co.company_name LIKE ? OR d.deal_name LIKE ?)';
         const searchTerm = `%${search}%`;
-        params.push(searchTerm, searchTerm);
+        params.push(searchTerm, searchTerm, searchTerm);
       }
 
       query += ' ORDER BY c.created_at DESC LIMIT ?, ?';
@@ -746,21 +751,28 @@ module.exports = function(app, pool) {
   app.post('/api/contracts', async (req, res) => {
     let connection;
     try {
-      const { subject, start_date, end_date, client_id, contract_type, contract_value, description, status, created_by } = req.body;
+      const { subject, start_date, end_date, client_id, deal_id, contract_type, contract_value, description, status, created_by, files } = req.body;
 
       if (!subject || !client_id || !contract_type) {
         return res.status(400).json({ error: 'Subject, client ID, and contract type required' });
       }
 
+      const filesJson = files ? (typeof files === 'string' ? files : JSON.stringify(files)) : null;
+
       connection = await getConnection();
       const [result] = await connection.query(
-        `INSERT INTO contracts (subject, start_date, end_date, client_id, contract_type, contract_value, description, status, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [subject, start_date || null, end_date || null, client_id, contract_type, contract_value || 0, description || null, status || 'Draft', created_by || null]
+        `INSERT INTO contracts (subject, start_date, end_date, client_id, deal_id, contract_type, contract_value, description, status, created_by, files)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [subject, start_date || null, end_date || null, client_id, deal_id || null, contract_type, contract_value || 0, description || null, status || 'Draft', created_by || null, filesJson]
       );
 
       const [contract] = await connection.query(
-        'SELECT c.*, co.company_name as client_name, u.first_name as created_by_name FROM contracts c LEFT JOIN companies co ON c.client_id = co.id LEFT JOIN users u ON c.created_by = u.id WHERE c.id = ?',
+        `SELECT c.*, co.company_name as client_name, d.deal_name, u.first_name as created_by_name 
+         FROM contracts c 
+         LEFT JOIN companies co ON c.client_id = co.id 
+         LEFT JOIN deals d ON c.deal_id = d.id 
+         LEFT JOIN users u ON c.created_by = u.id 
+         WHERE c.id = ?`,
         [result.insertId]
       );
       connection.release();
@@ -780,7 +792,12 @@ module.exports = function(app, pool) {
       connection = await getConnection();
 
       const [contracts] = await connection.query(
-        'SELECT c.*, co.company_name as client_name, u.first_name as created_by_name FROM contracts c LEFT JOIN companies co ON c.client_id = co.id LEFT JOIN users u ON c.created_by = u.id WHERE c.id = ?',
+        `SELECT c.*, co.company_name as client_name, d.deal_name, u.first_name as created_by_name 
+         FROM contracts c 
+         LEFT JOIN companies co ON c.client_id = co.id 
+         LEFT JOIN deals d ON c.deal_id = d.id 
+         LEFT JOIN users u ON c.created_by = u.id 
+         WHERE c.id = ?`,
         [id]
       );
       connection.release();
@@ -801,16 +818,22 @@ module.exports = function(app, pool) {
     let connection;
     try {
       const { id } = req.params;
-      const { subject, start_date, end_date, contract_type, contract_value, description, status } = req.body;
+      const { subject, start_date, end_date, contract_type, contract_value, description, status, deal_id, files } = req.body;
+      const filesJson = files ? (typeof files === 'string' ? files : JSON.stringify(files)) : null;
       
       connection = await getConnection();
       await connection.query(
-        'UPDATE contracts SET subject = ?, start_date = ?, end_date = ?, contract_type = ?, contract_value = ?, description = ?, status = ? WHERE id = ?',
-        [subject || null, start_date || null, end_date || null, contract_type || null, contract_value || null, description || null, status || null, id]
+        'UPDATE contracts SET subject = ?, start_date = ?, end_date = ?, contract_type = ?, contract_value = ?, description = ?, status = ?, deal_id = COALESCE(?, deal_id), files = COALESCE(?, files) WHERE id = ?',
+        [subject || null, start_date || null, end_date || null, contract_type || null, contract_value || null, description || null, status || null, deal_id || null, filesJson, id]
       );
 
       const [contract] = await connection.query(
-        'SELECT c.*, co.company_name as client_name, u.first_name as created_by_name FROM contracts c LEFT JOIN companies co ON c.client_id = co.id LEFT JOIN users u ON c.created_by = u.id WHERE c.id = ?',
+        `SELECT c.*, co.company_name as client_name, d.deal_name, u.first_name as created_by_name 
+         FROM contracts c 
+         LEFT JOIN companies co ON c.client_id = co.id 
+         LEFT JOIN deals d ON c.deal_id = d.id 
+         LEFT JOIN users u ON c.created_by = u.id 
+         WHERE c.id = ?`,
         [id]
       );
       connection.release();
@@ -874,21 +897,49 @@ module.exports = function(app, pool) {
   app.get('/api/estimations', async (req, res) => {
     let connection;
     try {
-      const { skip = 0, limit = 50, status, search, deal_id, lead_id, client_id } = req.query;
+      const { skip = 0, limit = 50, status, search, deal_id, lead_id, client_id, user_id, role, department } = req.query;
+      const headerUserId = req.headers['x-user-id'];
+      const headerUserRole = req.headers['x-user-role'];
+      let currentUserId = user_id || headerUserId;
+      let currentUserRole = role || headerUserRole;
+
+      if (currentUserId && !currentUserRole) {
+        try {
+          const [uRows] = await pool.query(
+            'SELECT r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
+            [currentUserId]
+          );
+          if (uRows.length > 0) {
+            currentUserRole = uRows[0].role_name;
+          }
+        } catch (e) {}
+      }
+
+      const isSuperAdmin = currentUserRole && (currentUserRole === 'Super Admin' || currentUserRole === 'Admin');
+      const isManager = currentUserRole && currentUserRole.toLowerCase().includes('manager');
+
       connection = await getConnection();
 
       let query = `
-        SELECT e.*, c.company_name as client_name, l.lead_name,
+        SELECT e.*, c.company_name as client_name, l.lead_name, l.owner_id as lead_owner_id,
+               d.assignee_id as deal_assignee_id,
                u.first_name as creator_first_name, u.last_name as creator_last_name,
                p.name as project_name
         FROM estimations e 
         LEFT JOIN companies c ON e.client_id = c.id 
         LEFT JOIN leads l ON e.lead_id = l.id
+        LEFT JOIN deals d ON e.deal_id = d.id
         LEFT JOIN users u ON e.estimate_by = u.id
         LEFT JOIN projects p ON e.project_id = p.id
         WHERE 1=1
       `;
       const params = [];
+
+      // Role-based visibility: non-admin & non-manager users can ONLY see estimations created by them, or related to leads/deals assigned to them
+      if (!isSuperAdmin && !isManager && currentUserId) {
+        query += ' AND (e.estimate_by = ? OR l.owner_id = ? OR d.assignee_id = ?)';
+        params.push(currentUserId, currentUserId, currentUserId);
+      }
       const entityConditions = [];
       if (deal_id) {
         entityConditions.push('e.deal_id = ?');
@@ -945,11 +996,12 @@ module.exports = function(app, pool) {
 
       connection = await getConnection();
       let finalEstimationNumber = estimation_number;
+      const prefix = (estimation_number && estimation_number.startsWith('Q-')) ? 'Q' : 'EST';
 
       // If estimation_number is not provided, or it looks like the default starting number,
       // generate a fresh unique one to avoid "Duplicate entry" errors.
       if (!finalEstimationNumber || finalEstimationNumber.endsWith('-001')) {
-        finalEstimationNumber = await generateEstimationNumber(pool);
+        finalEstimationNumber = await generateEstimationNumber(pool, prefix);
       } else {
         // Check if finalEstimationNumber already exists in DB
         const [existing] = await connection.query('SELECT id FROM estimations WHERE estimation_number = ?', [finalEstimationNumber]);
@@ -1807,21 +1859,50 @@ module.exports = function(app, pool) {
   app.get('/api/proposals', async (req, res) => {
     let connection;
     try {
-      const { skip = 0, limit = 50, status, search } = req.query;
+      const { skip = 0, limit = 50, status, search, user_id, role, department } = req.query;
+      const headerUserId = req.headers['x-user-id'];
+      const headerUserRole = req.headers['x-user-role'];
+      let currentUserId = user_id || headerUserId;
+      let currentUserRole = role || headerUserRole;
+
+      if (currentUserId && !currentUserRole) {
+        try {
+          const [uRows] = await pool.query(
+            'SELECT r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
+            [currentUserId]
+          );
+          if (uRows.length > 0) {
+            currentUserRole = uRows[0].role_name;
+          }
+        } catch (e) {}
+      }
+
+      const isSuperAdmin = currentUserRole && (currentUserRole === 'Super Admin' || currentUserRole === 'Admin');
+      const isManager = currentUserRole && currentUserRole.toLowerCase().includes('manager');
+
       connection = await getConnection();
 
       let query = `
         SELECT p.*,
                c.company_name as client_name,
                l.lead_name as lead_name,
+               l.owner_id as lead_owner_id,
+               d.assignee_id as deal_assignee_id,
                CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) as assigned_to_name
         FROM proposals p
         LEFT JOIN companies c ON p.client_id = c.id
         LEFT JOIN leads l ON p.lead_id = l.id
+        LEFT JOIN deals d ON p.deal_id = d.id
         LEFT JOIN users u ON p.assigned_to = u.id
         WHERE 1=1
       `;
       const params = [];
+
+      // Role-based visibility: non-admin & non-manager users can ONLY see proposals created by them, assigned to them, or for their leads/deals
+      if (!isSuperAdmin && !isManager && currentUserId) {
+        query += ' AND (p.created_by = ? OR p.assigned_to = ? OR l.owner_id = ? OR d.assignee_id = ?)';
+        params.push(currentUserId, currentUserId, currentUserId, currentUserId);
+      }
 
       if (status) {
         query += ' AND p.status = ?';

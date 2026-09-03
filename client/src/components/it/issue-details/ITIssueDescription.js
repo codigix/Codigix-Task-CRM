@@ -5,7 +5,7 @@ import {
   Type
 } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/environment';
-import { insertFilesIntoEditor, makeEditorPasteHandler } from '../../../utils/descriptionFiles';
+import { insertFilesIntoEditor, makeEditorPasteHandler, normalizeDescriptionHtml, toAbsoluteFileUrl } from '../../../utils/descriptionFiles';
 import Swal from 'sweetalert2';
 
 const stripHtmlTags = (str) => {
@@ -52,7 +52,7 @@ const renderFormattedDescription = (text) => {
     return (
       <div
         className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_li]:my-1 [&_li]:text-gray-800 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-xs [&_h4]:font-bold [&_h4]:text-gray-900 [&_h4]:mt-2 [&_h4]:mb-1 [&_strong]:font-bold [&_b]:font-bold font-sans [&_a]:text-blue-600 [&_a]:no-underline [&_img]:max-w-full [&_img]:rounded"
-        dangerouslySetInnerHTML={{ __html: text }}
+        dangerouslySetInnerHTML={{ __html: normalizeDescriptionHtml(text) }}
       />
     );
   }
@@ -160,7 +160,8 @@ const ITIssueDescription = ({
   // Safely initialize editor content when mounted
   useEffect(() => {
     if (isEditingDescription && editorRef.current && !isAiWriting) {
-      const contentToSet = tempDescription || description || '';
+      const raw = tempDescription || description || '';
+      const contentToSet = normalizeDescriptionHtml(raw);
       if (!editorRef.current.innerHTML || editorRef.current.innerHTML.trim() === '') {
         editorRef.current.innerHTML = contentToSet.includes('<') ? contentToSet : contentToSet.replace(/\n/g, '<br/>');
       }
@@ -176,7 +177,8 @@ const ITIssueDescription = ({
   };
 
   const handleSave = () => {
-    const finalHtml = editorRef.current ? editorRef.current.innerHTML : (tempDescription || description);
+    const rawHtml = editorRef.current ? editorRef.current.innerHTML : (tempDescription || description);
+    const finalHtml = normalizeDescriptionHtml(rawHtml);
     setTempDescription(finalHtml);
     // Delegate to the parent's save handler and pass the html explicitly. The parent knows
     // whether we're editing the issue or one of its subtasks; calling handleUpdate directly
@@ -430,10 +432,11 @@ const ITIssueDescription = ({
                 <div
                   className="flex items-center gap-2 cursor-pointer truncate min-w-0"
                   onClick={() => {
+                    const fileUrl = toAbsoluteFileUrl(file.url);
                     if (file.type?.includes('pdf') || file.name?.endsWith('.pdf')) {
-                      setSelectedPdfUrl(file.url);
-                    } else if (file.url) {
-                      window.open(file.url, '_blank');
+                      setSelectedPdfUrl(fileUrl);
+                    } else if (fileUrl) {
+                      window.open(fileUrl, '_blank');
                     }
                   }}
                 >

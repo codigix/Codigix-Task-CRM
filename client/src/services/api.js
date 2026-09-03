@@ -448,7 +448,10 @@ export const followupsAPI = {
   update: (id, data) => apiService.put(`/followups/${id}`, data),
   delete: (id) => apiService.delete(`/followups/${id}`),
   deleteByClientName: (name) => apiService.delete(`/followups/by-client-name/${encodeURIComponent(name)}`),
-  getMetrics: () => apiService.get('/followups/metrics/summary'),
+  getMetrics: (filters = {}) => {
+    const queryString = new URLSearchParams(filters).toString();
+    return apiService.get(`/followups/metrics/summary${queryString ? '?' + queryString : ''}`);
+  },
   complete: (id, data) => apiService.post(`/followups/${id}/complete`, data),
   reschedule: (id, data) => apiService.post(`/followups/${id}/reschedule`, data),
   getByRelated: (related_type, related_id) => apiService.get(`/followups?related_type=${related_type}&related_id=${related_id}`),

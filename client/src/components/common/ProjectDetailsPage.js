@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { canViewProjectFinancialsAndManage } from '../../utils/access';
 import {
   Edit3, MoreHorizontal, Plus, FileText, CheckSquare,
   Flag, Users, Clock, DollarSign, UploadCloud, Download,
@@ -22,6 +24,14 @@ const TABS = ['Overview', 'Tasks', 'Milestones', 'Team', 'Documents', 'Time Logs
 const ProjectDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+
+  const pathParts = location.pathname.toLowerCase().split('/').filter(Boolean);
+  const currentDesignation = pathParts.length >= 2 ? pathParts[1] : '';
+  const canManage = canViewProjectFinancialsAndManage(user, currentDesignation);
+  const visibleTabs = TABS.filter(tab => canManage || tab !== 'Settings');
+
   const [project, setProject] = useState(null);
   const [projectTasks, setProjectTasks] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -911,9 +921,11 @@ const ProjectDetailsPage = () => {
   const renderTeam = () => {
     return (
       <div className="bg-white rounded border border-gray-200  animate-fade-in">
-        <div className="p-4 border-b border-gray-100 flex justify-end">
-          <button onClick={() => setIsTeamModalOpen(true)} className="flex items-center gap-1.5 text-xs text-white bg-blue-600 p-2 rounded font-medium hover:bg-blue-700"><Plus size={12} /> Add Member</button>
-        </div>
+        {canManage && (
+          <div className="p-4 border-b border-gray-100 flex justify-end">
+            <button onClick={() => setIsTeamModalOpen(true)} className="flex items-center gap-1.5 text-xs text-white bg-blue-600 p-2 rounded font-medium hover:bg-blue-700"><Plus size={12} /> Add Member</button>
+          </div>
+        )}
         <table className="w-full text-left whitespace-nowrap text-xs">
           <thead className="bg-gray-50 border-b border-gray-100 text-gray-500">
             <tr>
@@ -950,7 +962,9 @@ const ProjectDetailsPage = () => {
                       </div>
                       <span className="text-xs text-gray-500">{Math.max(20, 100 - i * 15)}%</span>
                     </div>
-                    <button onClick={() => handleRemoveMember(m.user_id)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button>
+                    {canManage && (
+                      <button onClick={() => handleRemoveMember(m.user_id)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -1173,7 +1187,7 @@ const ProjectDetailsPage = () => {
           { icon: <BarChart2 size={24} className="text-purple-500" />, title: 'Project Summary', desc: 'Overall project summary report' },
           { icon: <CheckSquare size={24} className="text-blue-500" />, title: 'Task Report', desc: 'Detailed task status report' },
           { icon: <Clock size={24} className="text-orange-500" />, title: 'Time Log Report', desc: 'Logged hours and time analysis' },
-          { icon: <DollarSign size={24} className="text-green-500" />, title: 'Budget Report', desc: 'Budget vs Actual report' },
+          ...(canManage ? [{ icon: <DollarSign size={24} className="text-green-500" />, title: 'Budget Report', desc: 'Budget vs Actual report' }] : []),
           { icon: <Users size={24} className="text-red-500" />, title: 'Workload Report', desc: 'Team workload summary' },
           { icon: <PieChartIcon size={24} className="text-emerald-500" />, title: 'Client Report', desc: 'Client-friendly progress report' },
         ].map((r, i) => (
@@ -1249,9 +1263,11 @@ const ProjectDetailsPage = () => {
   const renderTopActions = () => {
     return (
       <div className="flex items-center gap-3">
-        <button onClick={() => setIsEditModalOpen(true)} className="p-2 bg-white border border-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
-          <Edit3 size={14} /> Edit Project
-        </button>
+        {canManage && (
+          <button onClick={() => setIsEditModalOpen(true)} className="p-2 bg-white border border-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
+            <Edit3 size={14} /> Edit Project
+          </button>
+        )}
         <button onClick={() => setIsCreateDrawerOpen(true)} className="p-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 flex items-center gap-2 ">
           <Plus size={14} /> Create Task
         </button>
@@ -1354,16 +1370,19 @@ const ProjectDetailsPage = () => {
                 </div>
               </div>
 
-              <div className="h-px bg-gray-100 my-1"></div>
-
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-500">Budget</span>
-                <span className="font-medium text-gray-900">{formatCurrency(project.budget)}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-500">Spent</span>
-                <span className="font-medium text-gray-900">{formatCurrency(project.spent)}</span>
-              </div>
+              {canManage && (
+                <>
+                  <div className="h-px bg-gray-100 my-1"></div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-500">Budget</span>
+                    <span className="font-medium text-gray-900">{formatCurrency(project.budget)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-500">Spent</span>
+                    <span className="font-medium text-gray-900">{formatCurrency(project.spent)}</span>
+                  </div>
+                </>
+              )}
 
               <div className="h-px bg-gray-100 my-1"></div>
 
@@ -1416,20 +1435,32 @@ const ProjectDetailsPage = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded border border-gray-200 p-4  flex flex-col justify-between h-20">
-              <div className="flex items-start justify-between">
-                <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500"><DollarSign size={16} /></div>
-                <div className="text-right">
-                  <div className="text-xs text-gray-500 font-medium">Budget Spent</div>
-                  <div className="text-lg  text-gray-900 leading-tight">{formatCurrency(project.spent)}</div>
+            {canManage ? (
+              <div className="bg-white rounded border border-gray-200 p-4  flex flex-col justify-between h-20">
+                <div className="flex items-start justify-between">
+                  <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500"><DollarSign size={16} /></div>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500 font-medium">Budget Spent</div>
+                    <div className="text-lg  text-gray-900 leading-tight">{formatCurrency(project.spent)}</div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white rounded border border-gray-200 p-4  flex flex-col justify-between h-20">
+                <div className="flex items-start justify-between">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><CheckSquare size={16} /></div>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500 font-medium">Progress</div>
+                    <div className="text-lg  text-gray-900 leading-tight">{progress}%</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Nav Tabs */}
           <div className="border-b border-gray-200 mb-6 flex gap-2 overflow-x-auto hide-scrollbar">
-            {TABS.map((tab) => (
+            {visibleTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}

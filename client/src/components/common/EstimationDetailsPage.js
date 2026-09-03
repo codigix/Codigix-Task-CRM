@@ -3,7 +3,7 @@ import {
   ArrowLeft, Edit2, Download, Send, CheckCircle, XCircle, 
   Calendar, CircleDollarSign, FileText, User, Building2, 
   Briefcase, History, AlertTriangle, Layers, ArrowRight,
-  Sparkles, RefreshCw, Copy, Check, Clock, ShieldAlert, Tag
+  Sparkles, RefreshCw, Copy, Check, Clock, ShieldAlert, Tag, Lock
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { estimationsAPI } from '../../services/api';
@@ -258,6 +258,9 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                 <h1 className="text-xl font-bold text-slate-900">
                   {estimation.estimation_number}
                 </h1>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                  <Lock size={11} className="text-amber-700" /> INTERNAL DOCUMENT
+                </span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                   v{estimation.version || 1}
                 </span>

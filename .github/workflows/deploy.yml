@@ -33,6 +33,9 @@ jobs:
             echo "📦 Deploying Backend..."
             cd /var/www/Codigix-Task-CRM/server
             npm install --production
+            echo "🗄️ Running Prisma Migrations..."
+            npx prisma generate
+            node prisma/auto-migrate.js
             pm2 restart Codigix-Task-CRM-backend 
 
 

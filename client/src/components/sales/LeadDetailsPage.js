@@ -12,6 +12,7 @@ import {
 import { leadsAPI, companiesAPI, activitiesAPI, estimationsAPI, notesAPI, filesAPI, dealsAPI, followupsAPI } from '../../services/api';
 import ConvertLeadModal from './ConvertLeadModal';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import { toAbsoluteFileUrl, formatFileSize } from '../../utils/descriptionFiles';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -59,6 +60,44 @@ const LeadDetailsPage = () => {
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [dealContacts, setDealContacts] = useState([]);
 
+  // File Upload States
+  const leadFileInputRef = React.useRef(null);
+  const noteFileInputRef = React.useRef(null);
+  const [noteSelectedFiles, setNoteSelectedFiles] = useState([]);
+  const [createModalFile, setCreateModalFile] = useState(null);
+
+  const handleLeadFileUpload = async (e) => {
+    const uploadedFiles = Array.from(e.target.files || []);
+    if (uploadedFiles.length === 0) return;
+
+    const leadId = lead?.lead_id || (isFromDeals ? null : id);
+    for (const f of uploadedFiles) {
+      try {
+        const fd = new FormData();
+        fd.append('file', f);
+        if (leadId) fd.append('lead_id', leadId);
+        if (lead?.deal_id && !lead?.is_virtual_deal) fd.append('deal_id', lead.deal_id);
+        if (lead?.company_id) fd.append('company_id', lead.company_id);
+        fd.append('userId', '1');
+
+        const res = await fetch(`${API_BASE_URL}/files/upload`, {
+          method: 'POST',
+          body: fd
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.details || errData.error || 'Upload failed');
+        }
+        showSuccessToast(`File "${f.name}" uploaded successfully`);
+      } catch (err) {
+        showErrorToast('Upload failed: ' + err.message);
+      }
+    }
+    if (e.target) e.target.value = '';
+    fetchFiles(lead?.lead_id, lead?.deal_id, lead?.company_id);
+    fetchFollowups(lead?.lead_id, lead?.deal_id, lead?.company_id);
+  };
+
   const fetchDealContacts = async (targetDealId) => {
     const isVirtual = !isNaN(parseInt(targetDealId)) && parseInt(targetDealId) > 1000000;
     if (!targetDealId || isVirtual) return;
@@ -77,19 +116,40 @@ const LeadDetailsPage = () => {
     if (!noteForm.title || !noteForm.note) return;
 
     try {
+      const leadId = lead.lead_id || (isFromDeals ? null : id);
       await notesAPI.create({
         title: noteForm.title,
         description: noteForm.note,
-        lead_id: lead.lead_id || (isFromDeals ? null : id),
+        lead_id: leadId,
         deal_id: lead.deal_id && !lead.is_virtual_deal ? lead.deal_id : null,
         company_id: lead.company_id || null,
         priority: 'Medium',
         is_important: false
       });
+
+      // If any files were attached to the note, upload them as lead files too
+      if (noteSelectedFiles.length > 0) {
+        for (const f of noteSelectedFiles) {
+          try {
+            const fd = new FormData();
+            fd.append('file', f);
+            if (leadId) fd.append('lead_id', leadId);
+            if (lead.deal_id && !lead.is_virtual_deal) fd.append('deal_id', lead.deal_id);
+            if (lead.company_id) fd.append('company_id', lead.company_id);
+            fd.append('userId', '1');
+            await fetch(`${API_BASE_URL}/files/upload`, { method: 'POST', body: fd });
+          } catch (uploadErr) {
+            console.error('Failed uploading note attachment:', uploadErr);
+          }
+        }
+      }
+
       showSuccessToast('Note added successfully');
       setNoteForm({ title: '', note: '', attachments: [] });
+      setNoteSelectedFiles([]);
       setIsAddNoteModalOpen(false);
       fetchNotes(lead.lead_id, lead.deal_id, lead.company_id);
+      fetchFiles(lead.lead_id, lead.deal_id, lead.company_id);
       fetchFollowups(lead.lead_id, lead.deal_id, lead.company_id); // Update unified feed
     } catch (err) {
       showErrorToast('Failed to add note: ' + err.message);
@@ -134,26 +194,50 @@ const LeadDetailsPage = () => {
 
   const handleCreateFile = async (e) => {
     e.preventDefault();
-    if (!fileForm.title) return;
+    if (!fileForm.title && !createModalFile) {
+      showErrorToast('Please provide a document title or select a file');
+      return;
+    }
 
     try {
-      await filesAPI.create({
-        name: fileForm.title,
-        file_type: fileForm.documentType || 'Document',
-        lead_id: lead.lead_id || (isFromDeals ? null : id),
-        deal_id: fileForm.deal || (lead.deal_id && !lead.is_virtual_deal ? lead.deal_id : null),
-        company_id: lead.company_id || null,
-        owner_id: 1, // Default to system user
-        status: 'Draft'
-      });
+      const leadId = lead.lead_id || (isFromDeals ? null : id);
+      if (createModalFile) {
+        const fd = new FormData();
+        fd.append('file', createModalFile);
+        if (leadId) fd.append('lead_id', leadId);
+        if (fileForm.deal || (lead.deal_id && !lead.is_virtual_deal)) {
+          fd.append('deal_id', fileForm.deal || lead.deal_id);
+        }
+        if (lead.company_id) fd.append('company_id', lead.company_id);
+        fd.append('userId', '1');
+
+        const res = await fetch(`${API_BASE_URL}/files/upload`, { method: 'POST', body: fd });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.details || errData.error || 'Upload failed');
+        }
+      } else {
+        await filesAPI.create({
+          name: fileForm.title,
+          file_type: fileForm.documentType || 'Document',
+          lead_id: leadId,
+          deal_id: fileForm.deal || (lead.deal_id && !lead.is_virtual_deal ? lead.deal_id : null),
+          company_id: lead.company_id || null,
+          owner_id: 1,
+          status: 'Draft'
+        });
+      }
+
       showSuccessToast('File created successfully');
       setFileForm({
         deal: '', documentType: '', owner: '', title: '',
         signature: 'No Signature', recipients: [{ name: '', email: '' }],
         content: '', subject: '', message: 'Your document is ready'
       });
+      setCreateModalFile(null);
       setIsAddFileModalOpen(false);
       fetchFiles(lead.lead_id, lead.deal_id, lead.company_id);
+      fetchFollowups(lead.lead_id, lead.deal_id, lead.company_id);
     } catch (err) {
       showErrorToast('Failed to create file: ' + err.message);
     }
@@ -1899,12 +1983,27 @@ const LeadDetailsPage = () => {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-base font-[500] text-gray-900">Files & Quotations</h3>
-                    <button
-                      onClick={() => setIsAddFileModalOpen(true)}
-                      className="bg-red-600 text-white p-2 rounded text-xs font-[500] flex items-center gap-1 hover:bg-red-700 transition-colors"
-                    >
-                      <Plus size={14} /> Create Document
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        ref={leadFileInputRef}
+                        onChange={handleLeadFileUpload}
+                        className="hidden"
+                        multiple
+                      />
+                      <button
+                        onClick={() => leadFileInputRef.current?.click()}
+                        className="bg-blue-600 text-white p-2 rounded text-xs font-[500] flex items-center gap-1.5 hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+                      >
+                        <Paperclip size={14} /> Upload File
+                      </button>
+                      <button
+                        onClick={() => setIsAddFileModalOpen(true)}
+                        className="bg-red-600 text-white p-2 rounded text-xs font-[500] flex items-center gap-1 hover:bg-red-700 transition-colors cursor-pointer"
+                      >
+                        <Plus size={14} /> Create Document
+                      </button>
+                    </div>
                   </div>
 
                   {/* Quotations Section */}
@@ -1945,31 +2044,59 @@ const LeadDetailsPage = () => {
 
                   {/* Other Files Section */}
                   <div className="space-y-3">
-                    <h4 className="text-xs font-[600] text-gray-700  tracking-wider">Other Documents</h4>
+                    <h4 className="text-xs font-[600] text-gray-700 tracking-wider">Other Documents ({files.length})</h4>
                     {files.map((file) => (
                       <div key={file.id} className="bg-white border border-gray-100 rounded p-4 space-y-2 hover:border-gray-200 transition-colors">
                         <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded bg-gray-50 text-gray-500 flex items-center justify-center">
+                          <div
+                            className="flex items-center gap-3 cursor-pointer group"
+                            onClick={() => {
+                              const url = toAbsoluteFileUrl(file.file_path || file.name);
+                              if (url) window.open(url, '_blank');
+                            }}
+                          >
+                            <div className="w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                               <Paperclip size={16} />
                             </div>
                             <div>
-                              <h4 className="text-[12px] font-[500] text-gray-900 mb-1">{file.name}</h4>
-                              <p className="text-xs text-gray-500">{file.file_type} • {formatDateTime(file.created_at)}</p>
+                              <h4 className="text-[12px] font-[500] text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">{file.name}</h4>
+                              <p className="text-xs text-gray-500">{file.file_type} • {formatFileSize(file.size_bytes)} • {formatDateTime(file.created_at)}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 text-white text-xs font-[500] rounded ${file.status === 'Sent' ? 'bg-green-600' : 'bg-blue-500'
-                              }`}>
-                              {file.status}
-                            </span>
+                            <button
+                              onClick={() => {
+                                const url = toAbsoluteFileUrl(file.file_path || file.name);
+                                if (url) window.open(url, '_blank');
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
+                              title="Download / View"
+                            >
+                              <Download size={15} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!window.confirm(`Delete ${file.name}?`)) return;
+                                try {
+                                  await filesAPI.delete(file.id);
+                                  showSuccessToast('File deleted');
+                                  fetchFiles(lead.lead_id, lead.deal_id, lead.company_id);
+                                } catch (e) {
+                                  showErrorToast('Failed to delete file');
+                                }
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                              title="Delete"
+                            >
+                              <Trash2 size={15} />
+                            </button>
                           </div>
                         </div>
                         <div className="flex items-center gap-3 pt-2">
                           <div className="w-6 h-6 rounded-full bg-red-50 text-red flex items-center justify-center text-[9px]">
-                            {getInitials(file.owner_name || 'U')}
+                            {getInitials(file.owner_name || file.first_name || 'U')}
                           </div>
-                          <span className="text-xs text-gray-600">{file.owner_name || 'System User'}</span>
+                          <span className="text-xs text-gray-600">{file.owner_name || `${file.first_name || ''} ${file.last_name || ''}`.trim() || 'System User'}</span>
                         </div>
                       </div>
                     ))}
@@ -2031,28 +2158,50 @@ const LeadDetailsPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-[500] text-gray-700 mb-1.5">Attachment <span className="text-red-500">*</span></label>
-                <div className="border border-dashed border-gray-200 rounded p-2 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group">
-                  <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <FileUp size={15} className="text-red" />
+                <label className="block text-xs font-[500] text-gray-700 mb-1.5">Attachment</label>
+                <input
+                  type="file"
+                  ref={noteFileInputRef}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setNoteSelectedFiles(prev => [...prev, ...files]);
+                    if (e.target) e.target.value = '';
+                  }}
+                  className="hidden"
+                  multiple
+                />
+                <div
+                  onClick={() => noteFileInputRef.current?.click()}
+                  className="border border-dashed border-gray-200 rounded p-4 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group"
+                >
+                  <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <FileUp size={16} className="text-red-600" />
                   </div>
-                  <p className="text-xs text-black-600">Drop your files here or <span className="text-red font-[500]">browse</span></p>
-                  <p className="text-xs text-gray-400 mt-1">Maximum size : 50 MB</p>
+                  <p className="text-xs text-gray-700 font-medium">Click to <span className="text-red-600">browse</span> files to attach</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">Maximum size : 50 MB</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-2 bg-gray-50 border border-gray-100 rounded group">
-                <div className="w-10 h-10 bg-green-500 rounded flex items-center justify-center text-white">
-                  <FileSpreadsheet size={15} />
+              {noteSelectedFiles.length > 0 && (
+                <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                  {noteSelectedFiles.map((f, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-100 rounded">
+                      <Paperclip size={14} className="text-blue-500 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-900 truncate">{f.name}</p>
+                        <p className="text-[10px] text-gray-400">{(f.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setNoteSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                        className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-red-500 cursor-pointer"
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs font-[500] text-gray-900">Project Specs.xls</p>
-                  <p className="text-xs text-gray-400 ">365 KB</p>
-                </div>
-                <button className="p-1.5 hover:bg-gray-200 rounded-full text-gray-400 transition-colors">
-                  <X size={14} />
-                </button>
-              </div>
+              )}
             </div>
             <div className="flex items-center justify-end gap-3 p-4 bg-gray-50/50 border-t border-gray-100">
               <button
@@ -2283,8 +2432,22 @@ const LeadDetailsPage = () => {
                       </div>
                     </div>
                     <div className="col-span-2">
-                      <label className="block text-xs font-[500] text-gray-700 mb-1.5  ">Title <span className="text-red-500">*</span></label>
-                      <input type="text" className="w-full p-2 border border-gray-200 rounded text-xs focus:ring-2 focus:ring-red-500/20 outline-none" placeholder="Enter title" />
+                      <label className="block text-xs font-[500] text-gray-700 mb-1.5">Title <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        className="w-full p-2 border border-gray-200 rounded text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
+                        placeholder="Enter title"
+                        value={fileForm.title}
+                        onChange={(e) => setFileForm({ ...fileForm, title: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-[500] text-gray-700 mb-1.5">Attach File (Optional)</label>
+                      <input
+                        type="file"
+                        onChange={(e) => setCreateModalFile(e.target.files[0] || null)}
+                        className="w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer"
+                      />
                     </div>
                   </div>
 

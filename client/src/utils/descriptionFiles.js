@@ -9,11 +9,56 @@ import { API_BASE_URL, BASE_SERVER_URL } from '../config/environment';
  * makes a pasted/attached file actually openable later (the Jira behaviour).
  */
 
-/** Turn a stored file_path (`/uploads/x.pdf`) into an absolute, openable URL. */
+/** Turn a stored file_path (`/uploads/x.pdf` or `/api/uploads/x.pdf`) into an absolute, openable URL. */
 export const toAbsoluteFileUrl = (filePath) => {
   if (!filePath) return '';
-  if (/^https?:\/\//i.test(filePath)) return filePath;
-  return `${BASE_SERVER_URL}${filePath.startsWith('/') ? '' : '/'}${filePath}`;
+
+  // If already an absolute URL:
+  if (/^https?:\/\//i.test(filePath)) {
+    // If the URL has localhost/127.0.0.1, but running in a remote browser (e.g. live site):
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      try {
+        const parsed = new URL(filePath);
+        let pathname = parsed.pathname;
+        if (pathname.startsWith('/uploads/')) {
+          pathname = `/api${pathname}`;
+        }
+        return `${window.location.origin}${pathname}${parsed.search}`;
+      } catch (e) {}
+    }
+    return filePath;
+  }
+
+  let cleanPath = filePath;
+  if (!cleanPath.startsWith('/uploads/') && !cleanPath.startsWith('/api/uploads/')) {
+    cleanPath = cleanPath.startsWith('/') ? `/uploads${cleanPath}` : `/uploads/${cleanPath}`;
+  }
+
+  // If running in a remote browser (live site):
+  // Nginx only proxies /api to Node.js backend. Route /uploads/ through /api/uploads/ so it reaches Node without Nginx edits!
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    if (cleanPath.startsWith('/uploads/')) {
+      cleanPath = `/api${cleanPath}`;
+    }
+    return `${window.location.origin}${cleanPath}`;
+  }
+
+  return `${BASE_SERVER_URL}${cleanPath}`;
+};
+
+/**
+ * Normalizes description HTML by replacing any stale localhost/127.0.0.1 upload URLs
+ * with the active origin when running on a live/production domain, and routing /uploads/ through /api/uploads/.
+ */
+export const normalizeDescriptionHtml = (html) => {
+  if (!html || typeof html !== 'string') return html;
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return html
+      .replace(/https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/uploads\//g, `${window.location.origin}/api/uploads/`)
+      .replace(/(src|href)=["']\/uploads\//g, `$1="${window.location.origin}/api/uploads/`)
+      .replace(/(src|href)=["']https?:\/\/[^/]+\/uploads\//g, `$1="${window.location.origin}/api/uploads/`);
+  }
+  return html;
 };
 
 export const formatFileSize = (bytes) => {
@@ -77,18 +122,19 @@ export const buildFileEmbedHtml = ({ url, name, sizeBytes, isImage }) => {
     { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]
   ));
   const size = formatFileSize(sizeBytes);
+  const absoluteUrl = toAbsoluteFileUrl(url);
 
   if (isImage) {
     return `<div class="crm-inline-file" contenteditable="false" style="margin:8px 0;">` +
-      `<a href="${url}" target="_blank" rel="noopener noreferrer">` +
-      `<img src="${url}" alt="${safeName}" style="max-width:100%;max-height:320px;border:1px solid #e5e7eb;border-radius:6px;display:block;" />` +
+      `<a href="${absoluteUrl}" target="_blank" rel="noopener noreferrer">` +
+      `<img src="${absoluteUrl}" alt="${safeName}" style="max-width:100%;max-height:320px;border:1px solid #e5e7eb;border-radius:6px;display:block;" />` +
       `</a>` +
       `<div style="font-size:11px;color:#6b7280;margin-top:4px;">${safeName}${size ? ` (${size})` : ''}</div>` +
       `</div><p><br/></p>`;
   }
 
   return `<div class="crm-inline-file" contenteditable="false" style="margin:8px 0;">` +
-    `<a href="${url}" target="_blank" rel="noopener noreferrer" download="${safeName}" ` +
+    `<a href="${absoluteUrl}" target="_blank" rel="noopener noreferrer" download="${safeName}" ` +
     `style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;text-decoration:none;color:#0f172a;font-family:sans-serif;">` +
     `<span style="font-size:15px;">📎</span>` +
     `<span style="font-size:12px;font-weight:600;">${safeName}</span>` +

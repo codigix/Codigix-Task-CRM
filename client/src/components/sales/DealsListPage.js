@@ -21,10 +21,23 @@ const DealsListPage = () => {
       setIsLoading(true);
       setError('');
       let dealsRes, contactsRes, companiesRes;
+
+      const currentUserData = (() => {
+        try {
+          return JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('user'));
+        } catch (e) { return null; }
+      })();
+
+      const authFilters = {};
+      if (currentUserData) {
+        authFilters.user_id = currentUserData.id || currentUserData.userId;
+        authFilters.role = currentUserData.role_name || currentUserData.role || currentUserData.userRole;
+        authFilters.department = currentUserData.department || currentUserData.department_name;
+      }
       
       try {
         [dealsRes, contactsRes, companiesRes] = await Promise.all([
-          dealsAPI.getAll(),
+          dealsAPI.getAll(authFilters),
           contactsAPI.getAll(),
           companiesAPI.getAll(),
         ]);

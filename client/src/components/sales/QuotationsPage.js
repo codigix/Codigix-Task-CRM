@@ -8,11 +8,13 @@ import ReviseQuotationModal from './ReviseQuotationModal';
 import { estimationsAPI, dealsAPI, leadsAPI, activitiesAPI } from '../../services/api';
 import { showSuccessToast } from '../../utils/toast';
 import { generateQuotationPDF } from '../../utils/generateQuotationPDF';
+import { useAuth } from '../../hooks/useAuth';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const QuotationsPage = () => {
   const location = useLocation();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState('kanban');
@@ -180,18 +182,11 @@ const QuotationsPage = () => {
 
     // Polling interval for background updates
     const interval = setInterval(() => {
-      // Use refs or direct checks to see if we should skip
-      // We check the states directly here to avoid re-creating the interval
-      // Note: Since this is inside the interval, we need to be careful about stale closures
-      // if we use state variables. However, we're using fetchQuotations(true) which
-      // now has its own internal isFetchingRef check.
-
-      // We'll use a safer approach by not depending on state for the interval creation
       fetchQuotations(true);
     }, 15000); // 15 seconds for stability
 
     return () => clearInterval(interval);
-  }, []); // Only once on mount
+  }, [user]);
 
   const handleReviseQuotation = async (quotation) => {
     try {
@@ -402,10 +397,23 @@ const QuotationsPage = () => {
     isFetchingRef.current = true;
     if (!isSilent) setIsLoadingQuotations(true);
     try {
+      const currentUserData = user || (() => {
+        try {
+          return JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('user'));
+        } catch (e) { return null; }
+      })();
+
+      const authFilters = {};
+      if (currentUserData) {
+        authFilters.user_id = currentUserData.id || currentUserData.userId;
+        authFilters.role = currentUserData.role_name || currentUserData.role || currentUserData.userRole;
+        authFilters.department = currentUserData.department || currentUserData.department_name;
+      }
+
       const [estimationsRes, dealsRes, leadsRes] = await Promise.all([
-        estimationsAPI.getAll(),
-        dealsAPI.getAll(),
-        leadsAPI.getAll()
+        estimationsAPI.getAll(authFilters),
+        dealsAPI.getAll(authFilters),
+        leadsAPI.getAll(authFilters)
       ]);
 
       const estimations = Array.isArray(estimationsRes) ? estimationsRes : [];
@@ -448,6 +456,20 @@ const QuotationsPage = () => {
         };
       });
 
+      // Client-side guardrail: non-admin and non-manager only see estimations created by them or related to their assigned leads/deals
+      const role = authFilters.role || '';
+      const isManager = role.toLowerCase().includes('admin') || role.toLowerCase().includes('manager');
+      let finalQuotations = joinedData;
+      if (!isManager && currentUserData?.id) {
+        const currentUid = Number(currentUserData.id);
+        finalQuotations = joinedData.filter(q => {
+          const estimateBy = q.estimate_by != null ? Number(q.estimate_by) : null;
+          const leadOwnerId = q.lead_owner_id != null ? Number(q.lead_owner_id) : (q.owner_id != null ? Number(q.owner_id) : null);
+          const dealAssigneeId = q.deal_assignee_id != null ? Number(q.deal_assignee_id) : (q.assignee_id != null ? Number(q.assignee_id) : null);
+          return estimateBy === currentUid || leadOwnerId === currentUid || dealAssigneeId === currentUid;
+        });
+      }
+
       // Additional safety check for silent updates to prevent race conditions
       // Ignore silent updates during a "grace period" after a manual update
       const timeSinceUpdate = Date.now() - lastUpdateRef.current;
@@ -456,7 +478,7 @@ const QuotationsPage = () => {
         return;
       }
 
-      setQuotations(joinedData);
+      setQuotations(finalQuotations);
     } catch (err) {
       console.error('Error fetching quotations:', err);
       if (!isSilent) setQuotations([]);

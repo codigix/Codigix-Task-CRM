@@ -2,10 +2,18 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Bell, Check, CheckCheck, Filter, MoreVertical, X, ExternalLink,
   MessageSquare, CheckSquare, AlertCircle, Upload, AtSign, Users,
-  Calendar, Briefcase, ChevronRight, ChevronLeft, Tag
+  Calendar, Briefcase, ChevronRight, ChevronLeft, Tag, Smartphone, Volume2, VolumeX, BellRing
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config/environment';
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  sendTestDeviceNotification,
+  isSoundEnabled,
+  setSoundEnabled,
+  showDeviceNotification
+} from '../../services/deviceNotification';
 
 // ─── Mock Data ──────────────────────────────────────────────────────────────
 const AVATARS = {
@@ -90,6 +98,31 @@ export default function NotificationsPage() {
   const [selectedNotif, setSelectedNotif] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [devicePermission, setDevicePermission] = useState(getNotificationPermission());
+  const [soundOn, setSoundOn] = useState(isSoundEnabled());
+
+  const handleEnableDeviceAlerts = async () => {
+    const perm = await requestNotificationPermission();
+    setDevicePermission(perm);
+    if (perm === 'granted') {
+      showDeviceNotification({
+        title: '🔔 Device Alerts Activated',
+        body: 'You will now receive native system notifications on this device!',
+        url: window.location.href
+      });
+    }
+  };
+
+  const handleTestAlert = async () => {
+    await sendTestDeviceNotification();
+    setDevicePermission(getNotificationPermission());
+  };
+
+  const handleToggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    setSoundEnabled(next);
+  };
 
   const loadNotifications = useCallback(async () => {
     if (!user?.id) { setIsLoading(false); return; }
@@ -175,9 +208,44 @@ export default function NotificationsPage() {
     <div className="bg-[#f8fafc] min-h-screen font-sans text-gray-900 relative" style={{ fontFamily: "'Inter', sans-serif" }} onClick={() => { }}>
 
       {/* Page Header */}
-      <div className="px-6 py-5 bg-white border-b border-gray-100">
-        <h1 className="text-[20px]  text-gray-900">Notifications</h1>
-        <p className="text-[12px] text-gray-500 mt-0.5">Stay updated with important activities and alerts</p>
+      <div className="px-6 py-5 bg-white border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <h1 className="text-[20px] font-bold text-gray-900">Notifications</h1>
+          <p className="text-[12px] text-gray-500 mt-0.5">Stay updated with important activities, task assignments, and system alerts</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {devicePermission === 'granted' ? (
+            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-semibold text-emerald-800">Device Alerts Active</span>
+              <button
+                onClick={handleTestAlert}
+                className="ml-1 text-[11px] bg-emerald-600 text-white px-2 py-0.5 rounded font-medium hover:bg-emerald-700 transition-colors shadow-xs"
+              >
+                Test Alert
+              </button>
+              <button
+                onClick={handleToggleSound}
+                className="text-emerald-700 hover:text-emerald-900 p-0.5 transition-colors"
+                title={soundOn ? 'Sound alerts on' : 'Sound alerts muted'}
+              >
+                {soundOn ? <Volume2 size={14} /> : <VolumeX size={14} />}
+              </button>
+            </div>
+          ) : devicePermission === 'denied' ? (
+            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              <AlertCircle size={14} className="text-amber-600" />
+              Device alerts blocked in browser settings.
+            </div>
+          ) : (
+            <button
+              onClick={handleEnableDeviceAlerts}
+              className="flex items-center gap-1.5 text-xs bg-blue-600 text-white px-3.5 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-sm active:scale-95"
+            >
+              <Smartphone size={14} /> Enable Device Alerts
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="p-6">

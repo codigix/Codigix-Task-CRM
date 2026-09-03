@@ -4,16 +4,17 @@ const fs = require('fs');
 const { google } = require('googleapis');
 const OpenAI = require('openai');
 const nodemailer = require('nodemailer');
+const { UPLOAD_DIR } = require('../config/upload');
 
 module.exports = function setupFollowupsRoutes(app, pool) {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
   });
 
-  // Configure multer for recording uploads
+  // Configure multer for recording uploads strictly inside UPLOAD_DIR
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      const dir = 'uploads/recordings';
+      const dir = path.join(UPLOAD_DIR, 'recordings');
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
@@ -826,9 +827,30 @@ module.exports = function setupFollowupsRoutes(app, pool) {
   app.get('/api/followups', async (req, res) => {
     try {
       const { assigned_to } = req.query;
+      const headerUserId = req.headers['x-user-id'];
+      const headerUserRole = req.headers['x-user-role'];
+      let userId = req.query.user_id || headerUserId;
+      let role = req.query.role || headerUserRole;
+
+      if (userId && !role) {
+        try {
+          const [uRows] = await pool.query(
+            'SELECT r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
+            [userId]
+          );
+          if (uRows.length > 0) {
+            role = uRows[0].role_name;
+          }
+        } catch (e) {}
+      }
+
+      const isSuperAdmin = role && (role === 'Super Admin' || role === 'Admin');
+      const isManager = role && role.toLowerCase().includes('manager');
 
       let queryText = `
         SELECT f.*,
+               l.owner_id as lead_owner_id,
+               d.assignee_id as deal_assignee_id,
                CASE 
                  WHEN f.related_type = 'Lead' THEN COALESCE(NULLIF(l.lead_name, ''), 'Lead')
                  WHEN f.related_type = 'Deal' THEN COALESCE(NULLIF(d.deal_name, ''), 'Deal')
@@ -862,8 +884,8 @@ module.exports = function setupFollowupsRoutes(app, pool) {
                   WHERE (deal_id = d.id OR (l.id IS NOT NULL AND lead_id = l.id) OR (f.related_type = 'Lead' AND lead_id = f.related_id) OR (f.related_type = 'Deal' AND deal_id = f.related_id) OR (f.related_type = 'Customer' AND client_id = f.related_id)) 
                   ORDER BY created_at DESC LIMIT 1) as latest_proposal_number
         FROM followups f
-        LEFT JOIN leads l ON f.related_type = 'Lead' AND f.related_id = l.id
-        LEFT JOIN deals d ON (f.related_type = 'Deal' AND f.related_id = d.id) OR f.deal_id = d.id
+        LEFT JOIN leads l ON (f.related_type = 'Lead' AND f.related_id = l.id) OR (f.lead_id IS NOT NULL AND f.lead_id = l.id)
+        LEFT JOIN deals d ON (f.related_type = 'Deal' AND f.related_id = d.id) OR (f.deal_id IS NOT NULL AND f.deal_id = d.id)
         LEFT JOIN contacts c ON f.related_type = 'Customer' AND f.related_id = c.id
         LEFT JOIN projects p ON f.project_id = p.id
         LEFT JOIN invoices i ON f.related_type = 'Invoice' AND f.related_id = i.id
@@ -871,9 +893,19 @@ module.exports = function setupFollowupsRoutes(app, pool) {
       `;
       const params = [];
 
+      // Role-based filtering: for leads, only visible to the user assigned to that lead; for deals, assigned to deal or linked lead; for other, assigned_to
+      if (!isSuperAdmin && !isManager && userId) {
+        queryText += ` AND (
+          (f.related_type = 'Lead' AND l.owner_id = ?)
+          OR (f.related_type = 'Deal' AND (d.assignee_id = ? OR l.owner_id = ?))
+          OR (f.related_type NOT IN ('Lead', 'Deal') AND f.assigned_to = ?)
+        )`;
+        params.push(userId, userId, userId, userId);
+      }
+
       if (assigned_to) {
-        queryText += ' AND f.assigned_to_name = ?';
-        params.push(assigned_to);
+        queryText += ' AND (f.assigned_to_name = ? OR f.assigned_to = ? OR l.owner_id = ?)';
+        params.push(assigned_to, assigned_to, assigned_to);
       }
 
       if (req.query.related_id) {
@@ -898,23 +930,62 @@ module.exports = function setupFollowupsRoutes(app, pool) {
   app.get('/api/followups/metrics/summary', async (req, res) => {
     try {
       const today = new Date().toISOString().split('T')[0];
+      const headerUserId = req.headers['x-user-id'];
+      const headerUserRole = req.headers['x-user-role'];
+      let userId = req.query.user_id || headerUserId;
+      let role = req.query.role || headerUserRole;
+
+      if (userId && !role) {
+        try {
+          const [uRows] = await pool.query(
+            'SELECT r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
+            [userId]
+          );
+          if (uRows.length > 0) {
+            role = uRows[0].role_name;
+          }
+        } catch (e) {}
+      }
+
+      const isSuperAdmin = role && (role === 'Super Admin' || role === 'Admin');
+      const isManager = role && role.toLowerCase().includes('manager');
+
+      const joinSql = `
+        FROM followups f
+        LEFT JOIN leads l ON (f.related_type = 'Lead' AND f.related_id = l.id) OR (f.lead_id IS NOT NULL AND f.lead_id = l.id)
+        LEFT JOIN deals d ON (f.related_type = 'Deal' AND f.related_id = d.id) OR (f.deal_id IS NOT NULL AND f.deal_id = d.id)
+      `;
+
+      let whereFilter = '';
+      const filterParams = [];
+
+      if (!isSuperAdmin && !isManager && userId) {
+        whereFilter = ` AND (
+          (f.related_type = 'Lead' AND l.owner_id = ?)
+          OR (f.related_type = 'Deal' AND (d.assignee_id = ? OR l.owner_id = ?))
+          OR (f.related_type NOT IN ('Lead', 'Deal') AND f.assigned_to = ?)
+        )`;
+        filterParams.push(userId, userId, userId, userId);
+      }
 
       const [todayCount] = await pool.query(
-        "SELECT COUNT(*) as count FROM followups WHERE scheduled_date = ? AND status != 'Completed'",
-        [today]
+        `SELECT COUNT(DISTINCT f.id) as count ${joinSql} WHERE f.scheduled_date = ? AND f.status != 'Completed' ${whereFilter}`,
+        [today, ...filterParams]
       );
 
       const [overdueCount] = await pool.query(
-        "SELECT COUNT(*) as count FROM followups WHERE scheduled_date < ? AND status != 'Completed'",
-        [today]
+        `SELECT COUNT(DISTINCT f.id) as count ${joinSql} WHERE f.scheduled_date < ? AND f.status != 'Completed' ${whereFilter}`,
+        [today, ...filterParams]
       );
 
       const [completedCount] = await pool.query(
-        "SELECT COUNT(*) as count FROM followups WHERE status = 'Completed'"
+        `SELECT COUNT(DISTINCT f.id) as count ${joinSql} WHERE f.status = 'Completed' ${whereFilter}`,
+        filterParams
       );
 
       const [totalCount] = await pool.query(
-        "SELECT COUNT(*) as count FROM followups"
+        `SELECT COUNT(DISTINCT f.id) as count ${joinSql} WHERE 1=1 ${whereFilter}`,
+        filterParams
       );
 
       const discipline = totalCount[0].count > 0
@@ -925,7 +996,7 @@ module.exports = function setupFollowupsRoutes(app, pool) {
         today: todayCount[0].count,
         overdue: overdueCount[0].count,
         discipline: discipline,
-        performance: 90 // Placeholder
+        performance: 90
       });
     } catch (error) {
       responseError(res, 500, 'Failed to fetch metrics', error);
@@ -1257,7 +1328,7 @@ module.exports = function setupFollowupsRoutes(app, pool) {
         return res.status(400).json({ error: 'No recording file provided' });
       }
 
-      const recordingUrl = `/uploads/recordings/${req.file.filename}`;
+      const recordingUrl = `/api/uploads/recordings/${req.file.filename}`;
 
       connection = await getConnection();
       await connection.query(

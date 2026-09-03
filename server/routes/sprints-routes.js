@@ -141,21 +141,44 @@ module.exports = function setupSprintsRoutes(app, pool) {
       const department = deptFilter(req.query.department);
       const includeCompleted = req.query.includeCompleted === 'true';
 
-      // Removed department-based validation so everyone can view tasks of everyone
-      let sql = 'SELECT * FROM sprints WHERE 1=1';
-      const params = [];
-      if (!includeCompleted) sql += " AND status <> 'Completed'";
-      sql += " ORDER BY FIELD(status,'Active','Planned','Completed'), sort_order ASC, id ASC";
+      let sql = `
+        SELECT DISTINCT s.* FROM sprints s
+      `;
+      if (!includeCompleted) sql += " WHERE s.status <> 'Completed'";
+      sql += " ORDER BY FIELD(s.status,'Active','Planned','Completed'), s.sort_order ASC, s.id ASC";
 
-      const [sprints] = await db.query(sql, params);
+      const [sprints] = await db.query(sql);
 
       // Attach each sprint's items plus a To Do / In Progress / Done breakdown.
       for (const s of sprints) {
-        // Rank order, exactly as the user dragged it. Unranked rows fall to the end.
-        const [items] = await db.query(
-          'SELECT * FROM it_kanban_issues WHERE sprint_id = ? ORDER BY rank_order IS NULL, rank_order ASC, id ASC',
-          [s.id]
-        );
+        // Only include issues relevant to this department (including cross-department assignments).
+        let itemsQuery = `
+          SELECT i.*,
+                 u_assignee.department AS assignee_department,
+                 u_reporter.department AS reporter_department
+          FROM it_kanban_issues i
+          LEFT JOIN users u_assignee ON (
+            u_assignee.id = (
+              SELECT id FROM users u
+              WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+                 OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+                 OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+              LIMIT 1
+            )
+          )
+          LEFT JOIN users u_reporter ON (
+            u_reporter.id = (
+              SELECT id FROM users u
+              WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+                 OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+                 OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+              LIMIT 1
+            )
+          )
+          WHERE i.sprint_id = ?
+          ORDER BY i.rank_order IS NULL, i.rank_order ASC, i.id ASC
+        `;
+        const [items] = await db.query(itemsQuery, [s.id]);
         s.issues = items;
         s.counts = items.reduce((acc, i) => {
           const st = String(i.status || '').toUpperCase();
@@ -167,10 +190,33 @@ module.exports = function setupSprintsRoutes(app, pool) {
       }
 
       // Anything not in a sprint is the backlog.
-      // Removed department-based validation so everyone can view tasks of everyone
-      const [backlog] = await db.query(
-        'SELECT * FROM it_kanban_issues WHERE sprint_id IS NULL ORDER BY rank_order IS NULL, rank_order ASC, id ASC'
-      );
+      // Scoped to the current department with cross-department collaboration.
+      const [backlog] = await db.query(`
+        SELECT i.*,
+               u_assignee.department AS assignee_department,
+               u_reporter.department AS reporter_department
+        FROM it_kanban_issues i
+        LEFT JOIN users u_assignee ON (
+          u_assignee.id = (
+            SELECT id FROM users u
+            WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+               OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+               OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+            LIMIT 1
+          )
+        )
+        LEFT JOIN users u_reporter ON (
+          u_reporter.id = (
+            SELECT id FROM users u
+            WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+               OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+               OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+            LIMIT 1
+          )
+        )
+        WHERE i.sprint_id IS NULL
+        ORDER BY i.rank_order IS NULL, i.rank_order ASC, i.id ASC
+      `);
 
       // A board can run several sprints at once, so the board filters on the whole set.
       // `activeSprint` stays for callers that only care about the first one.

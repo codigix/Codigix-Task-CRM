@@ -82,25 +82,33 @@ module.exports = function setupItKanbanRoutes(app, pool) {
     if (!assigneeName || assigneeName === 'Unassigned') return null;
     if (assigneeName.includes('@')) return assigneeName;
     try {
+      const cleanAssignee = assigneeName.trim();
       const [users] = await db.query(
-        "SELECT email, department FROM users WHERE CONCAT(first_name, ' ', last_name) = ? OR first_name = ? OR email = ?",
-        [assigneeName, assigneeName, assigneeName]
+        `SELECT email, department, username, first_name, last_name FROM users 
+         WHERE TRIM(LOWER(CONCAT(TRIM(first_name), ' ', TRIM(COALESCE(last_name, ''))))) = TRIM(LOWER(?))
+            OR TRIM(LOWER(first_name)) = TRIM(LOWER(?))
+            OR TRIM(LOWER(email)) = TRIM(LOWER(?))
+            OR TRIM(LOWER(username)) = TRIM(LOWER(?))`,
+        [cleanAssignee, cleanAssignee, cleanAssignee, cleanAssignee]
       );
       if (users.length === 0) return null;
       if (users.length === 1) return users[0].email;
+
+      // Exact match on username
+      const byUser = users.find(u => u.username && u.username.toLowerCase() === cleanAssignee.toLowerCase());
+      if (byUser) return byUser.email;
 
       const norm = (d) => String(d || '').replace(/\s*department\s*$/i, '').trim().toLowerCase();
       const target = norm(department);
       const sameDept = users.filter(u => norm(u.department) === target);
 
-      if (sameDept.length === 1) return sameDept[0].email;
+      if (sameDept.length > 0) {
+        const emails = Array.from(new Set(sameDept.map(u => u.email).filter(Boolean)));
+        return emails.join(', ');
+      }
 
-      console.warn(
-        `⚠️ "${assigneeName}" matches ${users.length} users` +
-        `${target ? ` (${sameDept.length} in ${department})` : ''} — assignment email skipped ` +
-        'rather than sent to the wrong person.'
-      );
-      return null;
+      const allEmails = Array.from(new Set(users.map(u => u.email).filter(Boolean)));
+      return allEmails.join(', ');
     } catch (e) {
       console.error('Failed to get assignee email:', e);
     }
@@ -201,6 +209,103 @@ module.exports = function setupItKanbanRoutes(app, pool) {
       return true;
     } catch (error) {
       console.error('❌ Failed to send assignment notification email:', error.message);
+      return false;
+    }
+  };
+
+  const sendReviewEmail = async ({
+    reporterEmail,
+    reporterName,
+    actorName,
+    ticketKey,
+    ticketTitle,
+    ticketType,
+    ticketPriority,
+    ticketDepartment
+  }) => {
+    const SMTP_HOST = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com';
+    const SMTP_PORT = process.env.EMAIL_PORT || process.env.SMTP_PORT || '587';
+    const SMTP_USER = process.env.EMAIL_USER || process.env.SMTP_USER;
+    const SMTP_PASS = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+
+    if (!SMTP_USER || !SMTP_PASS) {
+      console.warn('⚠️ SMTP credentials missing. Cannot send review notification email.');
+      return false;
+    }
+
+    try {
+      const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: parseInt(SMTP_PORT),
+        secure: SMTP_PORT == 465,
+        auth: {
+          user: SMTP_USER,
+          pass: SMTP_PASS
+        }
+      });
+
+      const clientBaseUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3001';
+      const workspace = String(ticketDepartment || '')
+        .replace(/\s*department\s*$/i, '').trim().toLowerCase() === 'marketing' ? 'marketing' : 'it';
+      const link = `${clientBaseUrl}/${workspace}/tasks?ticketKey=${ticketKey}`;
+
+      const mailOptions = {
+        from: `"Codigix CRM" <${SMTP_USER}>`,
+        to: reporterEmail,
+        subject: `[Task Ready for Review] ${ticketKey}: ${ticketTitle}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <div style="background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); padding: 18px; text-align: center; border-radius: 6px 6px 0 0;">
+              <h2 style="color: white; margin: 0; font-size: 18px;">Task Ready for Review</h2>
+            </div>
+            <div style="padding: 22px; color: #333333; line-height: 1.6;">
+              <p>Hello <strong>${reporterName}</strong>,</p>
+              <p>The work on task <strong>${ticketKey}</strong> is completed and has been moved to <span style="background-color: #f5f3ff; color: #6d28d9; padding: 3px 8px; border-radius: 4px; font-weight: bold; border: 1px solid #ddd6fe;">IN REVIEW</span> by <strong>${actorName}</strong>.</p>
+              <p>Please review the submitted work and approve or request revisions:</p>
+
+              <table style="width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 13px;">
+                <tr>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 30%; color: #6b7280;">Task Key</td>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #111827;">${ticketKey}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #6b7280;">Title</td>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketTitle}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #6b7280;">Type</td>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketType || 'Task'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #6b7280;">Priority</td>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: ${ticketPriority === 'High' ? '#ef4444' : '#f59e0b'};">${ticketPriority || 'Medium'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #6b7280;">Department</td>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketDepartment || 'IT'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #6b7280;">Moved to Review By</td>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 600; color: #4f46e5;">${actorName}</td>
+                </tr>
+              </table>
+
+              <div style="text-align: center; margin: 25px 0 10px 0;">
+                <a href="${link}" style="background-color: #7c3aed; color: white; padding: 10px 22px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 13px; display: inline-block;">Review Task on Kanban →</a>
+              </div>
+            </div>
+            <div style="background-color: #f9fafb; padding: 10px; text-align: center; font-size: 11px; color: #9ca3af; border-radius: 0 0 6px 6px; border-top: 1px solid #f3f4f6;">
+              This is an automated notification from Codigix CRM.
+            </div>
+          </div>
+        `
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✉️ Review notification email sent for ${ticketKey} to reporter ${reporterEmail}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to send review notification email:', error.message);
       return false;
     }
   };
@@ -667,8 +772,12 @@ Acceptance Criteria
 
   app.get('/api/it-kanban/issues', async (req, res) => {
     try {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       const { department } = req.query;
-      // Join the linked project so the details panel can show a real Parent instead of "None".
+      // Join the linked project so the details panel can show a real Parent instead of "None",
+      // and join users to detect assignee/reporter departments for cross-department visibility.
       let query = `
         SELECT i.*,
                p.name AS parent_project_name,
@@ -677,18 +786,47 @@ Acceptance Criteria
                -- label and goes stale the moment an item moves, so anything showing a sprint
                -- should read this instead.
                s.name AS sprint_name,
-               s.status AS sprint_status
+               s.status AS sprint_status,
+               u_assignee.department AS assignee_department,
+               u_reporter.department AS reporter_department
         FROM it_kanban_issues i
         LEFT JOIN projects p ON p.id = COALESCE(i.parent_id, i.project_id)
         LEFT JOIN sprints s ON s.id = i.sprint_id
+        LEFT JOIN users u_assignee ON (
+          u_assignee.id = (
+            SELECT id FROM users u
+            WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+               OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+               OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+            LIMIT 1
+          )
+        )
+        LEFT JOIN users u_reporter ON (
+          u_reporter.id = (
+            SELECT id FROM users u
+            WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+               OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+               OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+            LIMIT 1
+          )
+        )
       `;
       const params = [];
 
-      // Removed department-based validation so everyone can view tasks of everyone
-      /* if (department) {
-        query += ' WHERE i.department = ? OR (i.department IS NULL AND ? = "IT")';
-        params.push(department, department);
-      } */
+      // Full transparency everywhere: tasks across all departments are visible without department restrictions
+      if (department && req.query.strict === 'true') {
+        const deptNorm = department.toLowerCase().trim();
+        const deptPattern = `%${deptNorm}%`;
+        query += `
+          WHERE (
+            LOWER(i.department) LIKE ?
+            OR (i.department IS NULL AND ? = 'it')
+            OR LOWER(COALESCE(u_assignee.department, '')) LIKE ?
+            OR LOWER(COALESCE(u_reporter.department, '')) LIKE ?
+          )
+        `;
+        params.push(deptPattern, deptNorm, deptPattern, deptPattern);
+      }
       // Rank first, so the List and Board show the priority order set by dragging in the
       // Backlog. Unranked rows keep the old newest-first behaviour at the end.
       query += ' ORDER BY i.rank_order IS NULL, i.rank_order ASC, i.created_at DESC';
@@ -809,10 +947,13 @@ Acceptance Criteria
   // GET attachments for an issue by key
   app.get('/api/it-kanban/issues/:key/attachments', async (req, res) => {
     try {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       const { key } = req.params;
       const [attachments] = await db.query(
-        'SELECT * FROM it_kanban_attachments WHERE issue_key = ? ORDER BY uploaded_at DESC',
-        [key]
+        'SELECT * FROM it_kanban_attachments WHERE issue_key = ? OR issue_id = ? ORDER BY uploaded_at DESC',
+        [key, parseInt(key) || 0]
       );
       res.json(attachments);
     } catch (error) {
@@ -824,12 +965,12 @@ Acceptance Criteria
   app.post('/api/it-kanban/issues/:key/attachments', async (req, res) => {
     try {
       const { key } = req.params;
-      const { file_name, file_path, file_size, file_type } = req.body;
+      const { file_name, file_path, file_size, file_type, issue_id } = req.body;
       const [result] = await db.query(
-        'INSERT INTO it_kanban_attachments (issue_key, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?)',
-        [key, file_name, file_path || '', file_size || '0 KB', file_type || 'document']
+        'INSERT INTO it_kanban_attachments (issue_key, issue_id, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?, ?)',
+        [key, issue_id || null, file_name, file_path || '', file_size || '0 KB', file_type || 'document']
       );
-      res.status(201).json({ id: result.insertId, issue_key: key, file_name, file_path, file_size, file_type });
+      res.status(201).json({ id: result.insertId, issue_key: key, issue_id, file_name, file_path, file_size, file_type });
     } catch (error) {
       responseError(res, 500, 'Failed to save attachment', error);
     }
@@ -978,6 +1119,67 @@ Acceptance Criteria
           }
         } catch (dbErr) {
           console.error('Failed to query current issue state for assignee check:', dbErr);
+        }
+      }
+
+      // Check if status is changed to 'IN REVIEW' -> instantly notify reporter via in-app notification and email
+      if (updates.status) {
+        try {
+          const newStatus = String(updates.status).trim().toUpperCase();
+          if (newStatus.includes('REVIEW')) {
+            const [statusIssues] = await db.query(
+              "SELECT title, assignee, description, priority, type, status, department, reporter FROM it_kanban_issues WHERE issue_key = ?",
+              [key]
+            );
+            if (statusIssues.length > 0) {
+              const currentIssue = statusIssues[0];
+              const prevStatus = String(currentIssue.status || '').trim().toUpperCase();
+              if (!prevStatus.includes('REVIEW')) {
+                const reporterName = currentIssue.reporter;
+                if (reporterName && reporterName !== 'Unassigned') {
+                  const actor = await resolveActorName(req, currentIssue.assignee || 'A team member');
+
+                  // 1. In-app notification to the reporter
+                  const createNotification = req.app.locals.createNotification;
+                  if (typeof createNotification === 'function') {
+                    const workspace = String(currentIssue.department || '')
+                      .replace(/\s*department\s*$/i, '').trim().toLowerCase() === 'marketing' ? 'marketing' : 'it';
+                    createNotification({
+                      userName: reporterName,
+                      type: 'review_request',
+                      title: `Task Ready for Review: ${key}`,
+                      message: `${actor} moved "${updates.title || currentIssue.title}" to IN REVIEW for your review.`,
+                      actorName: actor,
+                      entityType: 'issue',
+                      entityKey: key,
+                      link: `/${workspace}/tasks?ticketKey=${key}`,
+                      excludeUserId: req.headers['x-user-id']
+                    }).catch(err => console.error('Failed to create in-app review notification:', err.message));
+                  }
+
+                  // 2. Email notification to the reporter
+                  getAssigneeEmail(reporterName, currentIssue.department).then(email => {
+                    if (email) {
+                      sendReviewEmail({
+                        reporterEmail: email,
+                        reporterName: reporterName,
+                        actorName: actor,
+                        ticketKey: key,
+                        ticketTitle: updates.title || currentIssue.title,
+                        ticketType: updates.type || currentIssue.type,
+                        ticketPriority: updates.priority || currentIssue.priority,
+                        ticketDepartment: currentIssue.department
+                      });
+                    } else {
+                      console.log(`ℹ️ No email address found for reporter "${reporterName}".`);
+                    }
+                  }).catch(err => console.error('Failed to trigger review email notify on update:', err));
+                }
+              }
+            }
+          }
+        } catch (statusErr) {
+          console.error('Failed to check review status transition:', statusErr);
         }
       }
 

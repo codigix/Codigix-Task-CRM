@@ -3,7 +3,7 @@ import {
   ChevronDown, ChevronRight, Check, Zap, Sparkles, Settings,
   FileEdit, FileText, AlignLeft, Network, CopyCheck,
   Clock, Github, LinkIcon, CheckSquare, GitBranch, GitPullRequest,
-  RefreshCw, CheckCircle, ExternalLink, X, Copy, Terminal
+  RefreshCw, CheckCircle, ExternalLink, X, Copy, Terminal, User, Search
 } from 'lucide-react';
 import { normalizeLabel } from '../../../utils/labels';
 
@@ -57,6 +57,7 @@ const ITIssueDetailsSidebar = ({
   remainingEstimate,
   setRemainingEstimate,
   usersList,
+  reportersList,
   teamsList,
   sprintsList,
   handleUpdate,
@@ -90,6 +91,19 @@ const ITIssueDetailsSidebar = ({
   const [showAutomationModal, setShowAutomationModal] = useState(false);
   const [copiedBranch, setCopiedBranch] = useState(false);
   const [repoUrl, setRepoUrl] = useState('https://github.com/codigix/crm-all-in-one');
+  const [assigneeSearch, setAssigneeSearch] = useState('');
+  const [reporterSearch, setReporterSearch] = useState('');
+
+  const filteredAssignees = (usersList || []).filter(u => {
+    const name = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || '';
+    return !assigneeSearch.trim() || name.toLowerCase().includes(assigneeSearch.toLowerCase().trim());
+  });
+
+  const rawReporters = (reportersList && reportersList.length > 0) ? reportersList : (usersList || []);
+  const filteredReporters = rawReporters.filter(u => {
+    const name = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || '';
+    return !reporterSearch.trim() || name.toLowerCase().includes(reporterSearch.toLowerCase().trim());
+  });
   const [automationLogs, setAutomationLogs] = useState([
     {
       id: 1,
@@ -146,7 +160,7 @@ const ITIssueDetailsSidebar = ({
   };
 
   return (
-    <div className="w-72 md:w-80 shrink-0 h-full overflow-y-auto pl-4 pr-1 custom-scrollbar space-y-5 border-l border-gray-100 font-sans">
+    <div className="w-80 lg:w-[350px] shrink-0 h-full overflow-y-auto overflow-x-hidden pl-3.5 pr-2 custom-scrollbar space-y-4 border-l border-gray-200/80 font-sans">
       {/* Top Status & AI Action Buttons */}
       <div className="flex items-center gap-2 flex-wrap mb-2">
         <div className="interactive-dropdown relative">
@@ -222,7 +236,7 @@ const ITIssueDetailsSidebar = ({
       </div>
 
       {/* COLLAPSIBLE DETAILS ACCORDION */}
-      <div className="border border-gray-200 rounded">
+      <div className="border border-gray-200 rounded overflow-hidden">
         <div
           onClick={() => toggleSection('details')}
           className="flex items-center justify-between p-2 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition"
@@ -235,12 +249,11 @@ const ITIssueDetailsSidebar = ({
         </div>
 
         {!collapsedSections.details && (
-          <div className="p-3.5 space-y-3.5 text-xs bg-white">
-            {/* Editable. Note a sprint still owns its project: moving this item into a
-                project-owning sprint will overwrite whatever is chosen here. */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Project</span>
-              <div className="col-span-2">
+          <div className="p-3 space-y-3 text-xs bg-white">
+            {/* Project */}
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Project</span>
+              <div className="flex-1 min-w-0">
                 {projectsList && projectsList.length > 0 ? (
                   <select
                     value={projectId || ''}
@@ -249,7 +262,7 @@ const ITIssueDetailsSidebar = ({
                       setProjectId(value);
                       handleUpdate({ project_id: value === '' ? null : Number(value) });
                     }}
-                    className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer max-w-full"
+                    className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full truncate"
                   >
                     <option value="">None</option>
                     {projectsList.map(p => (
@@ -259,73 +272,123 @@ const ITIssueDetailsSidebar = ({
                     ))}
                   </select>
                 ) : (
-                  <span className="text-xs text-gray-400">No projects in this department</span>
+                  <span className="text-xs text-gray-400 truncate block">No projects in dept</span>
                 )}
               </div>
             </div>
 
             {/* Assignee */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Assignee</span>
-              <div className="col-span-2 interactive-dropdown relative">
-                {openDropdown === 'details-assignee' ? (
-                  <div className="w-full">
-                    <div
-                      onClick={() => toggleDropdown('details-assignee')}
-                      className="flex items-center gap-2 border border-blue-500 ring-1 ring-blue-500 rounded px-1.5 py-1 bg-white cursor-text mb-1"
-                    >
-                      <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">
-                        {assignee.initial || 'U'}
-                      </div>
-                      <span className="bg-blue-500 text-white px-1 py-0.5 text-xs flex-1 rounded-xs truncate">{assignee.name}</span>
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Assignee</span>
+              <div className="flex-1 min-w-0 interactive-dropdown relative">
+                <div className="flex items-center justify-between gap-1 min-w-0">
+                  <div
+                    onClick={() => {
+                      setAssigneeSearch('');
+                      toggleDropdown('details-assignee');
+                    }}
+                    className={`flex items-center gap-1.5 px-1.5 py-1 -ml-1 rounded cursor-pointer transition text-gray-800 hover:bg-gray-100/80 min-w-0 ${openDropdown === 'details-assignee' ? 'bg-blue-50 ring-1 ring-blue-300' : ''}`}
+                    title="Click to change assignee"
+                  >
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${!assignee?.name || assignee?.name === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
+                      {!assignee?.name || assignee?.name === 'Unassigned' ? <User size={11} className="text-gray-600" /> : (assignee?.initial || 'U')}
+                    </div>
+                    <span className="text-xs text-gray-700 font-medium truncate">{assignee?.name || 'Unassigned'}</span>
+                    <ChevronDown size={12} className={`text-gray-400 shrink-0 transition-transform duration-150 ${openDropdown === 'details-assignee' ? 'rotate-180 text-blue-500' : ''}`} />
+                  </div>
+                  <button onClick={handleAssignToMe} className="text-xs text-blue-600 hover:underline font-medium cursor-pointer shrink-0 whitespace-nowrap">
+                    Assign to me
+                  </button>
+                </div>
+
+                {openDropdown === 'details-assignee' && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 top-full mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                  >
+                    {/* Integrated Search Box Header */}
+                    <div className="p-2 border-b border-gray-100 bg-gray-50/75 flex items-center gap-2">
+                      <Search size={13} className="text-gray-400 shrink-0" />
+                      <input
+                        type="text"
+                        autoFocus
+                        value={assigneeSearch}
+                        onChange={(e) => setAssigneeSearch(e.target.value)}
+                        placeholder="Search assignee..."
+                        className="w-full bg-transparent text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none"
+                      />
+                      {assigneeSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setAssigneeSearch('')}
+                          className="text-gray-400 hover:text-gray-600 cursor-pointer p-0.5"
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
                     </div>
 
-                    <div className="absolute left-0 top-full bg-white border border-gray-200 rounded-b shadow-lg z-50 min-w-[260px] max-h-64 overflow-y-auto custom-scrollbar">
-                      {usersList.map(u => {
+                    {/* Scrollable Options List */}
+                    <div className="max-h-56 overflow-y-auto py-1 custom-scrollbar">
+                      {/* Unassigned Option */}
+                      {(!assigneeSearch.trim() || 'unassigned'.includes(assigneeSearch.toLowerCase().trim())) && (
+                        <div
+                          onClick={() => {
+                            setAssignee({ name: 'Unassigned', initial: 'U', color: 'bg-gray-200 text-gray-500' });
+                            setOpenDropdown(null);
+                            setAssigneeSearch('');
+                            handleUpdate({ assignee: 'Unassigned' });
+                          }}
+                          className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${(!assignee?.name || assignee?.name === 'Unassigned') ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                        >
+                          <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
+                            <User size={12} className="text-gray-500" />
+                          </div>
+                          <span className="flex-1 truncate">Unassigned</span>
+                          {(!assignee?.name || assignee?.name === 'Unassigned') && (
+                            <Check size={14} className="text-blue-600 shrink-0" />
+                          )}
+                        </div>
+                      )}
+
+                      {/* Users List */}
+                      {filteredAssignees.map(u => {
                         const uName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
                         const uInitial = uName ? uName.substring(0, 2).toUpperCase() : 'U';
+                        const isSelected = assignee?.name === uName;
                         return (
                           <div
                             key={u.id || uName}
                             onClick={() => {
                               setAssignee({ name: uName, initial: uInitial, color: 'bg-blue-100 text-blue-700' });
                               setOpenDropdown(null);
+                              setAssigneeSearch('');
                               handleUpdate({ assignee: uName });
                             }}
-                            className="p-2.5 hover:bg-gray-100 cursor-pointer flex items-center gap-3 transition"
+                            className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
                           >
-                            <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
                               {uInitial}
                             </div>
-                            <span className="text-gray-800 text-xs font-medium">{uName}</span>
+                            <span className="flex-1 truncate">{uName}</span>
+                            {isSelected && <Check size={14} className="text-blue-600 shrink-0" />}
                           </div>
                         );
                       })}
+
+                      {filteredAssignees.length === 0 && assigneeSearch.trim() && !'unassigned'.includes(assigneeSearch.toLowerCase().trim()) && (
+                        <div className="px-3 py-3 text-center text-xs text-gray-400">No users found</div>
+                      )}
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div
-                      onClick={() => toggleDropdown('details-assignee')}
-                      className="flex items-center gap-2 hover:bg-gray-50 p-1 -ml-1 rounded cursor-pointer transition text-gray-800"
-                    >
-                      <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
-                        {assignee?.initial || 'U'}
-                      </div>
-                      <span className="text-xs text-gray-700 font-medium truncate">{assignee?.name || 'Unassigned'}</span>
-                    </div>
-                    <button onClick={handleAssignToMe} className="text-xs text-blue-600 hover:underline font-semibold cursor-pointer">
-                      Assign to me
-                    </button>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Parent Ticket Field (Jira Style) */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Parent</span>
-              <div className="col-span-2">
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Parent</span>
+              <div className="flex-1 min-w-0">
                 {currentSubtask ? (
                   <button
                     onClick={onBackToParent}
@@ -336,15 +399,13 @@ const ITIssueDetailsSidebar = ({
                     <span className="truncate">{parentIssueKey || 'WR-101'}: {parentIssueTitle || 'Parent Issue'}</span>
                   </button>
                 ) : (
-                  // A top-level item can sit under another work item on the same board.
-                  // Itself and its own children are excluded, so a cycle can't be chosen.
                   <select
                     value={issue?.parent_id ?? ''}
                     onChange={(e) => {
                       const v = e.target.value;
                       handleUpdate({ parent_id: v === '' ? null : Number(v) });
                     }}
-                    className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer max-w-full w-full"
+                    className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full truncate"
                   >
                     <option value="">None</option>
                     {parentOptions.map(o => (
@@ -356,36 +417,116 @@ const ITIssueDetailsSidebar = ({
             </div>
 
             {/* Reporter */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Reporter</span>
-              <div className="col-span-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
-                    {reporter?.initial || 'U'}
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Reporter</span>
+              <div className="flex-1 min-w-0 interactive-dropdown relative">
+                <div
+                  onClick={() => {
+                    setReporterSearch('');
+                    toggleDropdown('details-reporter');
+                  }}
+                  className={`flex items-center justify-between px-1.5 py-1 -ml-1 rounded cursor-pointer transition text-gray-800 hover:bg-gray-100/80 w-full ${openDropdown === 'details-reporter' ? 'bg-blue-50 ring-1 ring-blue-300' : ''}`}
+                  title="Click to change reporter"
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${!reporter?.name || reporter?.name === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
+                      {!reporter?.name || reporter?.name === 'Unassigned' ? <User size={11} className="text-gray-600" /> : (reporter?.initial || 'U')}
+                    </div>
+                    <span className="text-xs text-gray-700 font-medium truncate">{reporter?.name || 'Unassigned'}</span>
                   </div>
-                  <select
-                    value={reporter?.name || ''}
-                    onChange={(e) => {
-                      const name = e.target.value;
-                      const initial = name
-                        ? name.trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase()
-                        : 'U';
-                      setReporter({ name: name || 'Unassigned', initial, color: 'bg-blue-100 text-blue-700' });
-                      handleUpdate({ reporter: name || 'Unassigned' });
-                    }}
-                    className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer min-w-0 flex-1"
-                  >
-                    <option value="">Unassigned</option>
-                    {usersList.map(u => <option key={u.id || u.name} value={u.name}>{u.name}</option>)}
-                  </select>
+                  <ChevronDown size={12} className={`text-gray-400 shrink-0 transition-transform duration-150 ${openDropdown === 'details-reporter' ? 'rotate-180 text-blue-500' : ''}`} />
                 </div>
+
+                {openDropdown === 'details-reporter' && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 top-full mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                  >
+                    {/* Integrated Search Box Header */}
+                    <div className="p-2 border-b border-gray-100 bg-gray-50/75 flex items-center gap-2">
+                      <Search size={13} className="text-gray-400 shrink-0" />
+                      <input
+                        type="text"
+                        autoFocus
+                        value={reporterSearch}
+                        onChange={(e) => setReporterSearch(e.target.value)}
+                        placeholder="Search reporter..."
+                        className="w-full bg-transparent text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none"
+                      />
+                      {reporterSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setReporterSearch('')}
+                          className="text-gray-400 hover:text-gray-600 cursor-pointer p-0.5"
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Scrollable Options List */}
+                    <div className="max-h-56 overflow-y-auto py-1 custom-scrollbar">
+                      {/* Unassigned Option */}
+                      {(!reporterSearch.trim() || 'unassigned'.includes(reporterSearch.toLowerCase().trim())) && (
+                        <div
+                          onClick={() => {
+                            setReporter({ name: 'Unassigned', initial: 'U', color: 'bg-gray-200 text-gray-500' });
+                            setOpenDropdown(null);
+                            setReporterSearch('');
+                            handleUpdate({ reporter: 'Unassigned' });
+                          }}
+                          className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${(!reporter?.name || reporter?.name === 'Unassigned') ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                        >
+                          <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
+                            <User size={12} className="text-gray-500" />
+                          </div>
+                          <span className="flex-1 truncate">Unassigned</span>
+                          {(!reporter?.name || reporter?.name === 'Unassigned') && (
+                            <Check size={14} className="text-blue-600 shrink-0" />
+                          )}
+                        </div>
+                      )}
+
+                      {/* Reporters List */}
+                      {filteredReporters.map(u => {
+                        const uName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                        const uInitial = uName
+                          ? uName.trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase()
+                          : 'U';
+                        const isSelected = reporter?.name === uName;
+                        return (
+                          <div
+                            key={u.id || uName}
+                            onClick={() => {
+                              setReporter({ name: uName, initial: uInitial, color: 'bg-blue-100 text-blue-700' });
+                              setOpenDropdown(null);
+                              setReporterSearch('');
+                              handleUpdate({ reporter: uName });
+                            }}
+                            className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                          >
+                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                              {uInitial}
+                            </div>
+                            <span className="flex-1 truncate">{uName}</span>
+                            {isSelected && <Check size={14} className="text-blue-600 ml-auto shrink-0" />}
+                          </div>
+                        );
+                      })}
+
+                      {filteredReporters.length === 0 && reporterSearch.trim() && !'unassigned'.includes(reporterSearch.toLowerCase().trim()) && (
+                        <div className="px-3 py-3 text-center text-xs text-gray-400">No users found</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Team */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Team</span>
-              <div className="col-span-2">
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Team</span>
+              <div className="flex-1 min-w-0">
                 {teamsList && teamsList.length > 0 ? (
                   <select
                     value={team || ''}
@@ -395,21 +536,21 @@ const ITIssueDetailsSidebar = ({
                       setTeam(name);
                       handleUpdate({ team: name || 'None', team_id: match ? match.id : null });
                     }}
-                    className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer max-w-full"
+                    className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full truncate"
                   >
                     <option value="">None</option>
                     {teamsList.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
                   </select>
                 ) : (
-                  <span className="text-xs text-gray-400">No teams set up</span>
+                  <span className="text-xs text-gray-400 truncate block">No teams set up</span>
                 )}
               </div>
             </div>
 
             {/* Start date */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Start date</span>
-              <div className="col-span-2">
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Start date</span>
+              <div className="flex-1 min-w-0">
                 <input
                   type="date"
                   value={startDate || ''}
@@ -418,15 +559,15 @@ const ITIssueDetailsSidebar = ({
                     setStartDate(e.target.value);
                     handleUpdate({ start_date: e.target.value });
                   }}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white"
+                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full"
                 />
               </div>
             </div>
 
             {/* Due date */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Due date</span>
-              <div className="col-span-2">
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Due date</span>
+              <div className="flex-1 min-w-0">
                 <input
                   type="date"
                   value={dueDate}
@@ -435,22 +576,22 @@ const ITIssueDetailsSidebar = ({
                     setDueDate(e.target.value);
                     handleUpdate({ due_date: e.target.value });
                   }}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white"
+                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full"
                 />
               </div>
             </div>
 
             {/* Priority */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Priority</span>
-              <div className="col-span-2">
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Priority</span>
+              <div className="flex-1 min-w-0">
                 <select
                   value={priority || 'Medium'}
                   onChange={(e) => {
                     if (setPriority) setPriority(e.target.value);
                     handleUpdate({ priority: e.target.value });
                   }}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer"
+                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full"
                 >
                   {['Critical', 'High', 'Medium', 'Low'].map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
@@ -458,33 +599,33 @@ const ITIssueDetailsSidebar = ({
             </div>
 
             {/* Work type */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Type</span>
-              <div className="col-span-2">
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Type</span>
+              <div className="flex-1 min-w-0">
                 <select
                   value={issue?.type || 'Task'}
                   onChange={(e) => handleUpdate({ type: e.target.value })}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer max-w-full"
+                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full"
                 >
                   {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
             </div>
 
-            {/* Labels — editable, so tags can be corrected and added after creation. */}
-            <div className="grid grid-cols-3 items-start min-h-[30px] pt-1">
-              <span className="text-gray-500 font-medium">Labels</span>
-              <div className="col-span-2">
+            {/* Labels — editable */}
+            <div className="flex items-start min-h-[32px] gap-2 pt-1">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs pt-1">Labels</span>
+              <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap gap-1 items-center">
                   {labels.length === 0 && !isEditingLabels && (
                     <span className="text-xs text-gray-400">None</span>
                   )}
                   {labels.map(l => (
-                    <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1">
-                      {l}
+                    <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 max-w-full">
+                      <span className="truncate">{l}</span>
                       <X
                         size={9}
-                        className="cursor-pointer text-indigo-400 hover:text-indigo-800"
+                        className="cursor-pointer text-indigo-400 hover:text-indigo-800 shrink-0"
                         onClick={() => handleUpdate({ labels: labels.filter(x => x !== l) })}
                       />
                     </span>
@@ -492,7 +633,7 @@ const ITIssueDetailsSidebar = ({
                   {!isEditingLabels && (
                     <button
                       onClick={() => setIsEditingLabels(true)}
-                      className="text-[10px] px-1.5 py-0.5 rounded border border-dashed border-gray-300 text-gray-500 hover:bg-gray-50 transition"
+                      className="text-[10px] px-1.5 py-0.5 rounded border border-dashed border-gray-300 text-gray-500 hover:bg-gray-50 transition shrink-0 cursor-pointer"
                     >
                       + Add
                     </button>
@@ -524,13 +665,13 @@ const ITIssueDetailsSidebar = ({
             </div>
 
             {/* Effort points */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Effort points</span>
-              <div className="col-span-2">
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Effort points</span>
+              <div className="flex-1 min-w-0">
                 <select
                   value={issue?.story_points ?? ''}
                   onChange={(e) => handleUpdate({ story_points: e.target.value === '' ? null : Number(e.target.value) })}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer"
+                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full"
                 >
                   <option value="">None</option>
                   {[1, 2, 3, 5, 8, 13, 21].map(p => <option key={p} value={p}>{p}</option>)}
@@ -540,9 +681,9 @@ const ITIssueDetailsSidebar = ({
 
             {/* Flagged */}
             {!!issue?.flagged && (
-              <div className="grid grid-cols-3 items-center min-h-[30px]">
-                <span className="text-gray-500 font-medium">Flagged</span>
-                <div className="col-span-2">
+              <div className="flex items-center min-h-[32px] gap-2">
+                <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Flagged</span>
+                <div className="flex-1 min-w-0">
                   <span className="text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">Impediment</span>
                 </div>
               </div>
@@ -550,27 +691,26 @@ const ITIssueDetailsSidebar = ({
 
             {/* Created / Updated — read-only provenance */}
             {issue?.created_at && (
-              <div className="grid grid-cols-3 items-center min-h-[30px]">
-                <span className="text-gray-500 font-medium">Created</span>
-                <div className="col-span-2">
-                  <span className="text-xs text-gray-600">{formatStamp(issue.created_at)}</span>
+              <div className="flex items-center min-h-[32px] gap-2">
+                <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Created</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs text-gray-600 truncate block" title={formatStamp(issue.created_at)}>{formatStamp(issue.created_at)}</span>
                 </div>
               </div>
             )}
             {issue?.updated_at && (
-              <div className="grid grid-cols-3 items-center min-h-[30px]">
-                <span className="text-gray-500 font-medium">Updated</span>
-                <div className="col-span-2">
-                  <span className="text-xs text-gray-600">{formatStamp(issue.updated_at)}</span>
+              <div className="flex items-center min-h-[32px] gap-2">
+                <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Updated</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs text-gray-600 truncate block" title={formatStamp(issue.updated_at)}>{formatStamp(issue.updated_at)}</span>
                 </div>
               </div>
             )}
-            {/* Editable. Selecting a sprint moves the work item for real (sprint_id), which
-                is what the Board and Backlog filter on. Choosing Backlog removes it from its
-                sprint — and with it the project, since backlog work belongs to neither. */}
-            <div className="grid grid-cols-3 items-center min-h-[30px]">
-              <span className="text-gray-500 font-medium">Sprint</span>
-              <div className="col-span-2">
+
+            {/* Sprint */}
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Sprint</span>
+              <div className="flex-1 min-w-0">
                 {sprintsList && sprintsList.length > 0 ? (
                   <select
                     value={sprintId || ''}
@@ -578,8 +718,6 @@ const ITIssueDetailsSidebar = ({
                       const value = e.target.value;
                       setSprintId(value);
                       const chosen = sprintsList.find(x => String(x.id) === String(value));
-                      // Mirror the server's rule here so the Project field doesn't show a
-                      // stale value until the panel is reopened.
                       if (!value) setProjectId('');
                       else if (chosen && chosen.project_id != null) setProjectId(String(chosen.project_id));
                       handleUpdate({
@@ -587,7 +725,7 @@ const ITIssueDetailsSidebar = ({
                         sprint: chosen ? chosen.name : 'Backlog'
                       });
                     }}
-                    className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer max-w-full"
+                    className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full truncate"
                   >
                     <option value="">Backlog</option>
                     {sprintsList.map(sp => (
@@ -597,7 +735,7 @@ const ITIssueDetailsSidebar = ({
                     ))}
                   </select>
                 ) : (
-                  <span className="text-xs text-gray-400">No sprints on this board yet</span>
+                  <span className="text-xs text-gray-400 truncate block">No sprints on this board</span>
                 )}
               </div>
             </div>
@@ -612,7 +750,7 @@ const ITIssueDetailsSidebar = ({
       {showDevTools && (
         <>
           {/* COLLAPSIBLE DEVELOPMENT ACCORDION (REAL JIRA CODE INTEGRATION) */}
-          <div className="border border-gray-200 rounded">
+          <div className="border border-gray-200 rounded overflow-hidden">
             <div
               onClick={() => toggleSection('development')}
               className="flex items-center justify-between p-2 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition"
@@ -684,7 +822,7 @@ const ITIssueDetailsSidebar = ({
           </div>
 
           {/* COLLAPSIBLE AUTOMATION ACCORDION (REAL JIRA AUTOMATION ENGINE) */}
-          <div className="border border-gray-200 rounded">
+          <div className="border border-gray-200 rounded overflow-hidden">
             <div
               onClick={() => toggleSection('automation')}
               className="flex items-center justify-between p-2 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition"

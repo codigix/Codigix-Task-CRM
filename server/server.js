@@ -27,32 +27,36 @@ app.use(express.json({ limit: '50mb' }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+// Serve static files strictly from UPLOAD_DIR defined in .env (no optional fallback paths)
+const { UPLOAD_DIR } = require('./config/upload');
+app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/api/uploads', express.static(UPLOAD_DIR));
 
-// Fallback for resolving uploads matching original filenames
-app.get('/uploads/:filename', async (req, res, next) => {
+// Resolving uploads matching original filenames within UPLOAD_DIR without path-to-regexp syntax errors
+app.use(['/uploads', '/api/uploads'], async (req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
   const fs = require('fs');
-  const path = require('path');
-  const uploadsDir = path.join(__dirname, 'uploads');
-  const exactPath = path.join(uploadsDir, req.params.filename);
-  
-  if (fs.existsSync(exactPath)) {
+  const filename = path.basename(req.path);
+  if (!filename) return next();
+
+  const relativePath = req.path.replace(/^\//, '');
+  const exactPath = path.join(UPLOAD_DIR, relativePath);
+
+  if (fs.existsSync(exactPath) && fs.statSync(exactPath).isFile()) {
     return res.sendFile(exactPath);
   }
-  
+
   try {
-    if (fs.existsSync(uploadsDir)) {
-      const files = await fs.promises.readdir(uploadsDir);
-      const suffix = '-' + req.params.filename;
+    if (fs.existsSync(UPLOAD_DIR)) {
+      const files = await fs.promises.readdir(UPLOAD_DIR);
+      const suffix = '-' + filename;
       const matchedFile = files.find(f => f.endsWith(suffix));
       if (matchedFile) {
-        return res.sendFile(path.join(uploadsDir, matchedFile));
+        return res.sendFile(path.join(UPLOAD_DIR, matchedFile));
       }
     }
   } catch (err) {
-    console.error('Uploads fallback error:', err);
+    console.error('Uploads resolution error:', err);
   }
   next();
 });
@@ -449,11 +453,12 @@ app.use((err, req, res, next) => {
 
 const server = app.listen(PORT, async () => {
   console.log('================================================');
-  console.log(`🚀 CRM Backend Server is now LIVE!`);
+  console.log(`🚀 CRM Backend Server has STARTED!`);
   console.log(`📡 Port: ${PORT}`);
   console.log(`🌍 Environment: ${NODE_ENV}`);
+  console.log(`📁 Upload Directory: ${UPLOAD_DIR}`);
   console.log(`🔗 API Base: http://localhost:${PORT}/api`);
-  console.log(`🔐 CORS allowed for: ${process.env.CORS_ORIGIN}`);
+  console.log(`🔐 CORS Allowed: ${process.env.CORS_ORIGIN}`);
   console.log('================================================');
   await testConnection();
   

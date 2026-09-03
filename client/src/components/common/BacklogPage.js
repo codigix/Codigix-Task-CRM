@@ -16,6 +16,7 @@ import CompleteSprintModal from './CompleteSprintModal';
 import ImportCalendarModal from './ImportCalendarModal';
 import ITIssueDetailsPanel from '../it/ITIssueDetailsPanel';
 import Swal from 'sweetalert2';
+import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
 const PRIORITY_ICONS = {
   Critical: <ArrowUp size={13} className="text-red-600" />,
@@ -265,7 +266,7 @@ const InlineCreateRow = ({ sprintId, onCreate }) => {
       await onCreate(value, sprintId);
       setTitle(''); // Stay open for the next one, as Jira does.
     } catch (err) {
-      Swal.fire('Could not create the work item', err.message, 'error');
+      showErrorToast(err.message || 'Could not create the work item');
     } finally {
       setIsSaving(false);
     }
@@ -381,14 +382,37 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
             onChange={(a) => onUpdate(item.issue_key, { assignee: a })}
           />
 
-          <div className="shrink-0">
+          <div className="shrink-0 flex items-center gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                Swal.fire({
+                  title: 'Delete work item?',
+                  text: `Are you sure you want to delete ${item.issue_key}?`,
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#ef4444',
+                  cancelButtonColor: '#6b7280',
+                  confirmButtonText: 'Delete'
+                }).then((result) => {
+                  if (result.isConfirmed) {
+                    onDelete(item);
+                  }
+                });
+              }}
+              className="p-1 text-gray-400 hover:text-red-600 transition rounded hover:bg-red-50 cursor-pointer"
+              title="Delete task"
+            >
+              <Trash2 size={14} />
+            </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setAnchorRect(e.currentTarget.getBoundingClientRect());
                 setMenuOpen(!menuOpen);
               }}
-              className="p-1 text-gray-400 hover:text-gray-700 transition"
+              className="p-1 text-gray-400 hover:text-gray-700 transition rounded hover:bg-gray-100 cursor-pointer"
+              title="More actions"
             >
               <MoreHorizontal size={14} />
             </button>
@@ -466,7 +490,7 @@ const BacklogPage = ({ department }) => {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept)}`);
+      const res = await fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept)}&_t=${Date.now()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to load backlog');
       const data = await res.json();
       setSprints(data.sprints || []);
@@ -579,6 +603,9 @@ const BacklogPage = ({ department }) => {
         err.openSubtasks = data.openSubtasks;
         throw err;
       }
+      if (updates.assignee !== undefined) {
+        showSuccessToast(updates.assignee === 'Unassigned' || !updates.assignee ? 'Task unassigned successfully' : `Assigned to ${updates.assignee}`);
+      }
     } catch (err) {
       console.error('Failed to update work item:', err);
       // Blocked by the subtask rule? Name the subtasks so it is obvious what to finish.
@@ -594,7 +621,7 @@ const BacklogPage = ({ department }) => {
                  </div>`
         });
       } else {
-        Swal.fire('Could not save the change', err.message, 'error');
+        showErrorToast(err.message || 'Could not save the change');
       }
       load(); // Roll the optimistic edit back to what the server actually has.
     }
@@ -602,11 +629,14 @@ const BacklogPage = ({ department }) => {
 
   const deleteItem = async (issueKey) => {
     try {
-      await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete work item');
       setSelectedKey(null);
       load();
+      showSuccessToast(`Task ${issueKey} deleted successfully`);
     } catch (err) {
       console.error('Failed to delete work item:', err);
+      showErrorToast(err.message || 'Failed to delete work item');
     }
   };
 
@@ -615,15 +645,9 @@ const BacklogPage = ({ department }) => {
     const base = `${window.location.origin}/${currentDept.toLowerCase() === 'marketing' ? 'marketing' : 'it'}/${designation}/${username}`;
     const text = what === 'key' ? issueKey : `${base}/kanban?ticketKey=${encodeURIComponent(issueKey)}`;
     try {
-      await navigator.clipboard.writeText(text);
-      Swal.fire({
-        toast: true, position: 'bottom-end', icon: 'success',
-        title: what === 'key' ? 'Key copied' : 'Link copied',
-        timer: 1600, showConfirmButton: false
-      });
+      showSuccessToast(what === 'key' ? 'Key copied' : 'Link copied');
     } catch (err) {
-      // Clipboard access needs a secure context; show the value so it can still be copied.
-      Swal.fire('Copy this', text, 'info');
+      showErrorToast('Could not copy to clipboard');
     }
   };
 
@@ -673,8 +697,9 @@ const BacklogPage = ({ department }) => {
       });
       if (!res.ok) throw new Error((await res.json()).error || 'Failed');
       load();
+      showSuccessToast('Work item moved successfully');
     } catch (err) {
-      Swal.fire('Could not move work item', err.message, 'error');
+      showErrorToast(err.message || 'Could not move work item');
     }
   };
 
@@ -700,11 +725,7 @@ const BacklogPage = ({ department }) => {
 
     setSprintToStart(null);
     load();
-    Swal.fire({
-      icon: 'success', title: 'Sprint started',
-      text: `${data.itemCount} work item${data.itemCount === 1 ? '' : 's'} are now on the board.`,
-      timer: 2500, showConfirmButton: false
-    });
+    showSuccessToast(`Sprint started · ${data.itemCount} work item(s) are now on the board.`);
   };
 
   // Errors surface inside the dialog, so a rejected completion keeps the user's choices.
@@ -719,35 +740,34 @@ const BacklogPage = ({ department }) => {
 
     setSprintToComplete(null);
     load();
-    Swal.fire({
-      icon: 'success',
-      title: 'Sprint completed',
-      text: data.movedCount > 0
-        ? `${data.completedCount} done · ${data.movedCount} moved to ${data.movedTo}`
-        : `${data.completedCount} work item${data.completedCount === 1 ? '' : 's'} completed.`,
-      timer: 3000, showConfirmButton: false
-    });
+    showSuccessToast(data.movedCount > 0
+      ? `Sprint completed · ${data.completedCount} done, ${data.movedCount} moved to ${data.movedTo}`
+      : `Sprint completed · ${data.completedCount} work item(s) done.`
+    );
   };
 
-  // Deletes straight away, with no confirmation step. Safe to do because the work itself
-  // is never lost — every item returns to the Backlog and only the sprint is removed.
   const deleteSprint = async (sprint) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/sprints/${sprint.id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
-      load();
-      if (data.movedToBacklog > 0) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Sprint deleted',
-          text: `${data.movedToBacklog} work item${data.movedToBacklog === 1 ? '' : 's'} moved to the Backlog.`,
-          timer: 2500, showConfirmButton: false
-        });
+    Swal.fire({
+      title: 'Delete sprint?',
+      text: `Are you sure you want to delete "${sprint.name}"? Its work items will return to the Backlog.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Delete'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/sprints/${sprint.id}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed');
+          load();
+          showSuccessToast(`Sprint "${sprint.name}" deleted. ${data.movedToBacklog || 0} work item(s) moved to Backlog.`);
+        } catch (err) {
+          showErrorToast(err.message || 'Could not delete sprint');
+        }
       }
-    } catch (err) {
-      Swal.fire('Could not delete sprint', err.message, 'error');
-    }
+    });
   };
 
   const reorderSprint = async (sprint, direction) => {
