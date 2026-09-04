@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
-import { 
-  ArrowUp, ArrowDown, CheckSquare, Megaphone, Palette, Video, 
-  FileText, Globe, Users 
+import {
+  ArrowUp, ArrowDown, CheckSquare, Megaphone, Palette, Video,
+  FileText, Globe, Users
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config/environment';
@@ -660,6 +660,20 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     setIsCommenting(false);
   };
 
+  const handleEditComment = (index, updatedText) => {
+    if (!updatedText.trim()) return;
+    const next = [...comments];
+    if (next[index]) {
+      next[index] = {
+        ...next[index],
+        text: updatedText.trim(),
+        is_edited: true,
+        edited_at: new Date().toISOString()
+      };
+      persistComments(next);
+    }
+  };
+
   const handleLogWork = async ({ timeSpent, description, startedAt, originalEstimate }) => {
     if (!issueKey) return;
     try {
@@ -902,6 +916,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               isCommenting={isCommenting}
               setIsCommenting={setIsCommenting}
               handleAddComment={handleAddComment}
+              handleEditComment={handleEditComment}
               deleteComment={deleteComment}
               commentInputRef={commentInputRef}
               docsData={docsData}
@@ -915,6 +930,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               issueKey={issue?.issue_key || issue?.key}
               loggedUser={loggedUser}
               department={department || 'IT'}
+              currentUser={loggedUser}
+              usersList={usersList}
             />
           </div>
 
@@ -1022,7 +1039,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
         />
 
         {/* MANAGER REVIEW GATE */}
-        <ITManagerReviewGate 
+        <ITManagerReviewGate
           isOpen={showReviewGate}
           onClose={() => setShowReviewGate(false)}
           issue={{ ...issue, effort_points: effortPoints, contribution_method: contributionMethod }}

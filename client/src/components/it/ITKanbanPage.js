@@ -645,37 +645,65 @@ const ITKanbanPage = ({ department }) => {
       const prefix = deptConfig.defaultPrefix;
       const res = await fetch(API_BASE_URL + '/it-kanban/issues', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-name': user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : (username || 'System')
+        },
         body: JSON.stringify({
-          title: newIssueTitle,
+          title: newIssueTitle.trim(),
           type: newIssueType,
           status: col,
           assignee: assigneeVal,
           reporter: reporterVal,
           priority: 'Medium',
           department: currentDept,
-          keyPrefix: prefix
+          keyPrefix: prefix,
+          project_id: selectedProjectId !== 'ALL' ? Number(selectedProjectId) : null,
+          due_date: newIssueDueDate || null,
+          sprint_id: activeSprints.length > 0 ? Number(activeSprints[0].id) : null
         })
       });
       const data = await res.json();
+      if (!res.ok) {
+        showErrorToast(data.error || 'Failed to create task');
+        return;
+      }
 
-      const newCard = {
-        key: data.issue_key,
-        title: newIssueTitle,
+      const rawItem = data.issue || {
+        id: data.id,
+        issue_key: data.issue_key,
+        title: newIssueTitle.trim(),
         type: newIssueType,
         status: col,
         assignee: assigneeVal,
+        reporter: reporterVal,
         priority: 'Medium',
+        department: currentDept,
+        project_id: selectedProjectId !== 'ALL' ? Number(selectedProjectId) : null,
+        due_date: newIssueDueDate || null,
         labels: [currentDept],
-        sprint: 'Sprint 1',
+        sprint: activeSprints.length > 0 ? activeSprints[0].name : null,
+        sprint_id: activeSprints.length > 0 ? Number(activeSprints[0].id) : null,
+        sprint_status: activeSprints.length > 0 ? 'Active' : null,
         subtasks: [],
         linked_issues: [],
-        comments: []
+        comments: [],
+        created_at: new Date().toISOString()
       };
 
+      const newCard = {
+        ...rawItem,
+        key: rawItem.issue_key || data.issue_key,
+        issue_key: rawItem.issue_key || data.issue_key
+      };
+
+      // 1. Add to allRawIssues so that filters, drag-and-drop, and useEffect retain this card
+      setAllRawIssues(prev => [newCard, ...prev.filter(i => (i.issue_key !== newCard.issue_key && i.key !== newCard.key))]);
+
+      // 2. Optimistically add to boardData column
       setBoardData(prev => ({
         ...prev,
-        [col]: [...(prev[col] || []), newCard]
+        [col]: [...(prev[col] || []).filter(c => (c.key !== newCard.key && c.issue_key !== newCard.issue_key)), newCard]
       }));
 
       setNewIssueTitle('');
@@ -684,8 +712,11 @@ const ITKanbanPage = ({ department }) => {
       setNewIssueDueDate('');
       setActiveCreateColumn(null);
       setOpenInlineDropdown(null);
+
+      window.dispatchEvent(new Event('crm-refresh-notifications'));
     } catch (err) {
       console.error('Failed to save inline task', err);
+      showErrorToast('Failed to save inline task');
     }
   };
 
@@ -717,7 +748,7 @@ const ITKanbanPage = ({ department }) => {
 
       // Find issue
       for (const col of Object.keys(next)) {
-        const idx = next[col].findIndex(c => c.key === key);
+        const idx = next[col].findIndex(c => c.key === key || c.issue_key === key);
         if (idx !== -1) {
           foundCol = col;
           foundIdx = idx;
@@ -809,10 +840,11 @@ const ITKanbanPage = ({ department }) => {
     try {
       await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE' });
 
+      setAllRawIssues(prev => prev.filter(c => c.key !== key && c.issue_key !== key));
       setBoardData(prev => {
         const next = { ...prev };
         for (const col of Object.keys(next)) {
-          next[col] = next[col].filter(c => c.key !== key);
+          next[col] = next[col].filter(c => c.key !== key && c.issue_key !== key);
         }
         return next;
       });
@@ -835,9 +867,10 @@ const ITKanbanPage = ({ department }) => {
     }
 
     if (source.droppableId !== destination.droppableId) {
-      const sourceCol = [...boardData[source.droppableId]];
-      const destCol = [...boardData[destination.droppableId]];
+      const sourceCol = [...(boardData[source.droppableId] || [])];
+      const destCol = [...(boardData[destination.droppableId] || [])];
       const [removed] = sourceCol.splice(source.index, 1);
+      if (!removed) return;
       // Update the card's status to match the new column
       removed.status = destination.droppableId;
       destCol.splice(destination.index, 0, removed);
@@ -850,10 +883,11 @@ const ITKanbanPage = ({ department }) => {
       // transition (such as the unfinished-subtasks rule) and snaps the card back, instead
       // of leaving it parked in a column the server never accepted. It also attributes the
       // change to a person in the History tab.
-      updateIssue(removed.key, { status: destination.droppableId });
+      updateIssue(removed.key || removed.issue_key, { status: destination.droppableId });
     } else {
-      const col = [...boardData[source.droppableId]];
+      const col = [...(boardData[source.droppableId] || [])];
       const [removed] = col.splice(source.index, 1);
+      if (!removed) return;
       col.splice(destination.index, 0, removed);
       setBoardData({
         ...boardData,

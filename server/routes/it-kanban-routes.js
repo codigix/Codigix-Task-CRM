@@ -332,6 +332,90 @@ module.exports = function setupItKanbanRoutes(app, pool) {
     }
   };
 
+  const stripHtml = (html) => String(html || '').replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim();
+
+  // Send email notification when a user is mentioned in a comment
+  const sendMentionEmail = async ({
+    recipientEmail,
+    recipientName,
+    actorName,
+    ticketKey,
+    ticketTitle,
+    commentText,
+    ticketDepartment
+  }) => {
+    const SMTP_HOST = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com';
+    const SMTP_PORT = process.env.EMAIL_PORT || process.env.SMTP_PORT || '587';
+    const SMTP_USER = process.env.EMAIL_USER || process.env.SMTP_USER;
+    const SMTP_PASS = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+
+    if (!SMTP_USER || !SMTP_PASS || !recipientEmail) {
+      return false;
+    }
+
+    try {
+      const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: parseInt(SMTP_PORT),
+        secure: SMTP_PORT == 465,
+        auth: {
+          user: SMTP_USER,
+          pass: SMTP_PASS
+        }
+      });
+
+      const clientBaseUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3001';
+      const link = `${clientBaseUrl}/it/kanban?ticketKey=${encodeURIComponent(ticketKey)}`;
+      const cleanComment = stripHtml(commentText || '');
+
+      const mailOptions = {
+        from: `"${actorName || 'Codigix CRM'}" <${process.env.EMAIL_FROM || SMTP_USER}>`,
+        to: recipientEmail,
+        subject: `[CRM] (${ticketKey}) ${actorName || 'Team member'} mentioned you on "${ticketTitle}"`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); padding: 20px; color: white;">
+              <h2 style="margin: 0; font-size: 18px; font-weight: 600;">💬 You were mentioned in a task</h2>
+              <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">${actorName || 'A team member'} mentioned you in a comment on ${ticketKey}</p>
+            </div>
+            <div style="padding: 24px; background-color: #ffffff;">
+              <div style="margin-bottom: 20px;">
+                <p style="margin: 0 0 4px 0; font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Task</p>
+                <h3 style="margin: 0; font-size: 16px; color: #111827;">${ticketKey}: ${ticketTitle}</h3>
+              </div>
+
+              <!-- Comment Quote Box -->
+              <div style="background-color: #f8fafc; border-left: 4px solid #4f46e5; border-radius: 4px; padding: 14px 18px; margin-bottom: 24px;">
+                <div style="font-size: 12px; color: #6b7280; margin-bottom: 6px; font-weight: 600;">
+                  ${actorName || 'Team member'} commented:
+                </div>
+                <div style="font-size: 14px; color: #1f2937; line-height: 1.5; font-style: italic;">
+                  "${cleanComment.slice(0, 400)}${cleanComment.length > 400 ? '...' : ''}"
+                </div>
+              </div>
+
+              <div style="text-align: center; margin-top: 25px;">
+                <a href="${link}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px; display: inline-block; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);">
+                  View Task & Reply
+                </a>
+              </div>
+            </div>
+            <div style="background-color: #f9fafb; padding: 12px; text-align: center; font-size: 11px; color: #9ca3af; border-top: 1px solid #f3f4f6;">
+              Codigix CRM Task Collaboration · This is an automated alert
+            </div>
+          </div>
+        `
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✉️ Mention email sent for ${ticketKey} → ${recipientEmail} (messageId: ${info.messageId})`);
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to send mention notification email:', error.message);
+      return false;
+    }
+  };
+
   // ── AI Provider Configuration (supports DeepSeek, OpenAI & Gemini) ──
   const aiProvider = (process.env.AI_PROVIDER || 'deepseek').toLowerCase();
 
@@ -969,10 +1053,51 @@ Acceptance Criteria
         });
       }
 
+      const [[createdRow]] = await db.query(`
+        SELECT i.*,
+               p.name AS parent_project_name,
+               COALESCE(p.project_id_code, CONCAT('PRJ-', p.id)) AS parent_project_code,
+               s.name AS sprint_name,
+               s.status AS sprint_status,
+               u_assignee.department AS assignee_department,
+               u_reporter.department AS reporter_department
+        FROM it_kanban_issues i
+        LEFT JOIN projects p ON p.id = COALESCE(i.parent_id, i.project_id)
+        LEFT JOIN sprints s ON s.id = i.sprint_id
+        LEFT JOIN users u_assignee ON (
+          u_assignee.id = (
+            SELECT id FROM users u
+            WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+               OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+               OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.assignee) COLLATE utf8mb4_unicode_ci
+            LIMIT 1
+          )
+        )
+        LEFT JOIN users u_reporter ON (
+          u_reporter.id = (
+            SELECT id FROM users u
+            WHERE u.username COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+               OR CONCAT(TRIM(COALESCE(u.first_name, '')), ' ', TRIM(COALESCE(u.last_name, ''))) COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+               OR u.first_name COLLATE utf8mb4_unicode_ci = TRIM(i.reporter) COLLATE utf8mb4_unicode_ci
+            LIMIT 1
+          )
+        )
+        WHERE i.id = ?
+      `, [result.insertId]);
+
+      const formattedIssue = createdRow ? {
+        ...createdRow,
+        subtasks: typeof createdRow.subtasks === 'string' ? JSON.parse(createdRow.subtasks) : (createdRow.subtasks || []),
+        linked_issues: typeof createdRow.linked_issues === 'string' ? JSON.parse(createdRow.linked_issues) : (createdRow.linked_issues || []),
+        comments: typeof createdRow.comments === 'string' ? JSON.parse(createdRow.comments) : (createdRow.comments || []),
+        labels: typeof createdRow.labels === 'string' ? JSON.parse(createdRow.labels) : (createdRow.labels || [])
+      } : null;
+
       res.status(201).json({
         message: 'Issue created successfully',
         id: result.insertId,
-        issue_key: newKey
+        issue_key: newKey,
+        issue: formattedIssue
       });
     } catch (error) {
       responseError(res, 500, 'Failed to create Kanban issue', error);
@@ -1251,6 +1376,105 @@ Acceptance Criteria
           });
         } catch (e) {
           console.error('Failed to check subtask assignment changes:', e.message);
+        }
+      }
+
+      // Check for new comments and dispatch @mention notifications
+      if (updates.comments && Array.isArray(updates.comments)) {
+        try {
+          const [[issueData]] = await db.query(
+            'SELECT comments, title, department FROM it_kanban_issues WHERE issue_key = ?',
+            [key]
+          );
+          const oldComments = Array.isArray(issueData?.comments)
+            ? issueData.comments
+            : (typeof issueData?.comments === 'string' ? JSON.parse(issueData.comments || '[]') : []);
+
+          const newComments = updates.comments.slice(oldComments.length);
+          const createNotification = req.app.locals.createNotification;
+
+          if (newComments.length > 0) {
+            const [allDbUsers] = await db.query(
+              "SELECT id, CONCAT(first_name, ' ', last_name) AS full_name, first_name, last_name, username, email FROM users WHERE status = 'Active'"
+            );
+
+            for (const c of newComments) {
+              const rawText = c.text || '';
+              const cleanText = stripHtml(rawText);
+              const authorName = c.author || req.headers['x-user-name'] || 'Team Member';
+
+              // Match mentioned users from rawText and cleanText
+              const matchedUsers = new Map();
+
+              // Match HTML mention pills: <span ...>@User Name</span>
+              const pillMatches = String(rawText).matchAll(/<span[^>]*class=["'][^"']*mention-pill[^"']*["'][^>]*>@?([^<]+)<\/span>/gi);
+              for (const m of pillMatches) {
+                const pillName = m[1].trim().toLowerCase();
+                const found = allDbUsers.find(u =>
+                  u.full_name?.toLowerCase() === pillName ||
+                  u.first_name?.toLowerCase() === pillName ||
+                  u.username?.toLowerCase() === pillName
+                );
+                if (found) matchedUsers.set(found.id, found);
+              }
+
+              // Match plain text @mentions: @[name]
+              const lowerClean = cleanText.toLowerCase();
+              for (const u of allDbUsers) {
+                if (matchedUsers.has(u.id)) continue;
+                const patterns = [
+                  u.full_name ? `@${u.full_name.toLowerCase()}` : null,
+                  u.username ? `@${u.username.toLowerCase()}` : null,
+                  u.first_name ? `@${u.first_name.toLowerCase()}` : null
+                ].filter(Boolean);
+
+                for (const pat of patterns) {
+                  if (lowerClean.includes(pat)) {
+                    matchedUsers.set(u.id, u);
+                    break;
+                  }
+                }
+              }
+
+              for (const targetUser of matchedUsers.values()) {
+                // Do not notify author if they mention themselves
+                if (
+                  targetUser.full_name?.toLowerCase() === authorName.toLowerCase() ||
+                  targetUser.username?.toLowerCase() === authorName.toLowerCase()
+                ) continue;
+
+                // 1. In-app & Native Device OS Notification
+                if (typeof createNotification === 'function') {
+                  await createNotification({
+                    userId: targetUser.id,
+                    userName: targetUser.full_name || targetUser.first_name,
+                    type: 'mention',
+                    title: `💬 ${authorName} mentioned you`,
+                    message: `"${cleanText.slice(0, 120)}${cleanText.length > 120 ? '...' : ''}" in ${key}`,
+                    link: `/${String(issueData?.department || 'IT').toLowerCase() === 'marketing' ? 'marketing' : 'it'}`,
+                    entityType: 'issue',
+                    entityKey: key,
+                    actorName: authorName
+                  }).catch(nErr => console.error('Failed to create mention notification:', nErr));
+                }
+
+                // 2. Automated Email Notification
+                if (targetUser.email) {
+                  sendMentionEmail({
+                    recipientEmail: targetUser.email,
+                    recipientName: targetUser.full_name || targetUser.first_name,
+                    actorName,
+                    ticketKey: key,
+                    ticketTitle: issueData?.title || 'Task',
+                    commentText: cleanText,
+                    ticketDepartment: issueData?.department || 'IT'
+                  }).catch(eErr => console.error('Failed to send mention email:', eErr));
+                }
+              }
+            }
+          }
+        } catch (mErr) {
+          console.error('Failed to process mention notifications:', mErr.message);
         }
       }
 
