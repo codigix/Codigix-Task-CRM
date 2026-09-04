@@ -22,7 +22,8 @@ const ITIssueHeaderBar = ({
   toggleDropdown,
   currentSubtask,
   onBackToParent,
-  projectName
+  projectName,
+  onOpenReviewGate
 }) => {
   return (
     <div className="h-14 border-b border-gray-200 px-5 flex items-center justify-between bg-white shrink-0">
@@ -91,6 +92,16 @@ const ITIssueHeaderBar = ({
         >
           <Eye size={13} />
           <span>{watchCount}</span>
+        </button>
+
+        {/* Manager Review Gate */}
+        <button
+          onClick={onOpenReviewGate}
+          className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-semibold rounded shadow-sm transition"
+          title="Open Manager Review Gate"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Review Gate
         </button>
 
         {/* Share */}

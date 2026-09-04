@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
-import { ArrowUp, ArrowDown, CheckSquare } from 'lucide-react';
+import { 
+  ArrowUp, ArrowDown, CheckSquare, Megaphone, Palette, Video, 
+  FileText, Globe, Users 
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config/environment';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
@@ -13,6 +16,7 @@ import ITIssueLinkedItems from './issue-details/ITIssueLinkedItems';
 import ITIssueActivityTabs from './issue-details/ITIssueActivityTabs';
 import ITIssueDetailsSidebar from './issue-details/ITIssueDetailsSidebar';
 import ITSubtaskAiModal from './issue-details/ITSubtaskAiModal';
+import ITManagerReviewGate from './issue-details/ITManagerReviewGate';
 
 const PRIORITY_ICONS = {
   Highest: <ArrowUp size={14} className="text-red-600 font-bold" />,
@@ -28,7 +32,13 @@ const TYPE_ICONS = {
   Task: <CheckSquare size={14} className="text-blue-500 fill-blue-100" />,
   Story: <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-green-500 fill-green-100" fill="currentColor"><path d="M5 3v18l7-4.5 7 4.5V3z" /></svg>,
   Bug: <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-red-500 fill-red-100" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8" cy="8" r="1.5" /><circle cx="16" cy="8" r="1.5" /><circle cx="8" cy="16" r="1.5" /><circle cx="16" cy="16" r="1.5" /></svg>,
-  Test: <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-purple-500 fill-purple-100" fill="currentColor"><rect x="9" y="3" width="6" height="3" rx="1" /><path d="M10 6v11a2 2 0 004 0V6" /></svg>
+  Test: <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-purple-500 fill-purple-100" fill="currentColor"><rect x="9" y="3" width="6" height="3" rx="1" /><path d="M10 6v11a2 2 0 004 0V6" /></svg>,
+  Campaign: <Megaphone size={14} className="text-orange-500" />,
+  Design: <Palette size={14} className="text-purple-500" />,
+  Video: <Video size={14} className="text-red-500" />,
+  Content: <FileText size={14} className="text-green-600" />,
+  Search: <Globe size={14} className="text-indigo-500" />,
+  Social: <Users size={14} className="text-pink-500" />
 };
 
 const getInitials = (name) => {
@@ -91,7 +101,7 @@ const STATUS_COLORS = {
   'DONE': 'bg-green-100 text-green-800 hover:bg-green-200 font-semibold'
 };
 
-const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssueCreated }) => {
+const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssueCreated, department }) => {
   const { user } = useAuth();
   const loggedUser = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username : 'Current User';
 
@@ -114,6 +124,12 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const [originalEstimate, setOriginalEstimate] = useState('0h');
   const [remainingEstimate, setRemainingEstimate] = useState('0h');
 
+  // Performance Engine States
+  const [effortPoints, setEffortPoints] = useState(0);
+  const [estimatedHours, setEstimatedHours] = useState(0);
+  const [contributionMethod, setContributionMethod] = useState('WORK_BREAKDOWN');
+  const [contributionReviewStatus, setContributionReviewStatus] = useState('Pending');
+
   // Descriptions & Subtasks
   const [description, setDescription] = useState('');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -133,6 +149,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const [subtaskAiDetails, setSubtaskAiDetails] = useState(null);
   const [showSubtaskAiModal, setShowSubtaskAiModal] = useState(false);
   const [aiLoading, setAiLoading] = useState({ description: false, subtasks: false });
+  const [showReviewGate, setShowReviewGate] = useState(false);
+  const [githubData, setGithubData] = useState({ commits: [], prs: [] });
 
   // Linked items & Comments
   const [linkedIssues, setLinkedIssues] = useState([]);
@@ -233,6 +251,22 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     setCurrentStatus(issue.status || 'TO DO');
     setPriority(issue.priority || 'Medium');
     setDescription(issue.description || '');
+
+    // Performance Engine Init
+    setEffortPoints(issue.effort_points || 0);
+    setEstimatedHours(issue.estimated_hours || 0);
+    setContributionMethod(issue.contribution_method || 'WORK_BREAKDOWN');
+    setContributionReviewStatus(issue.contribution_review_status || 'Pending');
+
+    // Fetch GitHub Evidence
+    if (issue.issue_key || issue.key) {
+      fetch(`${API_BASE_URL}/tasks/${issue.issue_key || issue.key}/github`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.error) setGithubData(data);
+        })
+        .catch(err => console.error('Error fetching GitHub evidence:', err));
+    }
 
     const ass = issue.assignee;
     const isUnass = !ass || ass.toLowerCase() === 'unassigned' || ass.toLowerCase() === 'none';
@@ -715,6 +749,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
           toggleDropdown={toggleDropdown}
           currentSubtask={currentSubtask}
           onBackToParent={() => setCurrentSubtask(null)}
+          onOpenReviewGate={() => setShowReviewGate(true)}
         />
 
         {/* INDEPENDENTLY SCROLLABLE 2-COLUMN JIRA CONTENT */}
@@ -876,7 +911,10 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               handleDeleteWorklog={handleDeleteWorklog}
               handleGenerateDocs={handleGenerateDocs}
               aiDocsLoading={aiDocsLoading}
+              githubData={githubData}
+              issueKey={issue?.issue_key || issue?.key}
               loggedUser={loggedUser}
+              department={department || 'IT'}
             />
           </div>
 
@@ -961,6 +999,13 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
             parentIssueTitle={issue?.title}
             onBackToParent={() => setCurrentSubtask(null)}
             issue={issue}
+            effortPoints={effortPoints}
+            setEffortPoints={setEffortPoints}
+            estimatedHours={estimatedHours}
+            setEstimatedHours={setEstimatedHours}
+            contributionMethod={contributionMethod}
+            setContributionMethod={setContributionMethod}
+            contributionReviewStatus={contributionReviewStatus}
           />
         </div>
 
@@ -974,6 +1019,19 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
           setSubtasks={setSubtasks}
           handleUpdate={handleUpdate}
           logAiAction={() => { }}
+        />
+
+        {/* MANAGER REVIEW GATE */}
+        <ITManagerReviewGate 
+          isOpen={showReviewGate}
+          onClose={() => setShowReviewGate(false)}
+          issue={{ ...issue, effort_points: effortPoints, contribution_method: contributionMethod }}
+          subtasks={subtasks}
+          onReviewComplete={() => {
+            setContributionReviewStatus('Approved');
+            handleUpdate({ contribution_review_status: 'Approved' });
+          }}
+          department={department || 'IT'}
         />
       </div>
 

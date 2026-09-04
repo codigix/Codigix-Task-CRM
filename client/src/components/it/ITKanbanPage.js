@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   Search, Bell, HelpCircle, Settings, ChevronDown, ChevronRight,
   Share2, Download, MoreHorizontal, LayoutList, Plus, AlertCircle, ArrowUp, ArrowDown, CheckSquare,
-  Trash2, User, Check, Megaphone, Palette, Video, FileText, IterationCw, Calendar
+  Trash2, User, Check, Megaphone, Palette, Video, FileText, Globe, Users, IterationCw, Calendar
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ITCreateIssueDrawer from './ITCreateIssueDrawer';
@@ -43,7 +43,9 @@ const TYPE_ICONS = {
   Campaign: <Megaphone size={14} className="text-orange-500" />,
   Design: <Palette size={14} className="text-purple-500" />,
   Video: <Video size={14} className="text-red-500" />,
-  Content: <FileText size={14} className="text-green-600" />
+  Content: <FileText size={14} className="text-green-600" />,
+  Search: <Globe size={14} className="text-indigo-500" />,
+  Social: <Users size={14} className="text-pink-500" />
 };
 
 // Small icon used inside the inline "create issue" type picker (12px variant).
@@ -55,7 +57,9 @@ const TYPE_ICONS_SM = {
   Campaign: <Megaphone size={12} className="text-orange-500" />,
   Design: <Palette size={12} className="text-purple-500" />,
   Video: <Video size={12} className="text-red-500" />,
-  Content: <FileText size={12} className="text-green-600" />
+  Content: <FileText size={12} className="text-green-600" />,
+  Search: <Globe size={12} className="text-indigo-500" />,
+  Social: <Users size={12} className="text-pink-500" />
 };
 
 const COLUMN_COLORS = {
@@ -1771,6 +1775,7 @@ const ITKanbanPage = ({ department }) => {
               deleteIssue={deleteIssue}
               onClose={() => setSelectedIssue(null)}
               onIssueCreated={fetchKanbanData}
+              department={currentDept}
             />
 
             <CompleteSprintModal

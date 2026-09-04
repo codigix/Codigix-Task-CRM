@@ -66,7 +66,14 @@ const ITIssueDetailsSidebar = ({
   parentIssueKey,
   parentIssueTitle,
   onBackToParent,
-  issue
+  issue,
+  effortPoints,
+  setEffortPoints,
+  estimatedHours,
+  setEstimatedHours,
+  contributionMethod,
+  setContributionMethod,
+  contributionReviewStatus
 }) => {
   const [isEditingLabels, setIsEditingLabels] = useState(false);
   const [labelDraft, setLabelDraft] = useState('');
@@ -595,6 +602,58 @@ const ITIssueDetailsSidebar = ({
                 >
                   {['Critical', 'High', 'Medium', 'Low'].map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
+              </div>
+            </div>
+
+            {/* Effort Points */}
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs" title="Total performance value of this task">Effort Points</span>
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  value={effortPoints || 0}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (setEffortPoints) setEffortPoints(val);
+                    handleUpdate({ effort_points: val });
+                  }}
+                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full max-w-[80px]"
+                />
+                <span className="text-xs text-gray-400">pts</span>
+              </div>
+            </div>
+
+            {/* Contribution Method */}
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Method</span>
+              <div className="flex-1 min-w-0">
+                <select
+                  value={contributionMethod || 'WORK_BREAKDOWN'}
+                  onChange={(e) => {
+                    if (setContributionMethod) setContributionMethod(e.target.value);
+                    handleUpdate({ contribution_method: e.target.value });
+                  }}
+                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full"
+                >
+                  <option value="WORK_BREAKDOWN">Work Breakdown (Subtasks)</option>
+                  <option value="TIME_BASED">Time Log Fallback</option>
+                  <option value="MANAGER_ALLOCATED">Manual Allocation</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Contribution Status */}
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Perf Review</span>
+              <div className="flex-1 min-w-0">
+                <div className={`text-xs px-2 py-1 rounded inline-flex items-center font-semibold ${
+                  contributionReviewStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
+                  contributionReviewStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
+                  'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {contributionReviewStatus || 'Pending'}
+                </div>
               </div>
             </div>
 

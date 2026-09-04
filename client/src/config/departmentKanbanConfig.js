@@ -23,32 +23,29 @@ export const DEPARTMENT_KANBAN_CONFIG = {
     departmentName: 'Marketing Campaigns & Media',
     defaultPrefix: 'MKT',
     spaces: [
-      { id: 'ALL', name: 'All Marketing Spaces', code: 'ALL' },
-      { id: 'MKT', name: 'Marketing Campaigns (MKT)', code: 'MKT' },
-      { id: 'DES', name: 'Creative & Design (DES)', code: 'DES' },
-      { id: 'VID', name: 'Video Production (VID)', code: 'VID' },
-      { id: 'SMM', name: 'Social Media & Content (SMM)', code: 'SMM' },
-      { id: 'SEO', name: 'SEO & Organic Growth (SEO)', code: 'SEO' },
-      { id: 'WPD', name: 'Wordpress & Web Dev (WPD)', code: 'WPD' },
-      { id: 'PPC', name: 'PPC & Paid Ads (PPC)', code: 'PPC' },
+      { id: 'ALL', name: 'All Marketing Work', code: 'ALL' },
+      { id: 'MKT', name: 'Campaigns & Strategy (MKT)', code: 'MKT' },
+      { id: 'SEO', name: 'Search Optimization (SEO)', code: 'SEO' },
+      { id: 'SMM', name: 'Social Media & Outreach (SMM)', code: 'SMM' },
+      { id: 'CRV', name: 'Creative & Video (CRV)', code: 'CRV' },
+      { id: 'CNT', name: 'Content & Copy (CNT)', code: 'CNT' }
     ],
     issueTypes: [
-      { name: 'Task', icon: CheckSquare, color: 'text-blue-500 bg-blue-50', description: 'General task or deliverable' },
-      { name: 'Campaign', icon: Megaphone, color: 'text-orange-500 bg-orange-50', description: 'Marketing campaign or promo' },
-      { name: 'Design', icon: Palette, color: 'text-purple-500 bg-purple-50', description: 'Graphic asset or UI design' },
-      { name: 'Video', icon: Video, color: 'text-red-500 bg-red-50', description: 'Video reel or motion graphics' },
-      { name: 'Content', icon: FileText, color: 'text-green-500 bg-green-50', description: 'Blog post, copy, or SEO article' },
-      { name: 'Bug', icon: AlertCircle, color: 'text-red-600 bg-red-100', description: 'Website or tracking error' },
+      { name: 'Task', icon: CheckSquare, color: 'text-blue-500 bg-blue-50', description: 'General marketing task' },
+      { name: 'Campaign', icon: Megaphone, color: 'text-orange-500 bg-orange-50', description: 'Marketing campaign or strategy' },
+      { name: 'Design', icon: Palette, color: 'text-purple-500 bg-purple-50', description: 'Graphics, banners, visual assets' },
+      { name: 'Video', icon: Video, color: 'text-red-500 bg-red-50', description: 'Reels, shorts, motion graphics' },
+      { name: 'Content', icon: FileText, color: 'text-green-500 bg-green-50', description: 'Blogs, articles, ad copy' },
+      { name: 'Search', icon: Globe, color: 'text-indigo-500 bg-indigo-50', description: 'SEO, GMB, GEO, AEO updates' },
+      { name: 'Social', icon: Users, color: 'text-pink-500 bg-pink-50', description: 'Social media scheduling & posts' }
     ],
     roles: [
       'All Roles',
-      'Graphics Designer',
-      'Video Editor',
-      'Social Media Marketing',
-      'SEO & GMB',
-      'PPC Manager',
-      'Wordpress Developer',
-      'Manager'
+      'SEO/GEO/AEO Executive',
+      'Content Writer',
+      'Creative Designer',
+      'Social Media Manager',
+      'Marketing Manager'
     ]
   },
   Sales: {

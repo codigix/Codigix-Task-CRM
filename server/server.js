@@ -297,6 +297,9 @@ app.use('/api/auth', authRouter);
 app.use('/api/it-documents', require('./routes/it-documents-routes'));
 app.use('/api/seo-gmb', require('./routes/seo-gmb-routes')(pool));
 
+// Register Performance Engine (Phase 2)
+require('./routes/performance-engine-routes')(app, pool);
+
 app.get('/api/roles', async (req, res) => {
   let connection;
   try {

@@ -96,13 +96,24 @@ module.exports = function setupPerformanceRoutes(app, pool) {
 
   app.get('/api/performance/it/:departmentId', async (req, res) => {
     try {
-      // Task completion
+      // Calculate performance strictly from task_contributions (The Ledger)
+      const [contributions] = await pool.query(`
+        SELECT COUNT(*) as total_contributions,
+               SUM(effort_points) as total_earned_points
+        FROM task_contributions tc
+        JOIN general_tasks t ON tc.task_id = t.id
+        WHERE tc.approval_status = 'Approved' 
+        AND t.department_id = ?
+      `, [req.params.departmentId]);
+
+      // Legacy task metrics for historical context (if needed by frontend)
       const [tasks] = await pool.query(`
         SELECT COUNT(*) as total,
                SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
                SUM(CASE WHEN workflow_type IN ('Development', 'Testing', 'DevOps') THEN 1 ELSE 0 END) as it_tasks
         FROM general_tasks
       `);
+      
       const completionRate = tasks[0].it_tasks > 0
         ? ((tasks[0].completed / tasks[0].it_tasks) * 100).toFixed(2)
         : 0;
@@ -112,8 +123,9 @@ module.exports = function setupPerformanceRoutes(app, pool) {
         SELECT COUNT(*) as total,
                SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed
         FROM projects p
-        WHERE p.department_id = (SELECT id FROM departments WHERE name LIKE '%IT%' LIMIT 1)
-      `);
+        WHERE p.department_id = ?
+      `, [req.params.departmentId]);
+      
       const deploymentSuccess = projects[0].total > 0
         ? ((projects[0].completed / projects[0].total) * 100).toFixed(2)
         : 0;
@@ -121,6 +133,8 @@ module.exports = function setupPerformanceRoutes(app, pool) {
       res.json({
         department: 'IT Services',
         metrics: {
+          earnedEffortPoints: parseInt(contributions[0].total_earned_points) || 0,
+          approvedContributions: parseInt(contributions[0].total_contributions) || 0,
           taskCompletionRate: parseFloat(completionRate),
           tasksCompleted: tasks[0].completed || 0,
           totalTasks: tasks[0].it_tasks || 0,
@@ -130,6 +144,7 @@ module.exports = function setupPerformanceRoutes(app, pool) {
         }
       });
     } catch (error) {
+      console.error("Error in IT performance:", error);
       res.status(500).json({ error: error.message });
     }
   });

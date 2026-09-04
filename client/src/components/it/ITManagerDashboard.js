@@ -23,6 +23,7 @@ const ITManagerDashboard = () => {
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [performanceMetrics, setPerformanceMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [isWidgetDrawerOpen, setIsWidgetDrawerOpen] = useState(false);
@@ -56,6 +57,17 @@ const ITManagerDashboard = () => {
         const itTasks = (tasksRes || []).filter(t => itProjectIds.has(t.project_id) || t.department === 'IT');
         setTasks(itTasks);
 
+        // Fetch Performance Metrics
+        try {
+          const perfRes = await fetch('http://localhost:5000/api/performance/it/1'); // Using IT department id 1
+          const perfData = await perfRes.json();
+          if (perfRes.ok) {
+            setPerformanceMetrics(perfData.metrics);
+          }
+        } catch (perfErr) {
+          console.warn('Performance fetch failed:', perfErr);
+        }
+
         // Fetch activities
         // activitiesAPI might not exist or might need fallback if it fails
         try {
@@ -82,10 +94,10 @@ const ITManagerDashboard = () => {
 
   const kpiData = [
     { title: 'Total Projects', value: projects.length.toString(), trend: 'Live Data', icon: Folder, color: 'text-indigo-600', bg: 'bg-indigo-50', trendColor: 'text-gray-500' },
-    { title: 'Active Projects', value: activeProjectsCount.toString(), trend: 'Live Data', icon: ClipboardCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', trendColor: 'text-gray-500' },
+    { title: 'Earned Points', value: performanceMetrics?.earnedEffortPoints?.toString() || '0', trend: 'Approved', icon: Sparkles, color: 'text-emerald-600', bg: 'bg-emerald-50', trendColor: 'text-emerald-600' },
     { title: 'Tasks In Progress', value: inProgressTasksCount.toString(), trend: 'Live Data', icon: FileText, color: 'text-amber-500', bg: 'bg-amber-50', trendColor: 'text-gray-500' },
     { title: 'Open Bugs', value: openBugsCount.toString(), trend: 'Live Data', icon: Bug, color: 'text-rose-500', bg: 'bg-rose-50', trendColor: 'text-gray-500' },
-    { title: 'Deployments', value: '0', trend: 'Live Data', icon: Cloud, color: 'text-blue-500', bg: 'bg-blue-50', trendColor: 'text-gray-400' },
+    { title: 'Validated Work', value: performanceMetrics?.approvedContributions?.toString() || '0', trend: 'Subtasks & Logs', icon: CheckCircle, color: 'text-blue-600', bg: 'bg-blue-50', trendColor: 'text-gray-500' },
     { title: 'Logged Hours', value: '0h', trend: 'Live Data', icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50', trendColor: 'text-gray-400' },
   ];
 
