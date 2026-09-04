@@ -626,6 +626,20 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     setIsCommenting(false);
   };
 
+  const handleEditComment = (index, updatedText) => {
+    if (!updatedText.trim()) return;
+    const next = [...comments];
+    if (next[index]) {
+      next[index] = {
+        ...next[index],
+        text: updatedText.trim(),
+        is_edited: true,
+        edited_at: new Date().toISOString()
+      };
+      persistComments(next);
+    }
+  };
+
   const handleLogWork = async ({ timeSpent, description, startedAt, originalEstimate }) => {
     if (!issueKey) return;
     try {
@@ -867,6 +881,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               isCommenting={isCommenting}
               setIsCommenting={setIsCommenting}
               handleAddComment={handleAddComment}
+              handleEditComment={handleEditComment}
               deleteComment={deleteComment}
               commentInputRef={commentInputRef}
               docsData={docsData}
@@ -877,6 +892,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               handleGenerateDocs={handleGenerateDocs}
               aiDocsLoading={aiDocsLoading}
               loggedUser={loggedUser}
+              currentUser={loggedUser}
+              usersList={usersList}
             />
           </div>
 
