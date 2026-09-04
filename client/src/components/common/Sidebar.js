@@ -464,7 +464,8 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       {(isSuperAdmin || userDept === 'Sales Department') && renderSalesPages()}
       {(isSuperAdmin || userDept === 'IT Department') && renderITPages()}
       {(isSuperAdmin || userDept === 'Marketing Department') && renderMarketingPages()}
-      {(isSuperAdmin || userDept === 'SEO & GMB Department' || userRole === 'SEO Manager' || userRole === 'SEO Executive' || userRole === 'SEO & GMB') && renderSEOGMBPages()}
+      {/* Hidden specifically in SEO & GMB user login; only Super Admin retains visibility */}
+      {isSuperAdmin && renderSEOGMBPages()}
       {(isSuperAdmin || userRole.includes('HR')) && renderHRPages()}
       {renderBottomCommonPages()}
     </>

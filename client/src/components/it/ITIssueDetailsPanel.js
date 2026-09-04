@@ -244,6 +244,24 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   }, [issueDepartment]);
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showSubtaskAiModal) {
+          setShowSubtaskAiModal(false);
+        } else if (showReviewGate) {
+          setShowReviewGate(false);
+        } else if (isExpanded) {
+          setIsExpanded(false);
+        } else if (onClose) {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSubtaskAiModal, showReviewGate, isExpanded, onClose]);
+
+  useEffect(() => {
     if (!issue) return;
     setCurrentSubtask(null);
     setTitle(issue.title || '');
@@ -727,13 +745,13 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
 
   return (
     <>
-      {/* Backdrop for Expanded Modal */}
-      {isExpanded && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
-          onClick={() => setIsExpanded(false)}
-        />
-      )}
+      {/* Backdrop overlay with slight blur: dims background and clicking outside closes the modal */}
+      <div
+        className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-[9998] transition-all animate-fade-in"
+        onClick={onClose}
+        title="Click outside to close"
+        aria-hidden="true"
+      />
 
       {/* Main Drawer Container */}
       <div
@@ -1055,6 +1073,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       <style>{`
         .animate-slide-left { animation: slideLeft 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
         @keyframes slideLeft { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </>
   );
