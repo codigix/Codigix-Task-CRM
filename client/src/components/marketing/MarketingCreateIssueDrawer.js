@@ -145,7 +145,7 @@ const SimpleDropdown = ({ value, options, onSelect, placeholder, className = "" 
   );
 };
 
-const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null }) => {
+const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null, initialStatus = null, initialSummary = '' }) => {
   const { user } = useAuth();
   const { designation, username } = useParams();
   const [users, setUsers] = useState([]);
@@ -198,6 +198,13 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
       setShouldRender(true);
       setIsClosing(false);
       const timer = setTimeout(() => setAnimateIn(true), 10);
+      if (initialStatus || initialSummary) {
+        setFormData(prev => ({
+          ...prev,
+          status: initialStatus || prev.status,
+          summary: initialSummary || prev.summary
+        }));
+      }
       return () => clearTimeout(timer);
     } else {
       setAnimateIn(false);

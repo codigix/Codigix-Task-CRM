@@ -136,7 +136,7 @@ const SimpleDropdown = ({ value, options, onSelect, placeholder, className = "" 
   );
 };
 
-const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null, department }) => {
+const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null, department, initialStatus = null, initialSummary = '' }) => {
   const { user } = useAuth();
   const { designation, username } = useParams();
   const path = window.location.pathname.toLowerCase();
@@ -230,6 +230,13 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
       const frame = requestAnimationFrame(() => {
         setAnimateIn(true);
       });
+      if (initialStatus || initialSummary) {
+        setFormData(prev => ({
+          ...prev,
+          status: initialStatus || prev.status,
+          summary: initialSummary || prev.summary
+        }));
+      }
       return () => cancelAnimationFrame(frame);
     } else if (shouldRender) {
       setIsClosing(true);

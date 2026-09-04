@@ -4,7 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import {
   Search, Bell, HelpCircle, Settings, ChevronDown, ChevronRight,
   Share2, Download, MoreHorizontal, LayoutList, Plus, AlertCircle, ArrowUp, ArrowDown, CheckSquare,
-  Trash2, User, Check, Megaphone, Palette, Video, FileText, Globe, Users, IterationCw, Calendar
+  Trash2, User, Check, Megaphone, Palette, Video, FileText, Globe, Users, IterationCw, Calendar,
+  Folder, Maximize2, X
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ITCreateIssueDrawer from './ITCreateIssueDrawer';
@@ -754,6 +755,8 @@ const ITKanbanPage = ({ department }) => {
   }, [columnOrder, currentDept]);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
+  const [createDrawerInitialStatus, setCreateDrawerInitialStatus] = useState(null);
+  const [createDrawerInitialSummary, setCreateDrawerInitialSummary] = useState('');
 
   // Inline creation states
   const [activeCreateColumn, setActiveCreateColumn] = useState(null);
@@ -761,7 +764,34 @@ const ITKanbanPage = ({ department }) => {
   const [newIssueType, setNewIssueType] = useState('Task');
   const [newIssueAssignee, setNewIssueAssignee] = useState('Unassigned');
   const [newIssueDueDate, setNewIssueDueDate] = useState('');
+  const [newIssueProjectId, setNewIssueProjectId] = useState('');
+  const [inlineAssigneeSearch, setInlineAssigneeSearch] = useState('');
   const [openInlineDropdown, setOpenInlineDropdown] = useState(null);
+
+  const handleOpenInlineCreate = (col) => {
+    setActiveCreateColumn(col);
+    setNewIssueTitle('');
+    setNewIssueType('Task');
+    setNewIssueAssignee('Unassigned');
+    setNewIssueDueDate('');
+    setInlineAssigneeSearch('');
+    setOpenInlineDropdown(null);
+    if (selectedProjectId !== 'ALL') {
+      setNewIssueProjectId(selectedProjectId);
+    } else if (projectsList.length > 0) {
+      setNewIssueProjectId(projectsList[0].id);
+    } else {
+      setNewIssueProjectId('');
+    }
+  };
+
+  const handleExpandToDrawer = (col) => {
+    setCreateDrawerInitialStatus(col);
+    setCreateDrawerInitialSummary(newIssueTitle);
+    setActiveCreateColumn(null);
+    setOpenInlineDropdown(null);
+    setIsCreateDrawerOpen(true);
+  };
 
   // Close creation widget on clicking outside
   useEffect(() => {
@@ -791,11 +821,32 @@ const ITKanbanPage = ({ department }) => {
   const handleCreateInlineIssue = async (col) => {
     if (!newIssueTitle.trim()) return;
 
-    let assigneeVal = newIssueAssignee === 'Unassigned' || newIssueAssignee === 'Automatic' ? 'Unassigned' : newIssueAssignee;
-    const reporterVal = username ? username : 'Unassigned';
+    const currentUserName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : (username || 'Unassigned');
+    const reporterVal = currentUserName;
 
-    if (assigneeVal === 'Unassigned') {
-      assigneeVal = reporterVal;
+    let assigneeVal = newIssueAssignee;
+    if (!assigneeVal || assigneeVal === 'Automatic') {
+      assigneeVal = currentUserName;
+    }
+
+    const targetProjectId = selectedProjectId !== 'ALL'
+      ? Number(selectedProjectId)
+      : (newIssueProjectId ? Number(newIssueProjectId) : (projectsList[0]?.id ? Number(projectsList[0].id) : null));
+
+    let cleanDueDate = null;
+    if (newIssueDueDate && String(newIssueDueDate).trim()) {
+      const s = String(newIssueDueDate).trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        cleanDueDate = s.slice(0, 10);
+      } else {
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) {
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          cleanDueDate = `${year}-${month}-${day}`;
+        }
+      }
     }
 
     try {
@@ -804,7 +855,8 @@ const ITKanbanPage = ({ department }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-name': user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : (username || 'System')
+          'x-user-name': currentUserName,
+          'x-user-id': user?.id || ''
         },
         body: JSON.stringify({
           title: newIssueTitle.trim(),
@@ -815,8 +867,8 @@ const ITKanbanPage = ({ department }) => {
           priority: 'Medium',
           department: currentDept,
           keyPrefix: prefix,
-          project_id: selectedProjectId !== 'ALL' ? Number(selectedProjectId) : null,
-          due_date: newIssueDueDate || null,
+          project_id: targetProjectId,
+          due_date: cleanDueDate,
           sprint_id: activeSprints.length > 0 ? Number(activeSprints[0].id) : null
         })
       });
@@ -825,6 +877,8 @@ const ITKanbanPage = ({ department }) => {
         showErrorToast(data.error || 'Failed to create task');
         return;
       }
+
+      showSuccessToast(`Task ${data.issue_key || 'created'} added to ${col}`);
 
       const rawItem = data.issue || {
         id: data.id,
@@ -836,8 +890,8 @@ const ITKanbanPage = ({ department }) => {
         reporter: reporterVal,
         priority: 'Medium',
         department: currentDept,
-        project_id: selectedProjectId !== 'ALL' ? Number(selectedProjectId) : null,
-        due_date: newIssueDueDate || null,
+        project_id: targetProjectId,
+        due_date: cleanDueDate,
         labels: [currentDept],
         sprint: activeSprints.length > 0 ? activeSprints[0].name : null,
         sprint_id: activeSprints.length > 0 ? Number(activeSprints[0].id) : null,
@@ -863,12 +917,17 @@ const ITKanbanPage = ({ department }) => {
         [col]: [...(prev[col] || []).filter(c => (c.key !== newCard.key && c.issue_key !== newCard.issue_key)), newCard]
       }));
 
+      // 3. Reset form states
       setNewIssueTitle('');
       setNewIssueType('Task');
       setNewIssueAssignee('Unassigned');
       setNewIssueDueDate('');
+      setInlineAssigneeSearch('');
       setActiveCreateColumn(null);
       setOpenInlineDropdown(null);
+
+      // 4. Fresh re-sync from database
+      fetchKanbanData();
 
       window.dispatchEvent(new Event('crm-refresh-notifications'));
     } catch (err) {
@@ -1056,14 +1115,30 @@ const ITKanbanPage = ({ department }) => {
   return (
     <>
       {currentDept === 'Marketing' ? (
-        <MarketingCreateIssueDrawer isOpen={isCreateDrawerOpen} onIssueCreated={fetchKanbanData} onClose={() => setIsCreateDrawerOpen(false)} />
+        <MarketingCreateIssueDrawer
+          isOpen={isCreateDrawerOpen}
+          initialStatus={createDrawerInitialStatus}
+          initialSummary={createDrawerInitialSummary}
+          onIssueCreated={fetchKanbanData}
+          onClose={() => {
+            setIsCreateDrawerOpen(false);
+            setCreateDrawerInitialStatus(null);
+            setCreateDrawerInitialSummary('');
+          }}
+        />
       ) : (
         <ITCreateIssueDrawer
           department={currentDept}
           isOpen={isCreateDrawerOpen}
+          initialStatus={createDrawerInitialStatus}
+          initialSummary={createDrawerInitialSummary}
           projectId={selectedProjectId !== 'ALL' ? selectedProjectId : null}
           onIssueCreated={fetchKanbanData}
-          onClose={() => setIsCreateDrawerOpen(false)}
+          onClose={() => {
+            setIsCreateDrawerOpen(false);
+            setCreateDrawerInitialStatus(null);
+            setCreateDrawerInitialSummary('');
+          }}
         />
       )}
       <div className="flex w-full h-full max-h-full bg-white overflow-hidden font-sans">
@@ -1863,183 +1938,437 @@ const ITKanbanPage = ({ department }) => {
                                     </Droppable>
 
                                     {activeCreateColumn === col ? (
-                                      <div className="mt-2 p-3 bg-white border border-blue-500 rounded  flex flex-col gap-3 font-sans text-xs inline-create-box">
-                                        {/* Text Area */}
-                                        <textarea
-                                          autoFocus
-                                          placeholder="What needs to be done?"
-                                          value={newIssueTitle}
-                                          onChange={(e) => setNewIssueTitle(e.target.value)}
-                                          className="w-full text-xs text-gray-800 placeholder-gray-400 focus:outline-none resize-none h-14"
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                              e.preventDefault();
-                                              handleCreateInlineIssue(col);
-                                            }
-                                          }}
-                                        />
+                                       <div className="mt-2 p-3 bg-white border border-blue-500 rounded shadow-md flex flex-col gap-2.5 font-sans text-xs inline-create-box">
+                                         {/* Text Area */}
+                                         <textarea
+                                           autoFocus
+                                           placeholder="What needs to be done?"
+                                           value={newIssueTitle}
+                                           onChange={(e) => setNewIssueTitle(e.target.value)}
+                                           className="w-full text-xs text-gray-800 placeholder-gray-400 focus:outline-none resize-none h-14"
+                                           onKeyDown={(e) => {
+                                             if (e.key === 'Enter' && !e.shiftKey) {
+                                               e.preventDefault();
+                                               handleCreateInlineIssue(col);
+                                             } else if (e.key === 'Escape') {
+                                               setActiveCreateColumn(null);
+                                               setOpenInlineDropdown(null);
+                                             }
+                                           }}
+                                         />
 
-                                        {/* Bottom Row */}
-                                        <div className="flex items-center justify-between mt-1 relative">
-                                          <div className="flex items-center gap-2">
-                                            {/* Work Type selector dropdown */}
-                                            <div className="relative inline-dropdown">
-                                              <button
-                                                onClick={() => setOpenInlineDropdown(openInlineDropdown === 'type' ? null : 'type')}
-                                                className="flex items-center gap-1 p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition"
-                                              >
-                                                {TYPE_ICONS[newIssueType] || <CheckSquare size={14} className="text-blue-500 fill-blue-100" />}
-                                                <ChevronDown size={10} />
-                                              </button>
-                                              {openInlineDropdown === 'type' && (
-                                                <div className="absolute left-0 bottom-full mb-1.5 w-36 bg-white border border-gray-200 rounded shadow-lg py-1 z-50 text-sm">
-                                                  {deptIssueTypes.map(type => (
-                                                    <div
-                                                      key={type}
-                                                      onClick={() => {
-                                                        setNewIssueType(type);
-                                                        setOpenInlineDropdown(null);
-                                                      }}
-                                                      className="px-2.5 py-1.5 hover:bg-gray-50 flex items-center gap-2 cursor-pointer text-gray-700 font-medium"
-                                                    >
-                                                      {TYPE_ICONS_SM[type] || <CheckSquare size={12} className="text-blue-500 fill-blue-100" />} {type}
-                                                    </div>
-                                                  ))}
-                                                  <div className="border-t border-gray-100 my-1"></div>
-                                                  <div className="px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer text-gray-500 font-medium">Add work type</div>
-                                                  <div className="px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer text-gray-500 font-medium">Edit work type</div>
-                                                  <div className="px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer text-gray-500 font-medium">Manage</div>
-                                                </div>
-                                              )}
-                                            </div>
+                                         {/* Bottom Row Controls */}
+                                         <div className="flex items-center justify-between mt-1 relative">
+                                           <div className="flex items-center gap-1.5 flex-wrap">
+                                             {/* Work Type selector dropdown */}
+                                             <div className="relative inline-dropdown">
+                                               <button
+                                                 type="button"
+                                                 onClick={() => setOpenInlineDropdown(openInlineDropdown === 'type' ? null : 'type')}
+                                                 className="flex items-center gap-1 px-1.5 py-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition"
+                                                 title={`Type: ${newIssueType}`}
+                                               >
+                                                 {TYPE_ICONS[newIssueType] || <CheckSquare size={14} className="text-blue-500 fill-blue-100" />}
+                                                 <ChevronDown size={10} />
+                                               </button>
+                                               {openInlineDropdown === 'type' && (
+                                                 <div className="absolute left-0 bottom-full mb-1.5 w-40 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-50 text-xs text-gray-800 animate-in fade-in zoom-in-95 duration-100">
+                                                   <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                                     Work Type
+                                                   </div>
+                                                   {deptIssueTypes.map(type => (
+                                                     <div
+                                                       key={type}
+                                                       onClick={() => {
+                                                         setNewIssueType(type);
+                                                         setOpenInlineDropdown(null);
+                                                       }}
+                                                       className={`px-2.5 py-1.5 hover:bg-blue-50 flex items-center gap-2 cursor-pointer font-medium ${
+                                                         newIssueType === type ? 'bg-[#deebff] text-blue-900 font-semibold' : 'text-gray-700'
+                                                       }`}
+                                                     >
+                                                       {TYPE_ICONS_SM[type] || <CheckSquare size={12} className="text-blue-500 fill-blue-100" />}
+                                                       <span>{type}</span>
+                                                       {newIssueType === type && <Check size={12} className="text-blue-600 ml-auto" />}
+                                                     </div>
+                                                   ))}
+                                                 </div>
+                                               )}
+                                             </div>
 
-                                            {/* Due date picker dropdown */}
-                                            <div className="relative inline-dropdown">
-                                              <button
-                                                onClick={() => setOpenInlineDropdown(openInlineDropdown === 'date' ? null : 'date')}
-                                                className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition"
-                                              >
-                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                              </button>
-                                              {openInlineDropdown === 'date' && (
-                                                <div className="absolute left-0 bottom-full mb-1.5 w-64 bg-white border border-gray-200 rounded shadow-xl p-3 z-50 text-gray-800">
-                                                  <div className="font-semibold text-xs text-gray-500 mb-1">Due date</div>
-                                                  <input
-                                                    type="text"
-                                                    placeholder="7/13/2026"
-                                                    value={newIssueDueDate || '7/13/2026'}
-                                                    onChange={(e) => setNewIssueDueDate(e.target.value)}
-                                                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-500"
-                                                  />
-                                                  {/* Calendar Grid */}
-                                                  <div className="mt-3">
-                                                    <div className="flex justify-between items-center text-xs font-semibold text-gray-700 px-1 mb-2">
-                                                      <span>July 2026</span>
-                                                      <div className="flex gap-2">
-                                                        <span className="cursor-pointer hover:text-blue-500">{"<"}</span>
-                                                        <span className="cursor-pointer hover:text-blue-500">{">"}</span>
-                                                      </div>
-                                                    </div>
-                                                    <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-400 mb-1">
-                                                      {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => <span key={d}>{d}</span>)}
-                                                    </div>
-                                                    <div className="grid grid-cols-7 gap-1 text-xs">
-                                                      {[28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1].map((day, idx) => {
-                                                        const isCurrentMonth = idx >= 3 && idx <= 33;
-                                                        const isToday = day === 13 && isCurrentMonth;
-                                                        return (
-                                                          <span
-                                                            key={idx}
-                                                            onClick={() => {
-                                                              setNewIssueDueDate(`7/${day}/2026`);
-                                                              setOpenInlineDropdown(null);
-                                                            }}
-                                                            className={`py-1 rounded cursor-pointer transition ${isToday ? 'bg-blue-600 text-white ' :
-                                                              isCurrentMonth ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300'
-                                                              }`}
-                                                          >
-                                                            {day}
-                                                          </span>
-                                                        );
-                                                      })}
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </div>
+                                             {/* Due date picker popover */}
+                                             <div className="relative inline-dropdown">
+                                               <button
+                                                 type="button"
+                                                 onClick={() => setOpenInlineDropdown(openInlineDropdown === 'date' ? null : 'date')}
+                                                 className={`px-1.5 py-1 rounded flex items-center gap-1 transition ${
+                                                   newIssueDueDate
+                                                     ? 'bg-blue-50 text-blue-600 font-medium'
+                                                     : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                                                 }`}
+                                                 title={newIssueDueDate ? `Due: ${newIssueDueDate}` : "Set due date"}
+                                               >
+                                                 <Calendar size={13} />
+                                                 {newIssueDueDate ? (
+                                                   <span className="text-[11px] font-semibold">
+                                                     {(() => {
+                                                       const parts = newIssueDueDate.split('-');
+                                                       if (parts.length === 3) {
+                                                         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                                                         return `${parts[2]} ${months[parseInt(parts[1], 10) - 1] || parts[1]}`;
+                                                       }
+                                                       return newIssueDueDate;
+                                                     })()}
+                                                   </span>
+                                                 ) : null}
+                                               </button>
+                                               {openInlineDropdown === 'date' && (
+                                                 <div className="absolute left-0 bottom-full mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-2xl p-3 z-50 text-gray-800 animate-in fade-in zoom-in-95 duration-100">
+                                                   <div className="flex items-center justify-between pb-2 border-b border-gray-100 mb-2.5">
+                                                     <span className="font-semibold text-xs text-gray-700 flex items-center gap-1.5">
+                                                       <Calendar size={13} className="text-blue-600" /> Due Date
+                                                     </span>
+                                                     {newIssueDueDate && (
+                                                       <button
+                                                         type="button"
+                                                         onClick={() => {
+                                                           setNewIssueDueDate('');
+                                                           setOpenInlineDropdown(null);
+                                                         }}
+                                                         className="text-[11px] text-red-500 hover:text-red-700 font-medium"
+                                                       >
+                                                         Clear
+                                                       </button>
+                                                     )}
+                                                   </div>
 
-                                            {/* Assignee selector dropdown */}
-                                            <div className="relative inline-dropdown">
-                                              <button
-                                                onClick={() => setOpenInlineDropdown(openInlineDropdown === 'assignee' ? null : 'assignee')}
-                                                className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition"
-                                              >
-                                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                              </button>
-                                              {openInlineDropdown === 'assignee' && (
-                                                <div className="absolute left-0 bottom-full mb-1.5 w-60 bg-white border border-gray-200 rounded-md shadow-lg py-1.5 z-50 text-sm">
-                                                  <div className="px-2 pb-1.5 border-b border-gray-100">
-                                                    <input
-                                                      type="text"
-                                                      placeholder="Search users..."
-                                                      defaultValue="Unassigned"
-                                                      className="w-full px-2 py-1 border border-gray-200 rounded outline-none focus:border-blue-500"
-                                                    />
-                                                  </div>
-                                                  <div className="max-h-48 overflow-y-auto mt-1">
-                                                    {[
-                                                      { name: 'Automatic', sub: '' },
-                                                      { name: 'codigix infotech (Assign to me)', sub: 'codigixinfotech@gmail.com' },
-                                                      { name: 'sonalicodigix', sub: '' },
-                                                      { name: 'sanika mote', sub: '' },
-                                                      { name: 'Dinesh Dhage', sub: '' },
-                                                      { name: 'Abhijit Khedekar', sub: '' },
-                                                      { name: 'wpdevelopercodigix', sub: '' }
-                                                    ].map(user => (
-                                                      <div
-                                                        key={user.name}
-                                                        onClick={() => {
-                                                          setNewIssueAssignee(user.name);
-                                                          setOpenInlineDropdown(null);
-                                                        }}
-                                                        className="p-2 hover:bg-gray-50 cursor-pointer text-gray-700 font-medium"
-                                                      >
-                                                        <div className="flex items-center gap-2">
-                                                          <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] ">
-                                                            {user.name.charAt(0).toUpperCase()}
-                                                          </div>
-                                                          <div>
-                                                            <div>{user.name}</div>
-                                                            {user.sub && <div className="text-[9px] text-gray-400 font-normal">{user.sub}</div>}
-                                                          </div>
-                                                        </div>
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
+                                                   <input
+                                                     type="date"
+                                                     value={newIssueDueDate}
+                                                     onChange={(e) => {
+                                                       setNewIssueDueDate(e.target.value);
+                                                       setOpenInlineDropdown(null);
+                                                     }}
+                                                     className="w-full px-2.5 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-500 text-gray-800"
+                                                   />
 
-                                          {/* Submit Arrow Button */}
-                                          <button
-                                            onClick={() => handleCreateInlineIssue(col)}
-                                            disabled={!newIssueTitle.trim()}
-                                            className={`p-1.5 rounded transition ${newIssueTitle.trim() ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                              }`}
-                                          >
-                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>
-                                          </button>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <button
-                                        onClick={() => setActiveCreateColumn(col)}
-                                        className="mt-2 shrink-0 flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-200 p-2 rounded transition-colors w-full create-trigger-btn"
-                                      >
-                                        <Plus size={14} /> Create issue
-                                      </button>
-                                    )}
+                                                   {/* Quick selection chips */}
+                                                   <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-center gap-1.5 flex-wrap">
+                                                     <button
+                                                       type="button"
+                                                       onClick={() => {
+                                                         const today = new Date();
+                                                         const y = today.getFullYear();
+                                                         const m = String(today.getMonth() + 1).padStart(2, '0');
+                                                         const d = String(today.getDate()).padStart(2, '0');
+                                                         setNewIssueDueDate(`${y}-${m}-${d}`);
+                                                         setOpenInlineDropdown(null);
+                                                       }}
+                                                       className="px-2 py-0.5 bg-gray-100 hover:bg-blue-50 hover:text-blue-600 text-[11px] font-medium rounded transition"
+                                                     >
+                                                       Today
+                                                     </button>
+                                                     <button
+                                                       type="button"
+                                                       onClick={() => {
+                                                         const tom = new Date();
+                                                         tom.setDate(tom.getDate() + 1);
+                                                         const y = tom.getFullYear();
+                                                         const m = String(tom.getMonth() + 1).padStart(2, '0');
+                                                         const d = String(tom.getDate()).padStart(2, '0');
+                                                         setNewIssueDueDate(`${y}-${m}-${d}`);
+                                                         setOpenInlineDropdown(null);
+                                                       }}
+                                                       className="px-2 py-0.5 bg-gray-100 hover:bg-blue-50 hover:text-blue-600 text-[11px] font-medium rounded transition"
+                                                     >
+                                                       Tomorrow
+                                                     </button>
+                                                     <button
+                                                       type="button"
+                                                       onClick={() => {
+                                                         const nextWeek = new Date();
+                                                         nextWeek.setDate(nextWeek.getDate() + 7);
+                                                         const y = nextWeek.getFullYear();
+                                                         const m = String(nextWeek.getMonth() + 1).padStart(2, '0');
+                                                         const d = String(nextWeek.getDate()).padStart(2, '0');
+                                                         setNewIssueDueDate(`${y}-${m}-${d}`);
+                                                         setOpenInlineDropdown(null);
+                                                       }}
+                                                       className="px-2 py-0.5 bg-gray-100 hover:bg-blue-50 hover:text-blue-600 text-[11px] font-medium rounded transition"
+                                                     >
+                                                       Next week
+                                                     </button>
+                                                   </div>
+                                                 </div>
+                                               )}
+                                             </div>
+
+                                             {/* Assignee selector dropdown */}
+                                             <div className="relative inline-dropdown">
+                                               <button
+                                                 type="button"
+                                                 onClick={() => {
+                                                   setOpenInlineDropdown(openInlineDropdown === 'assignee' ? null : 'assignee');
+                                                   setInlineAssigneeSearch('');
+                                                 }}
+                                                 className={`px-1 py-1 rounded flex items-center gap-1 transition ${
+                                                   newIssueAssignee && newIssueAssignee !== 'Unassigned'
+                                                     ? 'bg-blue-50 text-blue-700'
+                                                     : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+                                                 }`}
+                                                 title={`Assignee: ${newIssueAssignee || 'Unassigned'}`}
+                                               >
+                                                 {newIssueAssignee && newIssueAssignee !== 'Unassigned' && newIssueAssignee !== 'Automatic' ? (
+                                                   <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] font-bold">
+                                                     {getInitials(newIssueAssignee)}
+                                                   </div>
+                                                 ) : (
+                                                   <User size={14} />
+                                                 )}
+                                                 {newIssueAssignee && newIssueAssignee !== 'Unassigned' && (
+                                                   <span className="text-[11px] font-medium max-w-[80px] truncate">
+                                                     {newIssueAssignee}
+                                                   </span>
+                                                 )}
+                                               </button>
+                                               {openInlineDropdown === 'assignee' && (
+                                                 <div className="absolute left-0 bottom-full mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-2xl py-1.5 z-50 text-xs text-gray-700 border-t-2 border-t-blue-500 animate-in fade-in zoom-in-95 duration-100">
+                                                   <div className="p-2 border-b border-gray-100 bg-white">
+                                                     <input
+                                                       type="text"
+                                                       autoFocus
+                                                       value={inlineAssigneeSearch}
+                                                       onChange={(e) => setInlineAssigneeSearch(e.target.value)}
+                                                       placeholder="Search team members..."
+                                                       className="w-full px-2.5 py-1 text-xs border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+                                                     />
+                                                     {newIssueAssignee && newIssueAssignee !== 'Unassigned' && (
+                                                       <div className="mt-1 px-0.5 flex items-center justify-between text-[11px] text-gray-500">
+                                                         <span className="truncate">Selected: <strong className="text-gray-800">{newIssueAssignee}</strong></span>
+                                                         <button
+                                                           type="button"
+                                                           onClick={() => {
+                                                             setNewIssueAssignee('Unassigned');
+                                                             setOpenInlineDropdown(null);
+                                                           }}
+                                                           className="text-red-600 hover:text-red-700 hover:underline font-semibold ml-2 shrink-0 cursor-pointer"
+                                                         >
+                                                           Unassign
+                                                         </button>
+                                                       </div>
+                                                     )}
+                                                   </div>
+
+                                                   <div className="max-h-52 overflow-y-auto py-1 custom-scrollbar">
+                                                     {/* Unassigned Option */}
+                                                     {(!inlineAssigneeSearch.trim() || 'unassigned'.includes(inlineAssigneeSearch.toLowerCase().trim())) && (
+                                                       <div
+                                                         onClick={() => {
+                                                           setNewIssueAssignee('Unassigned');
+                                                           setOpenInlineDropdown(null);
+                                                         }}
+                                                         className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${
+                                                           newIssueAssignee === 'Unassigned' ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
+                                                         }`}
+                                                       >
+                                                         <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
+                                                           <User size={12} />
+                                                         </div>
+                                                         <span className="text-xs font-medium">Unassigned</span>
+                                                         {newIssueAssignee === 'Unassigned' && <Check size={13} className="text-blue-600 ml-auto shrink-0" />}
+                                                       </div>
+                                                     )}
+
+                                                     {/* Automatic Option */}
+                                                     {(!inlineAssigneeSearch.trim() || 'automatic'.includes(inlineAssigneeSearch.toLowerCase().trim())) && (
+                                                       <div
+                                                         onClick={() => {
+                                                           setNewIssueAssignee('Automatic');
+                                                           setOpenInlineDropdown(null);
+                                                         }}
+                                                         className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${
+                                                           newIssueAssignee === 'Automatic' ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
+                                                         }`}
+                                                       >
+                                                         <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
+                                                           <User size={12} />
+                                                         </div>
+                                                         <span className="text-xs font-medium">Automatic</span>
+                                                         {newIssueAssignee === 'Automatic' && <Check size={13} className="text-blue-600 ml-auto shrink-0" />}
+                                                       </div>
+                                                     )}
+
+                                                     {/* Logged-in User (Assign to me) Option */}
+                                                     {user && (!inlineAssigneeSearch.trim() || 'assign to me'.includes(inlineAssigneeSearch.toLowerCase()) || (user.first_name || '').toLowerCase().includes(inlineAssigneeSearch.toLowerCase())) && (
+                                                       <div
+                                                         onClick={() => {
+                                                           const myName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+                                                           setNewIssueAssignee(myName);
+                                                           setOpenInlineDropdown(null);
+                                                         }}
+                                                         className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 border-b border-gray-100 transition-colors ${
+                                                           newIssueAssignee && (newIssueAssignee.toLowerCase() === (user.username || '').toLowerCase() || newIssueAssignee.toLowerCase().includes((user.first_name || '').toLowerCase()))
+                                                             ? 'bg-[#deebff] font-semibold text-blue-900'
+                                                             : 'text-gray-700'
+                                                         }`}
+                                                       >
+                                                         <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px] font-bold shrink-0">
+                                                           {getInitials(user.first_name || user.username)}
+                                                         </div>
+                                                         <div className="flex-1 min-w-0">
+                                                           <div className="truncate text-xs font-medium text-gray-900">
+                                                             {`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username} <span className="text-[10px] text-gray-500 font-normal">(Assign to me)</span>
+                                                           </div>
+                                                           {user.email && <div className="text-[10px] text-gray-500 truncate leading-none mt-0.5">{user.email}</div>}
+                                                         </div>
+                                                         {newIssueAssignee && (newIssueAssignee.toLowerCase() === (user.username || '').toLowerCase() || newIssueAssignee.toLowerCase().includes((user.first_name || '').toLowerCase())) && (
+                                                           <Check size={13} className="text-blue-600 shrink-0" />
+                                                         )}
+                                                       </div>
+                                                     )}
+
+                                                     {/* Team Users List from real users */}
+                                                     {itUsersList
+                                                       .filter(u => {
+                                                         if (user && (u.id === user.id || u.username === user.username)) return false;
+                                                         const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || '';
+                                                         return !inlineAssigneeSearch.trim() || name.toLowerCase().includes(inlineAssigneeSearch.toLowerCase()) || (u.email && u.email.toLowerCase().includes(inlineAssigneeSearch.toLowerCase()));
+                                                       })
+                                                       .map((u) => {
+                                                         const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'User';
+                                                         const initials = getInitials(fullName);
+                                                         const isSelected = newIssueAssignee && newIssueAssignee.toLowerCase() === fullName.toLowerCase();
+
+                                                         const colors = [
+                                                           'bg-blue-600 text-white',
+                                                           'bg-purple-600 text-white',
+                                                           'bg-amber-600 text-white',
+                                                           'bg-pink-600 text-white',
+                                                           'bg-indigo-600 text-white',
+                                                           'bg-teal-600 text-white'
+                                                         ];
+                                                         const colorClass = colors[Number(u.id || 0) % colors.length];
+
+                                                         return (
+                                                           <div
+                                                             key={u.id || u.username}
+                                                             onClick={() => {
+                                                               setNewIssueAssignee(fullName);
+                                                               setOpenInlineDropdown(null);
+                                                             }}
+                                                             className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${
+                                                               isSelected ? 'bg-[#deebff] text-blue-900 font-semibold' : 'text-gray-700'
+                                                             }`}
+                                                           >
+                                                             <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${colorClass}`}>
+                                                               {initials}
+                                                             </div>
+                                                             <div className="flex-1 min-w-0">
+                                                               <div className="truncate text-xs font-medium text-gray-900">{fullName}</div>
+                                                               {u.email && <div className="text-[10px] text-gray-500 truncate leading-none mt-0.5">{u.email}</div>}
+                                                             </div>
+                                                             {isSelected && <Check size={13} className="text-blue-600 shrink-0" />}
+                                                           </div>
+                                                         );
+                                                       })}
+                                                   </div>
+                                                 </div>
+                                               )}
+                                             </div>
+
+                                             {/* Project selector dropdown */}
+                                             {projectsList.length > 0 && (
+                                               <div className="relative inline-dropdown">
+                                                 <button
+                                                   type="button"
+                                                   onClick={() => setOpenInlineDropdown(openInlineDropdown === 'project' ? null : 'project')}
+                                                   className="px-1.5 py-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition flex items-center gap-1"
+                                                   title="Select Project"
+                                                 >
+                                                   <Folder size={13} className="text-amber-500 shrink-0" />
+                                                   <span className="text-[11px] font-medium text-gray-600 max-w-[70px] truncate">
+                                                     {projectsList.find(p => Number(p.id) === Number(newIssueProjectId))?.name || 'Project'}
+                                                   </span>
+                                                   <ChevronDown size={10} />
+                                                 </button>
+                                                 {openInlineDropdown === 'project' && (
+                                                   <div className="absolute left-0 bottom-full mb-2 w-52 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-50 text-xs">
+                                                     <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                                       Assign to Project
+                                                     </div>
+                                                     <div className="max-h-40 overflow-y-auto">
+                                                       {projectsList.map(proj => (
+                                                         <div
+                                                           key={proj.id}
+                                                           onClick={() => {
+                                                             setNewIssueProjectId(proj.id);
+                                                             setOpenInlineDropdown(null);
+                                                           }}
+                                                           className={`px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2 truncate ${
+                                                             Number(newIssueProjectId) === Number(proj.id) ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
+                                                           }`}
+                                                         >
+                                                           <Folder size={12} className="text-amber-500 shrink-0" />
+                                                           <span className="truncate">{proj.name}</span>
+                                                         </div>
+                                                       ))}
+                                                     </div>
+                                                   </div>
+                                                 )}
+                                               </div>
+                                             )}
+                                           </div>
+
+                                           {/* Right Side Action Buttons */}
+                                           <div className="flex items-center gap-1">
+                                             {/* Expand to Full Create Drawer */}
+                                             <button
+                                               type="button"
+                                               onClick={() => handleExpandToDrawer(col)}
+                                               className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-800 transition"
+                                               title="Open detailed create drawer"
+                                             >
+                                               <Maximize2 size={13} />
+                                             </button>
+
+                                             {/* Cancel Button */}
+                                             <button
+                                               type="button"
+                                               onClick={() => {
+                                                 setActiveCreateColumn(null);
+                                                 setOpenInlineDropdown(null);
+                                               }}
+                                               className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition"
+                                               title="Cancel"
+                                             >
+                                               <X size={14} />
+                                             </button>
+
+                                             {/* Submit Button */}
+                                             <button
+                                               type="button"
+                                               onClick={() => handleCreateInlineIssue(col)}
+                                               disabled={!newIssueTitle.trim()}
+                                               className={`p-1.5 rounded transition ${
+                                                 newIssueTitle.trim()
+                                                   ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                                                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                               }`}
+                                               title="Create task (Enter)"
+                                             >
+                                               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>
+                                             </button>
+                                           </div>
+                                         </div>
+                                       </div>
+                                     ) : (
+                                       <button
+                                         onClick={() => handleOpenInlineCreate(col)}
+                                         className="mt-2 shrink-0 flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-200 p-2 rounded transition-colors w-full create-trigger-btn"
+                                       >
+                                         <Plus size={14} /> Create issue
+                                       </button>
+                                     )}
                                   </div>
                                 )
                               }}

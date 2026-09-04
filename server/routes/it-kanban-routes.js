@@ -977,7 +977,29 @@ Acceptance Criteria
       } = req.body;
 
       // Normalise the optional planning fields the create drawers send.
-      const toDate = (v) => (v && String(v).trim() ? String(v).slice(0, 10) : null);
+      const toDate = (v) => {
+        if (!v) return null;
+        const s = String(v).trim();
+        if (!s || s === 'null' || s === 'undefined') return null;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+        if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+        // Handle M/D/YYYY or MM/DD/YYYY
+        const slashMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (slashMatch) {
+          const month = String(slashMatch[1]).padStart(2, '0');
+          const day = String(slashMatch[2]).padStart(2, '0');
+          const year = slashMatch[3];
+          return `${year}-${month}-${day}`;
+        }
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) {
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+        return null;
+      };
       const labelsJson = JSON.stringify(Array.isArray(labels) ? labels.filter(Boolean) : []);
       const linkedJson = JSON.stringify(Array.isArray(linked_issues) ? linked_issues.filter(Boolean) : []);
 
