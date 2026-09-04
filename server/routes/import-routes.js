@@ -38,25 +38,70 @@ module.exports = function setupImportRoutes(app, pool) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
 
+  const isWeekdayWord = (str) => {
+    if (!str || typeof str !== 'string') return false;
+    const s = str.trim().toLowerCase();
+    const weekdays = [
+      'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+      'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'
+    ];
+    return weekdays.includes(s);
+  };
+
+  const isDayHeader = (header) => {
+    if (!header || typeof header !== 'string') return false;
+    const h = header.trim().toLowerCase();
+    return h === 'day' || h === 'days' || h === 'weekday' || h === 'day of week' || isWeekdayWord(h);
+  };
+
   /**
    * Excel dates arrive as real Date objects when the cell was formatted as a date, and as
    * plain text when someone typed them. Text is genuinely ambiguous — 08/01/26 is either
    * 8 January or 1 August — so the caller states which order the file uses and we honour it
    * rather than guessing per row.
+   * If expectedWeekday is provided (from a Day column), we can test which interpretation
+   * matches that day of the week to eliminate ambiguity automatically.
    */
-  const parseCellDate = (value, dayFirst) => {
+  const parseCellDate = (value, dayFirst, expectedWeekday) => {
     if (value == null || value === '') return { date: null, ambiguous: false };
     if (value instanceof Date && !isNaN(value.getTime())) {
       return { date: toISODate(value), ambiguous: false };
     }
 
     const text = String(value).trim();
+    // Check for YYYY-MM-DD
+    const isoMatch = text.match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})$/);
+    if (isoMatch) {
+      const year = Number(isoMatch[1]);
+      const month = Number(isoMatch[2]);
+      const day = Number(isoMatch[3]);
+      const d = new Date(year, month - 1, day);
+      if (!isNaN(d.getTime()) && d.getMonth() === month - 1) {
+        return { date: toISODate(d), ambiguous: false };
+      }
+    }
+
     const m = text.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/);
     if (m) {
       const a = Number(m[1]);
       const b = Number(m[2]);
       let year = Number(m[3]);
       if (year < 100) year += 2000;
+
+      // When weekday is known (e.g. "Tuesday" from the Day column), use it to disambiguate MM-DD vs DD-MM
+      if (expectedWeekday && a <= 12 && b <= 12 && a !== b) {
+        const d1 = new Date(year, a - 1, b); // MM-DD
+        const name1 = d1.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        const d2 = new Date(year, b - 1, a); // DD-MM
+        const name2 = d2.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+
+        const ew = String(expectedWeekday).toLowerCase().trim();
+        if (name1 === ew || name1.startsWith(ew) || ew.startsWith(name1)) {
+          return { date: toISODate(d1), ambiguous: false };
+        } else if (name2 === ew || name2.startsWith(ew) || ew.startsWith(name2)) {
+          return { date: toISODate(d2), ambiguous: false };
+        }
+      }
 
       let day = dayFirst ? a : b;
       let month = dayFirst ? b : a;
@@ -103,18 +148,69 @@ module.exports = function setupImportRoutes(app, pool) {
       const sheet = workbook.worksheets[0];
       if (!sheet) return res.status(400).json({ error: 'The file has no worksheets' });
 
-      // Row 1, column B onward: one client per column.
+      // Find date column and day column if present
       const headerRow = sheet.getRow(1);
-      const columns = [];
+      let dateCol = 1;
+      let dayCol = null;
+
       headerRow.eachCell((cell, colNumber) => {
-        if (colNumber === 1) return; // column A is the date column
-        const name = cellText(cell);
-        if (name) columns.push({ colNumber, name: String(name) });
+        const text = String(cellText(cell) || '').trim().toLowerCase();
+        if (text === 'date' || text === 'dates') {
+          dateCol = colNumber;
+        } else if (isDayHeader(text)) {
+          dayCol = colNumber;
+        }
       });
+
+      // If dayCol wasn't found by header name, check if column 2 cells are mostly weekday names
+      if (!dayCol && dateCol === 1) {
+        let weekdayCount = 0;
+        let checkedRows = 0;
+        for (let r = 2; r <= Math.min(10, sheet.rowCount); r++) {
+          const val = cellText(sheet.getRow(r).getCell(2));
+          if (val) {
+            checkedRows++;
+            if (isWeekdayWord(val)) weekdayCount++;
+          }
+        }
+        if (checkedRows > 0 && weekdayCount >= checkedRows * 0.7) {
+          dayCol = 2;
+        }
+      }
+
+      // Collect all task / client columns (excluding dateCol and dayCol)
+      const columns = [];
+      const totalCols = Math.max(headerRow.cellCount || 0, sheet.columnCount || 0);
+
+      for (let c = 1; c <= totalCols; c++) {
+        if (c === dateCol) continue;
+        if (dayCol && c === dayCol) continue;
+
+        const rawHeader = cellText(headerRow.getCell(c));
+        const headerStr = String(rawHeader || '').trim();
+        if (isDayHeader(headerStr)) continue;
+
+        // Check if this column has header or data in subsequent rows
+        let hasData = Boolean(headerStr);
+        if (!hasData) {
+          for (let r = 2; r <= Math.min(15, sheet.rowCount); r++) {
+            const v = cellText(sheet.getRow(r).getCell(c));
+            if (v && !isWeekdayWord(v) && !(v instanceof Date)) {
+              hasData = true;
+              break;
+            }
+          }
+        }
+
+        if (hasData) {
+          const colName = headerStr || `Task ${columns.length + 1}`;
+          columns.push({ colNumber: c, name: colName });
+        }
+      }
 
       if (columns.length === 0) {
         return res.status(400).json({
-          error: 'No client columns found. Row 1 should name a client in column B onward.'
+          error: 'No task or client columns found. Row 1 should name task columns (e.g. Task 1, Task 2) or client names.'
         });
       }
 
@@ -123,12 +219,17 @@ module.exports = function setupImportRoutes(app, pool) {
         'SELECT id, name FROM projects WHERE name IS NOT NULL'
       );
       const matchProject = (header) => {
+        if (!header) return null;
         const h = String(header).toLowerCase().trim();
-        const exact = projects.find(p => String(p.name).toLowerCase().trim() === h);
+        const hBase = h.replace(/s$/i, '');
+        const exact = projects.find(p => {
+          const pn = String(p.name).toLowerCase().trim();
+          return pn === h || pn === hBase || pn.replace(/s$/i, '') === hBase;
+        });
         if (exact) return exact;
         return projects.find(p => {
           const n = String(p.name).toLowerCase().trim();
-          return n.includes(h) || h.includes(n);
+          return n.includes(h) || h.includes(n) || (hBase.length >= 3 && n.includes(hBase));
         }) || null;
       };
       const columnMap = columns.map(c => {
@@ -142,22 +243,54 @@ module.exports = function setupImportRoutes(app, pool) {
 
       sheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return;
-        const { date, ambiguous } = parseCellDate(cellText(row.getCell(1)), dayFirst);
+
+        const rawDate = cellText(row.getCell(dateCol));
+        const rawDay = dayCol ? cellText(row.getCell(dayCol)) : '';
+        const { date, ambiguous } = parseCellDate(rawDate, dayFirst, rawDay);
+
+        // Skip rows with no content in any task column
+        let hasAnyCell = false;
+        for (const col of columnMap) {
+          const v = cellText(row.getCell(col.colNumber));
+          if (v && !isWeekdayWord(v) && !(v instanceof Date)) {
+            hasAnyCell = true;
+            break;
+          }
+        }
+        if (!hasAnyCell) return;
 
         for (const col of columnMap) {
-          const title = cellText(row.getCell(col.colNumber));
-          if (!title || title instanceof Date) continue;
+          const rawVal = cellText(row.getCell(col.colNumber));
+          if (!rawVal || rawVal instanceof Date) continue;
+
+          const title = String(rawVal).trim();
+          if (!title || isWeekdayWord(title)) continue;
 
           if (!date) { skippedNoDate++; continue; }
           if (ambiguous) ambiguousDates++;
 
+          // Match project: first from column name if matched, else from task title prefix (e.g. "Bakul Caterings-GMB" -> "Bakul Caterings")
+          let rowProjectId = col.projectId;
+          let rowProjectName = col.projectName;
+          if (!rowProjectId) {
+            const prefixPart = title.split(/[-–—:_]/)[0].trim();
+            if (prefixPart) {
+              const matchedP = matchProject(prefixPart);
+              if (matchedP) {
+                rowProjectId = matchedP.id;
+                rowProjectName = matchedP.name;
+              }
+            }
+          }
+
           rows.push({
             rowNumber,
+            colNumber: col.colNumber,
             date,
-            title: String(title),
+            title,
             column: col.name,
-            projectId: col.projectId,
-            projectName: col.projectName
+            projectId: rowProjectId,
+            projectName: rowProjectName
           });
         }
       });
@@ -183,6 +316,11 @@ module.exports = function setupImportRoutes(app, pool) {
         }
       }
 
+      const unmatchedColumns = columnMap.filter(c => {
+        if (c.projectId) return false;
+        return !rows.some(r => r.colNumber === c.colNumber && r.projectId);
+      }).map(c => c.name);
+
       res.json({
         sheetName: sheet.name,
         columns: columnMap,
@@ -192,7 +330,7 @@ module.exports = function setupImportRoutes(app, pool) {
           duplicates,
           ambiguousDates,
           skippedNoDate,
-          unmatchedColumns: columnMap.filter(c => !c.projectId).map(c => c.name)
+          unmatchedColumns
         }
       });
     } catch (error) {
@@ -212,8 +350,8 @@ module.exports = function setupImportRoutes(app, pool) {
       if (!Array.isArray(rows) || rows.length === 0) {
         return res.status(400).json({ error: 'No rows to import' });
       }
-      if (!['due_date', 'start_date'].includes(dateField)) {
-        return res.status(400).json({ error: 'dateField must be due_date or start_date' });
+      if (!['due_date', 'start_date', 'both'].includes(dateField)) {
+        return res.status(400).json({ error: 'dateField must be due_date, start_date, or both' });
       }
 
       const dept = String(department || 'IT').replace(/\s*department\s*$/i, '').trim();
@@ -267,8 +405,8 @@ module.exports = function setupImportRoutes(app, pool) {
           [
             key, title, type, priority, reporter || 'Unassigned',
             projectId, dept,
-            dateField === 'due_date' ? row.date : null,
-            dateField === 'start_date' ? row.date : null,
+            (dateField === 'due_date' || dateField === 'both') ? row.date : null,
+            (dateField === 'start_date' || dateField === 'both') ? row.date : null,
             sprintId ? Number(sprintId) : null,
             labelsJson,
             JSON.stringify([]), JSON.stringify([]), JSON.stringify([])

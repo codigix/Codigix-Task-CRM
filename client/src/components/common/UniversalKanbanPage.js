@@ -107,10 +107,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
     return Array.from(terms);
   }, [username, user]);
 
-  const isMarketing = String(department || '').toLowerCase().includes('market') || String(department || '').toLowerCase().includes('seo');
-  const defaultCols = isMarketing 
-    ? ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'DONE'] 
-    : ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'];
+  const defaultCols = ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'];
 
   const [boardData, setBoardData] = useState(() => {
     const init = {};
@@ -123,7 +120,15 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return isMarketing ? parsed.filter(c => c !== 'TESTING') : parsed;
+          if (!parsed.includes('TESTING')) {
+            const doneIdx = parsed.indexOf('DONE');
+            if (doneIdx !== -1) {
+              parsed.splice(doneIdx, 0, 'TESTING');
+            } else {
+              parsed.push('TESTING');
+            }
+          }
+          return parsed;
         }
       } catch (e) {}
     }

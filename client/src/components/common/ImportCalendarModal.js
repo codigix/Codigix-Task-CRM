@@ -18,14 +18,14 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
   const [dayFirst, setDayFirst] = useState(false);
   // A content calendar says when a piece of work runs, not when it is due, so the date
   // becomes the start date unless told otherwise.
-  const [dateField, setDateField] = useState('start_date');
+  const [dateField, setDateField] = useState('both');
   const [sprintId, setSprintId] = useState('');
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState('');
 
   const reset = () => {
     setFile(null); setPreview(null); setExcluded(new Set());
-    setError(''); setIsBusy(false); setSprintId(''); setDateField('start_date');
+    setError(''); setIsBusy(false); setSprintId(''); setDateField('both');
   };
 
   // Opened from a sprint's menu? Then that sprint is the destination, not the Backlog.
@@ -35,7 +35,7 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
 
   if (!isOpen) return null;
 
-  const rowId = (r) => `${r.rowNumber}:${r.column}`;
+  const rowId = (r) => `${r.rowNumber}:${r.colNumber || r.column}:${r.title}`;
 
   const runPreview = async (chosenFile, useDayFirst) => {
     const f = chosenFile || file;
@@ -115,9 +115,9 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-[900px] max-h-[90vh] flex flex-col">
         <div className="flex items-start justify-between px-6 pt-5 pb-3 shrink-0">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Import content calendar</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Import calendar tasks</h2>
             <p className="text-[12px] text-gray-500 mt-0.5">
-              Column A holds the dates, row 1 names a client per column, and each filled cell becomes a work item.
+              Review and create tasks automatically from your calendar spreadsheet.
             </p>
           </div>
           <button onClick={() => { reset(); onCancel(); }} className="text-gray-400 hover:text-gray-700 p-1 rounded transition">
@@ -177,51 +177,6 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
                 </div>
               )}
 
-              {/* Import options */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div>
-                  <label className="block text-[12px] font-semibold text-gray-700 mb-1">Date order</label>
-                  <select
-                    value={dayFirst ? 'dmy' : 'mdy'}
-                    onChange={(e) => {
-                      const next = e.target.value === 'dmy';
-                      setDayFirst(next);
-                      runPreview(file, next);
-                    }}
-                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-[13px] bg-white cursor-pointer"
-                  >
-                    <option value="mdy">Month/Day/Year</option>
-                    <option value="dmy">Day/Month/Year</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[12px] font-semibold text-gray-700 mb-1">The date is the</label>
-                  <select
-                    value={dateField}
-                    onChange={(e) => setDateField(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-[13px] bg-white cursor-pointer"
-                  >
-                    <option value="start_date">Start date</option>
-                    <option value="due_date">Due date</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[12px] font-semibold text-gray-700 mb-1">Create into</label>
-                  <select
-                    value={sprintId}
-                    onChange={(e) => setSprintId(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-[13px] bg-white cursor-pointer"
-                  >
-                    {/* Sprint only — a calendar is planned work, so it belongs in a sprint. */}
-                    {sprints.map(s => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}{s.status === 'Active' ? ' (active)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
               {/* What will be created */}
               <div className="border border-gray-200 rounded overflow-hidden">
                 <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border-b border-gray-200 text-[12px]">
@@ -233,14 +188,13 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
                     <span className="text-gray-500">· {summary.skippedNoDate} skipped with no date</span>
                   )}
                 </div>
-                <div className="max-h-[280px] overflow-y-auto">
+                <div className="max-h-[340px] overflow-y-auto">
                   <table className="w-full text-[12px]">
                     <thead className="bg-white sticky top-0 border-b border-gray-100">
                       <tr className="text-gray-500">
                         <th className="w-8 p-2"></th>
                         <th className="text-left p-2 font-medium">Date</th>
                         <th className="text-left p-2 font-medium">Work item</th>
-                        <th className="text-left p-2 font-medium">Client column</th>
                         <th className="text-left p-2 font-medium">Project</th>
                       </tr>
                     </thead>
@@ -257,7 +211,6 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
                               {r.title}
                               {r.duplicate && <span className="ml-2 text-[10px] text-gray-500">already imported</span>}
                             </td>
-                            <td className="p-2 text-gray-600">{r.column}</td>
                             <td className="p-2 text-gray-600">
                               {r.projectName || <span className="text-gray-400">none</span>}
                             </td>
@@ -268,10 +221,6 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
                   </table>
                 </div>
               </div>
-
-              <p className="text-xs text-gray-500 mt-2">
-                Untick anything that isn’t work — holidays and notes often sit in the same grid.
-              </p>
             </>
           )}
         </div>
@@ -289,7 +238,7 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
             disabled={isBusy || !preview || chosenRows.length === 0}
             className="px-5 py-2 text-[14px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition disabled:opacity-50"
           >
-            {isBusy ? 'Working…' : `Import ${chosenRows.length || ''} work item${chosenRows.length === 1 ? '' : 's'}`}
+            {isBusy ? 'Creating…' : 'Create Task'}
           </button>
         </div>
       </div>
