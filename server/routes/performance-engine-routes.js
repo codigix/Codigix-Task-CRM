@@ -8,6 +8,70 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
     query: (sql, params) => pool.query(sql, params)
   };
 
+  // Auto-migrate tables for Performance Engine
+  (async function autoMigratePerformanceEngine() {
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS task_history (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          task_id VARCHAR(50) NOT NULL,
+          changed_by_user_id VARCHAR(50),
+          action_type VARCHAR(100),
+          field_name VARCHAR(100),
+          old_value TEXT,
+          new_value TEXT,
+          reason TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS task_contributions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          task_id VARCHAR(50) NOT NULL,
+          subtask_id VARCHAR(50),
+          user_id VARCHAR(50) NOT NULL,
+          role VARCHAR(50),
+          effort_points DECIMAL(10,2) DEFAULT 0,
+          contribution_percentage DECIMAL(5,2),
+          contribution_source VARCHAR(100),
+          approval_status VARCHAR(20) DEFAULT 'Pending',
+          approved_by VARCHAR(50),
+          approved_at TIMESTAMP NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS task_subtasks (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          task_id VARCHAR(50) NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          description TEXT,
+          point_value DECIMAL(10,2) DEFAULT 0,
+          status VARCHAR(50) DEFAULT 'To Do',
+          assigned_to_user_id VARCHAR(50),
+          created_by_user_id VARCHAR(50),
+          completed_by_user_id VARCHAR(50),
+          completed_at TIMESTAMP NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS task_time_logs (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          task_id VARCHAR(50) NOT NULL,
+          user_id VARCHAR(50) NOT NULL,
+          hours DECIMAL(10,2) NOT NULL,
+          description TEXT,
+          status VARCHAR(20) DEFAULT 'Approved',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log('Performance Engine tables verified/migrated successfully.');
+    } catch (e) {
+      console.error('Failed to auto-migrate Performance Engine tables:', e.message);
+    }
+  })();
+
   /**
    * 1. MIDDLEWARE: Audit History Interceptor
    */
@@ -159,29 +223,84 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
     const { taskId } = req.params;
     
     try {
-      const [tasks] = await db.query('SELECT * FROM general_tasks WHERE id = ?', [taskId]);
-      if (!tasks.length) return res.status(404).json({ success: false, message: 'Task not found' });
-      
-      const task = tasks[0];
-      const effortPoints = task.effort_points || 0;
+      let task = null;
+      let effortPoints = 0;
+      let contributionMethod = 'WORK_BREAKDOWN';
+      let taskType = 'general_tasks';
+
+      const [gTasks] = await db.query('SELECT * FROM general_tasks WHERE id = ?', [taskId]);
+      if (gTasks.length) {
+        task = gTasks[0];
+        effortPoints = task.effort_points || 0;
+        contributionMethod = task.contribution_method || 'WORK_BREAKDOWN';
+      } else {
+        const [iTasks] = await db.query('SELECT * FROM it_kanban_issues WHERE id = ?', [taskId]);
+        if (iTasks.length) {
+          task = iTasks[0];
+          effortPoints = parseInt(task.effort_points, 10) || parseInt(task.story_points, 10) || 0;
+          contributionMethod = task.contribution_method || 'WORK_BREAKDOWN';
+          taskType = 'it_kanban_issues';
+        } else {
+          return res.status(404).json({ success: false, message: 'Task not found' });
+        }
+      }
       
       let proposedContributions = [];
 
-      if (task.contribution_method === 'WORK_BREAKDOWN') {
-        const [subtasks] = await db.query('SELECT * FROM task_subtasks WHERE task_id = ? AND status = "Completed"', [taskId]);
-        subtasks.forEach(st => {
-          if (st.completed_by_user_id) {
+      if (contributionMethod === 'WORK_BREAKDOWN') {
+        if (taskType === 'general_tasks') {
+          const [subtasks] = await db.query('SELECT * FROM task_subtasks WHERE task_id = ? AND status = "Completed"', [taskId]);
+          if (subtasks.length === 0 && task.assigned_to_user_id) {
             proposedContributions.push({
-              user_id: st.completed_by_user_id,
-              subtask_id: st.id,
-              effort_points: st.point_value,
-              contribution_source: 'Subtask Completion',
-              role: 'Executor'
+              user_id: task.assigned_to_user_id,
+              subtask_id: null,
+              effort_points: effortPoints,
+              contribution_source: 'Parent Task Completion (No Subtasks)',
+              role: 'Owner'
+            });
+          } else {
+            subtasks.forEach(st => {
+              if (st.completed_by_user_id) {
+                proposedContributions.push({
+                  user_id: st.completed_by_user_id,
+                  subtask_id: st.id,
+                  effort_points: st.point_value,
+                  contribution_source: 'Subtask Completion',
+                  role: 'Executor'
+                });
+              }
             });
           }
-        });
+        } else {
+          // IT Kanban subtasks are stored as JSON on the issue
+          let subtasks = [];
+          try { subtasks = typeof task.subtasks === 'string' ? JSON.parse(task.subtasks) : (task.subtasks || []); } catch(e){}
+          
+          if (subtasks.length === 0 && task.assignee && task.assignee !== 'Unassigned') {
+            proposedContributions.push({
+              user_id: task.assignee, 
+              subtask_id: null,
+              effort_points: effortPoints,
+              contribution_source: 'Parent Task Completion (No Subtasks)',
+              role: 'Owner'
+            });
+          } else {
+            subtasks.forEach(st => {
+              if (st.completed && st.assignee && st.assignee !== 'Unassigned') {
+                // We'll use the assignee string as the user identifier for display purposes
+                proposedContributions.push({
+                  user_id: st.assignee, 
+                  subtask_id: st.id || null,
+                  effort_points: effortPoints > 0 ? Math.round(effortPoints / Math.max(1, subtasks.filter(s => s.completed).length)) : 0,
+                  contribution_source: 'Subtask Completion',
+                  role: 'Executor'
+                });
+              }
+            });
+          }
+        }
       } 
-      else if (task.contribution_method === 'TIME_BASED' && effortPoints > 0) {
+      else if (contributionMethod === 'TIME_BASED' && effortPoints > 0) {
         const [logs] = await db.query('SELECT user_id, SUM(hours) as total_hours FROM task_time_logs WHERE task_id = ? AND status = "Approved" GROUP BY user_id', [taskId]);
         
         const totalTaskHours = logs.reduce((sum, log) => sum + Number(log.total_hours), 0);
@@ -218,6 +337,9 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
       connection = await pool.getConnection();
       await connection.query('BEGIN');
 
+      const [gTasks] = await connection.query('SELECT id FROM general_tasks WHERE id = ?', [taskId]);
+      const isGeneralTask = gTasks.length > 0;
+
       await connection.query('DELETE FROM task_contributions WHERE task_id = ?', [taskId]);
 
       for (const comp of contributions) {
@@ -228,7 +350,12 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
         );
       }
 
-      await connection.query("UPDATE general_tasks SET contribution_review_status = 'Approved', status = 'Completed' WHERE id = ?", [taskId]);
+      if (isGeneralTask) {
+        await connection.query("UPDATE general_tasks SET contribution_review_status = 'Approved', status = 'Completed' WHERE id = ?", [taskId]);
+      } else {
+        // Also support IT Kanban status updates or marker
+        await connection.query("UPDATE it_kanban_issues SET status = 'Done' WHERE id = ?", [taskId]);
+      }
 
       await connection.query(
         `INSERT INTO task_history (task_id, changed_by_user_id, action_type, field_name, old_value, new_value, reason) VALUES (?, ?, ?, ?, ?, ?, ?)`,

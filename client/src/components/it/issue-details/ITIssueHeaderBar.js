@@ -25,6 +25,21 @@ const ITIssueHeaderBar = ({
   projectName,
   onOpenReviewGate
 }) => {
+  const currentUser = React.useMemo(() => {
+    try {
+      const u = localStorage.getItem('currentUser') || localStorage.getItem('user');
+      return u ? JSON.parse(u) : null;
+    } catch(e) { return null; }
+  }, []);
+
+  const isManagerOrAdmin = currentUser && (
+    ['manager', 'hr', 'admin'].includes(String(currentUser.role || '').toLowerCase().trim()) ||
+    ['manager', 'hr', 'admin'].includes(String(currentUser.department_role || '').toLowerCase().trim()) ||
+    ['manager', 'hr', 'admin'].includes(String(currentUser.role_name || '').toLowerCase().trim()) ||
+    String(currentUser.job_title || '').toLowerCase().includes('manager') ||
+    String(currentUser.job_title || '').toLowerCase().includes('hr')
+  );
+
   return (
     <div className="h-14 border-b border-gray-200 px-5 flex items-center justify-between bg-white shrink-0">
       {/* Breadcrumb Info */}
@@ -95,14 +110,16 @@ const ITIssueHeaderBar = ({
         </button>
 
         {/* Manager Review Gate */}
-        <button
-          onClick={onOpenReviewGate}
-          className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-semibold rounded shadow-sm transition"
-          title="Open Manager Review Gate"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          Review Gate
-        </button>
+        {isManagerOrAdmin && (
+          <button
+            onClick={onOpenReviewGate}
+            className="flex items-center gap-1 py-1.5 px-3 bg-purple-50 text-purple-700 hover:bg-purple-100 font-semibold rounded shadow-sm text-sm border border-purple-200 transition whitespace-nowrap"
+            title="Open Manager Review Gate"
+          >
+            <Lock size={14} className="text-purple-600" />
+            Review Gate
+          </button>
+        )}
 
         {/* Share */}
         <button className="p-1.5 rounded border border-gray-300 text-gray-500 hover:bg-gray-50 transition" title="Share">

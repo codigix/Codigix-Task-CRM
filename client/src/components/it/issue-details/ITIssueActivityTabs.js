@@ -148,9 +148,10 @@ const ITIssueActivityTabs = ({
                     <span className="font-semibold text-gray-800">{c.author || 'User'}</span>
                     <span className="text-[10px] text-gray-400">{c.time || 'Just now'}</span>
                   </div>
-                  <p className="text-gray-700 leading-relaxed bg-gray-50/50 p-2 rounded border border-gray-100">
-                    {c.text}
-                  </p>
+                  <div 
+                    className="text-gray-700 leading-relaxed bg-gray-50/50 p-2 rounded border border-gray-100"
+                    dangerouslySetInnerHTML={{ __html: c.text }}
+                  />
                 </div>
                 <button
                   onClick={() => deleteComment(i)}

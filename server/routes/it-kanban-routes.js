@@ -12,6 +12,28 @@ const isSubtaskDone = (s) => {
   return s.completed === true || isDoneStatus(s.status);
 };
 
+// Calculates effort points based on inherent value/complexity.
+const calculateValueBasedPoints = (type, priority, subtasksCount) => {
+  // 1. Base Points by Task Type
+  let basePoints = 3; // Standard Task / Story
+  const t = String(type || '').toUpperCase().trim();
+  if (t.includes('EPIC') || t.includes('CAMPAIGN')) basePoints = 10;
+  else if (t.includes('BUG') || t.includes('HOTFIX')) basePoints = 5;
+  else if (t.includes('SUB') || t.includes('MINOR')) basePoints = 1;
+
+  // 2. Priority Multiplier
+  let multiplier = 1.2; // Medium / Not Decided
+  const p = String(priority || '').toUpperCase().trim();
+  if (p.includes('LOWEST') || (p.includes('LOW') && !p.includes('NOT'))) multiplier = 1.0;
+  else if (p.includes('HIGHEST') || p.includes('CRITICAL')) multiplier = 2.0;
+  else if (p.includes('HIGH')) multiplier = 1.5;
+
+  // 3. Subtask Bonus
+  const bonus = Number(subtasksCount) || 0;
+
+  return Math.round((basePoints * multiplier) + bonus);
+};
+
 module.exports = function setupItKanbanRoutes(app, pool) {
   const db = {
     query: (sql, params) => pool.query(sql, params)
@@ -634,7 +656,10 @@ Acceptance Criteria
       { name: 'labels', definition: 'JSON' },
       { name: 'story_points', definition: 'VARCHAR(20)' },
       { name: 'flagged', definition: 'TINYINT(1) DEFAULT 0' },
-      { name: 'parent_id', definition: 'INT' }
+      { name: 'parent_id', definition: 'INT' },
+      { name: 'contribution_review_status', definition: "VARCHAR(20) DEFAULT 'Pending'" },
+      { name: 'contribution_method', definition: "VARCHAR(30) DEFAULT 'WORK_BREAKDOWN'" },
+      { name: 'effort_points', definition: 'INT DEFAULT 0' }
     ];
     try {
       const [cols] = await pool.query('DESCRIBE it_kanban_issues');
@@ -767,6 +792,16 @@ Acceptance Criteria
       res.json(labels);
     } catch (error) {
       responseError(res, 500, 'Failed to fetch labels', error);
+    }
+  });
+
+  app.post('/api/it-kanban/calculate-points', (req, res) => {
+    try {
+      const { type, priority, subtasksCount } = req.body;
+      const points = calculateValueBasedPoints(type, priority, subtasksCount);
+      res.json({ points });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to calculate points' });
     }
   });
 
@@ -1058,7 +1093,7 @@ Acceptance Criteria
       // backlog filter on, so the details panel has to be able to write it.
       // 'flagged' and 'story_points' are written by the backlog row menu, which mirrors
       // Jira's Add flag and Story point estimate actions.
-      const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability'];
+      const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability', 'contribution_review_status', 'contribution_method', 'effort_points'];
       // 'labels' belongs here, not in allowedFields: it is stored as JSON, and without it
       // labels could be set at creation but never changed afterwards.
       const jsonFields = ['subtasks', 'linked_issues', 'comments', 'labels'];

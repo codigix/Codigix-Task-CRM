@@ -75,8 +75,40 @@ const ITIssueDetailsSidebar = ({
   setContributionMethod,
   contributionReviewStatus
 }) => {
+  const [loadingPoints, setLoadingPoints] = useState(false);
   const [isEditingLabels, setIsEditingLabels] = useState(false);
   const [labelDraft, setLabelDraft] = useState('');
+
+  const handleAutoCalculatePoints = async () => {
+    try {
+      setLoadingPoints(true);
+      const subtasksList = typeof issue.subtasks === 'string' ? JSON.parse(issue.subtasks) : (issue.subtasks || []);
+      const res = await fetch('http://localhost:5000/api/it-kanban/calculate-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: issue.type,
+          priority: issue.priority,
+          subtasksCount: subtasksList.length
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.points !== undefined && data.points !== Number(effortPoints)) {
+        if (setEffortPoints) setEffortPoints(data.points);
+        handleUpdate({ effort_points: data.points });
+      }
+    } catch (e) {
+      console.error('Failed to auto-calculate points:', e);
+    } finally {
+      setLoadingPoints(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!issue || !issue.id || !issue.type) return;
+    handleAutoCalculatePoints();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [issue?.type, issue?.priority, (typeof issue.subtasks === 'string' ? JSON.parse(issue.subtasks) : (issue.subtasks || [])).length]);
 
   // Everything on this board except this item and the items already parented to it —
   // either would make a loop.
@@ -607,7 +639,17 @@ const ITIssueDetailsSidebar = ({
 
             {/* Effort Points */}
             <div className="flex items-center min-h-[32px] gap-2">
-              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs" title="Total performance value of this task">Effort Points</span>
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs flex items-center justify-between" title="Total performance value of this task">
+                Effort Points
+                <button
+                  onClick={handleAutoCalculatePoints}
+                  disabled={loadingPoints}
+                  title="Auto-calculate points based on Task Type, Priority, and Subtasks"
+                  className="p-1 text-emerald-500 hover:bg-emerald-50 rounded transition disabled:opacity-50"
+                >
+                  <Sparkles size={14} className={loadingPoints ? "animate-spin" : ""} />
+                </button>
+              </span>
               <div className="flex-1 min-w-0 flex items-center gap-2">
                 <input
                   type="number"
