@@ -101,6 +101,55 @@ const isPastDate = (v) => {
   return day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
 };
 
+const getIssueDateParts = (dateVal) => {
+  if (!dateVal) return null;
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return null;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getTodayStr = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getTomorrowStr = () => {
+  const tmrw = new Date();
+  tmrw.setDate(tmrw.getDate() + 1);
+  const year = tmrw.getFullYear();
+  const month = String(tmrw.getMonth() + 1).padStart(2, '0');
+  const day = String(tmrw.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getThisWeekRange = () => {
+  const now = new Date();
+  const currentDay = now.getDay();
+  const distToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + distToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { start: toStr(monday), end: toStr(sunday) };
+};
+
+const getThisMonthRange = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { start: toStr(firstDay), end: toStr(lastDay) };
+};
+
 const formatSprintDate = (value) => {
   const d = localMidnight(value);
   if (!d) return 'Not set';
@@ -140,7 +189,7 @@ const AlertTriangleIcon = ({ size = 16, className = "" }) => (
 
 const DEPARTMENT_KANBAN_COLUMNS = {
   'IT': ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'],
-  'Marketing': ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'DONE']
+  'Marketing': ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE']
 };
 
 const ITKanbanPage = ({ department }) => {
@@ -237,7 +286,15 @@ const ITKanbanPage = ({ department }) => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return currentDept === 'Marketing' ? parsed.filter(c => c !== 'TESTING') : parsed;
+          if (!parsed.includes('TESTING') && defaultDeptColumns.includes('TESTING')) {
+            const doneIdx = parsed.indexOf('DONE');
+            if (doneIdx !== -1) {
+              parsed.splice(doneIdx, 0, 'TESTING');
+            } else {
+              parsed.push('TESTING');
+            }
+          }
+          return parsed;
         }
       } catch (e) {}
     }
@@ -251,7 +308,15 @@ const ITKanbanPage = ({ department }) => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          cols = currentDept === 'Marketing' ? parsed.filter(c => c !== 'TESTING') : parsed;
+          if (!parsed.includes('TESTING') && defaultDeptColumns.includes('TESTING')) {
+            const doneIdx = parsed.indexOf('DONE');
+            if (doneIdx !== -1) {
+              parsed.splice(doneIdx, 0, 'TESTING');
+            } else {
+              parsed.push('TESTING');
+            }
+          }
+          cols = parsed;
         }
       } catch (e) {}
     }
@@ -267,12 +332,54 @@ const ITKanbanPage = ({ department }) => {
   const [selectedPriority, setSelectedPriority] = useState('ALL');
   const [selectedAssignees, setSelectedAssignees] = useState([]);
   const [onlyMyIssues, setOnlyMyIssues] = useState(!isManager);
+  const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL' | 'TODAY' | 'TOMORROW' | 'THIS_WEEK' | 'THIS_MONTH' | 'OVERDUE' | 'EXACT' | 'RANGE' | 'NO_DATE'
+  const [exactDate, setExactDate] = useState('');
+  const [rangeStart, setRangeStart] = useState('');
+  const [rangeEnd, setRangeEnd] = useState('');
+
+  const getDateFilterLabel = () => {
+    switch (dateFilter) {
+      case 'TODAY':
+        return 'Date: Today';
+      case 'TOMORROW':
+        return 'Date: Tomorrow';
+      case 'THIS_WEEK':
+        return 'Date: This Week';
+      case 'THIS_MONTH':
+        return 'Date: This Month';
+      case 'OVERDUE':
+        return 'Date: Overdue';
+      case 'NO_DATE':
+        return 'Date: No Date';
+      case 'EXACT':
+        return exactDate ? `Date: ${formatDate(exactDate) || exactDate}` : 'Date: Specific';
+      case 'RANGE':
+        if (rangeStart && rangeEnd) {
+          return `Date: ${formatDate(rangeStart)} - ${formatDate(rangeEnd)}`;
+        }
+        if (rangeStart) return `Date: from ${formatDate(rangeStart)}`;
+        if (rangeEnd) return `Date: until ${formatDate(rangeEnd)}`;
+        return 'Date: Range';
+      default:
+        return 'Date: All';
+    }
+  };
 
   useEffect(() => {
     setOnlyMyIssues(!isManager);
   }, [isManager]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilterDropdown, setActiveFilterDropdown] = useState(null);
+
+  useEffect(() => {
+    const handleDocumentClick = (e) => {
+      if (!e.target.closest('.relative')) {
+        setActiveFilterDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
+  }, []);
   const [openCardAssigneeDropdown, setOpenCardAssigneeDropdown] = useState(null);
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
   const [cardAssigneePos, setCardAssigneePos] = useState({ top: 0, left: 0 });
@@ -499,6 +606,57 @@ const ITKanbanPage = ({ department }) => {
     if (selectedPriority !== 'ALL') {
       filtered = filtered.filter(issue => issue.priority === selectedPriority);
     }
+    if (dateFilter !== 'ALL') {
+      const todayStr = getTodayStr();
+      const tomorrowStr = getTomorrowStr();
+      const { start: weekStart, end: weekEnd } = getThisWeekRange();
+      const { start: monthStart, end: monthEnd } = getThisMonthRange();
+
+      filtered = filtered.filter(issue => {
+        const startStr = getIssueDateParts(issue.start_date);
+        const dueStr = getIssueDateParts(issue.due_date);
+        const hasAnyDate = Boolean(startStr || dueStr);
+
+        if (dateFilter === 'NO_DATE') {
+          return !hasAnyDate;
+        }
+
+        if (dateFilter === 'OVERDUE') {
+          if (isDoneStatus(issue.status)) return false;
+          return issue.due_date && isPastDate(issue.due_date);
+        }
+
+        if (!hasAnyDate) return false;
+
+        const minDate = startStr && dueStr ? (startStr <= dueStr ? startStr : dueStr) : (startStr || dueStr);
+        const maxDate = startStr && dueStr ? (startStr <= dueStr ? dueStr : startStr) : (dueStr || startStr);
+
+        if (dateFilter === 'TODAY') {
+          return minDate <= todayStr && todayStr <= maxDate;
+        }
+        if (dateFilter === 'TOMORROW') {
+          return minDate <= tomorrowStr && tomorrowStr <= maxDate;
+        }
+        if (dateFilter === 'THIS_WEEK') {
+          return minDate <= weekEnd && maxDate >= weekStart;
+        }
+        if (dateFilter === 'THIS_MONTH') {
+          return minDate <= monthEnd && maxDate >= monthStart;
+        }
+        if (dateFilter === 'EXACT') {
+          if (!exactDate) return true;
+          return minDate <= exactDate && exactDate <= maxDate;
+        }
+        if (dateFilter === 'RANGE') {
+          if (!rangeStart && !rangeEnd) return true;
+          const rStart = rangeStart || '1970-01-01';
+          const rEnd = rangeEnd || '2999-12-31';
+          return minDate <= rEnd && maxDate >= rStart;
+        }
+
+        return true;
+      });
+    }
     if (selectedAssignees.length > 0) {
       filtered = filtered.filter(issue => {
         const isUnassigned = !issue.assignee || issue.assignee === 'Unassigned' || issue.assignee === 'Automatic';
@@ -568,7 +726,7 @@ const ITKanbanPage = ({ department }) => {
     });
 
     setBoardData(newBoard);
-  }, [allRawIssues, activeSprints, columnOrder, selectedProjectId, selectedType, selectedStatus, selectedPriority, selectedAssignees, onlyMyIssues, isManager, userSearchTerms, myIdentities, searchQuery, username]);
+  }, [allRawIssues, activeSprints, columnOrder, selectedProjectId, selectedType, selectedStatus, selectedPriority, selectedAssignees, onlyMyIssues, isManager, userSearchTerms, myIdentities, searchQuery, username, dateFilter, exactDate, rangeStart, rangeEnd]);
 
   // Opens a ticket straight from a URL like ...&/kanban?ticketKey=MKT-104, which is how
   // notifications deep-link. Depends on location.search so clicking a notification while
@@ -592,8 +750,7 @@ const ITKanbanPage = ({ department }) => {
 
 
   useEffect(() => {
-    const colsToSave = currentDept === 'Marketing' ? columnOrder.filter(c => c !== 'TESTING') : columnOrder;
-    localStorage.setItem(`${currentDept}_kanbanColumnOrder`, JSON.stringify(colsToSave));
+    localStorage.setItem(`${currentDept}_kanbanColumnOrder`, JSON.stringify(columnOrder));
   }, [columnOrder, currentDept]);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
@@ -1065,6 +1222,145 @@ const ITKanbanPage = ({ department }) => {
                       )}
                     </div>
 
+                    {/* Date Filter Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'date' ? null : 'date')}
+                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${dateFilter !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700'}`}
+                        title="Filter issues date wise"
+                      >
+                        <Calendar size={13} className={dateFilter !== 'ALL' ? 'text-blue-600' : 'text-gray-500'} />
+                        <span>{getDateFilterLabel()}</span>
+                        <ChevronDown size={14} />
+                      </button>
+                      {activeFilterDropdown === 'date' && (
+                        <div className="absolute left-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-50 text-xs text-gray-700 font-sans">
+                          <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
+                            <span className="font-semibold text-gray-800 flex items-center gap-1.5">
+                              <Calendar size={13} className="text-blue-600" /> Filter by Date
+                            </span>
+                            {dateFilter !== 'ALL' && (
+                              <button
+                                onClick={() => {
+                                  setDateFilter('ALL');
+                                  setExactDate('');
+                                  setRangeStart('');
+                                  setRangeEnd('');
+                                }}
+                                className="text-[11px] text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Quick presets grid */}
+                          <div className="grid grid-cols-2 gap-1 mb-2.5">
+                            {[
+                              { key: 'ALL', label: 'All Dates' },
+                              { key: 'TODAY', label: 'Today' },
+                              { key: 'TOMORROW', label: 'Tomorrow' },
+                              { key: 'THIS_WEEK', label: 'This Week' },
+                              { key: 'THIS_MONTH', label: 'This Month' },
+                              { key: 'OVERDUE', label: 'Overdue' },
+                              { key: 'NO_DATE', label: 'No Date' }
+                            ].map(item => (
+                              <button
+                                key={item.key}
+                                onClick={() => {
+                                  setDateFilter(item.key);
+                                  if (item.key !== 'EXACT' && item.key !== 'RANGE') {
+                                    setActiveFilterDropdown(null);
+                                  }
+                                }}
+                                className={`px-2.5 py-1.5 rounded text-left transition-colors flex items-center justify-between ${
+                                  dateFilter === item.key
+                                    ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200'
+                                    : 'hover:bg-gray-100 text-gray-700 border border-transparent'
+                                }`}
+                              >
+                                <span>{item.label}</span>
+                                {dateFilter === item.key && <Check size={12} className="text-blue-600" />}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Custom Specific Date Picker */}
+                          <div className="border-t border-gray-100 pt-2 space-y-2">
+                            <div>
+                              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                                Specific Date:
+                              </label>
+                              <input
+                                type="date"
+                                value={dateFilter === 'EXACT' ? exactDate : ''}
+                                onChange={(e) => {
+                                  setExactDate(e.target.value);
+                                  setDateFilter('EXACT');
+                                }}
+                                className={`w-full px-2 py-1 text-xs border rounded focus:outline-none transition-all ${
+                                  dateFilter === 'EXACT'
+                                    ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/40 text-blue-900 font-medium'
+                                    : 'border-gray-300 hover:border-gray-400'
+                                }`}
+                              />
+                            </div>
+
+                            {/* Custom Date Range Picker */}
+                            <div>
+                              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                                Date Range:
+                              </label>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <div>
+                                  <span className="text-[10px] text-gray-400 block mb-0.5">From</span>
+                                  <input
+                                    type="date"
+                                    value={dateFilter === 'RANGE' ? rangeStart : ''}
+                                    onChange={(e) => {
+                                      setRangeStart(e.target.value);
+                                      setDateFilter('RANGE');
+                                    }}
+                                    className={`w-full px-1.5 py-1 text-[11px] border rounded focus:outline-none ${
+                                      dateFilter === 'RANGE'
+                                        ? 'border-blue-500 bg-blue-50/40'
+                                        : 'border-gray-300'
+                                    }`}
+                                  />
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-gray-400 block mb-0.5">To</span>
+                                  <input
+                                    type="date"
+                                    value={dateFilter === 'RANGE' ? rangeEnd : ''}
+                                    onChange={(e) => {
+                                      setRangeEnd(e.target.value);
+                                      setDateFilter('RANGE');
+                                    }}
+                                    className={`w-full px-1.5 py-1 text-[11px] border rounded focus:outline-none ${
+                                      dateFilter === 'RANGE'
+                                        ? 'border-blue-500 bg-blue-50/40'
+                                        : 'border-gray-300'
+                                    }`}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Done / Close button */}
+                            <div className="pt-1.5 flex justify-end">
+                              <button
+                                onClick={() => setActiveFilterDropdown(null)}
+                                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
+                              >
+                                Done
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Assignee Filter (Searchable Select) */}
                     <div className="w-52">
                       <SearchableSelect
@@ -1105,7 +1401,7 @@ const ITKanbanPage = ({ department }) => {
                     </button>
 
                     {/* Clear Filters reset button */}
-                    {(selectedProjectId !== 'ALL' || selectedType !== 'ALL' || selectedStatus !== 'ALL' || selectedPriority !== 'ALL' || selectedAssignees.length > 0 || onlyMyIssues || searchQuery) && (
+                    {(selectedProjectId !== 'ALL' || selectedType !== 'ALL' || selectedStatus !== 'ALL' || selectedPriority !== 'ALL' || selectedAssignees.length > 0 || onlyMyIssues || searchQuery || dateFilter !== 'ALL') && (
                       <button
                         onClick={() => {
                           setSelectedProjectId('ALL');
@@ -1115,6 +1411,10 @@ const ITKanbanPage = ({ department }) => {
                           setSelectedAssignees([]);
                           setOnlyMyIssues(false);
                           setSearchQuery('');
+                          setDateFilter('ALL');
+                          setExactDate('');
+                          setRangeStart('');
+                          setRangeEnd('');
                         }}
                         className="text-xs text-red-600 font-medium hover:underline ml-2"
                       >
