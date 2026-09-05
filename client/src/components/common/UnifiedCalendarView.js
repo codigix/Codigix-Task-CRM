@@ -17,7 +17,7 @@ const UnifiedCalendarView = () => {
       setLoading(true);
       const month = currentDate.getMonth() + 1;
       const year = currentDate.getFullYear();
-      
+
       // Fetch from multiple sources
       const [tasksRes, projectsRes, dealsRes, invoicesRes] = await Promise.all([
         fetch(`/api/tasks?skip=0&limit=500`),
@@ -89,8 +89,8 @@ const UnifiedCalendarView = () => {
 
   const isSameDate = (date1, date2) => {
     return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate();
   };
 
   const getEventsForDate = (date) => {
@@ -143,16 +143,15 @@ const UnifiedCalendarView = () => {
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="bg-white rounded  border border-gray-200 p-6 space-y-6">
+    <div className="bg-white rounded  border border-gray-200 p-6 space-y-3">
       {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl   text-gray-900">Calendar View</h2>
         <div className="flex gap-2">
           <button
             onClick={() => setEventType('all')}
-            className={`px-3 py-1 rounded-full text-sm  transition ${
-              eventType === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            className={`px-3 py-1 rounded-full text-sm  transition ${eventType === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
           >
             All
           </button>
@@ -160,9 +159,8 @@ const UnifiedCalendarView = () => {
             <button
               key={type}
               onClick={() => setEventType(type)}
-              className={`px-3 py-1 rounded-full text-sm  transition ${
-                eventType === type ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              className={`px-3 py-1 rounded-full text-sm  transition ${eventType === type ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
             >
               {type.charAt(0).toUpperCase() + type.slice(1)}
             </button>
@@ -204,11 +202,10 @@ const UnifiedCalendarView = () => {
                 <div
                   key={index}
                   onClick={() => date && setSelectedDate(date)}
-                  className={`min-h-24 p-1 rounded  border-2 cursor-pointer transition ${
-                    isToday ? 'border-red-500 bg-red-50' :
-                    isSelected ? 'border-blue-500 bg-blue-50' :
-                    'border-gray-200 bg-white hover:border-gray-300'
-                  }`}
+                  className={`min-h-24 p-1 rounded  border-2 cursor-pointer transition ${isToday ? 'border-red-500 bg-red-50' :
+                      isSelected ? 'border-blue-500 bg-blue-50' :
+                        'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
                 >
                   {date && (
                     <>
@@ -245,7 +242,7 @@ const UnifiedCalendarView = () => {
             <h3 className=" text-gray-900 mb-3">
               {selectedDate ? selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : 'Select a date'}
             </h3>
-            
+
             {selectedDate && getEventsForDate(selectedDate).length > 0 ? (
               <div className="space-y-2">
                 {getEventsForDate(selectedDate).map(event => (

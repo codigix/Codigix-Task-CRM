@@ -81,10 +81,10 @@ const SeoGmbPage = () => {
     <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col justify-between h-full">
       <div className="flex items-center justify-between mb-2">
         <span className="text-gray-500 text-sm font-medium">{title}</span>
-        {Icon && <div className={`p-2 rounded-lg ${colorClass} bg-opacity-10`}><Icon size={18} className={colorClass} /></div>}
+        {Icon && <div className={`p-2 rounded ${colorClass} bg-opacity-10`}><Icon size={18} className={colorClass} /></div>}
       </div>
       <div className="flex items-end gap-2 mt-auto">
-        <span className="text-2xl font-bold text-gray-900">{value}</span>
+        <span className="text-2xl  text-gray-900">{value}</span>
         <span className={`text-xs font-semibold ${change >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center mb-1`}>
           {change >= 0 ? <TrendingUp size={12} className="mr-1" /> : <TrendingDown size={12} className="mr-1" />}
           {Math.abs(change)}%
@@ -104,12 +104,12 @@ const SeoGmbPage = () => {
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto">
-          <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-100 shadow-sm">
+          <div className="flex bg-gray-50 p-1 rounded border border-gray-100 shadow-sm">
             {tabs.map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-1.5 text-sm font-bold rounded-md transition-all ${activeTab === tab ? 'bg-white shadow text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                className={`px-6 py-1.5 text-sm  rounded-md transition-all ${activeTab === tab ? 'bg-white shadow text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
               >
                 {tab}
               </button>
@@ -131,7 +131,7 @@ const SeoGmbPage = () => {
         {/* Competitors Placeholder */}
         {activeTab === 'Competitors' && (
           <div className="bg-white rounded-xl p-8 text-center text-gray-500 shadow-sm border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Competitor Analysis</h3>
+            <h3 className="text-xl  text-gray-900 mb-2">Competitor Analysis</h3>
             <p>Competitor tracking features are coming soon.</p>
           </div>
         )}
@@ -155,7 +155,7 @@ const SeoGmbPage = () => {
               {/* SEO Performance (Line Chart) */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">SEO Performance</h3>
+                  <h3 className=" text-gray-900 text-sm">SEO Performance</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 min-h-[220px]">
@@ -178,7 +178,7 @@ const SeoGmbPage = () => {
               {/* Keywords Ranking Distribution */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Keywords Ranking Distribution</h3>
+                  <h3 className=" text-gray-900 text-sm">Keywords Ranking Distribution</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex items-center justify-between">
@@ -192,7 +192,7 @@ const SeoGmbPage = () => {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-xl font-bold text-gray-900">1,256</span>
+                      <span className="text-xl  text-gray-900">1,256</span>
                       <span className="text-[10px] text-gray-500">Total Keywords</span>
                     </div>
                   </div>
@@ -216,7 +216,7 @@ const SeoGmbPage = () => {
               {/* Top Performing Pages */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Performing Pages</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Performing Pages</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="overflow-x-auto flex-1">
@@ -253,7 +253,7 @@ const SeoGmbPage = () => {
               {/* Top Performing Keywords Expanded */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-6 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Performing Keywords</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Performing Keywords</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="overflow-x-auto flex-1">
@@ -289,7 +289,7 @@ const SeoGmbPage = () => {
 
               {/* SEO Health Score */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
-                <h3 className="font-bold text-gray-900 text-sm mb-4">SEO Health Score</h3>
+                <h3 className=" text-gray-900 text-sm mb-4">SEO Health Score</h3>
                 <div className="flex flex-col items-center">
                   <div className="relative w-32 h-32 flex flex-col items-center justify-center">
                     <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
@@ -297,11 +297,11 @@ const SeoGmbPage = () => {
                       <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`${widgets.seoHealthDetails?.score || 0}, 100`} />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-3xl font-bold text-gray-900 leading-none">{widgets.seoHealthDetails?.score || 0}</span>
+                      <span className="text-3xl  text-gray-900 leading-none">{widgets.seoHealthDetails?.score || 0}</span>
                       <span className="text-[10px] text-gray-500">/100</span>
                     </div>
                   </div>
-                  <p className="text-green-500 font-bold text-sm mt-3">Excellent</p>
+                  <p className="text-green-500  text-sm mt-3">Excellent</p>
                 </div>
                 <div className="mt-4 space-y-2 text-xs">
                   {widgets.seoHealthDetails?.categories?.map((c, i) => (
@@ -320,14 +320,14 @@ const SeoGmbPage = () => {
               {/* Core Web Vitals */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-bold text-gray-900 text-sm">Core Web Vitals</h3>
+                  <h3 className=" text-gray-900 text-sm">Core Web Vitals</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex flex-col justify-center space-y-6">
                   {widgets.coreWebVitals?.map((wv, i) => (
                     <div key={i} className="flex items-center justify-between border-b border-gray-50 pb-4 last:border-0 last:pb-0">
                       <span className="text-xs text-gray-600 w-1/2">{wv.name}</span>
-                      <span className="text-sm font-bold text-gray-900 text-right w-1/4">{wv.value}</span>
+                      <span className="text-sm  text-gray-900 text-right w-1/4">{wv.value}</span>
                       <span className="text-[10px] text-green-600 bg-green-50 px-2 py-1 rounded-full font-semibold border border-green-100 flex items-center gap-1 w-1/4 justify-center">
                         {wv.status} {wv.status === 'Good' ? '>' : ''}
                       </span>
@@ -345,7 +345,7 @@ const SeoGmbPage = () => {
               {/* Top Keywords by Intent */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Keywords by Intent</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Keywords by Intent</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex flex-wrap justify-center gap-3 mb-4">
@@ -375,7 +375,7 @@ const SeoGmbPage = () => {
               {/* Top Countries by Traffic */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Countries by Traffic</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Countries by Traffic</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex gap-4 items-center">
@@ -394,7 +394,7 @@ const SeoGmbPage = () => {
                         {lists.topCountries?.map((c, i) => (
                           <tr key={i} className="text-gray-700">
                             <td className="py-2 flex items-center gap-2"><span className="text-sm">{c.flag}</span> {c.country}</td>
-                            <td className="py-2 text-center font-bold">{c.traffic}</td>
+                            <td className="py-2 text-center ">{c.traffic}</td>
                             <td className="py-2 text-right text-green-500 font-medium">↑ {c.pct}</td>
                           </tr>
                         ))}
@@ -408,7 +408,7 @@ const SeoGmbPage = () => {
               {/* Top Devices by Clicks */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Devices by Clicks</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Devices by Clicks</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex flex-col">
@@ -429,7 +429,7 @@ const SeoGmbPage = () => {
                           <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></div>
                           <span className="text-gray-700 font-medium">{d.name}</span>
                         </div>
-                        <span className="font-bold text-gray-900">{d.value} <span className="text-gray-400 font-normal">({d.pct})</span></span>
+                        <span className=" text-gray-900">{d.value} <span className="text-gray-400 font-normal">({d.pct})</span></span>
                       </div>
                     ))}
                   </div>
@@ -460,7 +460,7 @@ const SeoGmbPage = () => {
               {/* Performance Over Time */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Performance Over Time</h3>
+                  <h3 className=" text-gray-900 text-sm">Performance Over Time</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 min-h-[220px]">
@@ -483,7 +483,7 @@ const SeoGmbPage = () => {
               {/* How customers search for your business */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">How customers search for your business</h3>
+                  <h3 className=" text-gray-900 text-sm">How customers search for your business</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex items-center justify-between">
@@ -497,7 +497,7 @@ const SeoGmbPage = () => {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-xl font-bold text-gray-900">5,742</span>
+                      <span className="text-xl  text-gray-900">5,742</span>
                       <span className="text-[10px] text-gray-500">Total Searches</span>
                     </div>
                   </div>
@@ -524,7 +524,7 @@ const SeoGmbPage = () => {
               {/* Customer Actions */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Customer Actions</h3>
+                  <h3 className=" text-gray-900 text-sm">Customer Actions</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex flex-col justify-center space-y-4">
@@ -533,7 +533,7 @@ const SeoGmbPage = () => {
                       <div className="flex justify-between mb-1">
                         <span className="text-gray-700">{act.name}</span>
                         <div className="flex items-center gap-3">
-                          <span className="font-bold">{act.value}</span>
+                          <span className="">{act.value}</span>
                           <span className="text-green-500 font-medium flex items-center w-12 justify-end">↑ {act.change.replace('+', '')}</span>
                         </div>
                       </div>
@@ -553,12 +553,12 @@ const SeoGmbPage = () => {
               {/* Recent Reviews */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Recent Reviews</h3>
+                  <h3 className=" text-gray-900 text-sm">Recent Reviews</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="flex flex-col items-center">
-                    <span className="text-5xl font-bold text-gray-900">{widgets.gmbRecentReviews?.rating || '4.8'}</span>
+                    <span className="text-5xl  text-gray-900">{widgets.gmbRecentReviews?.rating || '4.8'}</span>
                     <div className="flex text-yellow-400 my-1 text-sm"><Star fill="currentColor" size={14} /><Star fill="currentColor" size={14} /><Star fill="currentColor" size={14} /><Star fill="currentColor" size={14} /><Star fill="currentColor" size={14} /></div>
                     <span className="text-[10px] text-gray-500">Total {widgets.gmbRecentReviews?.total || '125'} Reviews</span>
                   </div>
@@ -581,7 +581,7 @@ const SeoGmbPage = () => {
               {/* Reviews Over Time */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Reviews Over Time</h3>
+                  <h3 className=" text-gray-900 text-sm">Reviews Over Time</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 min-h-[120px]">
@@ -599,7 +599,7 @@ const SeoGmbPage = () => {
               {/* Top Review Keywords */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Review Keywords</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Review Keywords</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1">
@@ -615,7 +615,7 @@ const SeoGmbPage = () => {
                       {lists.gmbTopReviewKeywords?.map((k, i) => (
                         <tr key={i} className="text-gray-700">
                           <td className="py-1.5">{k.keyword}</td>
-                          <td className="py-1.5 text-center font-bold">{k.mentions}</td>
+                          <td className="py-1.5 text-center ">{k.mentions}</td>
                           <td className={`py-1.5 text-right font-medium ${k.color}`}>↑ {k.trend.replace('+ ', '')}</td>
                         </tr>
                       ))}
@@ -628,21 +628,21 @@ const SeoGmbPage = () => {
               {/* Q&A Overview */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-2 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Q&A Overview</h3>
+                  <h3 className=" text-gray-900 text-sm">Q&A Overview</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 space-y-4">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2 text-gray-700"><MessageCircle size={14} className="text-blue-500" /> Questions</div>
-                    <div className="flex items-center gap-3"><span className="font-bold">{widgets.gmbQaOverview?.questions}</span><span className="text-green-500">↑ {widgets.gmbQaOverview?.qChange.replace('+ ', '')}</span></div>
+                    <div className="flex items-center gap-3"><span className="">{widgets.gmbQaOverview?.questions}</span><span className="text-green-500">↑ {widgets.gmbQaOverview?.qChange.replace('+ ', '')}</span></div>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2 text-gray-700"><CheckCircle2 size={14} className="text-green-500" /> Answered</div>
-                    <div className="flex items-center gap-3"><span className="font-bold">{widgets.gmbQaOverview?.answered}</span><span className="text-green-500">↑ {widgets.gmbQaOverview?.aChange.replace('+ ', '')}</span></div>
+                    <div className="flex items-center gap-3"><span className="">{widgets.gmbQaOverview?.answered}</span><span className="text-green-500">↑ {widgets.gmbQaOverview?.aChange.replace('+ ', '')}</span></div>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2 text-gray-700"><Clock size={14} className="text-purple-500" /> Pending</div>
-                    <div className="flex items-center gap-3"><span className="font-bold">{widgets.gmbQaOverview?.pending}</span><span className="text-red-500">↓ {widgets.gmbQaOverview?.pChange.replace('+ ', '')}</span></div>
+                    <div className="flex items-center gap-3"><span className="">{widgets.gmbQaOverview?.pending}</span><span className="text-red-500">↓ {widgets.gmbQaOverview?.pChange.replace('+ ', '')}</span></div>
                   </div>
                 </div>
                 <button className="text-indigo-600 text-xs font-semibold mt-4 hover:underline w-full text-center">View All Q&A &rarr;</button>
@@ -655,7 +655,7 @@ const SeoGmbPage = () => {
 
               {/* Google Business Profile Completion */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
-                <h3 className="font-bold text-gray-900 text-sm mb-4">Google Business Profile Completion</h3>
+                <h3 className=" text-gray-900 text-sm mb-4">Google Business Profile Completion</h3>
                 <div className="flex flex-col items-center">
                   <div className="relative w-32 h-32 flex flex-col items-center justify-center">
                     <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
@@ -663,7 +663,7 @@ const SeoGmbPage = () => {
                       <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`${widgets.gmbProfileCompletion?.score || 92}, 100`} />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-3xl font-bold text-gray-900 leading-none">{widgets.gmbProfileCompletion?.score || 92}%</span>
+                      <span className="text-3xl  text-gray-900 leading-none">{widgets.gmbProfileCompletion?.score || 92}%</span>
                       <span className="text-[10px] text-gray-500">Complete</span>
                     </div>
                   </div>
@@ -681,15 +681,15 @@ const SeoGmbPage = () => {
               {/* Photo Views */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Photo Views</h3>
+                  <h3 className=" text-gray-900 text-sm">Photo Views</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex gap-2">
                   {lists.gmbPhotoViews?.map((p, i) => (
-                    <div key={i} className="relative flex-1 rounded-lg overflow-hidden group cursor-pointer">
+                    <div key={i} className="relative flex-1 rounded overflow-hidden group cursor-pointer">
                       <img src={p.img} alt="Business" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                      <div className="absolute bottom-2 left-0 right-0 text-center text-white font-bold text-sm">{p.views?.toLocaleString()}</div>
+                      <div className="absolute bottom-2 left-0 right-0 text-center text-white  text-sm">{p.views?.toLocaleString()}</div>
                     </div>
                   ))}
                 </div>
@@ -699,7 +699,7 @@ const SeoGmbPage = () => {
               {/* Google Posts Performance */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Google Posts Performance</h3>
+                  <h3 className=" text-gray-900 text-sm">Google Posts Performance</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 space-y-3">
@@ -736,7 +736,7 @@ const SeoGmbPage = () => {
                   <button
                     key={engine.id}
                     onClick={() => setActiveGeoEngine(engine.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold shadow-sm whitespace-nowrap transition-colors border ${isActive ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold shadow-sm whitespace-nowrap transition-colors border ${isActive ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                   >
                     {Icon && <Icon size={16} className={isActive ? 'text-indigo-600' : engine.color} />} {engine.label}
                   </button>
@@ -750,7 +750,7 @@ const SeoGmbPage = () => {
                 <div className="absolute top-0 right-0 p-2 bg-gradient-to-bl from-indigo-50 to-transparent w-16 h-16 rounded-bl-3xl"></div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-gray-900 text-sm z-10">AI Visibility Score</span>
-                  <div className={`p-2 rounded-lg text-indigo-600 bg-indigo-50 z-10`}><Star size={18} className="text-indigo-600" /></div>
+                  <div className={`p-2 rounded text-indigo-600 bg-indigo-50 z-10`}><Star size={18} className="text-indigo-600" /></div>
                 </div>
                 <div className="flex items-end gap-2 mt-auto z-10">
                   <span className="text-2xl text-gray-900">{widgets.geoVisibilityScore?.score || '0'}/100</span>
@@ -773,7 +773,7 @@ const SeoGmbPage = () => {
               {/* AI Visibility Trend */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">AI Visibility Trend</h3>
+                  <h3 className=" text-gray-900 text-sm">AI Visibility Trend</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 14 Days</option></select>
                 </div>
                 <div className="flex-1 min-h-[220px]">
@@ -797,7 +797,7 @@ const SeoGmbPage = () => {
               {/* Share of Visibility by AI Engine */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Share of Visibility by AI Engine</h3>
+                  <h3 className=" text-gray-900 text-sm">Share of Visibility by AI Engine</h3>
                 </div>
                 <div className="flex-1 flex items-center justify-between">
                   <div className="relative w-[150px] h-[150px]">
@@ -811,7 +811,7 @@ const SeoGmbPage = () => {
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                       <span className="text-[10px] text-gray-500 font-semibold mb-0.5">Total</span>
-                      <span className="text-xl font-bold text-gray-900 leading-tight">1,842</span>
+                      <span className="text-xl  text-gray-900 leading-tight">1,842</span>
                       <span className="text-[9px] text-gray-500 mt-0.5">AI Mentions</span>
                     </div>
                   </div>
@@ -823,7 +823,7 @@ const SeoGmbPage = () => {
                           <span className="text-gray-700 font-medium">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="font-bold text-gray-900">{item.pct}</span>
+                          <span className=" text-gray-900">{item.pct}</span>
                           <span className="text-gray-400 w-8 text-right text-[9px]">({item.value})</span>
                         </div>
                       </div>
@@ -835,7 +835,7 @@ const SeoGmbPage = () => {
               {/* AI Overview Presence */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">AI Overview Presence</h3>
+                  <h3 className=" text-gray-900 text-sm">AI Overview Presence</h3>
                   <div className="flex gap-2">
                     <button className="text-[10px] bg-gray-50 border border-gray-200 px-2 py-1 rounded text-gray-700 font-semibold">Top Queries</button>
                     <button className="text-[10px] text-gray-500 hover:text-gray-700 px-2 py-1">Top Pages</button>
@@ -847,7 +847,7 @@ const SeoGmbPage = () => {
                       <div className="flex justify-between mb-1">
                         <span className="text-gray-700 truncate w-3/5">{q.query}</span>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900">{q.value}%</span>
+                          <span className=" text-gray-900">{q.value}%</span>
                           <span className="text-green-500 font-medium text-[9px] flex items-center justify-end">↑ {q.change.replace('+ ', '')}</span>
                         </div>
                       </div>
@@ -868,7 +868,7 @@ const SeoGmbPage = () => {
               {/* Top Prompts Tracking */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Prompts Tracking</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Prompts Tracking</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1">
@@ -892,9 +892,9 @@ const SeoGmbPage = () => {
                           <tr key={i} className="text-gray-700">
                             <td className="py-2.5 font-medium truncate max-w-[120px]">{p.prompt}</td>
                             <td className="py-2.5 flex items-center gap-1.5"><EngineIcon size={12} className="text-gray-400" /> {p.engine}</td>
-                            <td className="py-2.5 text-center font-bold text-gray-900">{p.position}</td>
+                            <td className="py-2.5 text-center  text-gray-900">{p.position}</td>
                             <td className="py-2.5 text-center"><span className={`px-2 py-0.5 rounded font-semibold text-[9px] ${visColor}`}>{p.visibility}</span></td>
-                            <td className={`py-2.5 text-center font-bold ${trendColor}`}>{trendIcon} {p.trend.replace(/[-+]\s/, '')}</td>
+                            <td className={`py-2.5 text-center  ${trendColor}`}>{trendIcon} {p.trend.replace(/[-+]\s/, '')}</td>
                           </tr>
                         )
                       })}
@@ -907,7 +907,7 @@ const SeoGmbPage = () => {
               {/* Brand Mentions & Citations */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Brand Mentions & Citations</h3>
+                  <h3 className=" text-gray-900 text-sm">Brand Mentions & Citations</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 min-h-[220px]">
@@ -931,7 +931,7 @@ const SeoGmbPage = () => {
               {/* AI Answer Examples */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">AI Answer Examples</h3>
+                  <h3 className=" text-gray-900 text-sm">AI Answer Examples</h3>
                 </div>
                 <div className="flex gap-2 mb-4">
                   {['ChatGPT', 'Google AI', 'Gemini', 'Perplexity'].map(tab => (
@@ -949,10 +949,10 @@ const SeoGmbPage = () => {
                   <div className="absolute top-1/2 -translate-y-1/2 -right-3 bg-white border border-gray-200 rounded-full p-1 shadow-sm cursor-pointer hover:bg-gray-50"><ChevronRight size={16} className="text-gray-400" /></div>
 
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2"><MessageCircle size={16} className="text-gray-900" /><span className="font-bold text-gray-900 text-sm">{activeAiAnswerTab}</span></div>
+                    <div className="flex items-center gap-2"><MessageCircle size={16} className="text-gray-900" /><span className=" text-gray-900 text-sm">{activeAiAnswerTab}</span></div>
                     <span className="text-[10px] text-gray-500 font-medium bg-gray-200 px-2 py-0.5 rounded">{currentAnswer.title}</span>
                   </div>
-                  <div className="bg-white p-3 rounded-lg border border-gray-100 mb-3 shadow-sm flex-1">
+                  <div className="bg-white p-3 rounded border border-gray-100 mb-3 shadow-sm flex-1">
                     <p className="text-gray-800 text-xs font-medium italic mb-2">"What is the best CRM software for small and medium businesses?"</p>
                     <p className="text-gray-600 text-xs leading-relaxed">
                       {currentAnswer.text}
@@ -976,7 +976,7 @@ const SeoGmbPage = () => {
               {/* Competitor Compare */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Competitor Compare</h3>
+                  <h3 className=" text-gray-900 text-sm">Competitor Compare</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-[10px] px-2 py-1 rounded outline-none font-semibold"><option>AI Visibility Score ▾</option></select>
                 </div>
                 <div className="flex-1">
@@ -997,7 +997,7 @@ const SeoGmbPage = () => {
                             {c.isUs ? <div className="p-1 bg-indigo-600 text-white rounded"><Target size={10} /></div> : <div className="p-1 text-gray-400"><Circle size={10} /></div>}
                             {c.company}
                           </td>
-                          <td className="py-2.5 text-center font-bold">{c.visibility}</td>
+                          <td className="py-2.5 text-center ">{c.visibility}</td>
                           <td className="py-2.5 text-center">{c.mentions}</td>
                           <td className="py-2.5 text-center">{c.citations}</td>
                           <td className="py-2.5 text-center text-green-500 font-semibold flex justify-center items-center gap-1">↑ {c.trend.replace('+ ', '')}</td>
@@ -1011,7 +1011,7 @@ const SeoGmbPage = () => {
               {/* AI Content Opportunities */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><Zap size={16} className="text-purple-500 fill-purple-100" /> AI Content Opportunities</h3>
+                  <h3 className=" text-gray-900 text-sm flex items-center gap-2"><Zap size={16} className="text-purple-500 fill-purple-100" /> AI Content Opportunities</h3>
                 </div>
                 <div className="flex-1">
                   <table className="w-full text-left text-xs">
@@ -1026,7 +1026,7 @@ const SeoGmbPage = () => {
                       {lists.geoContentOpportunities?.map((o, i) => (
                         <tr key={i} className="text-gray-700">
                           <td className="py-2.5 font-medium">{o.idea}</td>
-                          <td className="py-2.5 text-center font-bold text-gray-900">{o.score}</td>
+                          <td className="py-2.5 text-center  text-gray-900">{o.score}</td>
                           <td className="py-2.5 flex justify-center">
                             <span className={`px-2 py-0.5 rounded text-[9px] font-semibold ${o.vsearch === 'High' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>{o.vsearch}</span>
                           </td>
@@ -1040,7 +1040,7 @@ const SeoGmbPage = () => {
 
               {/* GEO Health Score */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
-                <h3 className="font-bold text-gray-900 text-sm mb-4">GEO Health Score</h3>
+                <h3 className=" text-gray-900 text-sm mb-4">GEO Health Score</h3>
                 <div className="flex items-center justify-between h-full gap-4">
                   <div className="flex flex-col items-center">
                     <div className="relative w-28 h-28 flex flex-col items-center justify-center">
@@ -1049,11 +1049,11 @@ const SeoGmbPage = () => {
                         <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`${widgets.geoHealthScoreDetails?.score || 86}, 100`} />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span className="text-2xl font-bold text-gray-900 leading-none">{widgets.geoHealthScoreDetails?.score || 86}</span>
+                        <span className="text-2xl  text-gray-900 leading-none">{widgets.geoHealthScoreDetails?.score || 86}</span>
                         <span className="text-[10px] text-gray-500">/100</span>
                       </div>
                     </div>
-                    <span className="text-green-600 font-bold text-xs mt-2">Excellent</span>
+                    <span className="text-green-600  text-xs mt-2">Excellent</span>
                   </div>
 
                   <div className="flex-1 space-y-2 text-[9px] font-medium">
@@ -1093,7 +1093,7 @@ const SeoGmbPage = () => {
               {/* Visibility Score Comparison */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Visibility Score Comparison</h3>
+                  <h3 className=" text-gray-900 text-sm">Visibility Score Comparison</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 14 Days</option></select>
                 </div>
                 <div className="flex-1 min-h-[220px]">
@@ -1116,7 +1116,7 @@ const SeoGmbPage = () => {
               {/* Traffic Share */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Traffic Share</h3>
+                  <h3 className=" text-gray-900 text-sm">Traffic Share</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 flex flex-col items-center justify-center">
@@ -1131,7 +1131,7 @@ const SeoGmbPage = () => {
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                       <span className="text-[10px] text-gray-500 font-semibold mb-0.5">Total</span>
-                      <span className="text-xl font-bold text-gray-900 leading-tight">48,521</span>
+                      <span className="text-xl  text-gray-900 leading-tight">48,521</span>
                       <span className="text-[10px] text-gray-500 mt-0.5">Sessions</span>
                     </div>
                   </div>
@@ -1143,7 +1143,7 @@ const SeoGmbPage = () => {
                           <span className="text-gray-700 font-medium">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="font-bold text-gray-900">{item.pct}</span>
+                          <span className=" text-gray-900">{item.pct}</span>
                           <span className="text-gray-400 text-[10px]">({item.value.toLocaleString()})</span>
                         </div>
                       </div>
@@ -1155,7 +1155,7 @@ const SeoGmbPage = () => {
               {/* Top Competitors Table */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Competitors</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Competitors</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
@@ -1176,7 +1176,7 @@ const SeoGmbPage = () => {
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }}></div>
                             {c.domain}
                           </td>
-                          <td className="py-2.5 text-center font-bold text-indigo-600">{c.visibility}</td>
+                          <td className="py-2.5 text-center  text-indigo-600">{c.visibility}</td>
                           <td className="py-2.5 text-center">{c.keywords.toLocaleString()}</td>
                           <td className="py-2.5 text-center">{c.backlinks.toLocaleString()}</td>
                           <td className="py-2.5 text-center">{c.traffic.toLocaleString()}</td>
@@ -1196,7 +1196,7 @@ const SeoGmbPage = () => {
               {/* Keyword Gap */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Keyword Gap</h3>
+                  <h3 className=" text-gray-900 text-sm">Keyword Gap</h3>
                   <div className="flex gap-2">
                     <button className="text-[10px] bg-indigo-50 text-indigo-700 font-semibold px-2 py-1 rounded">Missing</button>
                     <button className="text-[10px] text-gray-500 hover:bg-gray-50 px-2 py-1 rounded">Weak</button>
@@ -1236,7 +1236,7 @@ const SeoGmbPage = () => {
               {/* Backlink Gap */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Backlink Gap</h3>
+                  <h3 className=" text-gray-900 text-sm">Backlink Gap</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
@@ -1255,7 +1255,7 @@ const SeoGmbPage = () => {
                           <td className="py-3 font-semibold text-gray-900">{b.domain}</td>
                           <td className="py-3 text-center">{b.missing.toLocaleString()}</td>
                           <td className="py-3 text-center">{b.weak.toLocaleString()}</td>
-                          <td className="py-3 text-center font-bold text-gray-900">{b.strong.toLocaleString()}</td>
+                          <td className="py-3 text-center  text-gray-900">{b.strong.toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1267,7 +1267,7 @@ const SeoGmbPage = () => {
               {/* Top Pages by Traffic */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Pages by Traffic</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Pages by Traffic</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
@@ -1285,7 +1285,7 @@ const SeoGmbPage = () => {
                       {lists.compTopPages?.map((p, i) => (
                         <tr key={i} className="text-gray-700">
                           <td className="py-2.5 font-medium">{p.page}</td>
-                          <td className="py-2.5 text-center font-bold text-gray-900">{p.us.toLocaleString()}</td>
+                          <td className="py-2.5 text-center  text-gray-900">{p.us.toLocaleString()}</td>
                           <td className="py-2.5 text-center">{p.comp1.toLocaleString()}</td>
                           <td className="py-2.5 text-center">{p.comp2.toLocaleString()}</td>
                           <td className="py-2.5 text-center">{p.comp3.toLocaleString()}</td>
@@ -1305,7 +1305,7 @@ const SeoGmbPage = () => {
               {/* Content Gap */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Content Gap</h3>
+                  <h3 className=" text-gray-900 text-sm">Content Gap</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
@@ -1342,7 +1342,7 @@ const SeoGmbPage = () => {
               {/* Top Competitors by Channel */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Competitors by Channel</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Competitors by Channel</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 30 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
@@ -1361,7 +1361,7 @@ const SeoGmbPage = () => {
                       {lists.compChannelShare?.map((c, i) => (
                         <tr key={i} className="text-gray-700">
                           <td className="py-3 font-semibold text-gray-900">{c.domain}</td>
-                          <td className="py-3 text-center font-bold text-gray-900">{c.organic}</td>
+                          <td className="py-3 text-center  text-gray-900">{c.organic}</td>
                           <td className="py-3 text-center font-semibold">{c.direct}</td>
                           <td className="py-3 text-center font-semibold">{c.referrals}</td>
                           <td className="py-3 text-center font-semibold">{c.social}</td>
@@ -1377,15 +1377,15 @@ const SeoGmbPage = () => {
               {/* Top Competitors by Region */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Competitors by Region</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Competitors by Region</h3>
                 </div>
                 <div className="flex-1 flex flex-col">
-                  <div className="flex-1 min-h-[120px] bg-indigo-50/50 rounded-lg flex items-center justify-center relative overflow-hidden mb-4">
+                  <div className="flex-1 min-h-[120px] bg-indigo-50/50 rounded flex items-center justify-center relative overflow-hidden mb-4">
                     {/* Abstract map representation */}
                     <Globe size={180} strokeWidth={0.5} className="text-indigo-200 absolute -right-10 -top-10 opacity-60" />
                     <Map size={180} strokeWidth={0.5} className="text-indigo-200 absolute -left-10 -bottom-10 opacity-60" />
-                    <div className="z-10 bg-white/80 px-4 py-2 rounded-lg border border-indigo-100 backdrop-blur-sm text-center">
-                      <span className="block text-indigo-900 font-bold text-lg">Global</span>
+                    <div className="z-10 bg-white/80 px-4 py-2 rounded border border-indigo-100 backdrop-blur-sm text-center">
+                      <span className="block text-indigo-900  text-lg">Global</span>
                       <span className="block text-indigo-600 font-medium text-xs">Reach Tracking</span>
                     </div>
                   </div>
@@ -1437,7 +1437,7 @@ const SeoGmbPage = () => {
               {/* SEO Performance (Line Chart) */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">SEO Performance</h3>
+                  <h3 className=" text-gray-900 text-sm">SEO Performance</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 min-h-[220px]">
@@ -1460,7 +1460,7 @@ const SeoGmbPage = () => {
               {/* GMB Performance (Donut) */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">GMB Performance</h3>
+                  <h3 className=" text-gray-900 text-sm">GMB Performance</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex flex-col md:flex-row items-center justify-center">
@@ -1484,7 +1484,7 @@ const SeoGmbPage = () => {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-2xl font-bold text-gray-900 leading-tight">9,438</span>
+                      <span className="text-2xl  text-gray-900 leading-tight">9,438</span>
                       <span className="text-[10px] text-gray-500 mt-0.5">Total Views</span>
                     </div>
                   </div>
@@ -1501,7 +1501,7 @@ const SeoGmbPage = () => {
                           <span className="text-gray-700 font-medium">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-1 ml-4">
-                          <span className="font-bold text-gray-900">{item.value.toLocaleString()}</span>
+                          <span className=" text-gray-900">{item.value.toLocaleString()}</span>
                           <span className="text-gray-400 text-[10px]">({item.pct})</span>
                         </div>
                       </div>
@@ -1513,7 +1513,7 @@ const SeoGmbPage = () => {
               {/* Top GMB Actions */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top GMB Actions</h3>
+                  <h3 className=" text-gray-900 text-sm">Top GMB Actions</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 space-y-4 flex flex-col justify-center">
@@ -1530,7 +1530,7 @@ const SeoGmbPage = () => {
                         {a.label}
                       </div>
                       <div className="flex items-center gap-4 text-xs">
-                        <span className="font-bold text-gray-900">{a.value}</span>
+                        <span className=" text-gray-900">{a.value}</span>
                         <span className={`${a.color} font-semibold w-12 text-right`}>↑ {a.change.replace('+ ', '')}</span>
                       </div>
                     </div>
@@ -1546,7 +1546,7 @@ const SeoGmbPage = () => {
               {/* Top Performing Keywords */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-5 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Top Performing Keywords</h3>
+                  <h3 className=" text-gray-900 text-sm">Top Performing Keywords</h3>
                 </div>
                 <div className="flex-1 overflow-x-auto">
                   <table className="w-full text-left text-xs whitespace-nowrap">
@@ -1570,7 +1570,7 @@ const SeoGmbPage = () => {
                       ].map((k, i) => (
                         <tr key={i} className="text-gray-700">
                           <td className="py-2.5 font-semibold text-gray-900">{k.keyword}</td>
-                          <td className="py-2.5 text-center font-bold">{k.pos}</td>
+                          <td className="py-2.5 text-center ">{k.pos}</td>
                           <td className="py-2.5 text-center">
                             {k.change === '-' ? <span className="text-gray-400"><Minus size={12} className="mx-auto" /></span> : <span className="text-green-500 font-semibold flex items-center justify-center gap-1"><ArrowUpRight size={10} /> {k.change.replace('+ ', '')}</span>}
                           </td>
@@ -1588,7 +1588,7 @@ const SeoGmbPage = () => {
               {/* AI Visibility (GEO) */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">AI Visibility (GEO)</h3>
+                  <h3 className=" text-gray-900 text-sm">AI Visibility (GEO)</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex flex-col justify-center gap-6">
@@ -1599,11 +1599,11 @@ const SeoGmbPage = () => {
                         <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`78, 100`} />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span className="text-3xl font-bold text-gray-900 leading-none">78</span>
+                        <span className="text-3xl  text-gray-900 leading-none">78</span>
                         <span className="text-[10px] text-gray-500 font-medium">/100</span>
                       </div>
                     </div>
-                    <span className="text-green-600 font-bold text-xs mt-2">Good</span>
+                    <span className="text-green-600  text-xs mt-2">Good</span>
                   </div>
 
                   <div className="space-y-3 text-xs font-medium w-full px-4">
@@ -1618,7 +1618,7 @@ const SeoGmbPage = () => {
                         <div className="flex items-center gap-1.5 text-gray-600">
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> {c.name}
                         </div>
-                        <span className="font-bold text-gray-900">{c.score}</span>
+                        <span className=" text-gray-900">{c.score}</span>
                       </div>
                     ))}
                   </div>
@@ -1629,7 +1629,7 @@ const SeoGmbPage = () => {
               {/* AI Prompt Rankings */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-4 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">AI Prompt Rankings</h3>
+                  <h3 className=" text-gray-900 text-sm">AI Prompt Rankings</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 overflow-x-auto">
@@ -1651,7 +1651,7 @@ const SeoGmbPage = () => {
                       ].map((p, i) => (
                         <tr key={i} className="text-gray-700">
                           <td className="py-3.5 font-medium truncate max-w-[200px] text-gray-800">{p.prompt}</td>
-                          <td className="py-3.5 text-center font-bold text-gray-900">{p.pos}</td>
+                          <td className="py-3.5 text-center  text-gray-900">{p.pos}</td>
                           <td className="py-3.5 text-center">
                             {p.change === '-' ? <span className="text-gray-400"><Minus size={12} className="mx-auto" /></span> : <span className="text-green-500 font-semibold flex items-center justify-center gap-1"><ArrowUpRight size={10} /> {p.change.replace('+ ', '')}</span>}
                           </td>
@@ -1671,7 +1671,7 @@ const SeoGmbPage = () => {
               {/* GMB Reviews Overview */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">GMB Reviews Overview</h3>
+                  <h3 className=" text-gray-900 text-sm">GMB Reviews Overview</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex items-center justify-center gap-6">
@@ -1690,7 +1690,7 @@ const SeoGmbPage = () => {
                   <div className="flex-1 space-y-2 text-[10px]">
                     <div className="flex items-center justify-between text-gray-600">
                       <span>New Reviews</span>
-                      <span className="font-bold text-gray-900 flex items-center gap-1">8 <span className="text-green-500 text-[9px] font-semibold">↑ 33.3%</span></span>
+                      <span className=" text-gray-900 flex items-center gap-1">8 <span className="text-green-500 text-[9px] font-semibold">↑ 33.3%</span></span>
                     </div>
                     <div className="flex items-center justify-between text-gray-600">
                       <span>Positive</span>
@@ -1712,22 +1712,22 @@ const SeoGmbPage = () => {
               {/* GMB Posts Performance */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">GMB Posts Performance</h3>
+                  <h3 className=" text-gray-900 text-sm">GMB Posts Performance</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 grid grid-cols-3 gap-2">
                   <div className="flex flex-col items-center justify-center border-r border-gray-100 pr-2">
                     <span className="text-[10px] text-gray-500 font-medium mb-1">Total Posts</span>
-                    <span className="text-2xl font-bold text-gray-900">12</span>
+                    <span className="text-2xl  text-gray-900">12</span>
                   </div>
                   <div className="flex flex-col items-center justify-center border-r border-gray-100 px-2">
                     <span className="text-[10px] text-gray-500 font-medium mb-1">Total Views</span>
-                    <span className="text-xl font-bold text-gray-900">1,942</span>
+                    <span className="text-xl  text-gray-900">1,942</span>
                     <span className="text-green-500 text-[9px] font-semibold flex items-center mt-0.5"><ArrowUpRight size={10} /> 19.5%</span>
                   </div>
                   <div className="flex flex-col items-center justify-center pl-2">
                     <span className="text-[10px] text-gray-500 font-medium mb-1">Engagements</span>
-                    <span className="text-xl font-bold text-gray-900">342</span>
+                    <span className="text-xl  text-gray-900">342</span>
                     <span className="text-green-500 text-[9px] font-semibold flex items-center mt-0.5"><ArrowUpRight size={10} /> 15.2%</span>
                   </div>
                 </div>
@@ -1737,28 +1737,28 @@ const SeoGmbPage = () => {
               {/* Local Pack Rankings */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Local Pack Rankings</h3>
+                  <h3 className=" text-gray-900 text-sm">Local Pack Rankings</h3>
                   <select className="bg-gray-50 border border-gray-200 text-gray-600 text-xs px-2 py-1 rounded outline-none"><option>Last 7 Days</option></select>
                 </div>
                 <div className="flex-1 flex flex-col justify-center space-y-4 text-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 font-medium">Keywords in Local Pack</span>
                     <div className="flex items-center gap-3">
-                      <span className="font-bold text-gray-900 text-sm">24</span>
+                      <span className=" text-gray-900 text-sm">24</span>
                       <span className="text-green-500 font-semibold w-8 text-right">↑ 9.1%</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 font-medium">Local Pack Avg. Position</span>
                     <div className="flex items-center gap-3">
-                      <span className="font-bold text-gray-900 text-sm">2.6</span>
+                      <span className=" text-gray-900 text-sm">2.6</span>
                       <span className="text-green-500 font-semibold w-8 text-right">↑ 0.4</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 font-medium">Total Locations Ranked</span>
                     <div className="flex items-center gap-3">
-                      <span className="font-bold text-gray-900 text-sm">18</span>
+                      <span className=" text-gray-900 text-sm">18</span>
                       <span className="w-8"></span>
                     </div>
                   </div>
@@ -1769,7 +1769,7 @@ const SeoGmbPage = () => {
               {/* Technical SEO Health */}
               <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 lg:col-span-3 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-900 text-sm">Technical SEO Health</h3>
+                  <h3 className=" text-gray-900 text-sm">Technical SEO Health</h3>
                 </div>
                 <div className="flex-1 flex items-center justify-between">
                   <div className="flex flex-col items-center">
@@ -1780,29 +1780,29 @@ const SeoGmbPage = () => {
                         <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="4" strokeDasharray={`92, 100`} />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center mt-1">
-                        <span className="text-xl font-bold text-gray-900 leading-none">92</span>
+                        <span className="text-xl  text-gray-900 leading-none">92</span>
                         <span className="text-[9px] text-gray-500 font-medium">/100</span>
                       </div>
                     </div>
-                    <span className="text-green-600 font-bold text-[10px] mt-1">Excellent</span>
+                    <span className="text-green-600  text-[10px] mt-1">Excellent</span>
                   </div>
 
                   <div className="flex-1 pl-4 space-y-2 text-[10px]">
                     <div className="flex items-center justify-between text-gray-600">
                       <span className="font-medium">Crawled Pages</span>
-                      <span className="font-bold text-gray-900">1,256</span>
+                      <span className=" text-gray-900">1,256</span>
                     </div>
                     <div className="flex items-center justify-between text-gray-600">
                       <span className="font-medium">Issues Found</span>
-                      <span className="font-bold text-gray-900">24</span>
+                      <span className=" text-gray-900">24</span>
                     </div>
                     <div className="flex items-center justify-between text-red-500 font-medium">
                       <span className="flex items-center gap-1"><AlertCircle size={10} /> Critical Issues</span>
-                      <span className="font-bold">3</span>
+                      <span className="">3</span>
                     </div>
                     <div className="flex items-center justify-between text-orange-500 font-medium">
                       <span className="flex items-center gap-1"><AlertTriangle size={10} /> Warnings</span>
-                      <span className="font-bold">21</span>
+                      <span className="">21</span>
                     </div>
                   </div>
                 </div>
@@ -1816,7 +1816,7 @@ const SeoGmbPage = () => {
         {/* NON-SEO/GMB/GEO/COMPETITORS TABS FALLBACK */}
         {activeTab !== 'SEO' && activeTab !== 'GMB / GBP' && activeTab !== 'GEO / AI' && activeTab !== 'Competitors' && activeTab !== 'Overview' && (
           <div className="bg-white rounded-xl p-8 text-center text-gray-500 shadow-sm border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{activeTab} Metrics</h3>
+            <h3 className="text-xl  text-gray-900 mb-2">{activeTab} Metrics</h3>
             <p>This tab is functioning but the detailed metrics are hidden while viewing the core SEO dashboard. Switch back to the SEO, GMB / GBP, GEO / AI, or Competitors tab to view the main dashboard.</p>
           </div>
         )}

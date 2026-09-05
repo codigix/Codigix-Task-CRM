@@ -90,7 +90,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
       try {
         const parsed = JSON.parse(val);
         if (Array.isArray(parsed)) return parsed;
-      } catch (e) {}
+      } catch (e) { }
       return val.split(',').map(s => s.trim()).filter(Boolean);
     }
     return [String(val)];
@@ -105,7 +105,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
       try {
         const parsed = JSON.parse(val);
         if (Array.isArray(parsed)) list = parsed;
-      } catch (e) {}
+      } catch (e) { }
     }
     return list.filter(f => f && (typeof f === 'string' || f.name || f.file_path || f.url));
   };
@@ -165,7 +165,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="p-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={onBack}
               className="flex items-center gap-2 text-slate-700 hover:text-red-600 font-medium transition"
             >
@@ -173,7 +173,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
               Back
             </button>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl  text-gray-900">
                 {proposal.lead_name ? `${proposal.lead_name} (${proposal.client_name || 'Client'})` : (proposal.client_name || 'Proposal Details')}
               </h1>
               <p className="text-xs text-gray-500 mt-1">{proposal.proposal_number}</p>
@@ -183,7 +183,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
             <span className={`text-xs px-3 py-1 rounded-full font-medium ${getStatusColor(proposal.status)}`}>
               {proposal.status}
             </span>
-            <button 
+            <button
               onClick={() => setIsEditing(true)}
               className="flex items-center gap-2 px-3 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-700 font-medium transition shadow-sm"
             >
@@ -191,7 +191,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
               Edit Proposal
             </button>
             {proposal.status === 'Accepted' && (
-              <button 
+              <button
                 onClick={handleConvertToInvoice}
                 className="flex items-center gap-2 px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 font-medium transition shadow-sm"
               >
@@ -209,9 +209,9 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
           {/* Left Column (Details, Description, Attachments) */}
           <div className="md:col-span-2 space-y-6">
             {/* Client & Lead Information Card */}
-            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm space-y-4">
+            <div className="bg-white rounded p-5 border border-gray-200 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <h2 className="text-sm  text-gray-900 flex items-center gap-2">
                   Client & Lead Details
                 </h2>
                 {proposal.business_type && (
@@ -254,9 +254,9 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                     {servicesList.map((service, idx) => (
                       <li
                         key={idx}
-                        className="flex items-center gap-2.5 px-3 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded-lg text-xs font-medium text-emerald-900"
+                        className="flex items-center gap-2.5 px-3 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded text-xs font-medium text-emerald-900"
                       >
-                        <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                        <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]  shrink-0">
                           ✓
                         </span>
                         <span>{service}</span>
@@ -268,19 +268,19 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
             </div>
 
             {/* Timeline Card */}
-            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
-              <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <div className="bg-white rounded p-5 border border-gray-200 shadow-sm">
+              <h2 className="text-sm  text-gray-900 mb-4 flex items-center gap-2">
                 <Calendar size={18} className="text-blue-600" />
                 Timeline
               </h2>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <div className="p-3 bg-gray-50 rounded border border-gray-100">
                   <p className="text-xs text-gray-500">Proposal Date</p>
                   <p className="text-base font-semibold text-gray-900 mt-1">
                     {proposal.proposal_date ? new Date(proposal.proposal_date).toLocaleDateString() : 'N/A'}
                   </p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <div className="p-3 bg-gray-50 rounded border border-gray-100">
                   <p className="text-xs text-gray-500">Open Till</p>
                   <p className="text-base font-semibold text-gray-900 mt-1">
                     {proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}
@@ -290,26 +290,26 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
             </div>
 
             {/* Scope & Description Card */}
-            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm space-y-3">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+            <div className="bg-white rounded p-5 border border-gray-200 shadow-sm space-y-3">
+              <h2 className="text-sm  text-gray-900 flex items-center gap-2">
                 <FileText size={18} className="text-blue-600" />
                 Scope & Description
               </h2>
               {proposal.description ? (
                 <div
-                  className="text-xs text-gray-800 leading-relaxed bg-gray-50/70 p-4 rounded-lg border border-gray-200/70 whitespace-pre-wrap"
+                  className="text-xs text-gray-800 leading-relaxed bg-gray-50/70 p-4 rounded border border-gray-200/70 whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{ __html: proposal.description }}
                 />
               ) : (
-                <p className="text-xs text-gray-400 italic bg-gray-50/50 p-4 rounded-lg border border-gray-100">
+                <p className="text-xs text-gray-400 italic bg-gray-50/50 p-4 rounded border border-gray-100">
                   No detailed description provided for this proposal.
                 </p>
               )}
             </div>
 
             {/* Attachments & Files Card */}
-            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm space-y-3">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+            <div className="bg-white rounded p-5 border border-gray-200 shadow-sm space-y-3">
+              <h2 className="text-sm  text-gray-900 flex items-center gap-2">
                 <Paperclip size={18} className="text-blue-600" />
                 Attachments & Files ({attachmentsList.length})
               </h2>
@@ -324,7 +324,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                     return (
                       <div
                         key={idx}
-                        className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs hover:border-blue-300 hover:bg-blue-50/20 transition group"
+                        className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded text-xs hover:border-blue-300 hover:bg-blue-50/20 transition group"
                       >
                         <a
                           href={fileUrl}
@@ -338,7 +338,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                             }
                           }}
                         >
-                          <div className="w-8 h-8 rounded bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-base shrink-0 group-hover:bg-blue-600 group-hover:text-white transition">
+                          <div className="w-8 h-8 rounded bg-blue-100 text-blue-700 flex items-center justify-center  text-base shrink-0 group-hover:bg-blue-600 group-hover:text-white transition">
                             📄
                           </div>
                           <div className="min-w-0">
@@ -379,7 +379,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                   })}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400 italic bg-gray-50/50 p-4 rounded-lg border border-gray-100">
+                <p className="text-xs text-gray-400 italic bg-gray-50/50 p-4 rounded border border-gray-100">
                   No attachments uploaded for this proposal. Click "Edit Proposal" to attach files.
                 </p>
               )}
@@ -387,16 +387,16 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
 
             {/* Terms & Conditions (if present) */}
             {proposal.terms_conditions && (
-              <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
-                <h2 className="text-sm font-bold text-gray-900 mb-3">Terms & Conditions</h2>
+              <div className="bg-white rounded p-5 border border-gray-200 shadow-sm">
+                <h2 className="text-sm  text-gray-900 mb-3">Terms & Conditions</h2>
                 <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">{proposal.terms_conditions}</p>
               </div>
             )}
 
             {/* Notes (if present) */}
             {proposal.notes && (
-              <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
-                <h2 className="text-sm font-bold text-gray-900 mb-3">Internal Notes</h2>
+              <div className="bg-white rounded p-5 border border-gray-200 shadow-sm">
+                <h2 className="text-sm  text-gray-900 mb-3">Internal Notes</h2>
                 <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">{proposal.notes}</p>
               </div>
             )}
@@ -405,12 +405,12 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
           {/* Right Column (Sidebar Actions & Summary) */}
           <div className="space-y-6">
             {/* Status Actions */}
-            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm space-y-3">
-              <h2 className="text-sm font-bold text-gray-900">Actions</h2>
+            <div className="bg-white rounded p-5 border border-gray-200 shadow-sm space-y-3">
+              <h2 className="text-sm  text-gray-900">Actions</h2>
               {proposal.status === 'Draft' && (
                 <button
                   onClick={() => handleStatusChange('Submitted')}
-                  className="w-full p-2.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition"
+                  className="w-full p-2.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 transition"
                 >
                   Submit for Approval
                 </button>
@@ -420,14 +420,14 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                 <div className="space-y-2">
                   <button
                     onClick={() => handleStatusChange('Approved')}
-                    className="w-full p-2.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2"
+                    className="w-full p-2.5 bg-green-600 text-white rounded text-xs font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2"
                   >
                     <CheckCircle size={15} />
                     Approve Proposal
                   </button>
                   <button
                     onClick={() => handleStatusChange('Rejected')}
-                    className="w-full p-2.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2"
+                    className="w-full p-2.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2"
                   >
                     <XCircle size={15} />
                     Reject
@@ -438,7 +438,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
               {proposal.status === 'Approved' && (
                 <button
                   onClick={() => handleStatusChange('Sent')}
-                  className="w-full p-2.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  className="w-full p-2.5 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
                 >
                   <Send size={15} />
                   Send to Client
@@ -449,13 +449,13 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                 <div className="space-y-2">
                   <button
                     onClick={() => handleStatusChange('Accepted')}
-                    className="w-full p-2.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 transition"
+                    className="w-full p-2.5 bg-green-600 text-white rounded text-xs font-semibold hover:bg-green-700 transition"
                   >
                     Mark as Accepted
                   </button>
                   <button
                     onClick={() => handleStatusChange('Declined')}
-                    className="w-full p-2.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition"
+                    className="w-full p-2.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 transition"
                   >
                     Mark as Declined
                   </button>
@@ -464,7 +464,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
 
               <button
                 onClick={() => setIsEditing(true)}
-                className="w-full p-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
+                className="w-full p-2.5 bg-white border border-gray-300 text-gray-700 rounded text-xs font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
               >
                 <Edit2 size={14} />
                 Edit Proposal Details
@@ -472,8 +472,8 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
             </div>
 
             {/* Client & Lead Summary Card */}
-            <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm space-y-3">
-              <h2 className="text-sm font-bold text-gray-900">Client & Lead Overview</h2>
+            <div className="bg-white rounded p-5 border border-gray-200 shadow-sm space-y-3">
+              <h2 className="text-sm  text-gray-900">Client & Lead Overview</h2>
               <div className="space-y-2 text-xs">
                 <div>
                   <p className="text-[11px] text-gray-500">Client / Company</p>

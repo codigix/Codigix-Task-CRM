@@ -329,7 +329,7 @@ const ITIssueDetailsSidebar = ({
                     className={`flex items-center gap-1.5 px-1.5 py-1 -ml-1 rounded cursor-pointer transition text-gray-800 hover:bg-gray-100/80 min-w-0 ${openDropdown === 'details-assignee' ? 'bg-blue-50 ring-1 ring-blue-300' : ''}`}
                     title="Click to change assignee"
                   >
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${!assignee?.name || assignee?.name === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px]  shrink-0 ${!assignee?.name || assignee?.name === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
                       {!assignee?.name || assignee?.name === 'Unassigned' ? <User size={11} className="text-gray-600" /> : (assignee?.initial || 'U')}
                     </div>
                     <span className="text-xs text-gray-700 font-medium truncate">{assignee?.name || 'Unassigned'}</span>
@@ -343,7 +343,7 @@ const ITIssueDetailsSidebar = ({
                 {openDropdown === 'details-assignee' && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-full mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                    className="absolute right-0 top-full mt-1 w-64 bg-white rounded shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
                   >
                     {/* Integrated Search Box Header */}
                     <div className="p-2 border-b border-gray-100 bg-gray-50/75 flex items-center gap-2">
@@ -406,7 +406,7 @@ const ITIssueDetailsSidebar = ({
                             }}
                             className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
                           >
-                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
                               {uInitial}
                             </div>
                             <span className="flex-1 truncate">{uName}</span>
@@ -468,7 +468,7 @@ const ITIssueDetailsSidebar = ({
                   title="Click to change reporter"
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${!reporter?.name || reporter?.name === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px]  shrink-0 ${!reporter?.name || reporter?.name === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
                       {!reporter?.name || reporter?.name === 'Unassigned' ? <User size={11} className="text-gray-600" /> : (reporter?.initial || 'U')}
                     </div>
                     <span className="text-xs text-gray-700 font-medium truncate">{reporter?.name || 'Unassigned'}</span>
@@ -479,7 +479,7 @@ const ITIssueDetailsSidebar = ({
                 {openDropdown === 'details-reporter' && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-full mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                    className="absolute right-0 top-full mt-1 w-64 bg-white rounded shadow-xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
                   >
                     {/* Integrated Search Box Header */}
                     <div className="p-2 border-b border-gray-100 bg-gray-50/75 flex items-center gap-2">
@@ -544,7 +544,7 @@ const ITIssueDetailsSidebar = ({
                             }}
                             className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
                           >
-                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
                               {uInitial}
                             </div>
                             <span className="flex-1 truncate">{uName}</span>
@@ -689,11 +689,10 @@ const ITIssueDetailsSidebar = ({
             <div className="flex items-center min-h-[32px] gap-2">
               <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Perf Review</span>
               <div className="flex-1 min-w-0">
-                <div className={`text-xs px-2 py-1 rounded inline-flex items-center font-semibold ${
-                  contributionReviewStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
+                <div className={`text-xs px-2 py-1 rounded inline-flex items-center font-semibold ${contributionReviewStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
                   contributionReviewStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
-                  'bg-yellow-100 text-yellow-700'
-                }`}>
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
                   {contributionReviewStatus || 'Pending'}
                 </div>
               </div>
@@ -877,7 +876,7 @@ const ITIssueDetailsSidebar = ({
                 {/* Git Branch Info */}
                 <div className="p-2 bg-gray-50 rounded border border-gray-200 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-xs font-bold text-gray-700">
+                    <span className="flex items-center gap-1 text-xs  text-gray-700">
                       <GitBranch size={13} className="text-purple-600" /> {issueKey} Branch
                     </span>
                     <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">Active</span>
@@ -970,7 +969,7 @@ const ITIssueDetailsSidebar = ({
                         <div className="text-[10px] text-gray-500 truncate">{log.trigger}</div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1 py-0.5 rounded border border-green-200 block">
+                        <span className="text-[10px]  text-green-600 bg-green-50 px-1 py-0.5 rounded border border-green-200 block">
                           {log.status}
                         </span>
                         <span className="text-[9px] text-gray-400 mt-0.5 block">{log.time}</span>
@@ -998,7 +997,7 @@ const ITIssueDetailsSidebar = ({
             <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Github size={18} className="text-gray-800" />
-                <h3 className="text-sm font-bold text-gray-900">Connect Development Tools</h3>
+                <h3 className="text-sm  text-gray-900">Connect Development Tools</h3>
               </div>
               <button onClick={() => setShowDevModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
                 <X size={16} />
@@ -1015,10 +1014,10 @@ const ITIssueDetailsSidebar = ({
                 />
               </div>
 
-              <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded space-y-2">
                 <div className="flex items-center justify-between font-semibold text-purple-900">
                   <span className="flex items-center gap-1.5"><GitBranch size={14} /> Git Checkout Command</span>
-                  <button onClick={handleCopyBranch} className="text-xs text-purple-700 hover:underline flex items-center gap-1 cursor-pointer font-bold">
+                  <button onClick={handleCopyBranch} className="text-xs text-purple-700 hover:underline flex items-center gap-1 cursor-pointer ">
                     <Copy size={12} /> {copiedBranch ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
@@ -1031,11 +1030,11 @@ const ITIssueDetailsSidebar = ({
                 <span className="font-semibold text-gray-700 block">Connected Services</span>
                 <div className="flex items-center justify-between p-2 border border-gray-200 rounded bg-gray-50">
                   <span className="font-medium text-gray-800">GitHub Enterprise Sync</span>
-                  <span className="text-green-600 font-bold flex items-center gap-1"><CheckCircle size={13} /> Connected</span>
+                  <span className="text-green-600  flex items-center gap-1"><CheckCircle size={13} /> Connected</span>
                 </div>
                 <div className="flex items-center justify-between p-2 border border-gray-200 rounded bg-gray-50">
                   <span className="font-medium text-gray-800">VS Code IDE Deep Link</span>
-                  <span className="text-green-600 font-bold flex items-center gap-1"><CheckCircle size={13} /> Enabled</span>
+                  <span className="text-green-600  flex items-center gap-1"><CheckCircle size={13} /> Enabled</span>
                 </div>
               </div>
             </div>
@@ -1056,7 +1055,7 @@ const ITIssueDetailsSidebar = ({
             <div className="p-4 border-b bg-amber-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Zap size={18} className="text-amber-600 fill-amber-100" />
-                <h3 className="text-sm font-bold text-gray-900">Jira Automation Rules</h3>
+                <h3 className="text-sm  text-gray-900">Jira Automation Rules</h3>
               </div>
               <button onClick={() => setShowAutomationModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
                 <X size={16} />
@@ -1064,34 +1063,34 @@ const ITIssueDetailsSidebar = ({
             </div>
 
             <div className="p-4 space-y-3 text-xs font-sans max-h-[60vh] overflow-y-auto">
-              <div className="p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-1">
+              <div className="p-3 border border-gray-200 rounded bg-gray-50 space-y-1">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-gray-900">1. Auto-Assign on In Progress</span>
-                  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>
+                  <span className=" text-gray-900">1. Auto-Assign on In Progress</span>
+                  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded ">ACTIVE</span>
                 </div>
                 <p className="text-gray-600 text-xs">When ticket status changes to 'IN PROGRESS', automatically assign to current active user.</p>
               </div>
 
-              <div className="p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-1">
+              <div className="p-3 border border-gray-200 rounded bg-gray-50 space-y-1">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-gray-900">2. Auto-Complete Parent Issue</span>
-                  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>
+                  <span className=" text-gray-900">2. Auto-Complete Parent Issue</span>
+                  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded ">ACTIVE</span>
                 </div>
                 <p className="text-gray-600 text-xs">When all 5 subtasks are marked DONE, automatically transition parent issue to DONE.</p>
               </div>
 
-              <div className="p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-1">
+              <div className="p-3 border border-gray-200 rounded bg-gray-50 space-y-1">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-gray-900">3. Due Date Reminder Alert</span>
-                  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>
+                  <span className=" text-gray-900">3. Due Date Reminder Alert</span>
+                  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded ">ACTIVE</span>
                 </div>
                 <p className="text-gray-600 text-xs">When due date is within 24 hours, send automated reminder notification to assignee.</p>
               </div>
 
-              <div className="p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-1">
+              <div className="p-3 border border-gray-200 rounded bg-gray-50 space-y-1">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-gray-900">4. Git Branch Status Sync</span>
-                  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>
+                  <span className=" text-gray-900">4. Git Branch Status Sync</span>
+                  <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded ">ACTIVE</span>
                 </div>
                 <p className="text-gray-600 text-xs">When a developer commits to the ticket branch, update Development metrics automatically.</p>
               </div>

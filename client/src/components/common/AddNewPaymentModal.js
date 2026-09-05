@@ -146,7 +146,7 @@ const AddNewPaymentModal = ({ isOpen, onClose, onSubmit, invoices = [], companie
           </div>
         )}
 
-        <form id="add-payment-form" onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form id="add-payment-form" onSubmit={handleSubmit} className="p-6 space-y-3">
 
           {/* Select Invoices Section */}
           <div>

@@ -99,7 +99,7 @@ const ITSubtasksTable = ({
 
       {/* Unified Single Subtask Creation Box */}
       {isAddingSubtask && (
-        <div className="p-3 bg-blue-50/40 border border-blue-200 rounded-lg space-y-2.5 my-2 animate-in fade-in duration-150">
+        <div className="p-3 bg-blue-50/40 border border-blue-200 rounded space-y-2.5 my-2 animate-in fade-in duration-150">
           <div className="flex items-center gap-2">
             <input
               id="subtask-inline-input"
@@ -150,7 +150,7 @@ const ITSubtasksTable = ({
 
       {/* JIRA SUBTASKS DATA TABLE - CLEAN TABLE-FIXED FIT */}
       {subtasks.length > 0 && (
-        <div className="border border-gray-200 rounded-lg overflow-hidden my-3 shadow-2xs font-sans text-xs bg-white">
+        <div className="border border-gray-200 rounded overflow-hidden my-3 shadow-2xs font-sans text-xs bg-white">
           <table className="w-full text-left border-collapse table-fixed">
             <thead>
               <tr className="bg-gray-50/90 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -237,7 +237,7 @@ const ITSubtasksTable = ({
                             <User size={10} className="text-gray-500" />
                           </div>
                         ) : (
-                          <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[8px] font-bold shrink-0">
+                          <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[8px]  shrink-0">
                             {getInitials(stAssignee)}
                           </div>
                         )}
@@ -279,10 +279,10 @@ const ITSubtasksTable = ({
                             handleUpdate({ subtasks: updatedSubtasks });
                           }}
                           className={`text-xs font-semibold px-2 py-0.5 rounded border appearance-none cursor-pointer pr-5 focus:outline-none transition ${currentSubtaskStatus === 'Done'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                              : currentSubtaskStatus === 'In Progress'
-                                ? 'bg-blue-50 text-blue-700 border-blue-300'
-                                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                            : currentSubtaskStatus === 'In Progress'
+                              ? 'bg-blue-50 text-blue-700 border-blue-300'
+                              : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
                             }`}
                         >
                           <option value="To Do">To Do</option>

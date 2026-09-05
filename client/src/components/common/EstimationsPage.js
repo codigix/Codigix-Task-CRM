@@ -86,7 +86,7 @@ const EstimationsPage = () => {
           try {
             const p = JSON.parse(item.description);
             if (p && p.title) return p.title;
-          } catch (e) {}
+          } catch (e) { }
         }
         return item.project_name || item.business_type || item.type || '';
       },
@@ -95,7 +95,7 @@ const EstimationsPage = () => {
           try {
             const p = JSON.parse(item.description);
             if (p && p.requirementSummary) return p.requirementSummary;
-          } catch (e) {}
+          } catch (e) { }
         }
         return item.description || item.desc || '';
       },
@@ -1202,7 +1202,7 @@ const EstimationsPage = () => {
     const revisedCount = latestEstimations.filter(e => (e.status || '').toLowerCase() === 'revised' || (e.status || '').toLowerCase() === 'under review').length;
     const acceptedCount = latestEstimations.filter(e => (e.status || '').toLowerCase() === 'accepted' || (e.status || '').toLowerCase() === 'approved internally').length;
     const rejectedCount = latestEstimations.filter(e => (e.status || '').toLowerCase() === 'rejected' || (e.status || '').toLowerCase() === 'declined' || (e.status || '').toLowerCase() === 'archived').length;
-    
+
     const totalVal = latestEstimations.reduce((sum, e) => sum + (parseFloat(e.amount || e.total) || 0), 0);
     const acceptedVal = latestEstimations.filter(e => (e.status || '').toLowerCase() === 'accepted' || (e.status || '').toLowerCase() === 'approved internally').reduce((sum, e) => sum + (parseFloat(e.amount || e.total) || 0), 0);
     const convRate = totalCount > 0 ? Math.round((acceptedCount / totalCount) * 100) : 0;
@@ -1232,12 +1232,12 @@ const EstimationsPage = () => {
       <div className="bg-white border-b border-gray-200 p-4">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl  text-slate-900 flex items-center gap-2 flex-wrap">
               Estimations Management
               <span className="inline-block px-2.5 py-0.5 bg-red-50 text-red-600 text-xs font-semibold rounded-full border border-red-100">
                 {filteredEstimations.length}
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-sm">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs  bg-amber-50 text-amber-800 border border-amber-300 shadow-sm">
                 <Lock size={12} className="text-amber-700" />
                 INTERNAL DOCUMENT
               </span>
@@ -1255,12 +1255,12 @@ const EstimationsPage = () => {
             <div className="relative">
               <button
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
-                className="h-9 px-3 bg-red-600 rounded-lg text-xs font-medium text-white flex items-center gap-2 hover:bg-red-700 transition-colors shadow-sm"
+                className="h-9 px-3 bg-red-600 rounded text-xs font-medium text-white flex items-center gap-2 hover:bg-red-700 transition-colors shadow-sm"
               >
                 <Download size={16} /> Export <ChevronDown size={14} className={`transition-transform duration-200 ${showExportDropdown ? 'rotate-180' : ''}`} />
               </button>
               {showExportDropdown && (
-                <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] w-40 overflow-hidden py-1">
+                <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded shadow-xl z-[100] w-40 overflow-hidden py-1">
                   <button onClick={() => { handlePrint(); setShowExportDropdown(false); }} className="w-full px-3 py-2 text-left text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                     <Printer size={14} className="text-gray-500" /> Export as PDF
                   </button>
@@ -1269,7 +1269,7 @@ const EstimationsPage = () => {
             </div>
             <button
               onClick={() => fetchEstimations()}
-              className="p-2 border border-gray-300 rounded-lg flex items-center justify-center bg-white hover:bg-gray-50 text-gray-600 transition-colors"
+              className="p-2 border border-gray-300 rounded flex items-center justify-center bg-white hover:bg-gray-50 text-gray-600 transition-colors"
               title="Refresh"
             >
               <RotateCcw size={16} />
@@ -1279,45 +1279,45 @@ const EstimationsPage = () => {
 
         {/* 9 Summary Metric Widgets */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2.5 pt-2 border-t border-slate-100">
-          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-center">
+          <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-center">
             <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Total Est.</p>
-            <p className="text-base font-bold text-slate-900 mt-0.5">{summaryMetrics.totalCount}</p>
+            <p className="text-base  text-slate-900 mt-0.5">{summaryMetrics.totalCount}</p>
           </div>
-          <div className="bg-amber-50/50 p-2.5 rounded-lg border border-amber-200 text-center">
+          <div className="bg-amber-50/50 p-2.5 rounded border border-amber-200 text-center">
             <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider">Draft</p>
-            <p className="text-base font-bold text-amber-900 mt-0.5">{summaryMetrics.draftCount}</p>
+            <p className="text-base  text-amber-900 mt-0.5">{summaryMetrics.draftCount}</p>
           </div>
-          <div className="bg-blue-50/50 p-2.5 rounded-lg border border-blue-200 text-center">
+          <div className="bg-blue-50/50 p-2.5 rounded border border-blue-200 text-center">
             <p className="text-[10px] font-semibold text-blue-700 uppercase tracking-wider">Sent</p>
-            <p className="text-base font-bold text-blue-900 mt-0.5">{summaryMetrics.sentCount}</p>
+            <p className="text-base  text-blue-900 mt-0.5">{summaryMetrics.sentCount}</p>
           </div>
-          <div className="bg-indigo-50/50 p-2.5 rounded-lg border border-indigo-200 text-center">
+          <div className="bg-indigo-50/50 p-2.5 rounded border border-indigo-200 text-center">
             <p className="text-[10px] font-semibold text-indigo-700 uppercase tracking-wider">Revised</p>
-            <p className="text-base font-bold text-indigo-900 mt-0.5">{summaryMetrics.revisedCount}</p>
+            <p className="text-base  text-indigo-900 mt-0.5">{summaryMetrics.revisedCount}</p>
           </div>
-          <div className="bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-200 text-center">
+          <div className="bg-emerald-50/50 p-2.5 rounded border border-emerald-200 text-center">
             <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">Accepted</p>
-            <p className="text-base font-bold text-emerald-900 mt-0.5">{summaryMetrics.acceptedCount}</p>
+            <p className="text-base  text-emerald-900 mt-0.5">{summaryMetrics.acceptedCount}</p>
           </div>
-          <div className="bg-rose-50/50 p-2.5 rounded-lg border border-rose-200 text-center">
+          <div className="bg-rose-50/50 p-2.5 rounded border border-rose-200 text-center">
             <p className="text-[10px] font-semibold text-rose-700 uppercase tracking-wider">Rejected</p>
-            <p className="text-base font-bold text-rose-900 mt-0.5">{summaryMetrics.rejectedCount}</p>
+            <p className="text-base  text-rose-900 mt-0.5">{summaryMetrics.rejectedCount}</p>
           </div>
-          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-center col-span-2 sm:col-span-1">
+          <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-center col-span-2 sm:col-span-1">
             <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Est. Value</p>
-            <p className="text-xs font-bold text-slate-900 mt-1 truncate" title={`INR ${summaryMetrics.totalVal.toLocaleString()}`}>
+            <p className="text-xs  text-slate-900 mt-1 truncate" title={`INR ${summaryMetrics.totalVal.toLocaleString()}`}>
               INR {summaryMetrics.totalVal.toLocaleString()}
             </p>
           </div>
-          <div className="bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-200 text-center col-span-2 sm:col-span-1">
+          <div className="bg-emerald-50/50 p-2.5 rounded border border-emerald-200 text-center col-span-2 sm:col-span-1">
             <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">Won Value</p>
-            <p className="text-xs font-bold text-emerald-800 mt-1 truncate" title={`INR ${summaryMetrics.acceptedVal.toLocaleString()}`}>
+            <p className="text-xs  text-emerald-800 mt-1 truncate" title={`INR ${summaryMetrics.acceptedVal.toLocaleString()}`}>
               INR {summaryMetrics.acceptedVal.toLocaleString()}
             </p>
           </div>
-          <div className="bg-purple-50/50 p-2.5 rounded-lg border border-purple-200 text-center col-span-2 sm:col-span-1">
+          <div className="bg-purple-50/50 p-2.5 rounded border border-purple-200 text-center col-span-2 sm:col-span-1">
             <p className="text-[10px] font-semibold text-purple-700 uppercase tracking-wider">Win Rate</p>
-            <p className="text-base font-bold text-purple-900 mt-0.5">{summaryMetrics.convRate}%</p>
+            <p className="text-base  text-purple-900 mt-0.5">{summaryMetrics.convRate}%</p>
           </div>
         </div>
       </div>
@@ -1502,10 +1502,10 @@ const EstimationsPage = () => {
                                       src={item.logo}
                                       alt="company"
                                       draggable="false"
-                                      className="w-8 h-8 rounded-lg object-cover border border-slate-200 flex-shrink-0"
+                                      className="w-8 h-8 rounded object-cover border border-slate-200 flex-shrink-0"
                                     />
                                   ) : (
-                                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                    <div className="w-8 h-8 rounded bg-blue-100 text-blue-700 flex items-center justify-center  text-xs flex-shrink-0">
                                       {getCardValue(item, 'company')[0]}
                                     </div>
                                   )
@@ -1522,7 +1522,7 @@ const EstimationsPage = () => {
                                 </div>
                               </div>
                               <div className="relative pointer-events-auto flex items-center gap-1">
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                <span className="text-[10px]  px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                                   v{item.estimation_number?.match(/-v(\d+)$/i)?.[1] || item.version || 1}
                                 </span>
                                 {visibleColumns['Action'] && (
@@ -1531,7 +1531,7 @@ const EstimationsPage = () => {
                                       e.stopPropagation();
                                       setActionMenu(actionMenu === item.id ? null : item.id);
                                     }}
-                                    className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+                                    className="p-1 hover:bg-slate-100 rounded transition-colors"
                                   >
                                     <MoreVertical size={16} className="text-slate-500" />
                                   </button>
@@ -1549,7 +1549,7 @@ const EstimationsPage = () => {
                               <p className="text-xs text-slate-600 mb-3 line-clamp-2 leading-relaxed">{getCardValue(item, 'desc')}</p>
                             )}
 
-                            <div className="space-y-1.5 text-xs text-slate-700 bg-slate-50 rounded-lg p-2.5 border border-slate-100 mb-3">
+                            <div className="space-y-1.5 text-xs text-slate-700 bg-slate-50 rounded p-2.5 border border-slate-100 mb-3">
                               {visibleColumns['Estimations ID'] && (
                                 <div className="flex items-center justify-between">
                                   <span className="text-slate-400 text-[11px]">Estimate ID:</span>
@@ -1559,7 +1559,7 @@ const EstimationsPage = () => {
                               {visibleColumns['Amount'] && (
                                 <div className="flex items-center justify-between">
                                   <span className="text-slate-400 text-[11px]">Amount:</span>
-                                  <span className="font-bold text-slate-900">{getCardValue(item, 'amount')}</span>
+                                  <span className=" text-slate-900">{getCardValue(item, 'amount')}</span>
                                 </div>
                               )}
                               {visibleColumns['Date'] && (
@@ -1574,7 +1574,7 @@ const EstimationsPage = () => {
                           <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
                             {visibleColumns['Estimation By'] && (
                               <div className="flex items-center gap-1.5">
-                                <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-700">
+                                <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px]  text-slate-700">
                                   {getCardValue(item, 'owner')[0]}
                                 </div>
                                 <span className="text-[11px] text-slate-600 truncate max-w-[100px]">{getCardValue(item, 'owner')}</span>
@@ -1706,7 +1706,7 @@ const EstimationsPage = () => {
                       <td className="p-2 text-xs font-semibold text-slate-800 cursor-pointer hover:text-blue-600" onClick={() => setSelectedEstimationId(item.id)}>
                         <div className="flex items-center gap-1.5">
                           <span>{getCardValue(item, 'estimateId')}</span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          <span className="text-[10px]  px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                             v{item.estimation_number?.match(/-v(\d+)$/i)?.[1] || item.version || 1}
                           </span>
                         </div>
@@ -1715,7 +1715,7 @@ const EstimationsPage = () => {
                     {visibleColumns['Client'] && (
                       <td className="p-2 cursor-pointer" onClick={() => setSelectedEstimationId(item.id)}>
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-xs text-gray-600 border border-gray-200 overflow-hidden font-bold">
+                          <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-xs text-gray-600 border border-gray-200 overflow-hidden ">
                             {item.logo ? <img src={item.logo} alt="" className="w-full h-full object-cover" /> : getCardValue(item, 'company')[0]}
                           </div>
                           <span className="text-xs font-semibold text-slate-900 hover:text-blue-600">{getCardValue(item, 'company')}</span>
@@ -1723,12 +1723,12 @@ const EstimationsPage = () => {
                       </td>
                     )}
                     {visibleColumns['Amount'] && (
-                      <td className="p-2 text-xs font-bold text-slate-900">{getCardValue(item, 'amount')}</td>
+                      <td className="p-2 text-xs  text-slate-900">{getCardValue(item, 'amount')}</td>
                     )}
                     {visibleColumns['Project'] && (
                       <td className="p-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-xs text-blue-600 font-bold border border-blue-100">
+                          <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-xs text-blue-600  border border-blue-100">
                             {getCardValue(item, 'type')[0]}
                           </div>
                           <span className="text-xs text-gray-600">{getCardValue(item, 'type')}</span>
@@ -1766,13 +1766,12 @@ const EstimationsPage = () => {
                     {visibleColumns['Status'] && (
                       <td className="p-2">
                         <span
-                          className={`px-2.5 py-1 text-[11px] font-medium rounded-full border ${
-                            item.status === 'Accepted' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                          className={`px-2.5 py-1 text-[11px] font-medium rounded-full border ${item.status === 'Accepted' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
                             item.status === 'Sent' ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                            item.status === 'Revised' ? 'bg-indigo-100 text-indigo-800 border-indigo-300' :
-                            item.status === 'Rejected' || item.status === 'Declined' ? 'bg-rose-100 text-rose-800 border-rose-300' :
-                            'bg-amber-100 text-amber-800 border-amber-300'
-                          }`}
+                              item.status === 'Revised' ? 'bg-indigo-100 text-indigo-800 border-indigo-300' :
+                                item.status === 'Rejected' || item.status === 'Declined' ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                                  'bg-amber-100 text-amber-800 border-amber-300'
+                            }`}
                         >
                           {item.status}
                         </span>

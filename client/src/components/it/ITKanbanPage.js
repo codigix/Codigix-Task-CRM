@@ -296,7 +296,7 @@ const ITKanbanPage = ({ department }) => {
           }
           return parsed;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return defaultDeptColumns;
   });
@@ -318,7 +318,7 @@ const ITKanbanPage = ({ department }) => {
           }
           cols = parsed;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     setColumnOrder(cols);
   }, [currentDept]);
@@ -587,9 +587,9 @@ const ITKanbanPage = ({ department }) => {
     // Board shows tasks in running sprints as well as individual standalone tasks (created without a sprint)
     if (activeSprints.length > 0) {
       const runningIds = new Set(activeSprints.map(s => Number(s.id)));
-      filtered = filtered.filter(issue => 
+      filtered = filtered.filter(issue =>
         !issue.sprint_id ||
-        runningIds.has(Number(issue.sprint_id)) || 
+        runningIds.has(Number(issue.sprint_id)) ||
         issue.sprint_status === 'Active'
       );
     }
@@ -1144,7 +1144,7 @@ const ITKanbanPage = ({ department }) => {
                               }
                             }}
                             title={`Filter issues by ${fullName}`}
-                            className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all relative border-2 border-white cursor-pointer ${isSelected
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px]  transition-all relative border-2 border-white cursor-pointer ${isSelected
                               ? 'ring-2 ring-blue-600 ring-offset-1 z-20 scale-110 shadow-md'
                               : 'hover:z-10 hover:scale-105 opacity-90 hover:opacity-100'
                               } ${colorClass}`}
@@ -1154,7 +1154,7 @@ const ITKanbanPage = ({ department }) => {
                         );
                       })}
                       {itUsersList.length > 5 && (
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-100 text-gray-600 border-2 border-white z-0 ml-[-8px]" title={`${itUsersList.length - 5} more members`}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px]  bg-gray-100 text-gray-600 border-2 border-white z-0 ml-[-8px]" title={`${itUsersList.length - 5} more members`}>
                           +{itUsersList.length - 5}
                         </div>
                       )}
@@ -1190,7 +1190,7 @@ const ITKanbanPage = ({ department }) => {
                             <div
                               key={s}
                               onClick={() => { setSelectedStatus(s); setActiveFilterDropdown(null); }}
-                              className={`px-3 py-1.5 hover:bg-gray-100 cursor-pointer ${selectedStatus === s ? 'text-blue-600 font-bold bg-blue-50' : ''}`}
+                              className={`px-3 py-1.5 hover:bg-gray-100 cursor-pointer ${selectedStatus === s ? 'text-blue-600  bg-blue-50' : ''}`}
                             >
                               {s === 'ALL' ? 'All Statuses' : s}
                             </div>
@@ -1213,7 +1213,7 @@ const ITKanbanPage = ({ department }) => {
                             <div
                               key={p}
                               onClick={() => { setSelectedPriority(p); setActiveFilterDropdown(null); }}
-                              className={`px-3 py-1.5 hover:bg-gray-100 cursor-pointer ${selectedPriority === p ? 'text-blue-600 font-bold bg-blue-50' : ''}`}
+                              className={`px-3 py-1.5 hover:bg-gray-100 cursor-pointer ${selectedPriority === p ? 'text-blue-600  bg-blue-50' : ''}`}
                             >
                               {p === 'ALL' ? 'All Priorities' : p}
                             </div>
@@ -1234,7 +1234,7 @@ const ITKanbanPage = ({ department }) => {
                         <ChevronDown size={14} />
                       </button>
                       {activeFilterDropdown === 'date' && (
-                        <div className="absolute left-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-50 text-xs text-gray-700 font-sans">
+                        <div className="absolute left-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded shadow-xl p-3 z-50 text-xs text-gray-700 font-sans">
                           <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
                             <span className="font-semibold text-gray-800 flex items-center gap-1.5">
                               <Calendar size={13} className="text-blue-600" /> Filter by Date
@@ -1273,11 +1273,10 @@ const ITKanbanPage = ({ department }) => {
                                     setActiveFilterDropdown(null);
                                   }
                                 }}
-                                className={`px-2.5 py-1.5 rounded text-left transition-colors flex items-center justify-between ${
-                                  dateFilter === item.key
-                                    ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200'
-                                    : 'hover:bg-gray-100 text-gray-700 border border-transparent'
-                                }`}
+                                className={`px-2.5 py-1.5 rounded text-left transition-colors flex items-center justify-between ${dateFilter === item.key
+                                  ? 'bg-blue-50 text-blue-700  border border-blue-200'
+                                  : 'hover:bg-gray-100 text-gray-700 border border-transparent'
+                                  }`}
                               >
                                 <span>{item.label}</span>
                                 {dateFilter === item.key && <Check size={12} className="text-blue-600" />}
@@ -1298,11 +1297,10 @@ const ITKanbanPage = ({ department }) => {
                                   setExactDate(e.target.value);
                                   setDateFilter('EXACT');
                                 }}
-                                className={`w-full px-2 py-1 text-xs border rounded focus:outline-none transition-all ${
-                                  dateFilter === 'EXACT'
-                                    ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/40 text-blue-900 font-medium'
-                                    : 'border-gray-300 hover:border-gray-400'
-                                }`}
+                                className={`w-full px-2 py-1 text-xs border rounded focus:outline-none transition-all ${dateFilter === 'EXACT'
+                                  ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/40 text-blue-900 font-medium'
+                                  : 'border-gray-300 hover:border-gray-400'
+                                  }`}
                               />
                             </div>
 
@@ -1321,11 +1319,10 @@ const ITKanbanPage = ({ department }) => {
                                       setRangeStart(e.target.value);
                                       setDateFilter('RANGE');
                                     }}
-                                    className={`w-full px-1.5 py-1 text-[11px] border rounded focus:outline-none ${
-                                      dateFilter === 'RANGE'
-                                        ? 'border-blue-500 bg-blue-50/40'
-                                        : 'border-gray-300'
-                                    }`}
+                                    className={`w-full px-1.5 py-1 text-[11px] border rounded focus:outline-none ${dateFilter === 'RANGE'
+                                      ? 'border-blue-500 bg-blue-50/40'
+                                      : 'border-gray-300'
+                                      }`}
                                   />
                                 </div>
                                 <div>
@@ -1337,11 +1334,10 @@ const ITKanbanPage = ({ department }) => {
                                       setRangeEnd(e.target.value);
                                       setDateFilter('RANGE');
                                     }}
-                                    className={`w-full px-1.5 py-1 text-[11px] border rounded focus:outline-none ${
-                                      dateFilter === 'RANGE'
-                                        ? 'border-blue-500 bg-blue-50/40'
-                                        : 'border-gray-300'
-                                    }`}
+                                    className={`w-full px-1.5 py-1 text-[11px] border rounded focus:outline-none ${dateFilter === 'RANGE'
+                                      ? 'border-blue-500 bg-blue-50/40'
+                                      : 'border-gray-300'
+                                      }`}
                                   />
                                 </div>
                               </div>
@@ -1451,7 +1447,7 @@ const ITKanbanPage = ({ department }) => {
                         </button>
 
                         {showSprintDetails && (
-                          <div className="absolute right-0 top-full mt-2 w-[350px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 p-5 max-h-[70vh] overflow-y-auto">
+                          <div className="absolute right-0 top-full mt-2 w-[350px] bg-white border border-gray-200 rounded shadow-xl z-50 p-5 max-h-[70vh] overflow-y-auto">
                             {activeSprints.map((s, i) => (
                               <div key={s.id} className={i > 0 ? 'mt-5 pt-5 border-t border-gray-200' : ''}>
                                 <h4 className="text-[15px] font-semibold text-gray-900">{s.name}</h4>
@@ -1572,9 +1568,9 @@ const ITKanbanPage = ({ department }) => {
                                                     <Trash2 size={13} />
                                                   </button>
                                                   {/* Jira strikes through the key of a finished work item. */}
-                                                   <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                                                     <span className={`text-blue-600 text-xs hover:underline font-medium cursor-pointer ${isDoneStatus(card.status) ? 'line-through' : ''}`} onClick={(e) => { e.stopPropagation(); setSelectedIssue(card.key); }}>{card.key}</span>
-                                                   </div>
+                                                  <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                                    <span className={`text-blue-600 text-xs hover:underline font-medium cursor-pointer ${isDoneStatus(card.status) ? 'line-through' : ''}`} onClick={(e) => { e.stopPropagation(); setSelectedIssue(card.key); }}>{card.key}</span>
+                                                  </div>
                                                   <div className="text-xs text-gray-900 font-medium mb-3 leading-snug cursor-grab active:cursor-grabbing">{card.title}</div>
 
                                                   {/* JIRA INLINE EXPANDABLE SUBTASKS LIST */}
@@ -1695,162 +1691,162 @@ const ITKanbanPage = ({ department }) => {
                                                       })()}
 
                                                       {col === 'DONE' ? (
-                                                      <CheckCircleIcon className="text-green-500" size={16} />
-                                                    ) : (
-                                                      <div className="relative card-assignee-dropdown">
-                                                        <button
-                                                          onClick={(e) => handleOpenCardAssignee(e, card.key)}
-                                                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold border border-white shrink-0 cursor-pointer transition-transform hover:scale-110 ${card.assignee === 'Unassigned' || !card.assignee
-                                                            ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                                            : 'bg-blue-600 text-white shadow-sm'
-                                                            }`}
-                                                          title={`Assignee: ${card.assignee || 'Unassigned'} (Click to change)`}
-                                                        >
-                                                          {card.assignee === 'Unassigned' || !card.assignee ? (
-                                                            <User size={12} className="text-gray-500" />
-                                                          ) : (
-                                                            getInitials(card.assignee)
-                                                          )}
-                                                        </button>
-
-                                                        {/* JIRA CARD ASSIGNEE POPUP MENU (Right Side Floating) */}
-                                                        {openCardAssigneeDropdown === card.key && (
-                                                          <div
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            style={{
-                                                              position: 'fixed',
-                                                              top: `${cardAssigneePos.top}px`,
-                                                              left: `${cardAssigneePos.left}px`,
-                                                              width: '260px',
-                                                              zIndex: 99999
-                                                            }}
-                                                            className="bg-white border border-gray-200 rounded-lg shadow-2xl py-1.5 text-xs text-gray-700 font-sans border-t-2 border-t-blue-500"
+                                                        <CheckCircleIcon className="text-green-500" size={16} />
+                                                      ) : (
+                                                        <div className="relative card-assignee-dropdown">
+                                                          <button
+                                                            onClick={(e) => handleOpenCardAssignee(e, card.key)}
+                                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px]  border border-white shrink-0 cursor-pointer transition-transform hover:scale-110 ${card.assignee === 'Unassigned' || !card.assignee
+                                                              ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                              : 'bg-blue-600 text-white shadow-sm'
+                                                              }`}
+                                                            title={`Assignee: ${card.assignee || 'Unassigned'} (Click to change)`}
                                                           >
-                                                            {/* Jira Top Active / Search Input Box */}
-                                                            <div className="p-2 border-b border-gray-100 bg-white">
-                                                              <div className="relative">
-                                                                <input
-                                                                  type="text"
-                                                                  autoFocus
-                                                                  value={assigneeSearchQuery}
-                                                                  onChange={(e) => setAssigneeSearchQuery(e.target.value)}
-                                                                  placeholder="Search users..."
-                                                                  className="w-full px-3 py-1.5 text-xs border-2 border-blue-500 rounded-md focus:outline-none bg-white text-gray-900 font-medium placeholder:text-gray-400"
-                                                                />
-                                                              </div>
-                                                              {card.assignee && card.assignee !== 'Unassigned' && (
-                                                                <div className="mt-1.5 px-0.5 flex items-center justify-between text-[11px] text-gray-500">
-                                                                  <span className="truncate">Current: <strong className="text-gray-800 font-semibold">{card.assignee}</strong></span>
-                                                                  <button
-                                                                    type="button"
-                                                                    onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned')}
-                                                                    className="text-red-600 hover:text-red-700 hover:underline font-semibold ml-2 shrink-0 cursor-pointer"
-                                                                  >
-                                                                    Clear / Unassign
-                                                                  </button>
-                                                                </div>
-                                                              )}
-                                                            </div>
+                                                            {card.assignee === 'Unassigned' || !card.assignee ? (
+                                                              <User size={12} className="text-gray-500" />
+                                                            ) : (
+                                                              getInitials(card.assignee)
+                                                            )}
+                                                          </button>
 
-                                                            <div className="max-h-60 overflow-y-auto py-1 custom-scrollbar">
-                                                              {/* Unassigned Option */}
-                                                              {(!assigneeSearchQuery.trim() || 'unassigned'.includes(assigneeSearchQuery.toLowerCase().trim())) && (
+                                                          {/* JIRA CARD ASSIGNEE POPUP MENU (Right Side Floating) */}
+                                                          {openCardAssigneeDropdown === card.key && (
+                                                            <div
+                                                              onClick={(e) => e.stopPropagation()}
+                                                              style={{
+                                                                position: 'fixed',
+                                                                top: `${cardAssigneePos.top}px`,
+                                                                left: `${cardAssigneePos.left}px`,
+                                                                width: '260px',
+                                                                zIndex: 99999
+                                                              }}
+                                                              className="bg-white border border-gray-200 rounded shadow-2xl py-1.5 text-xs text-gray-700 font-sans border-t-2 border-t-blue-500"
+                                                            >
+                                                              {/* Jira Top Active / Search Input Box */}
+                                                              <div className="p-2 border-b border-gray-100 bg-white">
+                                                                <div className="relative">
+                                                                  <input
+                                                                    type="text"
+                                                                    autoFocus
+                                                                    value={assigneeSearchQuery}
+                                                                    onChange={(e) => setAssigneeSearchQuery(e.target.value)}
+                                                                    placeholder="Search users..."
+                                                                    className="w-full px-3 py-1.5 text-xs border-2 border-blue-500 rounded-md focus:outline-none bg-white text-gray-900 font-medium placeholder:text-gray-400"
+                                                                  />
+                                                                </div>
+                                                                {card.assignee && card.assignee !== 'Unassigned' && (
+                                                                  <div className="mt-1.5 px-0.5 flex items-center justify-between text-[11px] text-gray-500">
+                                                                    <span className="truncate">Current: <strong className="text-gray-800 font-semibold">{card.assignee}</strong></span>
+                                                                    <button
+                                                                      type="button"
+                                                                      onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned')}
+                                                                      className="text-red-600 hover:text-red-700 hover:underline font-semibold ml-2 shrink-0 cursor-pointer"
+                                                                    >
+                                                                      Clear / Unassign
+                                                                    </button>
+                                                                  </div>
+                                                                )}
+                                                              </div>
+
+                                                              <div className="max-h-60 overflow-y-auto py-1 custom-scrollbar">
+                                                                {/* Unassigned Option */}
+                                                                {(!assigneeSearchQuery.trim() || 'unassigned'.includes(assigneeSearchQuery.toLowerCase().trim())) && (
+                                                                  <div
+                                                                    onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned')}
+                                                                    className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee === 'Unassigned' || !card.assignee ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
+                                                                      }`}
+                                                                  >
+                                                                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
+                                                                      <User size={13} className="text-gray-600" />
+                                                                    </div>
+                                                                    <span className="text-xs font-medium">Unassigned</span>
+                                                                    {(card.assignee === 'Unassigned' || !card.assignee) && <Check size={14} className="text-blue-600 ml-auto shrink-0" />}
+                                                                  </div>
+                                                                )}
+
+                                                                {/* Automatic Option */}
                                                                 <div
-                                                                  onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned')}
-                                                                  className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee === 'Unassigned' || !card.assignee ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
-                                                                    }`}
+                                                                  onClick={() => {
+                                                                    const myName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : 'Unassigned';
+                                                                    handleUpdateCardAssignee(card.key, myName);
+                                                                  }}
+                                                                  className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 text-gray-700 font-medium border-b border-gray-100 transition-colors"
                                                                 >
                                                                   <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
                                                                     <User size={13} className="text-gray-600" />
                                                                   </div>
-                                                                  <span className="text-xs font-medium">Unassigned</span>
-                                                                  {(card.assignee === 'Unassigned' || !card.assignee) && <Check size={14} className="text-blue-600 ml-auto shrink-0" />}
+                                                                  <span className="text-xs font-medium">Automatic</span>
                                                                 </div>
-                                                              )}
 
-                                                              {/* Automatic Option */}
-                                                              <div
-                                                                onClick={() => {
-                                                                  const myName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : 'Unassigned';
-                                                                  handleUpdateCardAssignee(card.key, myName);
-                                                                }}
-                                                                className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 text-gray-700 font-medium border-b border-gray-100 transition-colors"
-                                                              >
-                                                                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
-                                                                  <User size={13} className="text-gray-600" />
-                                                                </div>
-                                                                <span className="text-xs font-medium">Automatic</span>
+                                                                {/* Logged in User (Assign to me) Option */}
+                                                                {user && (
+                                                                  <div
+                                                                    onClick={() => {
+                                                                      const myName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+                                                                      handleUpdateCardAssignee(card.key, myName);
+                                                                    }}
+                                                                    className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee && (card.assignee.toLowerCase().includes((user.first_name || '').toLowerCase()) || card.assignee.toLowerCase() === user.username.toLowerCase())
+                                                                      ? 'bg-[#deebff] font-semibold text-blue-900'
+                                                                      : 'text-gray-700'
+                                                                      }`}
+                                                                  >
+                                                                    <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]  shrink-0">
+                                                                      {getInitials(user.first_name || user.username)}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                      <div className="truncate text-xs font-medium text-gray-900">
+                                                                        {`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username} <span className="text-[10px] text-gray-500 font-normal">(assign to me)</span>
+                                                                      </div>
+                                                                      {user.email && <div className="text-[10px] text-gray-500 truncate leading-none mt-0.5">{user.email}</div>}
+                                                                    </div>
+                                                                  </div>
+                                                                )}
+
+                                                                {/* Team Users List */}
+                                                                {itUsersList
+                                                                  .filter(u => {
+                                                                    if (user && (u.id === user.id || u.username === user.username)) return false;
+                                                                    const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || '';
+                                                                    return name.toLowerCase().includes(assigneeSearchQuery.toLowerCase()) || (u.email && u.email.toLowerCase().includes(assigneeSearchQuery.toLowerCase()));
+                                                                  })
+                                                                  .map((u) => {
+                                                                    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'User';
+                                                                    const initials = getInitials(fullName);
+                                                                    const isCurrentAssignee = card.assignee && card.assignee.toLowerCase() === fullName.toLowerCase();
+
+                                                                    const colors = [
+                                                                      'bg-blue-600 text-white',
+                                                                      'bg-purple-600 text-white',
+                                                                      'bg-amber-600 text-white',
+                                                                      'bg-pink-600 text-white',
+                                                                      'bg-indigo-600 text-white',
+                                                                      'bg-teal-600 text-white'
+                                                                    ];
+                                                                    const colorClass = colors[Number(u.id || 0) % colors.length];
+
+                                                                    return (
+                                                                      <div
+                                                                        key={u.id || u.username}
+                                                                        onClick={() => handleUpdateCardAssignee(card.key, fullName)}
+                                                                        className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${isCurrentAssignee ? 'bg-[#deebff] text-blue-900 font-semibold' : 'text-gray-700'
+                                                                          }`}
+                                                                      >
+                                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px]  shrink-0 ${colorClass}`}>
+                                                                          {initials}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                          <div className="truncate text-xs font-medium text-gray-900">{fullName}</div>
+                                                                          {u.email && <div className="text-[10px] text-gray-500 truncate leading-none mt-0.5">{u.email}</div>}
+                                                                        </div>
+                                                                        {isCurrentAssignee && <Check size={14} className="text-blue-600 shrink-0" />}
+                                                                      </div>
+                                                                    );
+                                                                  })}
                                                               </div>
-
-                                                              {/* Logged in User (Assign to me) Option */}
-                                                              {user && (
-                                                                <div
-                                                                  onClick={() => {
-                                                                    const myName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
-                                                                    handleUpdateCardAssignee(card.key, myName);
-                                                                  }}
-                                                                  className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee && (card.assignee.toLowerCase().includes((user.first_name || '').toLowerCase()) || card.assignee.toLowerCase() === user.username.toLowerCase())
-                                                                    ? 'bg-[#deebff] font-semibold text-blue-900'
-                                                                    : 'text-gray-700'
-                                                                    }`}
-                                                                >
-                                                                  <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
-                                                                    {getInitials(user.first_name || user.username)}
-                                                                  </div>
-                                                                  <div className="flex-1 min-w-0">
-                                                                    <div className="truncate text-xs font-medium text-gray-900">
-                                                                      {`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username} <span className="text-[10px] text-gray-500 font-normal">(assign to me)</span>
-                                                                    </div>
-                                                                    {user.email && <div className="text-[10px] text-gray-500 truncate leading-none mt-0.5">{user.email}</div>}
-                                                                  </div>
-                                                                </div>
-                                                              )}
-
-                                                              {/* Team Users List */}
-                                                              {itUsersList
-                                                                .filter(u => {
-                                                                  if (user && (u.id === user.id || u.username === user.username)) return false;
-                                                                  const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || '';
-                                                                  return name.toLowerCase().includes(assigneeSearchQuery.toLowerCase()) || (u.email && u.email.toLowerCase().includes(assigneeSearchQuery.toLowerCase()));
-                                                                })
-                                                                .map((u) => {
-                                                                  const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'User';
-                                                                  const initials = getInitials(fullName);
-                                                                  const isCurrentAssignee = card.assignee && card.assignee.toLowerCase() === fullName.toLowerCase();
-
-                                                                  const colors = [
-                                                                    'bg-blue-600 text-white',
-                                                                    'bg-purple-600 text-white',
-                                                                    'bg-amber-600 text-white',
-                                                                    'bg-pink-600 text-white',
-                                                                    'bg-indigo-600 text-white',
-                                                                    'bg-teal-600 text-white'
-                                                                  ];
-                                                                  const colorClass = colors[Number(u.id || 0) % colors.length];
-
-                                                                  return (
-                                                                    <div
-                                                                      key={u.id || u.username}
-                                                                      onClick={() => handleUpdateCardAssignee(card.key, fullName)}
-                                                                      className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${isCurrentAssignee ? 'bg-[#deebff] text-blue-900 font-semibold' : 'text-gray-700'
-                                                                        }`}
-                                                                    >
-                                                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${colorClass}`}>
-                                                                        {initials}
-                                                                      </div>
-                                                                      <div className="flex-1 min-w-0">
-                                                                        <div className="truncate text-xs font-medium text-gray-900">{fullName}</div>
-                                                                        {u.email && <div className="text-[10px] text-gray-500 truncate leading-none mt-0.5">{u.email}</div>}
-                                                                      </div>
-                                                                      {isCurrentAssignee && <Check size={14} className="text-blue-600 shrink-0" />}
-                                                                    </div>
-                                                                  );
-                                                                })}
                                                             </div>
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                    )}
+                                                          )}
+                                                        </div>
+                                                      )}
                                                     </div>
                                                   </div>
                                                 </div>

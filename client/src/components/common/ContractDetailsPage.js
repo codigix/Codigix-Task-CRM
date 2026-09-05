@@ -11,7 +11,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendEmail, setSendEmail] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     subject: contract.subject || '',
     start_date: contract.start_date || '',
@@ -82,9 +82,9 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
   const handleSendContract = async () => {
     setIsLoading(true);
     try {
-      await contractsAPI.update(contract.id, { 
+      await contractsAPI.update(contract.id, {
         status: 'Sent',
-        sent_to_email: sendEmail 
+        sent_to_email: sendEmail
       });
       setShowSendModal(false);
       setSendEmail('');
@@ -134,7 +134,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
       {/* Header */}
       <div className="bg-white border-b p-2  flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={onBack}
             className="p-2 hover:bg-gray-100 rounded  transition-colors"
           >
@@ -145,18 +145,18 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
             <p className="text-xs  text-gray-500 mt-1">Contract Details</p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {!isEditing && (
             <>
-              <button 
+              <button
                 onClick={handleDownloadContract}
                 className="flex items-center gap-2 p-2  border border-gray-300 rounded  text-xs    text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Download size={16} />
                 Download
               </button>
-              <button 
+              <button
                 onClick={() => setShowSendModal(true)}
                 disabled={formData.status === 'Sent'}
                 className="flex items-center gap-2 p-2  border border-gray-300 rounded  text-xs    text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -164,14 +164,14 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
                 <Send size={16} />
                 Send
               </button>
-              <button 
+              <button
                 onClick={() => setIsEditing(true)}
                 className="flex items-center gap-2 p-2  border border-gray-300 rounded  text-xs    text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Edit2 size={16} />
                 Edit
               </button>
-              <button 
+              <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="flex items-center gap-2 p-2  border border-red-300 rounded  text-xs    text-red-700 hover:bg-red-50 transition-colors"
               >
@@ -180,10 +180,10 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
               </button>
             </>
           )}
-          
+
           {isEditing && (
             <>
-              <button 
+              <button
                 onClick={() => {
                   setIsEditing(false);
                   setFormData({
@@ -203,7 +203,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
                 <X size={16} />
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSaveChanges}
                 disabled={isLoading}
                 className="flex items-center gap-2 p-2  bg-red-600 text-white rounded  text-xs    hover:bg-red-700 transition-colors disabled:opacity-50"
@@ -376,10 +376,10 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
                 <label className="block text-xs font-semibold text-gray-700 mb-2">
                   Linked Deal / Converted Lead
                 </label>
-                <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center gap-2.5">
+                <div className="p-3 bg-indigo-50 border border-indigo-100 rounded flex items-center gap-2.5">
                   <span className="text-lg">🎯</span>
                   <div>
-                    <p className="text-xs font-bold text-indigo-950">{contract.deal_name || `Deal #${contract.deal_id}`}</p>
+                    <p className="text-xs  text-indigo-950">{contract.deal_name || `Deal #${contract.deal_id}`}</p>
                     <p className="text-[11px] text-indigo-600">Contract originated from this sales deal conversion</p>
                   </div>
                 </div>
@@ -415,13 +415,13 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
                   try {
                     filesList = typeof contract.files === 'string' ? JSON.parse(contract.files) : contract.files;
                   } catch (e) { filesList = []; }
-                  
+
                   if (!Array.isArray(filesList) || filesList.length === 0) {
                     return <p className="text-xs text-gray-500 italic">No files attached</p>;
                   }
 
                   return (
-                    <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                    <div className="divide-y divide-gray-100 border border-gray-200 rounded overflow-hidden bg-white">
                       {filesList.map((file, idx) => (
                         <div key={idx} className="p-2.5 flex items-center justify-between gap-3 hover:bg-gray-50 transition">
                           <div className="flex items-center gap-2.5 min-w-0">
@@ -474,7 +474,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
           <div className="bg-white rounded  shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-betweenp-3  border-b border-gray-200">
               <h3 className="text-md  text-gray-900">Send Contract to Client</h3>
-              <button 
+              <button
                 onClick={() => {
                   setShowSendModal(false);
                   setSendEmail('');
@@ -495,7 +495,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
               />
             </div>
             <div className="flex gap-3p-3  border-t border-gray-200">
-              <button 
+              <button
                 onClick={() => {
                   setShowSendModal(false);
                   setSendEmail('');
@@ -505,7 +505,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSendContract}
                 disabled={isLoading || !sendEmail}
                 className="flex-1 p-2  bg-red-600 text-white rounded  text-xs    hover:bg-red-700 disabled:opacity-50"
@@ -526,14 +526,14 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
               <p className="text-gray-600 mb-6">Are you sure you want to delete this contract? This action cannot be undone.</p>
             </div>
             <div className="flex gap-3p-3  border-t border-gray-200">
-              <button 
+              <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={isLoading}
                 className="flex-1 p-2  border border-gray-300 rounded  text-xs    text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleDeleteContract}
                 disabled={isLoading}
                 className="flex-1 p-2  bg-red-600 text-white rounded  text-xs    hover:bg-red-700 disabled:opacity-50"

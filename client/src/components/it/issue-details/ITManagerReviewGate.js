@@ -73,12 +73,12 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, subtasks, onReviewComplet
 
   return createPortal(
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 999999 }}>
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-2 text-gray-800">
             <ShieldCheck size={20} className="text-emerald-600" />
-            <h2 className="text-lg font-bold">Manager Review Gate</h2>
+            <h2 className="text-lg ">Manager Review Gate</h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded text-gray-500 transition">
             <X size={18} />
@@ -86,14 +86,14 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, subtasks, onReviewComplet
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-white">
+        <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-white">
           <div className="bg-blue-50 border border-blue-200 p-4 rounded flex gap-3 text-sm text-blue-800">
             <Calculator size={18} className="shrink-0 mt-0.5 text-blue-600" />
             <div>
               <p className="font-semibold">Performance Recalculation</p>
               <p className="mt-1 opacity-90">
-                The engine has calculated the performance distribution based on the <strong>{issue?.contribution_method || 'WORK_BREAKDOWN'}</strong> method. 
-                Task Effort Points: <span className="font-bold">{issue?.effort_points || issue?.story_points || 0} pts</span>.
+                The engine has calculated the performance distribution based on the <strong>{issue?.contribution_method || 'WORK_BREAKDOWN'}</strong> method.
+                Task Effort Points: <span className="">{issue?.effort_points || issue?.story_points || 0} pts</span>.
               </p>
             </div>
           </div>
@@ -105,7 +105,7 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, subtasks, onReviewComplet
           ) : (
             <div className="space-y-4">
               {proposal && proposal.length > 0 ? (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="border border-gray-200 rounded overflow-hidden">
                   <table className="w-full text-sm text-left text-gray-600">
                     <thead className="bg-gray-50 text-gray-700 text-xs uppercase border-b border-gray-200">
                       <tr>
@@ -120,7 +120,7 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, subtasks, onReviewComplet
                         <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="px-4 py-3 font-medium text-gray-800">{p.user_id}</td>
                           <td className="px-4 py-3">{p.role}</td>
-                          <td className="px-4 py-3 text-right font-bold text-emerald-600">+{p.effort_points}</td>
+                          <td className="px-4 py-3 text-right  text-emerald-600">+{p.effort_points}</td>
                           <td className="px-4 py-3 text-right text-gray-500">
                             {p.contribution_percentage ? `${p.contribution_percentage}%` : '-'}
                           </td>
@@ -141,7 +141,7 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, subtasks, onReviewComplet
           <div className="bg-gray-50 border border-gray-200 rounded p-4 flex gap-3 text-sm text-gray-600 mt-6">
             <History size={16} className="shrink-0 mt-0.5 text-gray-500" />
             <div>
-              <p className="font-bold text-gray-700">Immutable Audit Ledger</p>
+              <p className=" text-gray-700">Immutable Audit Ledger</p>
               <p className="mt-1">
                 Approving this distribution will permanently stamp these points to the performance ledger. Assignment itself does not grant points; only validated work is credited.
               </p>
@@ -155,7 +155,7 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, subtasks, onReviewComplet
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={fetchRecalculate}
               disabled={loading}
               className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 bg-gray-200 hover:bg-gray-300 px-3 py-1.5 rounded transition disabled:opacity-50"
@@ -169,9 +169,9 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, subtasks, onReviewComplet
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={onClose}
               className="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2"
             >

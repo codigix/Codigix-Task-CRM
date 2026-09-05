@@ -1065,12 +1065,12 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
                     const previewUrl = isImg ? URL.createObjectURL(file) : null;
 
                     return (
-                      <div key={i} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-2.5 shadow-sm hover:border-blue-300 transition-all group">
+                      <div key={i} className="flex items-center justify-between bg-white border border-gray-200 rounded p-2.5 shadow-sm hover:border-blue-300 transition-all group">
                         <div className="flex items-center gap-2.5 min-w-0">
                           {isImg ? (
                             <img src={previewUrl} alt="" className="w-9 h-9 rounded object-cover border border-gray-100 shrink-0" />
                           ) : (
-                            <div className="w-9 h-9 rounded bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold shrink-0 border border-blue-100">
+                            <div className="w-9 h-9 rounded bg-blue-50 text-blue-600 flex items-center justify-center text-sm  shrink-0 border border-blue-100">
                               📄
                             </div>
                           )}

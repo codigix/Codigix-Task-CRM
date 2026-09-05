@@ -46,7 +46,7 @@ const CreateSprintModal = ({ isOpen, defaultName, projects, onCancel, onCreate }
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-[520px] max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded shadow-2xl w-full max-w-[520px] max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between px-6 pt-5 pb-3">
           <h2 className="text-xl font-semibold text-gray-900">Create sprint</h2>
           <button onClick={onCancel} className="text-gray-400 hover:text-gray-700 p-1 rounded transition">

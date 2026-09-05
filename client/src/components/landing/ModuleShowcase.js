@@ -49,7 +49,7 @@ const ModuleShowcase = () => {
     <section id="modules" className="py-20 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4 tracking-tight">Powerful tools built right in</h2>
+          <h2 className="text-2xl md:text-3xl  text-slate-900 mb-4 tracking-tight">Powerful tools built right in</h2>
           <p className="text-base text-slate-600 font-light">
             Stop paying for separate software. Codigix CRM includes premium collaboration and productivity tools out of the box.
           </p>
@@ -64,11 +64,10 @@ const ModuleShowcase = () => {
                 <button
                   key={module.id}
                   onClick={() => setActiveModule(module.id)}
-                  className={`relative flex flex-col items-start p-6 rounded-3xl text-left transition-all duration-500 border ${
-                    isActive 
-                      ? 'bg-white border-red-600 shadow-xl shadow-red-600/5 translate-x-2' 
+                  className={`relative flex flex-col items-start p-6 rounded-3xl text-left transition-all duration-500 border ${isActive
+                      ? 'bg-white border-red-600 shadow-xl shadow-red-600/5 translate-x-2'
                       : 'bg-transparent border-transparent hover:bg-white/50 hover:border-slate-200'
-                  }`}
+                    }`}
                 >
                   {isActive && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-red-600 rounded-r-full"></div>
@@ -77,7 +76,7 @@ const ModuleShowcase = () => {
                     <div className={`p-3 rounded-2xl transition-colors duration-500 ${isActive ? 'bg-red-100 text-red-600' : 'bg-slate-200/50 text-slate-500'}`}>
                       {module.icon}
                     </div>
-                    <h4 className={`text-lg font-bold tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
+                    <h4 className={`text-lg  tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
                       {module.title}
                     </h4>
                   </div>
@@ -107,20 +106,20 @@ const ModuleShowcase = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Fake Content Area based on Active Module */}
               <div className="flex-1 bg-slate-50 relative overflow-hidden">
                 <div className={`absolute inset-0 transition-all duration-700 transform ${activeModule === 'kanban' ? 'opacity-100 translate-y-0 scale-100 z-10' : 'opacity-0 translate-y-8 scale-95 pointer-events-none z-0'}`}>
-                   <KanbanMockup />
+                  <KanbanMockup />
                 </div>
                 <div className={`absolute inset-0 transition-all duration-700 transform ${activeModule === 'video' ? 'opacity-100 translate-y-0 scale-100 z-10' : 'opacity-0 translate-y-8 scale-95 pointer-events-none z-0'}`}>
-                   <VideoMockup />
+                  <VideoMockup />
                 </div>
                 <div className={`absolute inset-0 transition-all duration-700 transform ${activeModule === 'chat' ? 'opacity-100 translate-y-0 scale-100 z-10' : 'opacity-0 translate-y-8 scale-95 pointer-events-none z-0'}`}>
-                   <ChatMockup />
+                  <ChatMockup />
                 </div>
                 <div className={`absolute inset-0 transition-all duration-700 transform ${activeModule === 'calendar' ? 'opacity-100 translate-y-0 scale-100 z-10' : 'opacity-0 translate-y-8 scale-95 pointer-events-none z-0'}`}>
-                   <CalendarMockup />
+                  <CalendarMockup />
                 </div>
               </div>
             </div>

@@ -7,9 +7,9 @@ const VideoMockup = () => {
       {/* Top Header */}
       <div className="h-12 bg-slate-900/90 border-b border-slate-700 flex items-center justify-between px-6 shrink-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center text-white text-[10px] font-bold">C</div>
+          <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center text-white text-[10px] ">C</div>
           <span className="font-semibold text-slate-200 text-sm">Weekly Sync</span>
-          <span className="bg-red-500/20 text-red-400 text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-widest border border-red-500/30 flex items-center gap-1.5">
+          <span className="bg-red-500/20 text-red-400 text-[9px] px-2 py-0.5 rounded  uppercase tracking-widest border border-red-500/30 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
             REC
           </span>
@@ -22,20 +22,20 @@ const VideoMockup = () => {
       {/* Main Video Area */}
       <div className="flex-1 p-4 flex gap-4 overflow-hidden">
         <div className="flex-1 flex flex-col gap-4 relative">
-          
+
           {/* Main Speaker View */}
           <div className="flex-1 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden relative group">
-            <img 
-              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800" 
-              alt="Main Speaker" 
+            <img
+              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800"
+              alt="Main Speaker"
               className="w-full h-full object-cover"
             />
-            <div className="absolute bottom-4 left-4 bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
+            <div className="absolute bottom-4 left-4 bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded border border-slate-700 flex items-center gap-2">
               <span className="text-white text-xs font-semibold">Sarah Jenkins</span>
               <Mic size={12} className="text-emerald-400" />
             </div>
           </div>
-          
+
           {/* Grid View for others */}
           <div className="h-32 flex gap-4 shrink-0">
             {[
@@ -58,8 +58,8 @@ const VideoMockup = () => {
         {/* Right Sidebar (Participants/Chat) */}
         <div className="w-64 bg-slate-800 rounded-2xl border border-slate-700 flex flex-col overflow-hidden shrink-0 hidden lg:flex">
           <div className="flex border-b border-slate-700">
-            <div className="flex-1 text-center py-3 text-xs font-bold text-slate-200 border-b-2 border-red-500 bg-slate-700/50">Participants (4)</div>
-            <div className="flex-1 text-center py-3 text-xs font-bold text-slate-400 hover:text-slate-200 cursor-pointer">Chat</div>
+            <div className="flex-1 text-center py-3 text-xs  text-slate-200 border-b-2 border-red-500 bg-slate-700/50">Participants (4)</div>
+            <div className="flex-1 text-center py-3 text-xs  text-slate-400 hover:text-slate-200 cursor-pointer">Chat</div>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
             {[
@@ -70,7 +70,7 @@ const VideoMockup = () => {
             ].map((p, i) => (
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-xs">
+                  <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center text-slate-300  text-xs">
                     {p.name.charAt(0)}
                   </div>
                   <div>

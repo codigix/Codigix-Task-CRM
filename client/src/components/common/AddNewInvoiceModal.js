@@ -176,7 +176,7 @@ const AddNewInvoiceModal = ({ isOpen, onClose, onSubmit, companies = [], project
           </div>
         )}
 
-        <form id="add-invoice-form" onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form id="add-invoice-form" onSubmit={handleSubmit} className="p-6 space-y-3">
 
           {/* Client Section */}
           <div>

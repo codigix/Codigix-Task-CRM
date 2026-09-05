@@ -267,11 +267,11 @@ const WorkloadReportPage = ({ department }) => {
         {isLoading ? (
           <div className="py-16 text-center text-sm text-gray-400">Loading…</div>
         ) : rows.length === 0 ? (
-          <div className="py-16 text-center text-sm text-gray-400 bg-white border border-gray-200 rounded-lg">
+          <div className="py-16 text-center text-sm text-gray-400 bg-white border border-gray-200 rounded">
             {isManager ? 'No work items on this board yet.' : 'You have no work items assigned.'}
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-[13px] whitespace-nowrap">
                 <thead className="bg-gray-50 border-b border-gray-200 text-gray-600">
@@ -334,7 +334,7 @@ const WorkloadReportPage = ({ department }) => {
                         <td key={c} className="text-center px-3 py-2.5 font-semibold text-gray-700">{totals[c]}</td>
                       ))}
                       {hasOther && <td className="text-center px-3 py-2.5 font-semibold text-gray-700">{totals.other}</td>}
-                      <td className="text-center px-4 py-2.5 font-bold text-gray-900">{totals.total}</td>
+                      <td className="text-center px-4 py-2.5  text-gray-900">{totals.total}</td>
                       {isManager && <td className="px-4 py-2.5" />}
                     </tr>
                   </tfoot>

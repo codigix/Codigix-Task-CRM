@@ -411,8 +411,8 @@ const ITTeamsPage = ({ department }) => {
             { title: 'Total Projects', val: projects.length, sub: 'Projects Assigned', icon: Folder, color: 'text-emerald-500', bg: 'bg-emerald-50' },
             { title: 'Active Assignments', val: activeAssignments, sub: 'Across All Projects', icon: Calendar, color: 'text-blue-500', bg: 'bg-blue-50' },
           ].map((k, i) => (
-            <div key={i} className="bg-white p-4 rounded-lg border border-gray-100 flex items-center gap-4 hover:shadow-sm transition-shadow">
-              <div className={`p-3.5 rounded-lg ${k.bg} ${k.color} shrink-0`}><k.icon size={22} /></div>
+            <div key={i} className="bg-white p-4 rounded border border-gray-100 flex items-center gap-4 hover:shadow-sm transition-shadow">
+              <div className={`p-3.5 rounded ${k.bg} ${k.color} shrink-0`}><k.icon size={22} /></div>
               <div>
                 <div className="text-sm  text-gray-500 mb-0.5">{k.title}</div>
                 <div className="text-xl  text-gray-900 mb-0.5">{k.val}</div>
@@ -491,7 +491,7 @@ const ITTeamsPage = ({ department }) => {
               </div>
 
               {teams.length > 0 ? (
-                <div className="overflow-x-auto border border-gray-100 rounded-lg shadow-sm">
+                <div className="overflow-x-auto border border-gray-100 rounded shadow-sm">
                   <table className="w-full text-left border-collapse bg-white">
                     <thead>
                       <tr className="border-b border-gray-100 text-xs  text-gray-500 bg-gray-50/50">
@@ -622,7 +622,7 @@ const ITTeamsPage = ({ department }) => {
                             {isExpanded && (
                               <tr className="bg-gray-50/30">
                                 <td colSpan="7" className="py-3 px-8">
-                                  <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden mb-2">
+                                  <div className="border border-gray-200 rounded bg-white shadow-sm overflow-hidden mb-2">
                                     <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
                                       <span className="text-[10px]  text-gray-500 uppercase tracking-wider">Allocated Team Members</span>
                                       <button
@@ -689,7 +689,7 @@ const ITTeamsPage = ({ department }) => {
                                     </table>
                                   </div>
 
-                                  <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden mt-4 mb-2">
+                                  <div className="border border-gray-200 rounded bg-white shadow-sm overflow-hidden mt-4 mb-2">
                                     <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
                                       <span className="text-[10px]  text-gray-500 uppercase tracking-wider">Assigned Projects</span>
                                       <button
@@ -1049,7 +1049,7 @@ const ITTeamsPage = ({ department }) => {
       {/* Create Team Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-5 w-full max-w-3xl shadow-xl border border-gray-200 overflow-y-auto max-h-[90vh]">
+          <div className="bg-white rounded p-5 w-full max-w-3xl shadow-xl border border-gray-200 overflow-y-auto max-h-[90vh]">
             {/* Header */}
             <div className="flex justify-between items-center pb-3 border-b border-gray-100 mb-4">
               <div>
@@ -1071,7 +1071,7 @@ const ITTeamsPage = ({ department }) => {
 
             <form onSubmit={handleCreateTeam} className="space-y-4">
               {/* Section 1: Team & Manager Information */}
-              <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-100 mb-4">
+              <div className="bg-gray-50/50 rounded p-3 border border-gray-100 mb-4">
                 <div className="flex items-center gap-2 mb-3 text-xs  text-gray-900 border-b border-gray-100 pb-1.5">
                   <Briefcase size={14} className="text-indigo-600" />
                   <span>Team & Manager Information</span>
@@ -1147,7 +1147,7 @@ const ITTeamsPage = ({ department }) => {
               </div>
 
               {/* Section 2: Allocate Team Member (Form) */}
-              <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-100 mb-4">
+              <div className="bg-gray-50/50 rounded p-3 border border-gray-100 mb-4">
                 <div className="flex items-center gap-2 mb-3 text-xs  text-gray-900 border-b border-gray-100 pb-1.5">
                   <UserPlus size={14} className="text-emerald-600" />
                   <span>Allocate Team Member</span>
@@ -1241,7 +1241,7 @@ const ITTeamsPage = ({ department }) => {
               </div>
 
               {/* Section 3: Allocated Members Table */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+              <div className="border border-gray-200 rounded overflow-hidden mb-4">
                 <div className="bg-gray-50 px-3 py-2 border-b border-gray-200 flex justify-between items-center">
                   <span className="text-xs  text-gray-900">Allocated Members List ({newTeam.members.length})</span>
                 </div>
@@ -1290,7 +1290,7 @@ const ITTeamsPage = ({ department }) => {
               </div>
 
               {/* Section 4: Assign IT Project (Form) */}
-              <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-100 mb-4">
+              <div className="bg-gray-50/50 rounded p-3 border border-gray-100 mb-4">
                 <div className="flex items-center gap-2 mb-3 text-xs  text-gray-900 border-b border-gray-100 pb-1.5">
                   <Folder size={14} className="text-indigo-600" />
                   <span>Assign IT Project</span>
@@ -1326,7 +1326,7 @@ const ITTeamsPage = ({ department }) => {
               </div>
 
               {/* Section 5: Assigned Projects List Table */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+              <div className="border border-gray-200 rounded overflow-hidden mb-4">
                 <div className="bg-gray-50 px-3 py-2 border-b border-gray-200 flex justify-between items-center">
                   <span className="text-xs  text-gray-900">Assigned Projects List ({newTeam.project_ids?.length || 0})</span>
                 </div>
@@ -1601,7 +1601,7 @@ const ITTeamsPage = ({ department }) => {
       {/* View Team Modal */}
       {isViewModalOpen && selectedTeam && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-5 w-full max-w-xl shadow-xl border border-gray-150 max-h-[85vh] overflow-y-auto custom-scrollbar">
+          <div className="bg-white rounded p-5 w-full max-w-xl shadow-xl border border-gray-150 max-h-[85vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-150">
               <div className="flex items-center gap-2">
                 <Users className="text-indigo-600" size={18} />
@@ -1620,7 +1620,7 @@ const ITTeamsPage = ({ department }) => {
 
             <div className="space-y-4 text-xs">
               {/* Manager & Description Section */}
-              <div className="grid grid-cols-2 gap-4 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
+              <div className="grid grid-cols-2 gap-4 bg-gray-50/50 p-3 rounded border border-gray-100">
                 <div>
                   <h3 className=" text-gray-500 uppercase text-[9px] tracking-wider mb-1">Team Manager</h3>
                   {(() => {
@@ -1653,7 +1653,7 @@ const ITTeamsPage = ({ department }) => {
                 <div className="flex justify-between items-center mb-2">
                   <h3 className=" text-gray-900 uppercase text-[9px] tracking-wider">Allocated Members ({selectedTeam.members?.length || 0})</h3>
                 </div>
-                <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                <div className="border border-gray-200 rounded overflow-hidden bg-white">
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="border-b border-gray-100 text-gray-400 bg-gray-50/20">
@@ -1706,7 +1706,7 @@ const ITTeamsPage = ({ department }) => {
                     <Plus size={12} /> Assign Project
                   </button>
                 </div>
-                <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                <div className="border border-gray-200 rounded overflow-hidden bg-white">
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="border-b border-gray-100 text-gray-400 bg-gray-50/20">

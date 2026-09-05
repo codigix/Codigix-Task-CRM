@@ -130,7 +130,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
           }
           return parsed;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return defaultCols;
   });
@@ -556,7 +556,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                   onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'space' ? null : 'space')}
                   className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded border border-gray-200 hover:border-gray-300 font-medium text-gray-700 shadow-sm"
                 >
-                  <span className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
+                  <span className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center text-[10px] ">
                     {selectedSpace !== 'ALL' ? selectedSpace : config.defaultPrefix}
                   </span>
                   <span>
@@ -572,7 +572,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                         onClick={() => { setSelectedSpace(sp.code); setActiveFilterDropdown(null); }}
                         className={`px-3 py-2 text-xs flex items-center space-x-2 hover:bg-gray-50 cursor-pointer ${selectedSpace === sp.code ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700'}`}
                       >
-                        <span className="w-4 h-4 rounded bg-gray-200 text-gray-700 flex items-center justify-center text-[9px] font-bold">
+                        <span className="w-4 h-4 rounded bg-gray-200 text-gray-700 flex items-center justify-center text-[9px] ">
                           {sp.code}
                         </span>
                         <span>{sp.name}</span>
@@ -595,7 +595,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                   <div className="absolute left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-30">
                     <div
                       onClick={() => { setSelectedProjectId('ALL'); setActiveFilterDropdown(null); }}
-                      className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedProjectId === 'ALL' ? 'font-bold text-blue-600' : 'text-gray-700'}`}
+                      className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedProjectId === 'ALL' ? ' text-blue-600' : 'text-gray-700'}`}
                     >
                       All Projects
                     </div>
@@ -603,7 +603,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                       <div
                         key={p.id}
                         onClick={() => { setSelectedProjectId(p.id); setActiveFilterDropdown(null); }}
-                        className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer truncate ${Number(selectedProjectId) === Number(p.id) ? 'font-bold text-blue-600' : 'text-gray-700'}`}
+                        className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer truncate ${Number(selectedProjectId) === Number(p.id) ? ' text-blue-600' : 'text-gray-700'}`}
                       >
                         {p.name}
                       </div>
@@ -625,7 +625,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                   <div className="absolute left-0 mt-1 w-36 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-30">
                     <div
                       onClick={() => { setSelectedType('ALL'); setActiveFilterDropdown(null); }}
-                      className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedType === 'ALL' ? 'font-bold text-blue-600' : 'text-gray-700'}`}
+                      className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedType === 'ALL' ? ' text-blue-600' : 'text-gray-700'}`}
                     >
                       All Types
                     </div>
@@ -633,7 +633,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                       <div
                         key={t.name}
                         onClick={() => { setSelectedType(t.name); setActiveFilterDropdown(null); }}
-                        className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer flex items-center space-x-2 ${selectedType === t.name ? 'font-bold text-blue-600' : 'text-gray-700'}`}
+                        className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer flex items-center space-x-2 ${selectedType === t.name ? ' text-blue-600' : 'text-gray-700'}`}
                       >
                         <t.icon size={13} />
                         <span>{t.name}</span>
@@ -658,7 +658,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                       <div
                         key={p}
                         onClick={() => { setSelectedPriority(p); setActiveFilterDropdown(null); }}
-                        className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedPriority === p ? 'font-bold text-blue-600' : 'text-gray-700'}`}
+                        className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedPriority === p ? ' text-blue-600' : 'text-gray-700'}`}
                       >
                         {p === 'ALL' ? 'All Priorities' : p}
                       </div>
@@ -680,13 +680,13 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                   <div className="absolute left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-30 max-h-60 overflow-y-auto">
                     <div
                       onClick={() => { setSelectedAssignee('ALL'); setActiveFilterDropdown(null); }}
-                      className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedAssignee === 'ALL' ? 'font-bold text-blue-600' : 'text-gray-700'}`}
+                      className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedAssignee === 'ALL' ? ' text-blue-600' : 'text-gray-700'}`}
                     >
                       All Assignees
                     </div>
                     <div
                       onClick={() => { setSelectedAssignee('UNASSIGNED'); setActiveFilterDropdown(null); }}
-                      className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedAssignee === 'UNASSIGNED' ? 'font-bold text-blue-600' : 'text-gray-700'}`}
+                      className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedAssignee === 'UNASSIGNED' ? ' text-blue-600' : 'text-gray-700'}`}
                     >
                       Unassigned
                     </div>
@@ -696,7 +696,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                         <div
                           key={u.id}
                           onClick={() => { setSelectedAssignee(name); setActiveFilterDropdown(null); }}
-                          className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer truncate ${selectedAssignee === name ? 'font-bold text-blue-600' : 'text-gray-700'}`}
+                          className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer truncate ${selectedAssignee === name ? ' text-blue-600' : 'text-gray-700'}`}
                         >
                           {name}
                         </div>
@@ -740,7 +740,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className="w-72 min-w-[280px] bg-gray-50 rounded-lg flex flex-col max-h-[calc(100vh-220px)] border border-gray-200 shadow-sm shrink-0"
+                              className="w-72 min-w-[280px] bg-gray-50 rounded flex flex-col max-h-[calc(100vh-220px)] border border-gray-200 shadow-sm shrink-0"
                             >
                               {/* COLUMN HEADER */}
                               <div
@@ -749,7 +749,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                               >
                                 <div className="flex items-center space-x-2">
                                   <span>{col}</span>
-                                  <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] font-bold">
+                                  <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] ">
                                     {colCards.length}
                                   </span>
                                 </div>
@@ -840,7 +840,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                                                 {/* ASSIGNEE AVATAR POPOVER TRIGGER */}
                                                 <button
                                                   onClick={(e) => handleOpenCardAssignee(e, cardKey)}
-                                                  className={`w-6 h-6 rounded-full font-bold flex items-center justify-center text-[10px] hover:ring-2 hover:ring-blue-400 transition ${!card.assignee || card.assignee === 'Unassigned' ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}
+                                                  className={`w-6 h-6 rounded-full  flex items-center justify-center text-[10px] hover:ring-2 hover:ring-blue-400 transition ${!card.assignee || card.assignee === 'Unassigned' ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}
                                                   title={`Assigned to: ${card.assignee || 'Unassigned'}`}
                                                 >
                                                   {!card.assignee || card.assignee === 'Unassigned' ? <User size={12} className="text-gray-500" /> : getInitials(card.assignee)}
@@ -910,7 +910,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                     {/* ADD COLUMN BUTTON */}
                     <div className="w-64 shrink-0">
                       {isAddingColumn ? (
-                        <div className="p-3 bg-white rounded-lg border border-gray-300 shadow-sm">
+                        <div className="p-3 bg-white rounded border border-gray-300 shadow-sm">
                           <input
                             type="text"
                             autoFocus
@@ -941,7 +941,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                       ) : (
                         <button
                           onClick={() => setIsAddingColumn(true)}
-                          className="w-full h-10 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1 transition bg-white/40 hover:bg-white"
+                          className="w-full h-10 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded text-xs font-semibold text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1 transition bg-white/40 hover:bg-white"
                         >
                           <Plus size={14} />
                           <span>Add column</span>
@@ -978,7 +978,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
       {/* CARD SUBTASKS POPOVER OVERLAY */}
       {openSubtasksPopover && (
         <div
-          className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-3 text-xs w-72 animate-fade-in"
+          className="fixed z-50 bg-white rounded shadow-xl border border-gray-200 p-3 text-xs w-72 animate-fade-in"
           style={{ top: subtaskPos.top, left: subtaskPos.left }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -1027,7 +1027,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
       {/* CARD ASSIGNEE POPOVER OVERLAY */}
       {openCardAssigneeDropdown && (
         <div
-          className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-2 text-xs w-60 animate-fade-in"
+          className="fixed z-50 bg-white rounded shadow-xl border border-gray-200 p-2 text-xs w-60 animate-fade-in"
           style={{ top: cardAssigneePos.top, left: cardAssigneePos.left }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -1049,7 +1049,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
               onClick={() => handleUpdateCardAssignee(openCardAssigneeDropdown, 'Unassigned')}
               className="p-1.5 hover:bg-gray-50 rounded cursor-pointer flex items-center space-x-2 text-gray-700"
             >
-              <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 font-bold flex items-center justify-center text-[9px]">U</div>
+              <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-600  flex items-center justify-center text-[9px]">U</div>
               <span>Unassigned</span>
             </div>
             {departmentUsersList
@@ -1065,7 +1065,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                     onClick={() => handleUpdateCardAssignee(openCardAssigneeDropdown, name)}
                     className="p-1.5 hover:bg-gray-50 rounded cursor-pointer flex items-center space-x-2 text-gray-700"
                   >
-                    <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[9px]">
+                    <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700  flex items-center justify-center text-[9px]">
                       {getInitials(name)}
                     </div>
                     <span className="truncate">{name}</span>

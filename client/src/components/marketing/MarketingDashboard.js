@@ -48,7 +48,7 @@ const MarketingDashboard = () => {
   const KPICard = ({ title, value, change, icon: Icon, iconBg, iconColor }) => (
     <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col justify-between h-full">
       <div className="flex items-center gap-3 mb-4">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconBg}`}>
+        <div className={`w-10 h-10 rounded flex items-center justify-center ${iconBg}`}>
           <Icon size={20} className={iconColor} />
         </div>
         <div>
@@ -90,7 +90,7 @@ const MarketingDashboard = () => {
             endDate={dateRange.endDate}
             onChange={(s, e) => setDateRange({ startDate: s, endDate: e })}
           />
-          <button className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+          <button className="p-2 bg-white border border-gray-200 rounded hover:bg-gray-50">
             <MoreHorizontal size={16} className="text-gray-600" />
           </button>
         </div>
@@ -206,12 +206,12 @@ const MarketingDashboard = () => {
             ))}
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+            <div className="bg-gray-50 p-3 rounded border border-gray-100">
               <p className="text-xs text-gray-500 mb-1">Conversion Rate</p>
               <p className="text-lg  text-gray-900">10.1%</p>
               <p className="text-[10px] text-green-500 mt-1 flex items-center"><TrendingUp size={10} className="mr-1" /> 1.6% vs last 7 days</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+            <div className="bg-gray-50 p-3 rounded border border-gray-100">
               <p className="text-xs text-gray-500 mb-1">Avg. Deal Size</p>
               <p className="text-lg  text-gray-900">$3,890</p>
               <p className="text-[10px] text-green-500 mt-1 flex items-center"><TrendingUp size={10} className="mr-1" /> 8.4% vs last 7 days</p>
@@ -247,7 +247,7 @@ const MarketingDashboard = () => {
               return (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${e.color}15` }}>
+                    <div className="w-8 h-8 rounded flex items-center justify-center" style={{ backgroundColor: `${e.color}15` }}>
                       <EIcon size={14} color={e.color} />
                     </div>
                     <div>
@@ -353,7 +353,7 @@ const MarketingDashboard = () => {
             </div>
             <p className="text-sm font-semibold relative z-10">Active Campaigns</p>
             <p className="text-xs opacity-80 relative z-10 mb-4">14 / 18 Running</p>
-            <button className="w-full py-2 bg-white/20 hover:bg-white/30 transition-colors rounded-lg text-sm  relative z-10">View All Campaigns</button>
+            <button className="w-full py-2 bg-white/20 hover:bg-white/30 transition-colors rounded text-sm  relative z-10">View All Campaigns</button>
           </div>
         </div>
 

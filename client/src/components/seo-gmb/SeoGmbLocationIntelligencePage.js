@@ -30,17 +30,17 @@ const SeoGmbLocationIntelligencePage = () => {
   const KPICard = ({ title, value, change, changeLabel, icon: Icon, colorClass }) => (
     <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center h-full relative overflow-hidden group">
       <div className="flex items-center gap-3 mb-2">
-        <div className={`p-2 rounded-lg bg-opacity-10 ${colorClass.replace('text', 'bg')}`}>
+        <div className={`p-2 rounded bg-opacity-10 ${colorClass.replace('text', 'bg')}`}>
           <Icon size={18} className={colorClass} />
         </div>
         <span className="text-gray-900 text-xs font-semibold">{title}</span>
       </div>
       <div>
         <div className="flex items-end gap-2">
-          <span className="text-2xl font-bold text-gray-900 leading-none">{value}</span>
+          <span className="text-2xl  text-gray-900 leading-none">{value}</span>
         </div>
         {change && (
-          <span className={`text-[9px] font-bold ${change.toString().startsWith('-') ? 'text-red-500' : 'text-green-500'} block mt-1.5`}>
+          <span className={`text-[9px]  ${change.toString().startsWith('-') ? 'text-red-500' : 'text-green-500'} block mt-1.5`}>
             {change.toString().startsWith('-') ? '↓' : '↑'} {change.toString().replace('-', '')} <span className="text-gray-400 font-medium">{changeLabel}</span>
           </span>
         )}
@@ -153,7 +153,7 @@ const SeoGmbLocationIntelligencePage = () => {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-sm font-bold text-gray-900">32,756</span>
+                  <span className="text-sm  text-gray-900">32,756</span>
                 </div>
               </div>
             </div>
@@ -202,7 +202,7 @@ const SeoGmbLocationIntelligencePage = () => {
                     <td className="py-2.5 text-center text-gray-500">{row.v}</td>
                     <td className="py-2.5 text-center text-green-600 font-semibold">{row.t3}</td>
                     <td className="py-2.5 text-center text-blue-600 font-semibold">{row.t10}</td>
-                    <td className="py-2.5 text-center font-bold">{row.p}</td>
+                    <td className="py-2.5 text-center ">{row.p}</td>
                   </tr>
                 ))}
               </tbody>
@@ -231,7 +231,7 @@ const SeoGmbLocationIntelligencePage = () => {
                   <tr key={i} className="text-gray-700">
                     <td className="py-2.5 font-medium text-indigo-600">{row.k}</td>
                     <td className="py-2.5 text-gray-500">{row.l}</td>
-                    <td className="py-2.5 text-center text-green-600 font-bold">#{row.p}</td>
+                    <td className="py-2.5 text-center text-green-600 ">#{row.p}</td>
                   </tr>
                 ))}
               </tbody>
@@ -290,10 +290,10 @@ const SeoGmbLocationIntelligencePage = () => {
                 ].map((row, i) => (
                   <tr key={i} className={`text-gray-700 ${row.c === 'Your Business' ? 'bg-indigo-50/50' : ''}`}>
                     <td className={`py-2.5 font-medium ${row.c === 'Your Business' ? 'text-indigo-600' : ''}`}>{row.c}</td>
-                    <td className="py-2.5 text-center font-bold">{row.m}</td>
-                    <td className="py-2.5 text-center font-bold">{row.b}</td>
-                    <td className="py-2.5 text-center font-bold">{row.p}</td>
-                    <td className="py-2.5 text-center font-bold">{row.h}</td>
+                    <td className="py-2.5 text-center ">{row.m}</td>
+                    <td className="py-2.5 text-center ">{row.b}</td>
+                    <td className="py-2.5 text-center ">{row.p}</td>
+                    <td className="py-2.5 text-center ">{row.h}</td>
                   </tr>
                 ))}
               </tbody>
@@ -336,7 +336,7 @@ const SeoGmbLocationIntelligencePage = () => {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-xl font-bold text-gray-900">32,456</span>
+                  <span className="text-xl  text-gray-900">32,456</span>
                 </div>
               </div>
               <div className="flex-1 pl-6 space-y-3">
@@ -346,7 +346,7 @@ const SeoGmbLocationIntelligencePage = () => {
                       <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }}></div>
                       {item.name}
                     </div>
-                    <span className="text-gray-900 font-bold">{item.value}%</span>
+                    <span className="text-gray-900 ">{item.value}%</span>
                   </div>
                 ))}
               </div>
@@ -408,9 +408,9 @@ const SeoGmbLocationIntelligencePage = () => {
                   <tr key={idx} className="text-gray-700">
                     <td className="py-2.5 font-medium">{row.q}</td>
                     <td className="py-2.5 text-center">
-                      <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-600">{row.i}</span>
+                      <span className="px-2 py-0.5 rounded text-[9px]  bg-blue-50 text-blue-600">{row.i}</span>
                     </td>
-                    <td className="py-2.5 text-center font-bold">{row.s.toLocaleString()}</td>
+                    <td className="py-2.5 text-center ">{row.s.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -483,9 +483,9 @@ const SeoGmbLocationIntelligencePage = () => {
                   <td className="py-2.5 text-center">{row.v}</td>
                   <td className="py-2.5 text-center">{row.t.toLocaleString()}</td>
                   <td className="py-2.5 text-center">{row.c}</td>
-                  <td className="py-2.5 text-center font-bold text-gray-900">{row.r}</td>
+                  <td className="py-2.5 text-center  text-gray-900">{row.r}</td>
                   <td className="py-2.5 text-center">
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${row.s === 'Active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{row.s}</span>
+                    <span className={`px-2 py-0.5 rounded text-[9px]  ${row.s === 'Active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>{row.s}</span>
                   </td>
                   <td className="py-2.5 text-right flex justify-end gap-2">
                     <button className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-indigo-600"><Eye size={14} /></button>
@@ -550,15 +550,15 @@ const SeoGmbLocationIntelligencePage = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs border-b border-gray-50 pb-2">
                   <span className="text-gray-700">1. South Mumbai</span>
-                  <span className="font-bold text-green-600">92/100</span>
+                  <span className=" text-green-600">92/100</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-b border-gray-50 pb-2">
                   <span className="text-gray-700">2. Koramangala, Bengaluru</span>
-                  <span className="font-bold text-green-600">89/100</span>
+                  <span className=" text-green-600">89/100</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-b border-gray-50 pb-2">
                   <span className="text-gray-700">3. Hinjewadi, Pune</span>
-                  <span className="font-bold text-green-600">85/100</span>
+                  <span className=" text-green-600">85/100</span>
                 </div>
               </div>
             </div>
@@ -568,15 +568,15 @@ const SeoGmbLocationIntelligencePage = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs border-b border-gray-50 pb-2">
                   <span className="text-gray-700">1. North Zone, Delhi</span>
-                  <span className="font-bold text-red-600">32/100</span>
+                  <span className=" text-red-600">32/100</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-b border-gray-50 pb-2">
                   <span className="text-gray-700">2. Industrial Area, Kolkata</span>
-                  <span className="font-bold text-red-600">35/100</span>
+                  <span className=" text-red-600">35/100</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-b border-gray-50 pb-2">
                   <span className="text-gray-700">3. Old City, Hyderabad</span>
-                  <span className="font-bold text-red-600">38/100</span>
+                  <span className=" text-red-600">38/100</span>
                 </div>
               </div>
             </div>
@@ -600,7 +600,7 @@ const SeoGmbLocationIntelligencePage = () => {
               { n: 'Search Intent Report', d: 'Search intent by location', active: false },
               { n: 'Multi-Location Summary', d: 'All locations summary report', active: false },
             ].map((r, i) => (
-              <div key={i} className={`p-3 rounded-lg border cursor-pointer transition flex items-start gap-3 ${r.active ? 'border-indigo-600 bg-indigo-50/50' : 'border-transparent hover:border-gray-200'}`}>
+              <div key={i} className={`p-3 rounded border cursor-pointer transition flex items-start gap-3 ${r.active ? 'border-indigo-600 bg-indigo-50/50' : 'border-transparent hover:border-gray-200'}`}>
                 <FileText size={16} className={r.active ? 'text-indigo-600' : 'text-gray-400'} />
                 <div>
                   <h4 className={`text-xs font-semibold ${r.active ? 'text-indigo-900' : 'text-gray-700'}`}>{r.n}</h4>
@@ -609,7 +609,7 @@ const SeoGmbLocationIntelligencePage = () => {
               </div>
             ))}
           </div>
-          <button className="w-full mt-6 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition">
+          <button className="w-full mt-6 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition">
             Generate Custom Report
           </button>
         </div>
@@ -640,7 +640,7 @@ const SeoGmbLocationIntelligencePage = () => {
                   <td className="py-3 text-gray-500">{row.d}</td>
                   <td className="py-3">{row.t}</td>
                   <td className="py-3 text-center">
-                    <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-green-50 text-green-600">{row.s}</span>
+                    <span className="px-2 py-0.5 rounded text-[9px]  bg-green-50 text-green-600">{row.s}</span>
                   </td>
                   <td className="py-3 text-right">
                     <button className="text-gray-400 hover:text-indigo-600 p-1"><Download size={14} /></button>
@@ -738,9 +738,9 @@ const SeoGmbLocationIntelligencePage = () => {
                 <Globe size={14} className="text-gray-400" /> {int.n}
               </div>
               {int.s === 'Connected' ? (
-                <span className="text-[9px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">Connected</span>
+                <span className="text-[9px]  text-green-600 bg-green-50 px-2 py-0.5 rounded">Connected</span>
               ) : (
-                <button className="text-[9px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition">Connect</button>
+                <button className="text-[9px]  text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition">Connect</button>
               )}
             </div>
           ))}
@@ -754,11 +754,11 @@ const SeoGmbLocationIntelligencePage = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-6 py-4 flex flex-wrap items-center justify-between gap-4 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <div className="p-2 border border-gray-200 rounded-lg">
+          <div className="p-2 border border-gray-200 rounded">
             <MapPin className="text-gray-600" size={20} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 leading-tight">Location Intelligence</h1>
+            <h1 className="text-xl  text-gray-900 leading-tight">Location Intelligence</h1>
             <p className="text-xs text-gray-500">Discover location-based opportunities and track performance across regions</p>
           </div>
         </div>
@@ -776,7 +776,7 @@ const SeoGmbLocationIntelligencePage = () => {
           <button className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">
             <RefreshCw size={14} />
           </button>
-          <button className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+          <button className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
             <Download size={14} /> Export Report
           </button>
         </div>
@@ -789,9 +789,9 @@ const SeoGmbLocationIntelligencePage = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`py-3 text-xs font-bold border-b-[3px] transition-colors whitespace-nowrap ${activeTab === tab
-                  ? 'border-indigo-600 text-indigo-700'
-                  : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
+              className={`py-3 text-xs  border-b-[3px] transition-colors whitespace-nowrap ${activeTab === tab
+                ? 'border-indigo-600 text-indigo-700'
+                : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
                 }`}
             >
               {tab}

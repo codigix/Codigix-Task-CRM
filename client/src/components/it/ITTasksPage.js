@@ -276,7 +276,7 @@ const ITTasksPage = () => {
     setOpenFilterDropdown(openFilterDropdown === name ? null : name);
   };
 
-const tableColumns = React.useMemo(() => {
+  const tableColumns = React.useMemo(() => {
     return ALL_COLUMNS.map(col => {
       let renderFn;
       switch (col.key) {
@@ -310,7 +310,7 @@ const tableColumns = React.useMemo(() => {
             const isUnass = !row.assignee || row.assignee.toLowerCase() === 'unassigned' || row.assignee.toLowerCase() === 'none';
             return (
               <div className="flex items-center gap-2">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${isUnass ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px]  ${isUnass ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
                   {isUnass ? <User size={11} className="text-gray-500" /> : (row.assignee ? row.assignee.charAt(0).toUpperCase() : "U")}
                 </div>
                 <span className={isUnass ? 'text-gray-500 font-normal' : 'text-gray-900 font-medium'}>
@@ -510,7 +510,7 @@ const tableColumns = React.useMemo(() => {
                               }
                             }}
                             title={`Filter tasks by ${fullName}`}
-                            className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all relative border-2 border-white cursor-pointer ${isSelected
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px]  transition-all relative border-2 border-white cursor-pointer ${isSelected
                               ? 'ring-2 ring-blue-600 ring-offset-1 z-20 scale-110 shadow-md'
                               : 'hover:z-10 hover:scale-105 opacity-90 hover:opacity-100'
                               } ${colorClass}`}
@@ -520,7 +520,7 @@ const tableColumns = React.useMemo(() => {
                         );
                       })}
                       {usersList.length > 5 && (
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-100 text-gray-600 border-2 border-white z-0 ml-[-8px]" title={`${usersList.length - 5} more members`}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px]  bg-gray-100 text-gray-600 border-2 border-white z-0 ml-[-8px]" title={`${usersList.length - 5} more members`}>
                           +{usersList.length - 5}
                         </div>
                       )}
@@ -532,11 +532,11 @@ const tableColumns = React.useMemo(() => {
                       </button>
                       {openFilterDropdown === 'project' && (
                         <div className="absolute left-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs max-h-60 overflow-y-auto">
-                          <div onClick={() => { setSelectedProjectId('ALL'); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedProjectId === 'ALL' ? 'font-bold text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
+                          <div onClick={() => { setSelectedProjectId('ALL'); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedProjectId === 'ALL' ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                             All Projects
                           </div>
                           {projectsList.map(p => (
-                            <div key={p.id} onClick={() => { setSelectedProjectId(p.id); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${Number(selectedProjectId) === Number(p.id) ? 'font-bold text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
+                            <div key={p.id} onClick={() => { setSelectedProjectId(p.id); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${Number(selectedProjectId) === Number(p.id) ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                               {p.name || p.title}
                             </div>
                           ))}
@@ -551,7 +551,7 @@ const tableColumns = React.useMemo(() => {
                       {openFilterDropdown === 'type' && (
                         <div className="absolute left-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs">
                           {['ALL', 'Task', 'Bug', 'Story', 'Test'].map(t => (
-                            <div key={t} onClick={() => { setSelectedType(t); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedType === t ? 'font-bold text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
+                            <div key={t} onClick={() => { setSelectedType(t); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedType === t ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                               {t === 'ALL' ? 'All Types' : t}
                             </div>
                           ))}
@@ -566,7 +566,7 @@ const tableColumns = React.useMemo(() => {
                       {openFilterDropdown === 'status' && (
                         <div className="absolute left-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs">
                           {['ALL', 'TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'].map(st => (
-                            <div key={st} onClick={() => { setSelectedStatus(st); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedStatus === st ? 'font-bold text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
+                            <div key={st} onClick={() => { setSelectedStatus(st); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedStatus === st ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                               {st === 'ALL' ? 'All Statuses' : st}
                             </div>
                           ))}
@@ -581,7 +581,7 @@ const tableColumns = React.useMemo(() => {
                       {openFilterDropdown === 'priority' && (
                         <div className="absolute left-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs">
                           {['ALL', 'Low', 'Medium', 'High'].map(pr => (
-                            <div key={pr} onClick={() => { setSelectedPriority(pr); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedPriority === pr ? 'font-bold text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
+                            <div key={pr} onClick={() => { setSelectedPriority(pr); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedPriority === pr ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                               {pr === 'ALL' ? 'All Priorities' : pr}
                             </div>
                           ))}
@@ -600,7 +600,7 @@ const tableColumns = React.useMemo(() => {
                           </button>
                           {openFilterDropdown === 'assignee' && (
                             <div className="absolute left-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-md shadow-xl py-1 z-50 text-xs text-gray-700 max-h-60 overflow-y-auto">
-                              <div onClick={() => { setSelectedAssignees([]); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedAssignees.length === 0 ? 'font-bold text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
+                              <div onClick={() => { setSelectedAssignees([]); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedAssignees.length === 0 ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                                 All Assignees
                               </div>
                               <div onClick={() => {
@@ -609,7 +609,7 @@ const tableColumns = React.useMemo(() => {
                                 } else {
                                   setSelectedAssignees(prev => [...prev, 'UNASSIGNED']);
                                 }
-                              }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedAssignees.includes('UNASSIGNED') ? 'font-bold text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
+                              }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedAssignees.includes('UNASSIGNED') ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                                 Unassigned
                               </div>
                               {usersList.map(u => {
@@ -623,7 +623,7 @@ const tableColumns = React.useMemo(() => {
                                     } else {
                                       setSelectedAssignees(prev => [...prev, uName]);
                                     }
-                                  }} className={`p-2 hover:bg-gray-50 cursor-pointer ${isSelected ? 'font-bold text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
+                                  }} className={`p-2 hover:bg-gray-50 cursor-pointer ${isSelected ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                                     {uName}
                                   </div>
                                 );
@@ -774,11 +774,11 @@ const tableColumns = React.useMemo(() => {
                   </div>
                 </div>
 
-                
+
                 <div className="mt-4 border border-gray-200 rounded bg-white overflow-hidden w-full max-w-full">
-                  <DataTable 
-                    columns={tableColumns} 
-                    data={filteredTasks} 
+                  <DataTable
+                    columns={tableColumns}
+                    data={filteredTasks}
                     visibleColumns={Array.from(selectedColumns)}
                     hideSearch={true}
                     onRowClick={(row) => setSelectedIssue(row.issue_key || row.key)}

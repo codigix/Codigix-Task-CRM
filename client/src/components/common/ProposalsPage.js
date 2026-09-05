@@ -332,7 +332,7 @@ const ProposalsPage = ({ onViewDetails }) => {
                 <MoreVertical size={16} className="text-gray-600" />
               </button>
               {showActionMenu === proposal.id && (
-                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-20 py-1">
+                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded shadow-xl z-20 py-1">
                   <button
                     onClick={() => { setShowActionMenu(null); setSelectedProposalId(proposal.id); }}
                     className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 flex items-center gap-2 text-gray-700"
@@ -390,7 +390,7 @@ const ProposalsPage = ({ onViewDetails }) => {
             className="cursor-pointer group mb-2"
             onClick={() => setSelectedProposalId(proposal.id)}
           >
-            <h3 className="font-bold text-gray-900 text-sm group-hover:text-blue-600 transition-colors truncate" title={proposal.lead_name || clientName}>
+            <h3 className=" text-gray-900 text-sm group-hover:text-blue-600 transition-colors truncate" title={proposal.lead_name || clientName}>
               {proposal.lead_name || clientName}
             </h3>
             {proposal.lead_name && clientName && (
@@ -431,7 +431,7 @@ const ProposalsPage = ({ onViewDetails }) => {
             </p>
           )}
 
-          <div className="space-y-1.5 mb-3 text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+          <div className="space-y-1.5 mb-3 text-xs text-gray-600 bg-gray-50 p-2.5 rounded border border-gray-100">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-gray-400">Date:</span>
               <span className="font-medium text-gray-800">{proposal.proposal_date ? new Date(proposal.proposal_date).toLocaleDateString() : 'N/A'}</span>
@@ -446,7 +446,7 @@ const ProposalsPage = ({ onViewDetails }) => {
         <div className="border-t border-gray-100 pt-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-7 h-7 rounded-full ${getCompanyColor(proposal.client_id)} text-white flex items-center justify-center text-[10px] font-bold shrink-0 shadow-sm`}>
+              <div className={`w-7 h-7 rounded-full ${getCompanyColor(proposal.client_id)} text-white flex items-center justify-center text-[10px]  shrink-0 shadow-sm`}>
                 {getCompanyInitials(clientName)}
               </div>
               <div className="min-w-0">
@@ -504,7 +504,7 @@ const ProposalsPage = ({ onViewDetails }) => {
         <td className="p-3 text-xs">
           {proposal.assigned_to_name ? (
             <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] font-bold">
+              <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] ">
                 {proposal.assigned_to_name.slice(0, 2).toUpperCase()}
               </div>
               <span className="text-gray-700 text-xs font-medium">{proposal.assigned_to_name}</span>
@@ -531,7 +531,7 @@ const ProposalsPage = ({ onViewDetails }) => {
               <MoreVertical size={18} className="text-gray-600" />
             </button>
             {showActionMenu === proposal.id && (
-              <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-xl z-20 py-1">
+              <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded shadow-xl z-20 py-1">
                 <button
                   onClick={() => { setShowActionMenu(null); setSelectedProposalId(proposal.id); }}
                   className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 flex items-center gap-2 text-gray-700"
@@ -686,10 +686,10 @@ const ProposalsPage = ({ onViewDetails }) => {
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Total Proposals</p>
-              <h3 className="text-xl font-bold text-gray-900 mt-1">{proposals.length}</h3>
+              <h3 className="text-xl  text-gray-900 mt-1">{proposals.length}</h3>
               <p className="text-xs text-gray-400 mt-1">Active Pipeline</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
+            <div className="w-10 h-10 rounded bg-blue-50 text-blue-600 flex items-center justify-center  text-lg">
               📄
             </div>
           </div>
@@ -697,12 +697,12 @@ const ProposalsPage = ({ onViewDetails }) => {
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Approved / Sent</p>
-              <h3 className="text-xl font-bold text-indigo-600 mt-1">
+              <h3 className="text-xl  text-indigo-600 mt-1">
                 {proposals.filter(p => p.status === 'Approved' || p.status === 'Sent' || p.status === 'Submitted').length}
               </h3>
               <p className="text-xs text-gray-400 mt-1">Pending Client Action</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg">
+            <div className="w-10 h-10 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center  text-lg">
               📤
             </div>
           </div>
@@ -710,12 +710,12 @@ const ProposalsPage = ({ onViewDetails }) => {
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Accepted (Won)</p>
-              <h3 className="text-xl font-bold text-emerald-600 mt-1">
+              <h3 className="text-xl  text-emerald-600 mt-1">
                 {proposals.filter(p => p.status === 'Accepted').length}
               </h3>
               <p className="text-xs text-emerald-600 font-medium mt-1">Won Proposals</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
+            <div className="w-10 h-10 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center  text-lg">
               🏆
             </div>
           </div>
@@ -723,14 +723,14 @@ const ProposalsPage = ({ onViewDetails }) => {
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Win Conversion Rate</p>
-              <h3 className="text-xl font-bold text-purple-600 mt-1">
+              <h3 className="text-xl  text-purple-600 mt-1">
                 {proposals.length > 0
                   ? Math.round((proposals.filter(p => p.status === 'Accepted').length / proposals.length) * 100)
                   : 0}%
               </h3>
               <p className="text-xs text-gray-400 mt-1">Proposals Converted</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg">
+            <div className="w-10 h-10 rounded bg-purple-50 text-purple-600 flex items-center justify-center  text-lg">
               📊
             </div>
           </div>

@@ -73,11 +73,11 @@ const PricingSection = () => {
           <p className="text-lg text-slate-600 mb-8 font-light leading-relaxed">
             Choose the perfect plan for your team. Start small and upgrade as you grow. No hidden fees, ever.
           </p>
-          
+
           {/* Billing Toggle */}
           <div className="flex items-center justify-center gap-4">
             <span className={`text-sm font-semibold transition-colors ${!isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>Monthly</span>
-            <button 
+            <button
               className="relative inline-flex h-8 w-16 items-center rounded-full bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               onClick={() => setIsAnnual(!isAnnual)}
             >
@@ -85,27 +85,27 @@ const PricingSection = () => {
             </button>
             <div className="flex items-center gap-2">
               <span className={`text-sm font-semibold transition-colors ${isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>Annually</span>
-              <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full">SAVE 20%</span>
+              <span className="bg-red-100 text-red-700 text-[10px]  px-2 py-0.5 rounded-full">SAVE 20%</span>
             </div>
           </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
           {plans.map((plan, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className={`relative bg-white rounded-3xl border transition-all duration-300 ${plan.popular ? 'border-red-500 shadow-2xl shadow-red-900/10 scale-105 z-20' : 'border-slate-200 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:-translate-y-1 z-10'}`}
             >
               {plan.popular && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-red-600 to-rose-500 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-red-600 to-rose-500 text-white text-xs  px-4 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
                   Most Popular
                 </div>
               )}
-              
+
               <div className="p-8">
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+                <h3 className="text-2xl  text-slate-900 mb-2">{plan.name}</h3>
                 <p className="text-sm text-slate-500 mb-6 h-10">{plan.description}</p>
-                
+
                 <div className="mb-8">
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-extrabold text-slate-900">${plan.price}</span>
@@ -115,14 +115,14 @@ const PricingSection = () => {
                     {isAnnual ? 'Billed annually' : 'Billed monthly'}
                   </div>
                 </div>
-                
-                <button className={`w-full py-3.5 rounded-xl font-bold transition-all ${plan.popular ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'}`}>
+
+                <button className={`w-full py-3.5 rounded-xl  transition-all ${plan.popular ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'}`}>
                   Get Started
                 </button>
               </div>
-              
+
               <div className="p-8 border-t border-slate-100 bg-slate-50/50 rounded-b-3xl">
-                <div className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-4">What's included</div>
+                <div className="text-xs  text-slate-900 uppercase tracking-widest mb-4">What's included</div>
                 <ul className="space-y-3">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-3">

@@ -15,7 +15,7 @@ const BookDemoSection = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       const payload = {
         name: `${formData.firstName} ${formData.lastName}`.trim(),
@@ -61,7 +61,7 @@ const BookDemoSection = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex flex-col lg:flex-row gap-16 items-center">
-          
+
           {/* Left Content */}
           <div className="w-full lg:w-1/2">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-semibold mb-6">
@@ -73,7 +73,7 @@ const BookDemoSection = () => {
             <p className="text-lg text-slate-400 mb-8 font-light leading-relaxed max-w-lg">
               Get a personalized walkthrough of our platform. We'll show you how Codigix can be tailored to solve your specific business challenges.
             </p>
-            
+
             <ul className="space-y-4 mb-10">
               {[
                 'Identify bottlenecks in your current workflow',
@@ -87,42 +87,42 @@ const BookDemoSection = () => {
                 </li>
               ))}
             </ul>
-            
+
             <div className="flex items-center gap-4">
-               <div className="flex -space-x-3">
-                  <img src="https://i.pravatar.cc/100?img=12" alt="Sales" className="w-12 h-12 rounded-full border-2 border-slate-900 object-cover" />
-                  <img src="https://i.pravatar.cc/100?img=33" alt="Sales" className="w-12 h-12 rounded-full border-2 border-slate-900 object-cover" />
-               </div>
-               <div className="text-sm text-slate-400">
-                 Speak directly with our <span className="font-semibold text-white">product experts.</span>
-               </div>
+              <div className="flex -space-x-3">
+                <img src="https://i.pravatar.cc/100?img=12" alt="Sales" className="w-12 h-12 rounded-full border-2 border-slate-900 object-cover" />
+                <img src="https://i.pravatar.cc/100?img=33" alt="Sales" className="w-12 h-12 rounded-full border-2 border-slate-900 object-cover" />
+              </div>
+              <div className="text-sm text-slate-400">
+                Speak directly with our <span className="font-semibold text-white">product experts.</span>
+              </div>
             </div>
           </div>
 
           {/* Right Form */}
           <div className="w-full lg:w-1/2 max-w-md mx-auto lg:mx-0">
             <div className="bg-white rounded-3xl p-8 shadow-2xl border border-slate-100">
-              <h3 className="text-2xl font-bold text-slate-900 mb-6">Book your demo</h3>
+              <h3 className="text-2xl  text-slate-900 mb-6">Book your demo</h3>
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600">First Name</label>
-                    <input required type="text" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="Jane" />
+                    <input required type="text" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="Jane" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600">Last Name</label>
-                    <input required type="text" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="Doe" />
+                    <input required type="text" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="Doe" />
                   </div>
                 </div>
-                
+
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600">Work Email</label>
-                  <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="jane@company.com" />
+                  <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="jane@company.com" />
                 </div>
-                
+
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600">Company Size</label>
-                  <select required value={formData.companySize} onChange={(e) => setFormData({...formData, companySize: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all text-slate-700">
+                  <select required value={formData.companySize} onChange={(e) => setFormData({ ...formData, companySize: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all text-slate-700">
                     <option value="">Select size...</option>
                     <option value="1-10">1-10 employees</option>
                     <option value="11-50">11-50 employees</option>
@@ -134,21 +134,21 @@ const BookDemoSection = () => {
 
                 <div className="space-y-1.5 pb-2">
                   <label className="text-xs font-semibold text-slate-600">How can we help?</label>
-                  <textarea required rows="3" value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all resize-none" placeholder="Tell us about your current challenges..."></textarea>
+                  <textarea required rows="3" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all resize-none" placeholder="Tell us about your current challenges..."></textarea>
                 </div>
-                
-                <button type="submit" disabled={isSubmitting || isSuccess} className={`w-full rounded-xl py-3.5 font-bold text-sm transition-all shadow-md hover:-translate-y-0.5 flex items-center justify-center gap-2 ${isSuccess ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-red-600 hover:bg-red-700 text-white disabled:bg-red-400 shadow-[0_4px_15px_rgb(220,38,38,0.2)]'}`}>
-                  {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Submitting...</> : 
-                   isSuccess ? <><CheckCircle2 size={18} /> Request Sent!</> : 
-                   <>Schedule Demo <ArrowRight size={16} /></>}
+
+                <button type="submit" disabled={isSubmitting || isSuccess} className={`w-full rounded-xl py-3.5  text-sm transition-all shadow-md hover:-translate-y-0.5 flex items-center justify-center gap-2 ${isSuccess ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-red-600 hover:bg-red-700 text-white disabled:bg-red-400 shadow-[0_4px_15px_rgb(220,38,38,0.2)]'}`}>
+                  {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Submitting...</> :
+                    isSuccess ? <><CheckCircle2 size={18} /> Request Sent!</> :
+                      <>Schedule Demo <ArrowRight size={16} /></>}
                 </button>
-                
+
                 {isSuccess && (
                   <div className="text-emerald-600 text-xs font-semibold text-center mt-2 animate-fade-in-up">
                     Thank you! We have received your request and will be in touch shortly.
                   </div>
                 )}
-                
+
                 <p className="text-[10px] text-slate-400 text-center pt-2">
                   By submitting this form, you agree to our Terms of Service and Privacy Policy.
                 </p>

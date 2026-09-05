@@ -51,7 +51,7 @@ const renderFormattedDescription = (text) => {
   if (text.includes('<')) {
     return (
       <div
-        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_li]:my-1 [&_li]:text-gray-800 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-xs [&_h4]:font-bold [&_h4]:text-gray-900 [&_h4]:mt-2 [&_h4]:mb-1 [&_strong]:font-bold [&_b]:font-bold font-sans [&_a]:text-blue-600 [&_a]:no-underline [&_img]:max-w-full [&_img]:rounded"
+        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_li]:my-1 [&_li]:text-gray-800 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-xs [&_h4]: [&_h4]:text-gray-900 [&_h4]:mt-2 [&_h4]:mb-1 [&_strong]: [&_b]: font-sans [&_a]:text-blue-600 [&_a]:no-underline [&_img]:max-w-full [&_img]:rounded"
         dangerouslySetInnerHTML={{ __html: normalizeDescriptionHtml(text) }}
       />
     );
@@ -80,7 +80,7 @@ const renderFormattedDescription = (text) => {
 
         if (isHeader) {
           const title = trimmed.replace(/^#+\s*/, '').replace(/^\*\*/, '').replace(/\*\*$/, '');
-          return <h3 key={idx} className="text-sm font-bold text-gray-900 mt-4 mb-1 block">{title}</h3>;
+          return <h3 key={idx} className="text-sm  text-gray-900 mt-4 mb-1 block">{title}</h3>;
         }
 
         const isExplicitBullet = /^[•\-\*]\s*/.test(trimmed);
@@ -229,13 +229,13 @@ const ITIssueDescription = ({
       {/* Description Section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-gray-700 tracking-wide block">Description</label>
+          <label className="text-xs  text-gray-700 tracking-wide block">Description</label>
         </div>
 
         {isEditingDescription ? (
           <div className="space-y-3">
             {/* Jira-Style Rich WYSIWYG Editor Box */}
-            <div className="border border-gray-300 rounded-lg overflow-hidden bg-white shadow-xs focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition">
+            <div className="border border-gray-300 rounded overflow-hidden bg-white shadow-xs focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition">
               {/* Rich Format Toolbar */}
               <div className="flex items-center gap-1 p-2 bg-gray-50 border-b border-gray-200 flex-wrap text-gray-600 text-xs select-none">
                 <button
@@ -254,7 +254,7 @@ const ITIssueDescription = ({
                 <button
                   type="button"
                   onClick={() => executeCommand('formatBlock', '<h3>')}
-                  className="p-1.5 hover:bg-gray-200 rounded text-gray-700 font-bold text-xs cursor-pointer flex items-center gap-0.5"
+                  className="p-1.5 hover:bg-gray-200 rounded text-gray-700  text-xs cursor-pointer flex items-center gap-0.5"
                   title="Heading H3"
                 >
                   <Type size={13} />
@@ -264,7 +264,7 @@ const ITIssueDescription = ({
                 <button
                   type="button"
                   onClick={() => executeCommand('bold')}
-                  className="p-1.5 hover:bg-gray-200 rounded text-gray-700 cursor-pointer font-bold"
+                  className="p-1.5 hover:bg-gray-200 rounded text-gray-700 cursor-pointer "
                   title="Bold (Ctrl+B)"
                 >
                   <Bold size={13} />
@@ -347,7 +347,7 @@ const ITIssueDescription = ({
                     attachFilesToDescription(e.dataTransfer.files);
                   }
                 }}
-                className="w-full text-xs p-3 focus:outline-none font-sans leading-relaxed text-gray-800 bg-white min-h-[180px] outline-none prose prose-xs max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-2 [&_h3]:mb-1 [&_strong]:font-bold [&_b]:font-bold [&_a]:text-blue-600 [&_a]:underline [&_img]:max-w-full [&_img]:rounded"
+                className="w-full text-xs p-3 focus:outline-none font-sans leading-relaxed text-gray-800 bg-white min-h-[180px] outline-none prose prose-xs max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-2 [&_h3]:mb-1 [&_strong]: [&_b]: [&_a]:text-blue-600 [&_a]:underline [&_img]:max-w-full [&_img]:rounded"
               />
               {isUploadingFile && (
                 <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 border-t border-gray-200 bg-blue-50/50">
@@ -359,7 +359,7 @@ const ITIssueDescription = ({
 
             {/* Jira Rovo AI Floating Status Bar */}
             {isAiWriting && (
-              <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-lg text-white text-xs shadow-lg animate-pulse my-2">
+              <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded text-white text-xs shadow-lg animate-pulse my-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
                 <span className="font-semibold flex-1">✨ AI is writing description...</span>
               </div>
@@ -392,7 +392,7 @@ const ITIssueDescription = ({
               setTempDescription(description);
               setIsEditingDescription(true);
             }}
-            className="min-h-[70px] p-3 rounded-lg border border-transparent hover:border-gray-200 hover:bg-gray-50/60 cursor-pointer text-xs text-gray-800 leading-relaxed transition font-sans group"
+            className="min-h-[70px] p-3 rounded border border-transparent hover:border-gray-200 hover:bg-gray-50/60 cursor-pointer text-xs text-gray-800 leading-relaxed transition font-sans group"
             title="Click to edit description"
           >
             {description ? (
@@ -461,7 +461,7 @@ const ITIssueDescription = ({
       {/* PDF PREVIEW MODAL */}
       {selectedPdfUrl && (
         <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+          <div className="bg-white rounded w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden shadow-2xl">
             <div className="p-3 bg-gray-100 border-b flex justify-between items-center">
               <span className="text-xs font-semibold text-gray-700">PDF Viewer</span>
               <button
@@ -492,7 +492,7 @@ const ITIssueDescription = ({
             <div className="p-4 grid grid-cols-2 gap-4 flex-1 overflow-y-auto text-xs">
               <div className="space-y-1.5">
                 <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px]">Original Description</span>
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 min-h-[150px] leading-relaxed">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded text-gray-700 min-h-[150px] leading-relaxed">
                   {description ? renderFormattedDescription(description) : 'No description'}
                 </div>
               </div>
@@ -501,7 +501,7 @@ const ITIssueDescription = ({
                 <textarea
                   value={stripHtmlTags(improvedDescription)}
                   onChange={(e) => setImprovedDescription(e.target.value)}
-                  className="w-full h-[180px] p-3 bg-indigo-50/30 border border-indigo-200 rounded-lg text-gray-900 leading-relaxed outline-none focus:ring-1 focus:ring-indigo-500 font-sans"
+                  className="w-full h-[180px] p-3 bg-indigo-50/30 border border-indigo-200 rounded text-gray-900 leading-relaxed outline-none focus:ring-1 focus:ring-indigo-500 font-sans"
                 />
               </div>
             </div>

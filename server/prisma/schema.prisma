@@ -1947,6 +1947,9 @@ model users {
   @@index([role_id], map: "idx_role_id")
   @@index([status], map: "idx_status")
   @@index([username], map: "idx_username")
+
+  performance_reviews_employee performance_reviews[] @relation("performance_reviews_employee")
+  performance_reviews_reviewer performance_reviews[] @relation("performance_reviews_reviewer")
 }
 
 enum activities_activity_type {
@@ -2517,4 +2520,25 @@ model task_history {
   general_tasks      general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
 
   @@index([task_id])
+}
+
+model performance_reviews {
+  id                   Int       @id @default(autoincrement())
+  employee_id          Int
+  reviewer_id          Int
+  score                Int
+  task_completion      Int
+  quality_of_work      Int
+  on_time_delivery     Int
+  efficiency           Int
+  review_gate_points   Int
+  points_distribution  Int
+  feedback             String?   @db.LongText
+  created_at           DateTime  @default(now()) @db.Timestamp(0)
+  updated_at           DateTime  @default(now()) @db.Timestamp(0)
+  users_employee       users     @relation("performance_reviews_employee", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_reviewer       users     @relation("performance_reviews_reviewer", fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([employee_id], map: "idx_performance_reviews_employee")
+  @@index([reviewer_id], map: "idx_performance_reviews_reviewer")
 }

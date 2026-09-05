@@ -281,7 +281,7 @@ const ContractsPage = () => {
         </div>
       </div>
 
-      <h3 className="text-sm font-bold text-gray-900 mb-1 truncate">{contract.subject || 'Unnamed Contract'}</h3>
+      <h3 className="text-sm  text-gray-900 mb-1 truncate">{contract.subject || 'Unnamed Contract'}</h3>
       <p className="text-xs text-gray-500 mb-2 truncate">{contract.contract_type || 'N/A'}</p>
 
       {contract.deal_name && (
@@ -320,7 +320,7 @@ const ContractsPage = () => {
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded border border-blue-200">
+        <span className="text-xs  bg-blue-50 text-blue-700 px-2.5 py-1 rounded border border-blue-200">
           ₹{formatContractValue(contract.contract_value)}
         </span>
       </div>

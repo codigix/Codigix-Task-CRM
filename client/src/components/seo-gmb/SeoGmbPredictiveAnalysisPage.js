@@ -55,7 +55,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
   const KPICard = ({ title, value, change, changeLabel, icon: Icon, colorClass, sparklineColor }) => (
     <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center h-full relative overflow-hidden group">
       <div className="flex items-center gap-3 mb-2">
-        <div className={`p-2 rounded-lg bg-opacity-10 ${colorClass.replace('text', 'bg')}`}>
+        <div className={`p-2 rounded bg-opacity-10 ${colorClass.replace('text', 'bg')}`}>
           <Icon size={18} className={colorClass} />
         </div>
         <span className="text-gray-900 text-xs font-semibold">{title}</span>
@@ -63,10 +63,10 @@ const SeoGmbPredictiveAnalysisPage = () => {
       <div className="flex justify-between items-end">
         <div>
           <div className="flex items-end gap-2">
-            <span className="text-2xl font-bold text-gray-900 leading-none">{value}</span>
+            <span className="text-2xl  text-gray-900 leading-none">{value}</span>
           </div>
           {change && (
-            <span className={`text-[9px] font-bold ${change.toString().startsWith('-') ? 'text-red-500' : 'text-green-500'} block mt-1.5`}>
+            <span className={`text-[9px]  ${change.toString().startsWith('-') ? 'text-red-500' : 'text-green-500'} block mt-1.5`}>
               {change.toString().startsWith('-') ? '↓' : '↑'} {change.toString().replace('-', '')} <span className="text-gray-400 font-medium">{changeLabel}</span>
             </span>
           )}
@@ -152,10 +152,10 @@ const SeoGmbPredictiveAnalysisPage = () => {
               ].map((row, i) => (
                 <tr key={i} className="text-gray-700">
                   <td className="py-3 font-medium flex items-center gap-2"><Target size={12} className="text-indigo-500" /> {row.o}</td>
-                  <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded font-bold ${row.i === 'High' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>{row.i}</span></td>
-                  <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded font-bold ${row.e === 'Low' ? 'text-green-600 bg-green-50' : row.e === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50'}`}>{row.e}</span></td>
+                  <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded  ${row.i === 'High' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>{row.i}</span></td>
+                  <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded  ${row.e === 'Low' ? 'text-green-600 bg-green-50' : row.e === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50'}`}>{row.e}</span></td>
                   <td className="py-3 text-center">
-                    <div className="w-6 h-6 rounded-full border-2 border-green-500 flex items-center justify-center text-[9px] font-bold text-green-700 mx-auto">{row.s}</div>
+                    <div className="w-6 h-6 rounded-full border-2 border-green-500 flex items-center justify-center text-[9px]  text-green-700 mx-auto">{row.s}</div>
                   </td>
                 </tr>
               ))}
@@ -177,9 +177,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              <tr><td className="py-2 text-indigo-600">cloud erp software</td><td className="py-2 text-center text-gray-500">8</td><td className="py-2 text-center text-green-600 font-bold">3</td></tr>
-              <tr><td className="py-2 text-indigo-600">manufacturing erp</td><td className="py-2 text-center text-gray-500">12</td><td className="py-2 text-center text-green-600 font-bold">6</td></tr>
-              <tr><td className="py-2 text-indigo-600">erp for sme</td><td className="py-2 text-center text-gray-500">15</td><td className="py-2 text-center text-green-600 font-bold">7</td></tr>
+              <tr><td className="py-2 text-indigo-600">cloud erp software</td><td className="py-2 text-center text-gray-500">8</td><td className="py-2 text-center text-green-600 ">3</td></tr>
+              <tr><td className="py-2 text-indigo-600">manufacturing erp</td><td className="py-2 text-center text-gray-500">12</td><td className="py-2 text-center text-green-600 ">6</td></tr>
+              <tr><td className="py-2 text-indigo-600">erp for sme</td><td className="py-2 text-center text-gray-500">15</td><td className="py-2 text-center text-green-600 ">7</td></tr>
             </tbody>
           </table>
           <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('Keyword Forecast')}>View Full Forecast &rarr;</button>
@@ -196,9 +196,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              <tr><td className="py-2">ChatGPT</td><td className="py-2 text-center text-gray-500">68/100</td><td className="py-2 text-center text-green-600 font-bold">82/100</td></tr>
-              <tr><td className="py-2">Google AI Overview</td><td className="py-2 text-center text-gray-500">72/100</td><td className="py-2 text-center text-green-600 font-bold">86/100</td></tr>
-              <tr><td className="py-2">Gemini</td><td className="py-2 text-center text-gray-500">65/100</td><td className="py-2 text-center text-green-600 font-bold">78/100</td></tr>
+              <tr><td className="py-2">ChatGPT</td><td className="py-2 text-center text-gray-500">68/100</td><td className="py-2 text-center text-green-600 ">82/100</td></tr>
+              <tr><td className="py-2">Google AI Overview</td><td className="py-2 text-center text-gray-500">72/100</td><td className="py-2 text-center text-green-600 ">86/100</td></tr>
+              <tr><td className="py-2">Gemini</td><td className="py-2 text-center text-gray-500">65/100</td><td className="py-2 text-center text-green-600 ">78/100</td></tr>
             </tbody>
           </table>
           <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('AI Visibility Forecast')}>View Full AI Visibility &rarr;</button>
@@ -263,23 +263,23 @@ const SeoGmbPredictiveAnalysisPage = () => {
           <div className="space-y-4">
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Predicted Traffic (Next 90 Days)</span>
-              <span className="font-bold text-gray-900">48,756</span>
+              <span className=" text-gray-900">48,756</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Upper Range</span>
-              <span className="font-bold text-gray-900">64,240</span>
+              <span className=" text-gray-900">64,240</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Lower Range</span>
-              <span className="font-bold text-gray-900">45,120</span>
+              <span className=" text-gray-900">45,120</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Avg. Daily Traffic</span>
-              <span className="font-bold text-gray-900">1,625</span>
+              <span className=" text-gray-900">1,625</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Growth Rate</span>
-              <span className="font-bold text-green-600">18.6%</span>
+              <span className=" text-green-600">18.6%</span>
             </div>
           </div>
         </div>
@@ -328,8 +328,8 @@ const SeoGmbPredictiveAnalysisPage = () => {
                 <tr key={i} className="text-gray-700">
                   <td className="py-3 font-medium text-indigo-600">{row.k}</td>
                   <td className="py-3 text-center text-gray-500">{row.c}</td>
-                  <td className="py-3 text-center font-bold text-gray-900">{row.p}</td>
-                  <td className="py-3 text-center font-bold text-green-600">↑ {row.ch.replace('+ ', '')}</td>
+                  <td className="py-3 text-center  text-gray-900">{row.p}</td>
+                  <td className="py-3 text-center  text-green-600">↑ {row.ch.replace('+ ', '')}</td>
                   <td className="py-3 text-center text-green-600">{row.pr}</td>
                   <td className="py-3 text-center">{row.s.toLocaleString()}</td>
                 </tr>
@@ -382,8 +382,8 @@ const SeoGmbPredictiveAnalysisPage = () => {
                 <tr key={i} className="text-gray-700">
                   <td className="py-3 font-medium flex items-center gap-2"><Cpu size={14} className="text-indigo-500" /> {row.p}</td>
                   <td className="py-3 text-center text-gray-500">{row.c}</td>
-                  <td className="py-3 text-center font-bold text-gray-900">{row.pr}</td>
-                  <td className="py-3 text-center font-bold text-green-600">↑ {row.ch.replace('+ ', '')}</td>
+                  <td className="py-3 text-center  text-gray-900">{row.pr}</td>
+                  <td className="py-3 text-center  text-green-600">↑ {row.ch.replace('+ ', '')}</td>
                   <td className="py-3 text-center">{row.m.toLocaleString()}</td>
                 </tr>
               ))}
@@ -435,31 +435,31 @@ const SeoGmbPredictiveAnalysisPage = () => {
           <div className="space-y-4">
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Conversions (Next 90 Days)</span>
-              <span className="font-bold text-gray-900">1,245</span>
+              <span className=" text-gray-900">1,245</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Upper Range</span>
-              <span className="font-bold text-gray-900">1,450</span>
+              <span className=" text-gray-900">1,450</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Lower Range</span>
-              <span className="font-bold text-gray-900">980</span>
+              <span className=" text-gray-900">980</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Avg. Daily Conversions</span>
-              <span className="font-bold text-gray-900">14.2</span>
+              <span className=" text-gray-900">14.2</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Conversion Rate</span>
-              <span className="font-bold text-green-600">2.85%</span>
+              <span className=" text-green-600">2.85%</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs pt-4">
               <span className="font-semibold text-gray-900">Revenue (Predicted)</span>
-              <span className="font-bold text-indigo-600">₹12,48,300</span>
+              <span className=" text-indigo-600">₹12,48,300</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Revenue Range</span>
-              <span className="font-bold text-gray-500">₹10,50,000 - ₹14,80,000</span>
+              <span className=" text-gray-500">₹10,50,000 - ₹14,80,000</span>
             </div>
           </div>
         </div>
@@ -514,9 +514,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
                     <tr key={i} className={`text-gray-700 ${row.c === 'Your Website' ? 'bg-indigo-50/30' : ''}`}>
                       <td className={`py-3 font-medium flex items-center gap-2 ${row.c === 'Your Website' ? 'text-indigo-600' : ''}`}><Globe size={14} className={row.c === 'Your Website' ? 'text-indigo-600' : 'text-gray-400'} /> {row.c}</td>
                       <td className="py-3 text-center text-gray-500">{row.ct.toLocaleString()}</td>
-                      <td className="py-3 text-center font-bold text-gray-900">{row.pt.toLocaleString()}</td>
-                      <td className="py-3 text-center font-bold text-green-600">↑ {row.ch.replace('+ ', '')}</td>
-                      <td className="py-3 text-center font-bold text-gray-900">{row.m}</td>
+                      <td className="py-3 text-center  text-gray-900">{row.pt.toLocaleString()}</td>
+                      <td className="py-3 text-center  text-green-600">↑ {row.ch.replace('+ ', '')}</td>
+                      <td className="py-3 text-center  text-gray-900">{row.m}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -545,7 +545,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
                       <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: d.color }}></div>
                       {d.name}
                     </div>
-                    <span className="font-bold text-gray-900">{d.value}%</span>
+                    <span className=" text-gray-900">{d.value}%</span>
                   </div>
                 ))}
               </div>
@@ -597,9 +597,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
                     {row.s > 70 ? <AlertTriangle size={14} className="text-red-500" /> : row.s > 40 ? <AlertTriangle size={14} className="text-yellow-500" /> : <CheckCircle size={14} className="text-green-500" />}
                     {row.r}
                   </td>
-                  <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded font-bold ${row.i === 'High' ? 'text-red-600 bg-red-50' : row.i === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.i}</span></td>
-                  <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded font-bold ${row.p === 'High' ? 'text-red-600 bg-red-50' : row.p === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.p}</span></td>
-                  <td className="py-3 text-center font-bold text-gray-900">{row.s}/100</td>
+                  <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded  ${row.i === 'High' ? 'text-red-600 bg-red-50' : row.i === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.i}</span></td>
+                  <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded  ${row.p === 'High' ? 'text-red-600 bg-red-50' : row.p === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.p}</span></td>
+                  <td className="py-3 text-center  text-gray-900">{row.s}/100</td>
                   <td className="py-3 text-gray-600">{row.rc}</td>
                 </tr>
               ))}
@@ -619,7 +619,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
 
         {/* Left Column: Forecast Type */}
         <div className="lg:col-span-3 space-y-4">
-          <h3 className="font-bold text-gray-900 text-sm">1. Forecast Type</h3>
+          <h3 className=" text-gray-900 text-sm">1. Forecast Type</h3>
           <p className="text-xs text-gray-500 mb-4">Select what you want to forecast</p>
           <div className="space-y-3">
             {[
@@ -635,9 +635,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
                 onClick={() => setForecastType(type.id)}
                 className={`p-4 rounded-xl border-2 cursor-pointer transition flex items-start gap-3 ${forecastType === type.id ? 'border-indigo-600 bg-indigo-50/20' : 'border-gray-100 bg-white hover:border-gray-200'}`}
               >
-                <div className={`p-2 rounded-lg ${type.bg}`}><type.icon size={16} className={type.color} /></div>
+                <div className={`p-2 rounded ${type.bg}`}><type.icon size={16} className={type.color} /></div>
                 <div className="flex-1">
-                  <h4 className={`text-xs font-bold ${forecastType === type.id ? 'text-indigo-900' : 'text-gray-900'}`}>{type.label}</h4>
+                  <h4 className={`text-xs  ${forecastType === type.id ? 'text-indigo-900' : 'text-gray-900'}`}>{type.label}</h4>
                   <p className="text-[10px] text-gray-500 mt-0.5">{type.desc}</p>
                 </div>
                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${forecastType === type.id ? 'border-indigo-600' : 'border-gray-300'}`}>
@@ -651,7 +651,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
         {/* Middle Column: Configuration */}
         <div className="lg:col-span-6 space-y-6">
           <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-            <h3 className="font-bold text-gray-900 text-sm">2. Forecast Configuration</h3>
+            <h3 className=" text-gray-900 text-sm">2. Forecast Configuration</h3>
             <p className="text-xs text-gray-500 mb-6">Set the parameters for your forecast</p>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -710,7 +710,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <label className="block text-xs font-semibold text-gray-700 mb-3">Include in Forecast</label>
               <div className="flex flex-wrap items-center gap-4">
                 {['Organic Traffic', 'Branded Traffic', 'Non-Branded Traffic', 'Keywords', 'Conversions'].map(opt => (
-                  <label key={opt} className="flex items-center gap-2 cursor-pointer bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg">
+                  <label key={opt} className="flex items-center gap-2 cursor-pointer bg-gray-50 border border-gray-100 px-3 py-1.5 rounded">
                     <input type="checkbox" defaultChecked className="rounded text-indigo-600 focus:ring-indigo-500" />
                     <span className="text-xs font-medium text-gray-700">{opt}</span>
                   </label>
@@ -721,17 +721,17 @@ const SeoGmbPredictiveAnalysisPage = () => {
             <div>
               <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-3">Historical Data Source <Info size={12} className="text-gray-400" /></label>
               <div className="grid grid-cols-2 gap-4">
-                <label className="border border-indigo-600 bg-indigo-50/30 p-3 rounded-lg flex items-start gap-3 cursor-pointer">
+                <label className="border border-indigo-600 bg-indigo-50/30 p-3 rounded flex items-start gap-3 cursor-pointer">
                   <input type="radio" name="dataSource" defaultChecked className="mt-1" />
                   <div>
-                    <div className="text-xs font-bold text-gray-900">Use data from Codigix CRM</div>
+                    <div className="text-xs  text-gray-900">Use data from Codigix CRM</div>
                     <div className="text-[10px] text-gray-500 mt-0.5">Use historical data from your CRM database</div>
                   </div>
                 </label>
-                <label className="border border-gray-200 p-3 rounded-lg flex items-start gap-3 cursor-pointer hover:bg-gray-50 transition">
+                <label className="border border-gray-200 p-3 rounded flex items-start gap-3 cursor-pointer hover:bg-gray-50 transition">
                   <input type="radio" name="dataSource" className="mt-1" />
                   <div>
-                    <div className="text-xs font-bold text-gray-900">Connect External Source</div>
+                    <div className="text-xs  text-gray-900">Connect External Source</div>
                     <div className="text-[10px] text-gray-500 mt-0.5">Connect Google Analytics / Search Console</div>
                   </div>
                 </label>
@@ -740,7 +740,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-            <h3 className="font-bold text-gray-900 text-sm">3. Advanced Settings <span className="text-gray-400 font-normal">(Optional)</span></h3>
+            <h3 className=" text-gray-900 text-sm">3. Advanced Settings <span className="text-gray-400 font-normal">(Optional)</span></h3>
             <p className="text-xs text-gray-500 mb-6">Fine-tune your forecast with advanced options</p>
 
             <div className="grid grid-cols-4 gap-6 items-center">
@@ -774,7 +774,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-            <h3 className="font-bold text-gray-900 text-sm">4. Forecast Name & Description</h3>
+            <h3 className=" text-gray-900 text-sm">4. Forecast Name & Description</h3>
             <p className="text-xs text-gray-500 mb-6">Give a name to your forecast (Optional)</p>
 
             <div className="grid grid-cols-12 gap-4">
@@ -797,15 +797,15 @@ const SeoGmbPredictiveAnalysisPage = () => {
             <div className="flex items-start gap-2">
               <div className="p-1 rounded bg-indigo-50"><Clock size={14} className="text-indigo-600" /></div>
               <div>
-                <div className="text-xs font-bold text-indigo-900">AI Processing Time</div>
-                <div className="text-[10px] text-gray-500 mt-0.5">Forecast generation typically takes <span className="font-bold text-gray-700">2-5 minutes</span> depending on data volume and complexity.</div>
+                <div className="text-xs  text-indigo-900">AI Processing Time</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">Forecast generation typically takes <span className=" text-gray-700">2-5 minutes</span> depending on data volume and complexity.</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setIsGeneratingForecast(false)} className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition">
+              <button onClick={() => setIsGeneratingForecast(false)} className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-50 transition">
                 Cancel
               </button>
-              <button onClick={() => setIsGeneratingForecast(false)} className="px-6 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+              <button onClick={() => setIsGeneratingForecast(false)} className="px-6 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
                 <Sparkles size={14} /> Generate Forecast
               </button>
             </div>
@@ -817,7 +817,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
           <div className="bg-indigo-50/50 rounded-xl border border-indigo-100 p-5">
             <div className="flex items-center gap-2 mb-4">
               <Sparkles size={16} className="text-indigo-600" />
-              <h3 className="font-bold text-indigo-900 text-xs">Forecast Details</h3>
+              <h3 className=" text-indigo-900 text-xs">Forecast Details</h3>
             </div>
             <p className="text-[10px] text-indigo-900/70 mb-6">AI model will analyze your historical data and market trends to generate accurate predictions.</p>
 
@@ -826,34 +826,34 @@ const SeoGmbPredictiveAnalysisPage = () => {
                 <div className="p-1.5 rounded bg-white shadow-sm"><Hash size={12} className="text-indigo-500" /></div>
                 <div>
                   <div className="text-[10px] font-medium text-gray-500">Model</div>
-                  <div className="text-xs font-bold text-indigo-900">Machine Learning (Prophet + XGBoost)</div>
+                  <div className="text-xs  text-indigo-900">Machine Learning (Prophet + XGBoost)</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded bg-white shadow-sm"><Target size={12} className="text-indigo-500" /></div>
                 <div>
                   <div className="text-[10px] font-medium text-gray-500">Confidence Level</div>
-                  <div className="text-xs font-bold text-indigo-900">90%</div>
+                  <div className="text-xs  text-indigo-900">90%</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded bg-white shadow-sm"><Clock size={12} className="text-indigo-500" /></div>
                 <div>
                   <div className="text-[10px] font-medium text-gray-500">Last Updated</div>
-                  <div className="text-xs font-bold text-indigo-900">May 23, 2026 10:30 AM</div>
+                  <div className="text-xs  text-indigo-900">May 23, 2026 10:30 AM</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <div className="p-1.5 rounded bg-white shadow-sm"><Database size={12} className="text-indigo-500" /></div>
                 <div>
                   <div className="text-[10px] font-medium text-gray-500">Data Points</div>
-                  <div className="text-xs font-bold text-indigo-900">1,248 (Last 12 Months)</div>
+                  <div className="text-xs  text-indigo-900">1,248 (Last 12 Months)</div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-indigo-100 p-4">
-              <h4 className="font-bold text-indigo-900 text-xs mb-3">What you'll get?</h4>
+            <div className="bg-white rounded border border-indigo-100 p-4">
+              <h4 className=" text-indigo-900 text-xs mb-3">What you'll get?</h4>
               <div className="space-y-2">
                 {['Prediction charts and trends', 'Confidence intervals', 'Growth opportunities', 'Risk analysis', 'Actionable recommendations'].map((item, i) => (
                   <div key={i} className="flex items-start gap-2 text-[10px] font-medium text-gray-700">
@@ -875,11 +875,11 @@ const SeoGmbPredictiveAnalysisPage = () => {
       {isGeneratingForecast ? (
         <div className="bg-white border-b border-gray-100 px-6 py-4 flex flex-wrap items-center justify-between gap-4 flex-shrink-0">
           <div className="flex items-center gap-4">
-            <button onClick={() => setIsGeneratingForecast(false)} className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition">
+            <button onClick={() => setIsGeneratingForecast(false)} className="p-2 border border-gray-200 rounded text-gray-500 hover:bg-gray-50 transition">
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 leading-tight">Generate New Forecast</h1>
+              <h1 className="text-xl  text-gray-900 leading-tight">Generate New Forecast</h1>
               <p className="text-xs text-gray-500">Configure your settings and generate AI-powered predictions</p>
             </div>
           </div>
@@ -894,10 +894,10 @@ const SeoGmbPredictiveAnalysisPage = () => {
               endDate={dateRange.endDate}
               onChange={(start, end) => setDateRange({ startDate: start, endDate: end })}
             />
-            <button onClick={() => setIsGeneratingForecast(false)} className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition">
+            <button onClick={() => setIsGeneratingForecast(false)} className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-50 transition">
               Cancel
             </button>
-            <button onClick={() => setIsGeneratingForecast(false)} className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+            <button onClick={() => setIsGeneratingForecast(false)} className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
               <Sparkles size={14} /> Generate Forecast
             </button>
           </div>
@@ -905,11 +905,11 @@ const SeoGmbPredictiveAnalysisPage = () => {
       ) : (
         <div className="bg-white border-b border-gray-100 px-6 py-4 flex flex-wrap items-center justify-between gap-4 flex-shrink-0">
           <div className="flex items-center gap-4">
-            <div className="p-2 border border-gray-200 rounded-lg bg-indigo-600">
+            <div className="p-2 border border-gray-200 rounded bg-indigo-600">
               <TrendingUp className="text-white" size={20} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 leading-tight">Predictive Analysis</h1>
+              <h1 className="text-xl  text-gray-900 leading-tight">Predictive Analysis</h1>
               <p className="text-xs text-gray-500">AI-powered predictions and insights for future performance</p>
             </div>
           </div>
@@ -927,7 +927,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             <button className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">
               <RefreshCw size={14} />
             </button>
-            <button onClick={() => setIsGeneratingForecast(true)} className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition shadow-sm">
+            <button onClick={() => setIsGeneratingForecast(true)} className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm">
               Generate New Forecast
             </button>
           </div>
@@ -942,9 +942,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-3 text-xs font-bold border-b-[3px] transition-colors whitespace-nowrap ${activeTab === tab
-                    ? 'border-indigo-600 text-indigo-700'
-                    : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
+                className={`py-3 text-xs  border-b-[3px] transition-colors whitespace-nowrap ${activeTab === tab
+                  ? 'border-indigo-600 text-indigo-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
                   }`}
               >
                 {tab}

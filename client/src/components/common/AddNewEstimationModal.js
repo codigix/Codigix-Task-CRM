@@ -77,11 +77,11 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
       const estimations = await estimationsAPI.getAll(filters);
       if (Array.isArray(estimations)) {
         const baseNumber = currentQuotationNumber ? currentQuotationNumber.split('-v')[0] : '';
-        const filteredEstimations = baseNumber 
+        const filteredEstimations = baseNumber
           ? estimations.filter(est => {
-              const num = est.estimation_number || est.quotation_number || '';
-              return num.startsWith(baseNumber);
-            })
+            const num = est.estimation_number || est.quotation_number || '';
+            return num.startsWith(baseNumber);
+          })
           : estimations;
 
         const sortedEstimations = [...filteredEstimations].sort((a, b) =>
@@ -504,7 +504,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
   const handleTriggerRevision = () => {
     const currentNum = formData.quotationNumber || initialData?.quotation_number || initialData?.quotationNumber || `Q-${new Date().getFullYear()}-001`;
     const baseNum = currentNum.split('-v')[0];
-    
+
     let highestVer = 1;
     if (Array.isArray(formData.versionHistory) && formData.versionHistory.length > 0) {
       formData.versionHistory.forEach(v => {
@@ -521,8 +521,8 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
     const nextVer = highestVer + 1;
     const newQuotationNumber = `${baseNum}-v${nextVer}`;
 
-    const leadItService = formData.it_services === 'Other' 
-      ? (formData.it_services_other || initialData?.it_services_other || 'Software Services') 
+    const leadItService = formData.it_services === 'Other'
+      ? (formData.it_services_other || initialData?.it_services_other || 'Software Services')
       : (formData.it_services || initialData?.it_services);
 
     setFormData(prev => ({
@@ -538,20 +538,20 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
       revisionDate: new Date().toISOString().split('T')[0],
       items: Array.isArray(prev.items) && prev.items.length > 0
         ? prev.items.map(item => {
-            const isGenericName = !item.productName || item.productName === 'Service' || item.productName === prev.client || item.productName === prev.contactPerson || item.productName === 'CRM';
-            const name = !isGenericName
-              ? item.productName 
-              : (leadItService || prev.project_name || prev.dealName || prev.businessType || 'Software Services');
-            return {
-              ...item,
-              id: Date.now() + Math.random(),
-              productName: name,
-              description: item.description || '',
-              duration: item.duration || '',
-              quantity: parseFloat(item.quantity) || 1,
-              rate: parseFloat(item.rate) || 0
-            };
-          })
+          const isGenericName = !item.productName || item.productName === 'Service' || item.productName === prev.client || item.productName === prev.contactPerson || item.productName === 'CRM';
+          const name = !isGenericName
+            ? item.productName
+            : (leadItService || prev.project_name || prev.dealName || prev.businessType || 'Software Services');
+          return {
+            ...item,
+            id: Date.now() + Math.random(),
+            productName: name,
+            description: item.description || '',
+            duration: item.duration || '',
+            quantity: parseFloat(item.quantity) || 1,
+            rate: parseFloat(item.rate) || 0
+          };
+        })
         : [{ id: Date.now(), productName: leadItService || prev.project_name || prev.dealName || prev.businessType || 'Software Services', description: '', duration: '', quantity: 1, rate: 0 }],
       discount: 0,
       taxPercentage: prev.taxPercentage !== undefined ? prev.taxPercentage : 10,
@@ -589,40 +589,40 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
 
           const revisionItems = Array.isArray(initialData.items) && initialData.items.length > 0
             ? initialData.items.map(item => ({
-                id: Date.now() + Math.random(),
-                productName: (item.productName && item.productName !== 'CRM') ? item.productName : (initialData.project_name || initialData.deal_name || initialData.business_type || defaultItService),
-                description: item.description || '',
-                duration: item.duration || '',
-                quantity: parseFloat(item.quantity) || 1,
-                rate: parseFloat(item.rate || item.price) || 0
-              }))
+              id: Date.now() + Math.random(),
+              productName: (item.productName && item.productName !== 'CRM') ? item.productName : (initialData.project_name || initialData.deal_name || initialData.business_type || defaultItService),
+              description: item.description || '',
+              duration: item.duration || '',
+              quantity: parseFloat(item.quantity) || 1,
+              rate: parseFloat(item.rate || item.price) || 0
+            }))
             : (() => {
-                const services = [];
-                if (initialData.it_services && initialData.it_services !== 'None') {
+              const services = [];
+              if (initialData.it_services && initialData.it_services !== 'None') {
+                services.push({
+                  id: Date.now() + 1,
+                  productName: initialData.it_services === 'Other' ? initialData.it_services_other : initialData.it_services,
+                  description: initialData.description || '',
+                  duration: '',
+                  quantity: 1,
+                  rate: parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0
+                });
+              }
+              const marketingServices = parseJson(initialData.marketing_services);
+              if (Array.isArray(marketingServices) && marketingServices.length > 0) {
+                marketingServices.forEach((service, index) => {
                   services.push({
-                    id: Date.now() + 1,
-                    productName: initialData.it_services === 'Other' ? initialData.it_services_other : initialData.it_services,
-                    description: initialData.description || '',
+                    id: Date.now() + 100 + index,
+                    productName: service,
+                    description: index === 0 && services.length === 0 ? (initialData.description || '') : '',
                     duration: '',
                     quantity: 1,
-                    rate: parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0
+                    rate: (index === 0 && services.length === 0) ? (parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0) : 0
                   });
-                }
-                const marketingServices = parseJson(initialData.marketing_services);
-                if (Array.isArray(marketingServices) && marketingServices.length > 0) {
-                  marketingServices.forEach((service, index) => {
-                    services.push({
-                      id: Date.now() + 100 + index,
-                      productName: service,
-                      description: index === 0 && services.length === 0 ? (initialData.description || '') : '',
-                      duration: '',
-                      quantity: 1,
-                      rate: (index === 0 && services.length === 0) ? (parseFloat(initialData.value || initialData.deal_value || initialData.amount) || 0) : 0
-                    });
-                  });
-                }
-                return services.length > 0 ? services : [{ id: Date.now(), productName: initialData.project_name || initialData.deal_name || initialData.business_type || defaultItService, description: initialData.description || '', duration: '', quantity: 1, rate: parseFloat(initialData.amount || initialData.deal_value) || 0 }];
-              })();
+                });
+              }
+              return services.length > 0 ? services : [{ id: Date.now(), productName: initialData.project_name || initialData.deal_name || initialData.business_type || defaultItService, description: initialData.description || '', duration: '', quantity: 1, rate: parseFloat(initialData.amount || initialData.deal_value) || 0 }];
+            })();
 
           setFormData(prev => ({
             ...prev,
@@ -734,7 +734,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
         // Always fetch additional details from lead/deal (to populate fields not saved in DB like contactPerson)
         const isVirtual = Number(deal_id) > 1000000;
         const isExisting = !!initialData.id;
-        
+
         if (isVirtual) {
           handleLeadChange((Number(deal_id) - 1000000).toString(), isExisting, qNum);
         } else if (deal_id) {
@@ -1446,20 +1446,18 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                   {formData.versionHistory.map((v, i) => {
                     const isSelected = v.current || Number(formData.id) === Number(v.id);
                     return (
-                      <div 
-                        key={i} 
+                      <div
+                        key={i}
                         onClick={() => handleSelectVersion(v)}
-                        className={`flex items-start gap-3 p-2 rounded cursor-pointer transition-all ${
-                          isSelected
-                            ? 'bg-blue-50/80 border border-blue-300 shadow-xs'
-                            : 'hover:bg-gray-50 border border-transparent opacity-75 hover:opacity-100'
-                        }`}
+                        className={`flex items-start gap-3 p-2 rounded cursor-pointer transition-all ${isSelected
+                          ? 'bg-blue-50/80 border border-blue-300 shadow-xs'
+                          : 'hover:bg-gray-50 border border-transparent opacity-75 hover:opacity-100'
+                          }`}
                       >
-                        <div className={`w-8 h-8 rounded border flex items-center justify-center text-xs font-[500] ${
-                          isSelected
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-gray-50 border-gray-200 text-gray-500'
-                        }`}>
+                        <div className={`w-8 h-8 rounded border flex items-center justify-center text-xs font-[500] ${isSelected
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-gray-50 border-gray-200 text-gray-500'
+                          }`}>
                           {v.version.toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1600,7 +1598,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
             {/* Modal Header */}
             <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
+                <div className="w-9 h-9 rounded bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
                   <Mail size={18} />
                 </div>
                 <div>
@@ -1608,9 +1606,9 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                   <p className="text-xs text-slate-400">Review all quotation details before sending to client</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setIsEmailPreviewOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+                className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
               >
                 <X size={18} />
               </button>
@@ -1618,16 +1616,16 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
 
             {/* Modal Content */}
             <div className="p-5 overflow-y-auto space-y-4 text-xs text-gray-700">
-              
+
               {/* Email Meta Card */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+              <div className="bg-gray-50 border border-gray-200 rounded p-3 space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-600 w-20">To Email:</span>
-                  <input 
-                    type="email" 
-                    value={emailToRecipient} 
-                    onChange={(e) => setEmailToRecipient(e.target.value)} 
-                    placeholder="Enter client email..." 
+                  <input
+                    type="email"
+                    value={emailToRecipient}
+                    onChange={(e) => setEmailToRecipient(e.target.value)}
+                    placeholder="Enter client email..."
                     className="flex-1 px-2.5 py-1 border border-gray-300 rounded font-medium text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -1640,23 +1638,23 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
               </div>
 
               {/* Client & Quotation Info */}
-              <div className="grid grid-cols-2 gap-3 bg-blue-50/50 border border-blue-100 rounded-lg p-3">
+              <div className="grid grid-cols-2 gap-3 bg-blue-50/50 border border-blue-100 rounded p-3">
                 <div>
                   <p className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">Client Information</p>
-                  <p className="font-bold text-gray-900 text-sm mt-0.5">{formData.contactPerson || formData.client || 'Valued Client'}</p>
+                  <p className=" text-gray-900 text-sm mt-0.5">{formData.contactPerson || formData.client || 'Valued Client'}</p>
                   <p className="text-gray-600">{formData.client}</p>
                   <p className="text-gray-500">{formData.client_phone || formData.businessType}</p>
                 </div>
                 <div>
                   <p className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">Quotation Information</p>
-                  <p className="font-bold text-gray-900 text-sm mt-0.5">#{formData.quotationNumber}</p>
+                  <p className=" text-gray-900 text-sm mt-0.5">#{formData.quotationNumber}</p>
                   <p className="text-gray-600">Date: {formData.quotationDate}</p>
                   <p className="text-gray-500">Valid Until: {formData.validUntil || 'N/A'}</p>
                 </div>
               </div>
 
               {/* Items Table */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="border border-gray-200 rounded overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-gray-100 border-b border-gray-200">
                     <tr>
@@ -1680,7 +1678,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
               </div>
 
               {/* Financial Summary */}
-              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <div className="flex justify-between items-center bg-gray-50 p-3 rounded border border-gray-200">
                 <div className="flex items-center gap-2 text-blue-700 font-medium">
                   <FileText size={16} className="text-red-500" />
                   <span>Attachment: <strong>Quotation-{formData.quotationNumber}.pdf</strong></span>
@@ -1688,7 +1686,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                 <div className="text-right space-y-0.5">
                   <p className="text-gray-600">Subtotal: <span className="font-semibold text-gray-900">₹{Number(subtotal).toLocaleString()}</span></p>
                   {tax > 0 && <p className="text-gray-600">Tax ({formData.taxPercentage}%): <span className="font-semibold text-gray-900">₹{Number(tax).toLocaleString()}</span></p>}
-                  <p className="text-sm font-bold text-gray-900">Total Amount: <span className="text-blue-600">₹{Number(total).toLocaleString()}</span></p>
+                  <p className="text-sm  text-gray-900">Total Amount: <span className="text-blue-600">₹{Number(total).toLocaleString()}</span></p>
                 </div>
               </div>
 
@@ -1699,7 +1697,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
               <button
                 type="button"
                 onClick={() => setIsEmailPreviewOpen(false)}
-                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-100 transition-colors"
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded text-xs font-semibold hover:bg-gray-100 transition-colors"
               >
                 Cancel
               </button>
@@ -1725,7 +1723,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                   setFormData(updatedFormData);
                   await handleSubmit(e, 'Sent', true, updatedFormData);
                 }}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-md flex items-center gap-2 transition-all"
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-md flex items-center gap-2 transition-all"
               >
                 <Mail size={14} />
                 Confirm & Send Email

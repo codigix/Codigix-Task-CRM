@@ -845,35 +845,35 @@ const TaskDetailsPage = () => {
                             >
                               <MoreVertical size={16} />
                             </button>
-                              {isFileMenuOpen === file.id && (
-                                <div className="absolute top-full right-0 mt-1 w-32 bg-white border border-gray-100 rounded shadow-xl z-50 py-1">
-                                  <button
-                                    onClick={() => {
-                                      const url = toAbsoluteFileUrl(file.file_path || file.path || file.url || file.name);
-                                      if (url) window.open(url, '_blank');
-                                      setIsFileMenuOpen(null);
-                                    }}
-                                    className="w-full text-left p-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                                  >
-                                    <Download size={14} /> Download
-                                  </button>
-                                  <button
-                                    onClick={async () => {
-                                      try {
-                                        await filesAPI.delete(file.id);
-                                        showSuccessToast('File deleted successfully');
-                                        fetchFiles();
-                                      } catch (err) {
-                                        showErrorToast('Failed to delete file: ' + err.message);
-                                      }
-                                      setIsFileMenuOpen(null);
-                                    }}
-                                    className="w-full text-left p-2 text-xs text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
-                                  >
-                                    <Trash2 size={14} /> Delete
-                                  </button>
-                                </div>
-                              )}
+                            {isFileMenuOpen === file.id && (
+                              <div className="absolute top-full right-0 mt-1 w-32 bg-white border border-gray-100 rounded shadow-xl z-50 py-1">
+                                <button
+                                  onClick={() => {
+                                    const url = toAbsoluteFileUrl(file.file_path || file.path || file.url || file.name);
+                                    if (url) window.open(url, '_blank');
+                                    setIsFileMenuOpen(null);
+                                  }}
+                                  className="w-full text-left p-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                >
+                                  <Download size={14} /> Download
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await filesAPI.delete(file.id);
+                                      showSuccessToast('File deleted successfully');
+                                      fetchFiles();
+                                    } catch (err) {
+                                      showErrorToast('Failed to delete file: ' + err.message);
+                                    }
+                                    setIsFileMenuOpen(null);
+                                  }}
+                                  className="w-full text-left p-2 text-xs text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                                >
+                                  <Trash2 size={14} /> Delete
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex justify-between items-center text-xs">
@@ -1146,7 +1146,7 @@ const TaskDetailsPage = () => {
                 <Plus size={14} /> Add Recipient
               </button>
             </div>
-            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+            <div className="p-6 space-y-3 max-h-[70vh] overflow-y-auto">
               {fileModalTab === 'Basic Info' ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
@@ -1220,7 +1220,7 @@ const TaskDetailsPage = () => {
                 <X size={15} />
               </button>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-3">
               <div className="grid grid-cols-3 gap-4">
                 {['Gmail', 'Outlook', 'Other'].map((type) => (
                   <button

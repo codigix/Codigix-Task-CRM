@@ -479,18 +479,18 @@ const Header = ({ toggleSidebar }) => {
               >
                 <Bell size={20} />
                 {unreadCount > 0 && (
-                  <span className="notification-badge absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px] font-bold rounded-full border border-white flex items-center justify-center">
+                  <span className="notification-badge absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px]  rounded-full border border-white flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
 
               {showNotifications && (
-                <div className="dropdown-menu absolute right-0 mt-2 w-84 bg-white z-50 rounded-lg shadow-2xl border border-gray-100 py-1 overflow-hidden animate-in fade-in zoom-in duration-150">
+                <div className="dropdown-menu absolute right-0 mt-2 w-84 bg-white z-50 rounded shadow-2xl border border-gray-100 py-1 overflow-hidden animate-in fade-in zoom-in duration-150">
                   <div className="p-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                     <h3 className="text-xs font-semibold text-gray-900 flex items-center gap-1.5">
                       <Bell size={14} className="text-gray-700" />
-                      Notifications {unreadCount > 0 && <span className="text-red-500 font-bold">({unreadCount})</span>}
+                      Notifications {unreadCount > 0 && <span className="text-red-500 ">({unreadCount})</span>}
                     </h3>
                     <div className="flex items-center gap-2">
                       {unreadCount > 0 && (
@@ -700,7 +700,7 @@ const Header = ({ toggleSidebar }) => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleEnableDeviceAlerts}
-              className="px-3 py-1 bg-white text-blue-700 font-bold rounded shadow-xs hover:bg-blue-50 active:scale-95 transition-all text-xs"
+              className="px-3 py-1 bg-white text-blue-700  rounded shadow-xs hover:bg-blue-50 active:scale-95 transition-all text-xs"
             >
               Allow Notifications
             </button>

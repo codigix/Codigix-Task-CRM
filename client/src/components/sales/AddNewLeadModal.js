@@ -812,14 +812,14 @@ const AddNewLeadModal = ({ isOpen, onClose, onSubmit, companies = [], onCompanyA
                           </button>
                         ))}
                         <button
-                            type="button"
-                            onClick={() => {
-                              setFormData(prev => ({ ...prev, it_services: 'Other' }));
-                              setItServiceSearchOpen(false);
-                            }}
-                            className="w-full p-2 text-left text-xs text-gray-700 hover:bg-gray-50"
-                          >
-                            Other
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, it_services: 'Other' }));
+                            setItServiceSearchOpen(false);
+                          }}
+                          className="w-full p-2 text-left text-xs text-gray-700 hover:bg-gray-50"
+                        >
+                          Other
                         </button>
                         {getFilteredItServices().length === 0 && (
                           <div className="p-2 text-xs text-gray-500 text-center">No services found</div>
@@ -1089,7 +1089,7 @@ const AddNewLeadModal = ({ isOpen, onClose, onSubmit, companies = [], onCompanyA
                   <button
                     type="button"
                     onClick={() => setSelectedFile(null)}
-                    className="text-red hover:text-red-800 font-bold"
+                    className="text-red hover:text-red-800 "
                   >
                     ×
                   </button>

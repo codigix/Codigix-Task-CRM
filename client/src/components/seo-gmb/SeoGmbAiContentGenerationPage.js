@@ -41,10 +41,10 @@ const SeoGmbAiContentGenerationPage = () => {
             endDate={dateRange.endDate}
             onChange={(start, end) => setDateRange({ startDate: start, endDate: end })}
           />
-          <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+          <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition">
             Save as Draft
           </button>
-          <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition shadow-sm">
+          <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition shadow-sm">
             Publish / Export ▾
           </button>
         </div>
@@ -63,7 +63,7 @@ const SeoGmbAiContentGenerationPage = () => {
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Content Type</label>
                 <div className="relative">
-                  <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 outline-none appearance-none cursor-pointer">
+                  <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded px-3 py-2 outline-none appearance-none cursor-pointer">
                     <option>Blog Post</option>
                     <option>Landing Page</option>
                     <option>Product Description</option>
@@ -77,17 +77,17 @@ const SeoGmbAiContentGenerationPage = () => {
                   <label className="block text-xs font-medium text-gray-700 mb-1">Topic / Keyword <span className="text-red-500">*</span></label>
                   <span className="text-xs text-gray-400">42/100</span>
                 </div>
-                <input 
-                  type="text" 
-                  value="Benefits of Cloud ERP for Manufacturing" 
-                  className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2 outline-none focus:border-indigo-500 transition" 
-                  readOnly 
+                <input
+                  type="text"
+                  value="Benefits of Cloud ERP for Manufacturing"
+                  className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded px-3 py-2 outline-none focus:border-indigo-500 transition"
+                  readOnly
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Content Goal</label>
-                <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 outline-none">
+                <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded px-3 py-2 outline-none">
                   <option>Informational</option>
                   <option>Transactional</option>
                   <option>Navigational</option>
@@ -96,7 +96,7 @@ const SeoGmbAiContentGenerationPage = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Target Audience</label>
-                <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 outline-none">
+                <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded px-3 py-2 outline-none">
                   <option>Manufacturing Businesses</option>
                   <option>General Public</option>
                   <option>IT Professionals</option>
@@ -105,7 +105,7 @@ const SeoGmbAiContentGenerationPage = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Tone of Voice</label>
-                <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 outline-none">
+                <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded px-3 py-2 outline-none">
                   <option>Professional</option>
                   <option>Casual</option>
                   <option>Persuasive</option>
@@ -115,14 +115,14 @@ const SeoGmbAiContentGenerationPage = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Language</label>
-                  <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 outline-none">
+                  <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded px-3 py-2 outline-none">
                     <option>English</option>
                     <option>Spanish</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Word Count</label>
-                  <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 outline-none">
+                  <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded px-3 py-2 outline-none">
                     <option>1500 - 2000 Words</option>
                     <option>500 - 1000 Words</option>
                   </select>
@@ -131,7 +131,7 @@ const SeoGmbAiContentGenerationPage = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">AI Model <Activity size={12} className="text-gray-400" /></label>
-                <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 outline-none">
+                <select className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded px-3 py-2 outline-none">
                   <option>GPT-4o</option>
                   <option>Claude 3.5 Sonnet</option>
                   <option>Gemini 1.5 Pro</option>
@@ -143,13 +143,13 @@ const SeoGmbAiContentGenerationPage = () => {
                   <label className="block text-xs font-medium text-gray-700 mb-1">Additional Instructions (Optional)</label>
                   <span className="text-xs text-gray-400">0/500</span>
                 </div>
-                <textarea 
-                  className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg px-3 py-2 outline-none h-24 resize-none focus:border-indigo-500 transition placeholder-gray-400"
+                <textarea
+                  className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded px-3 py-2 outline-none h-24 resize-none focus:border-indigo-500 transition placeholder-gray-400"
                   placeholder="Add specific points you want to include..."
                 ></textarea>
               </div>
 
-              <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 transition shadow-[0_0_15px_rgba(79,70,229,0.3)]">
+              <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded flex items-center justify-center gap-2 transition shadow-[0_0_15px_rgba(79,70,229,0.3)]">
                 <Zap size={16} className="fill-white" /> Generate Content
               </button>
             </div>
@@ -162,7 +162,7 @@ const SeoGmbAiContentGenerationPage = () => {
             </div>
             <div className="space-y-2">
               {['Cloud ERP Benefits for SMEs', 'Why Manufacturers Choose Cloud ERP', 'Cloud ERP vs On-Premise ERP', 'Future of Manufacturing with Cloud ERP', 'Cost Savings with Cloud ERP'].map((idea, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/30 cursor-pointer transition">
+                <div key={i} className="flex items-center gap-3 p-3 rounded border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/30 cursor-pointer transition">
                   <Plus size={16} className="text-indigo-600" />
                   <span className="text-sm text-gray-700 font-medium">{idea}</span>
                 </div>
@@ -174,12 +174,12 @@ const SeoGmbAiContentGenerationPage = () => {
         {/* MIDDLE COLUMN: Text Editor */}
         <div className="xl:col-span-6 space-y-4 flex flex-col h-full">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col flex-1">
-            
+
             {/* Editor Header */}
             <div className="border-b border-gray-100 px-5 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h3 className="font-semibold text-gray-900">Generated Content</h3>
-                <span className="bg-green-50 text-green-600 border border-green-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">AI Generated</span>
+                <span className="bg-green-50 text-green-600 border border-green-200 text-[10px]  px-2 py-0.5 rounded-full uppercase tracking-wider">AI Generated</span>
               </div>
               <div className="flex items-center gap-4 text-gray-500 text-sm">
                 <span>1,832 words</span>
@@ -220,38 +220,38 @@ const SeoGmbAiContentGenerationPage = () => {
 
             {/* Editor Content Area */}
             <div className="p-8 flex-1 overflow-y-auto">
-              <h1 className="text-3xl font-bold text-gray-900 mb-6">Benefits of Cloud ERP for Manufacturing</h1>
-              
+              <h1 className="text-3xl  text-gray-900 mb-6">Benefits of Cloud ERP for Manufacturing</h1>
+
               <p className="text-gray-700 mb-6 leading-relaxed">
                 The manufacturing industry is evolving rapidly, and businesses need smarter solutions to stay competitive. Cloud ERP (Enterprise Resource Planning) has emerged as a game-changer, enabling manufacturers to streamline operations, reduce costs, and improve efficiency.
               </p>
 
-              <h2 className="text-xl font-bold text-gray-900 mb-3 mt-8">1. Real-Time Data Access</h2>
+              <h2 className="text-xl  text-gray-900 mb-3 mt-8">1. Real-Time Data Access</h2>
               <p className="text-gray-700 mb-6 leading-relaxed">
                 Cloud ERP provides real-time access to critical business data from anywhere, at any time. This helps manufacturers make faster, data-driven decisions and respond quickly to market changes.
               </p>
 
-              <h2 className="text-xl font-bold text-gray-900 mb-3 mt-8">2. Cost Savings</h2>
+              <h2 className="text-xl  text-gray-900 mb-3 mt-8">2. Cost Savings</h2>
               <p className="text-gray-700 mb-6 leading-relaxed">
                 With Cloud ERP, companies can significantly reduce IT infrastructure costs, maintenance expenses, and hardware investments. You pay only for what you use, making it a cost-effective solution for businesses of all sizes.
               </p>
 
-              <h2 className="text-xl font-bold text-gray-900 mb-3 mt-8">3. Scalability and Flexibility</h2>
+              <h2 className="text-xl  text-gray-900 mb-3 mt-8">3. Scalability and Flexibility</h2>
               <p className="text-gray-700 mb-6 leading-relaxed">
                 As your manufacturing business grows, Cloud ERP grows with you. It allows you to easily add new users, modules, and features without complex upgrades or downtime.
               </p>
 
-              <h2 className="text-xl font-bold text-gray-900 mb-3 mt-8">4. Improved Collaboration</h2>
+              <h2 className="text-xl  text-gray-900 mb-3 mt-8">4. Improved Collaboration</h2>
               <p className="text-gray-700 mb-6 leading-relaxed">
                 Cloud ERP centralizes data across departments—production, inventory, finance, sales, and supply chain—improving communication and collaboration across your organization.
               </p>
 
-              <h2 className="text-xl font-bold text-gray-900 mb-3 mt-8">5. Enhanced Security</h2>
+              <h2 className="text-xl  text-gray-900 mb-3 mt-8">5. Enhanced Security</h2>
               <p className="text-gray-700 mb-6 leading-relaxed">
                 Leading Cloud ERP providers implement robust security measures, including data encryption, regular backups, and multi-layer authentication, ensuring your sensitive business data is always protected.
               </p>
 
-              <h2 className="text-xl font-bold text-gray-900 mb-3 mt-8">6. Better Production Planning</h2>
+              <h2 className="text-xl  text-gray-900 mb-3 mt-8">6. Better Production Planning</h2>
               <p className="text-gray-700 mb-6 leading-relaxed">
                 Cloud ERP helps manufacturers optimize production schedules, manage resources efficiently, and minimize downtime with accurate forecasting and planning tools.
               </p>
@@ -272,13 +272,13 @@ const SeoGmbAiContentGenerationPage = () => {
 
           {/* AI Assistant & History Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
+
             {/* AI Assistant */}
             <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm h-64 flex flex-col">
               <h3 className="font-semibold text-gray-900 mb-4">AI Content Assistant</h3>
               <div className="flex gap-4 border-b border-gray-100 mb-4">
                 {['Suggestions', 'Improve Content', 'Expand Content', 'Shorten Content', 'Make it Simple'].map(tab => (
-                  <button 
+                  <button
                     key={tab}
                     onClick={() => setActiveAssistantTab(tab)}
                     className={`text-xs font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${activeAssistantTab === tab ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
@@ -314,21 +314,21 @@ const SeoGmbAiContentGenerationPage = () => {
                     <h4 className="text-sm font-semibold text-gray-900 mb-1">Benefits of Cloud ERP for Manufacturing</h4>
                     <p className="text-[10px] text-gray-500">May 30, 2026 - 10:30 AM</p>
                   </div>
-                  <span className="bg-green-50 text-green-600 border border-green-200 text-[9px] font-bold px-2 py-0.5 rounded-full">Published</span>
+                  <span className="bg-green-50 text-green-600 border border-green-200 text-[9px]  px-2 py-0.5 rounded-full">Published</span>
                 </div>
                 <div className="flex items-start justify-between border-b border-gray-50 pb-3">
                   <div>
                     <h4 className="text-sm font-semibold text-gray-900 mb-1">Top ERP Features for Manufacturing</h4>
                     <p className="text-[10px] text-gray-500">May 28, 2026 - 04:15 PM</p>
                   </div>
-                  <span className="bg-gray-50 text-gray-600 border border-gray-200 text-[9px] font-bold px-2 py-0.5 rounded-full">Draft</span>
+                  <span className="bg-gray-50 text-gray-600 border border-gray-200 text-[9px]  px-2 py-0.5 rounded-full">Draft</span>
                 </div>
                 <div className="flex items-start justify-between border-b border-gray-50 pb-3">
                   <div>
                     <h4 className="text-sm font-semibold text-gray-900 mb-1">Manufacturing ERP Implementation Guide</h4>
                     <p className="text-[10px] text-gray-500">May 26, 2026 - 11:20 AM</p>
                   </div>
-                  <span className="bg-gray-50 text-gray-600 border border-gray-200 text-[9px] font-bold px-2 py-0.5 rounded-full">Draft</span>
+                  <span className="bg-gray-50 text-gray-600 border border-gray-200 text-[9px]  px-2 py-0.5 rounded-full">Draft</span>
                 </div>
               </div>
               <button className="text-indigo-600 text-xs font-semibold mt-2 hover:underline w-full text-left">View All History &rarr;</button>
@@ -338,19 +338,19 @@ const SeoGmbAiContentGenerationPage = () => {
 
         {/* RIGHT COLUMN: SEO/GEO & Tools */}
         <div className="xl:col-span-3 space-y-4">
-          
+
           {/* Content Score */}
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-4">Content Score (AI Optimization)</h3>
             <div className="flex items-center justify-between">
-              
+
               <div className="relative w-28 h-28 flex flex-col items-center justify-center">
                 <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
                   <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E5E7EB" strokeWidth="3" />
                   <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10B981" strokeWidth="3" strokeDasharray="88, 100" />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-3xl font-bold text-gray-900 leading-none tracking-tighter">88<span className="text-sm font-medium text-gray-400">/100</span></span>
+                  <span className="text-3xl  text-gray-900 leading-none tracking-tighter">88<span className="text-sm font-medium text-gray-400">/100</span></span>
                 </div>
                 <div className="absolute -bottom-2 text-[10px] font-semibold text-green-600">Excellent</div>
               </div>
@@ -383,10 +383,10 @@ const SeoGmbAiContentGenerationPage = () => {
           {/* SEO / GEO Analysis */}
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-4">SEO / GEO Analysis</h3>
-            
+
             <div className="flex gap-2 border-b border-gray-100 mb-4">
               {['SEO', 'GEO', 'Readability', 'Tone'].map(tab => (
-                <button 
+                <button
                   key={tab}
                   onClick={() => setActiveAnalysisTab(tab)}
                   className={`text-xs font-semibold pb-2 border-b-2 transition-colors flex-1 text-center ${activeAnalysisTab === tab ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
@@ -469,25 +469,25 @@ const SeoGmbAiContentGenerationPage = () => {
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-4">Content Actions</h3>
             <div className="grid grid-cols-4 gap-2">
-              <div className="flex flex-col items-center justify-center p-3 rounded-lg border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer transition gap-2 text-center group">
+              <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer transition gap-2 text-center group">
                 <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition">
                   <Search size={14} className="text-indigo-600" />
                 </div>
                 <span className="text-[9px] font-semibold text-gray-700 leading-tight">Generate FAQ</span>
               </div>
-              <div className="flex flex-col items-center justify-center p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition gap-2 text-center group">
+              <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition gap-2 text-center group">
                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
                   <Globe size={14} className="text-blue-600" />
                 </div>
                 <span className="text-[9px] font-semibold text-gray-700 leading-tight">Generate Meta</span>
               </div>
-              <div className="flex flex-col items-center justify-center p-3 rounded-lg border border-gray-100 hover:border-pink-300 hover:bg-pink-50 cursor-pointer transition gap-2 text-center group">
+              <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-pink-300 hover:bg-pink-50 cursor-pointer transition gap-2 text-center group">
                 <div className="w-8 h-8 rounded-full bg-pink-50 flex items-center justify-center group-hover:bg-pink-100 transition">
                   <FileText size={14} className="text-pink-600" />
                 </div>
                 <span className="text-[9px] font-semibold text-gray-700 leading-tight">Generate Summary</span>
               </div>
-              <div className="flex flex-col items-center justify-center p-3 rounded-lg border border-gray-100 hover:border-green-300 hover:bg-green-50 cursor-pointer transition gap-2 text-center group">
+              <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-green-300 hover:bg-green-50 cursor-pointer transition gap-2 text-center group">
                 <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition">
                   <Shield size={14} className="text-green-600" />
                 </div>

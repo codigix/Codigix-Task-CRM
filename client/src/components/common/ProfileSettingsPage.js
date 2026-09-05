@@ -418,7 +418,7 @@ const ProfileSettingsPage = () => {
             target: a.details || 'on a record',
             time: new Date(a.created_at).toLocaleString(),
             type: a.activity_type || 'system'
-        })));
+          })));
 
         setInvoices(invoicesRes.data
           .filter(i => userNameMatches(i.bill_to) || userNameMatches(i.created_by))
@@ -428,7 +428,7 @@ const ProfileSettingsPage = () => {
             amount: `$${parseFloat(i.amount || 0).toFixed(2)}`,
             status: i.status || 'Draft',
             client: i.bill_to || 'Client'
-        })));
+          })));
 
       } catch (err) {
         console.error('Failed to fetch profile data', err);
@@ -583,7 +583,7 @@ const ProfileSettingsPage = () => {
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl font-bold tracking-wider select-none">
+                <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl  tracking-wider select-none">
                   {((profile.firstName?.[0] || '') + (profile.lastName?.[0] || '')).toUpperCase() || (profile.email?.[0] || 'U').toUpperCase()}
                 </div>
               )}
@@ -593,7 +593,7 @@ const ProfileSettingsPage = () => {
 
           <div className="flex-1 text-center md:text-left">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-              <h2 className="text-xl font-bold text-gray-900">{profile.firstName} {profile.lastName}</h2>
+              <h2 className="text-xl  text-gray-900">{profile.firstName} {profile.lastName}</h2>
               <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-md border border-indigo-100">
                 {profile.role || 'Team Member'}
               </span>
@@ -918,9 +918,8 @@ const ProfileSettingsPage = () => {
                         </div>
                         <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              idx === 0 ? 'bg-blue-600' : idx === 1 ? 'bg-emerald-500' : idx === 2 ? 'bg-purple-500' : idx === 3 ? 'bg-amber-500' : 'bg-rose-500'
-                            }`}
+                            className={`h-full rounded-full transition-all duration-500 ${idx === 0 ? 'bg-blue-600' : idx === 1 ? 'bg-emerald-500' : idx === 2 ? 'bg-purple-500' : idx === 3 ? 'bg-amber-500' : 'bg-rose-500'
+                              }`}
                             style={{ width: `${Math.min(100, Math.max(userItem.workload, userItem.taskCount > 0 ? 10 : 0))}%` }}
                           ></div>
                         </div>

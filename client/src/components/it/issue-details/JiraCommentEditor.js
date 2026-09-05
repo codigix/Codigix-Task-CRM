@@ -59,7 +59,7 @@ const JiraCommentEditor = ({
     try {
       setIsBoldActive(document.queryCommandState('bold'));
       setIsItalicActive(document.queryCommandState('italic'));
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Synchronize state with editor content
@@ -186,15 +186,14 @@ const JiraCommentEditor = ({
   };
 
   return (
-    <div className="border border-blue-500/80 ring-2 ring-blue-500/20 rounded-lg bg-white shadow-sm overflow-hidden text-xs relative">
+    <div className="border border-blue-500/80 ring-2 ring-blue-500/20 rounded bg-white shadow-sm overflow-hidden text-xs relative">
       {/* ── JIRA RICH TEXT TOOLBAR (VISUAL WYSIWYG) ── */}
       <div className="flex items-center gap-1 px-2.5 py-1.5 border-b border-gray-200 bg-gray-50/80 flex-wrap select-none">
         <button
           type="button"
           onMouseDown={(e) => { e.preventDefault(); executeCommand('bold'); }}
-          className={`p-1.5 rounded transition cursor-pointer font-bold ${
-            isBoldActive ? 'bg-blue-100 text-blue-700 shadow-xs' : 'hover:bg-gray-200 text-gray-700'
-          }`}
+          className={`p-1.5 rounded transition cursor-pointer  ${isBoldActive ? 'bg-blue-100 text-blue-700 shadow-xs' : 'hover:bg-gray-200 text-gray-700'
+            }`}
           title="Bold (Ctrl+B)"
         >
           <Bold size={13} strokeWidth={2.5} />
@@ -202,9 +201,8 @@ const JiraCommentEditor = ({
         <button
           type="button"
           onMouseDown={(e) => { e.preventDefault(); executeCommand('italic'); }}
-          className={`p-1.5 rounded transition cursor-pointer ${
-            isItalicActive ? 'bg-blue-100 text-blue-700 shadow-xs' : 'hover:bg-gray-200 text-gray-700'
-          }`}
+          className={`p-1.5 rounded transition cursor-pointer ${isItalicActive ? 'bg-blue-100 text-blue-700 shadow-xs' : 'hover:bg-gray-200 text-gray-700'
+            }`}
           title="Italic (Ctrl+I)"
         >
           <Italic size={13} />
@@ -221,7 +219,7 @@ const JiraCommentEditor = ({
         <button
           type="button"
           onMouseDown={(e) => { e.preventDefault(); executeCommand('formatBlock', '<h3>'); }}
-          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition cursor-pointer font-bold flex items-center gap-0.5"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition cursor-pointer  flex items-center gap-0.5"
           title="Heading (H3)"
         >
           <Type size={13} />
@@ -291,13 +289,13 @@ const JiraCommentEditor = ({
           onMouseUp={checkActiveFormatting}
           onKeyDown={handleKeyDown}
           data-placeholder={placeholder}
-          className="w-full text-xs outline-none min-h-[75px] font-sans leading-relaxed text-gray-800 bg-white prose prose-xs max-w-none [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-gray-900 [&_pre]:bg-gray-100 [&_pre]:p-1.5 [&_pre]:rounded [&_a]:text-blue-600 [&_a]:underline empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:cursor-text"
+          className="w-full text-xs outline-none min-h-[75px] font-sans leading-relaxed text-gray-800 bg-white prose prose-xs max-w-none [&_strong]: [&_b]: [&_em]:italic [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_pre]:bg-gray-100 [&_pre]:p-1.5 [&_pre]:rounded [&_a]:text-blue-600 [&_a]:underline empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:cursor-text"
         />
 
         {/* ── @MENTION AUTOCOMPLETE DROPDOWN ── */}
         {mentionQuery !== null && mentionMatches.length > 0 && (
-          <div className="absolute left-4 top-12 z-50 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-            <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
+          <div className="absolute left-4 top-12 z-50 w-56 bg-white rounded shadow-xl border border-gray-200 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+            <div className="px-2.5 py-1 text-[10px]  text-gray-400 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
               Mention Teammate
             </div>
             {mentionMatches.map((u, idx) => (
@@ -307,11 +305,10 @@ const JiraCommentEditor = ({
                   e.preventDefault();
                   insertMention(u.name);
                 }}
-                className={`px-2.5 py-1.5 flex items-center gap-2 cursor-pointer transition ${
-                  idx === selectedMentionIndex ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`px-2.5 py-1.5 flex items-center gap-2 cursor-pointer transition ${idx === selectedMentionIndex ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                  }`}
               >
-                <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700  text-[10px] flex items-center justify-center shrink-0">
                   {u.name.slice(0, 2).toUpperCase()}
                 </div>
                 <span className="truncate">{u.name}</span>
@@ -338,7 +335,7 @@ const JiraCommentEditor = ({
               }}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 text-[10px] font-medium transition cursor-pointer border border-gray-200/60"
             >
-              <span className="w-3.5 h-3.5 rounded-full bg-gray-300 text-gray-700 text-[8px] flex items-center justify-center font-bold">
+              <span className="w-3.5 h-3.5 rounded-full bg-gray-300 text-gray-700 text-[8px] flex items-center justify-center ">
                 {u.name[0]?.toUpperCase()}
               </span>
               <span>+ {u.name}</span>
