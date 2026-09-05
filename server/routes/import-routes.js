@@ -377,8 +377,15 @@ module.exports = function setupImportRoutes(app, pool) {
       );
       let nextNum = 101;
       for (const row of existing) {
-        const parts = String(row.issue_key).split('-');
-        const n = parts.length === 2 ? parseInt(parts[1], 10) : NaN;
+        const str = String(row.issue_key || '').trim();
+        let n = NaN;
+        if (str.toUpperCase().startsWith(`${prefix.toUpperCase()}-`)) {
+          n = parseInt(str.slice(prefix.length + 1), 10);
+        }
+        if (isNaN(n)) {
+          const parts = str.split('-');
+          n = parseInt(parts[parts.length - 1], 10);
+        }
         if (!isNaN(n) && n >= nextNum) nextNum = n + 1;
       }
 

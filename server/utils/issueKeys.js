@@ -80,13 +80,32 @@ const nextIssueKey = async (runner, prefix) => {
     'SELECT issue_key FROM it_kanban_issues WHERE issue_key LIKE ?', [`${prefix}-%`]
   );
 
+  const existingKeys = new Set(rows.map(r => String(r.issue_key).toUpperCase()));
+
   let highest = 100; // first key of any prefix is -101
   for (const row of rows) {
-    const parts = String(row.issue_key).split('-');
-    const n = parts.length === 2 ? parseInt(parts[1], 10) : NaN;
+    const str = String(row.issue_key || '').trim();
+    let n = NaN;
+    // When prefix has hyphens (e.g. PRJ-2026-0013), slice off `${prefix}-`
+    if (str.toUpperCase().startsWith(`${prefix.toUpperCase()}-`)) {
+      n = parseInt(str.slice(prefix.length + 1), 10);
+    }
+    // Fallback: take the last hyphen-delimited chunk
+    if (isNaN(n)) {
+      const parts = str.split('-');
+      n = parseInt(parts[parts.length - 1], 10);
+    }
     if (!isNaN(n) && n > highest) highest = n;
   }
-  return `${prefix}-${highest + 1}`;
+
+  // Ensure candidate key is guaranteed free
+  let seq = highest + 1;
+  let candidate = `${prefix}-${seq}`;
+  while (existingKeys.has(candidate.toUpperCase())) {
+    seq++;
+    candidate = `${prefix}-${seq}`;
+  }
+  return candidate;
 };
 
 /** Project code when the work has a project, department prefix when it doesn't. */
