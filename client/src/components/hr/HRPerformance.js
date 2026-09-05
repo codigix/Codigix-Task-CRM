@@ -734,7 +734,8 @@ const Drawer = ({ isOpen, onClose, employee }) => {
 const OverviewTab = ({ handleGenerateReport }) => {
   const { overview, employees } = React.useContext(PerformanceContext);
   const { trendData = [], deptData = [], scoreBreakdown = [], perfDistribution = [], averageScore = 0, totalReviews = 0 } = overview || {};
-  const topEmployees = employees.filter(e => e.score).sort((a,b)=>b.score-a.score).slice(0,5);
+  const safeEmployees = Array.isArray(employees) ? employees : [];
+  const topEmployees = safeEmployees.filter(e => e.score).sort((a,b)=>b.score-a.score).slice(0,5);
   const recentReviews = []; // Handled separately or mocked
   
   return (
@@ -1001,7 +1002,7 @@ const OverviewTab = ({ handleGenerateReport }) => {
 const AllEmployeesTab = ({ onSelectEmployee, handleGenerateReport }) => {
   const { employees, overview } = React.useContext(PerformanceContext);
   const { deptData = [], perfDistribution = [] } = overview || {};
-  const allEmployees = employees;
+  const allEmployees = Array.isArray(employees) ? employees : [];
 
   const [searchTerm, setSearchTerm] = useState('');
 
