@@ -74,7 +74,7 @@ const ProjectsListPage = ({ onProjectSelect }) => {
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (project.project_id_code || project.project_id || '').toLowerCase().includes(searchTerm.toLowerCase());
+      (project.project_id_code || project.project_id || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || project.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -129,7 +129,7 @@ const ProjectsListPage = ({ onProjectSelect }) => {
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-3">
           <div className="bg-white rounded  border border-gray-200 p-2 space-y-4">
             <div className="flex gap-2 flex-wrap">
               <div className="flex-grow">

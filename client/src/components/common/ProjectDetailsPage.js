@@ -512,13 +512,13 @@ const ProjectDetailsPage = () => {
                 ['Services', (project.client_services && project.client_services.length > 0) ? (
                   <div className="flex flex-wrap gap-1">
                     {project.client_services.map((s, si) => (
-                      <span key={si} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full font-bold border border-indigo-100 text-[10px]">
+                      <span key={si} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full  border border-indigo-100 text-[10px]">
                         {s}
                       </span>
                     ))}
                   </div>
                 ) : (project.service_name || '-')],
-                ['Assigned Team', (project.team_name || assignedTeamName) ? <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full font-bold border border-emerald-100 text-[10px]">{project.team_name || assignedTeamName}</span> : 'No team assigned'],
+                ['Assigned Team', (project.team_name || assignedTeamName) ? <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full  border border-emerald-100 text-[10px]">{project.team_name || assignedTeamName}</span> : 'No team assigned'],
                 ['Project Manager', `${project.manager_first_name || ''} ${project.manager_last_name || ''}`.trim() || 'Unassigned'],
                 ['Priority', <span className="text-red-500 bg-red-50 px-1.5 py-0.5 rounded text-[9px] font-medium border border-red-200">{project.priority || '-'}</span>],
                 ['Start Date', formatDate(project.start_date)],
@@ -542,29 +542,29 @@ const ProjectDetailsPage = () => {
 
           {/* Assigned Team Info Card */}
           <div className="bg-white rounded border border-gray-200 p-3">
-            <h3 className="text-xs font-bold text-gray-900 mb-3 flex items-center gap-1.5 border-b border-gray-100 pb-2 uppercase tracking-wider">
+            <h3 className="text-xs  text-gray-900 mb-3 flex items-center gap-1.5 border-b border-gray-100 pb-2 uppercase tracking-wider">
               <Users size={14} className="text-indigo-600" />
               Assigned Team Info
             </h3>
             {(project?.team_name || assignedTeamName) ? (
               <div className="space-y-4">
                 <div>
-                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full font-bold border border-emerald-100 text-[10px]">
+                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full  border border-emerald-100 text-[10px]">
                     {project?.team_name || assignedTeamName}
                   </span>
                 </div>
-                
+
                 {/* Team Manager */}
                 <div className="border-t border-gray-100 pt-3">
-                  <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Team Manager</h4>
+                  <h4 className="text-[9px]  text-gray-400 uppercase tracking-wider mb-1">Team Manager</h4>
                   <div className="flex items-center gap-2">
                     {assignedTeam?.manager_name ? (
-                      <div className="w-6 h-6 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold">
+                      <div className="w-6 h-6 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-[10px] ">
                         {assignedTeam.manager_name[0].toUpperCase()}
                       </div>
                     ) : null}
                     <div>
-                      <p className="text-xs font-bold text-gray-800">
+                      <p className="text-xs  text-gray-800">
                         {assignedTeam?.manager_name || 'Unassigned'}
                       </p>
                     </div>
@@ -573,7 +573,7 @@ const ProjectDetailsPage = () => {
 
                 {/* Team Members List */}
                 <div className="border-t border-gray-100 pt-3">
-                  <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">Allocated Team Roster ({teamRoster.length})</h4>
+                  <h4 className="text-[9px]  text-gray-400 uppercase tracking-wider mb-2">Allocated Team Roster ({teamRoster.length})</h4>
                   <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
                     {teamRoster.map((m, idx) => (
                       <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-gray-50 last:border-0">
@@ -581,7 +581,7 @@ const ProjectDetailsPage = () => {
                           {m.avatar ? (
                             <img src={m.avatar} alt="A" className="w-5 h-5 rounded-full object-cover" />
                           ) : (
-                            <div className="w-5 h-5 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-[9px] font-bold">
+                            <div className="w-5 h-5 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-[9px] ">
                               {m.first_name ? m.first_name[0].toUpperCase() : 'U'}
                             </div>
                           )}
@@ -790,32 +790,32 @@ const ProjectDetailsPage = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900 text-base">{editingMilestone ? 'Edit Milestone' : 'Add Milestone'}</h3>
+                <h3 className=" text-gray-900 text-base">{editingMilestone ? 'Edit Milestone' : 'Add Milestone'}</h3>
                 <button onClick={() => { setIsMilestoneModalOpen(false); setEditingMilestone(null); }} className="text-gray-400 hover:text-gray-600">✕</button>
               </div>
               <form onSubmit={handleMilestoneSubmit} className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Title *</label>
-                  <input required type="text" value={milestoneForm.title} onChange={e => setMilestoneForm(p => ({...p, title: e.target.value}))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Milestone title" />
+                  <input required type="text" value={milestoneForm.title} onChange={e => setMilestoneForm(p => ({ ...p, title: e.target.value }))} className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Milestone title" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
-                  <textarea rows={2} value={milestoneForm.description} onChange={e => setMilestoneForm(p => ({...p, description: e.target.value}))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Optional description" />
+                  <textarea rows={2} value={milestoneForm.description} onChange={e => setMilestoneForm(p => ({ ...p, description: e.target.value }))} className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Optional description" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
-                    <input type="date" value={milestoneForm.start_date} onChange={e => setMilestoneForm(p => ({...p, start_date: e.target.value}))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input type="date" value={milestoneForm.start_date} onChange={e => setMilestoneForm(p => ({ ...p, start_date: e.target.value }))} className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Due Date</label>
-                    <input type="date" value={milestoneForm.due_date} onChange={e => setMilestoneForm(p => ({...p, due_date: e.target.value}))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input type="date" value={milestoneForm.due_date} onChange={e => setMilestoneForm(p => ({ ...p, due_date: e.target.value }))} className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
-                    <select value={milestoneForm.status} onChange={e => setMilestoneForm(p => ({...p, status: e.target.value}))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select value={milestoneForm.status} onChange={e => setMilestoneForm(p => ({ ...p, status: e.target.value }))} className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                       <option>Not Started</option>
                       <option>In Progress</option>
                       <option>Completed</option>
@@ -824,12 +824,12 @@ const ProjectDetailsPage = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Progress ({milestoneForm.progress}%)</label>
-                    <input type="range" min={0} max={100} value={milestoneForm.progress} onChange={e => setMilestoneForm(p => ({...p, progress: Number(e.target.value)}))} className="w-full mt-2" />
+                    <input type="range" min={0} max={100} value={milestoneForm.progress} onChange={e => setMilestoneForm(p => ({ ...p, progress: Number(e.target.value) }))} className="w-full mt-2" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Owner</label>
-                  <select value={milestoneForm.owner_id} onChange={e => setMilestoneForm(p => ({...p, owner_id: e.target.value}))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <select value={milestoneForm.owner_id} onChange={e => setMilestoneForm(p => ({ ...p, owner_id: e.target.value }))} className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">-- Unassigned --</option>
                     {teamMembers.map(m => (
                       <option key={m.user_id} value={m.user_id}>{m.first_name} {m.last_name}</option>
@@ -837,8 +837,8 @@ const ProjectDetailsPage = () => {
                   </select>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
-                  <button type="button" onClick={() => { setIsMilestoneModalOpen(false); setEditingMilestone(null); }} className="px-4 py-2 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
-                  <button type="submit" className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">{editingMilestone ? 'Update' : 'Create'} Milestone</button>
+                  <button type="button" onClick={() => { setIsMilestoneModalOpen(false); setEditingMilestone(null); }} className="px-4 py-2 text-xs font-medium text-gray-700 border border-gray-200 rounded hover:bg-gray-50">Cancel</button>
+                  <button type="submit" className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700">{editingMilestone ? 'Update' : 'Create'} Milestone</button>
                 </div>
               </form>
             </div>
@@ -884,12 +884,11 @@ const ProjectDetailsPage = () => {
                     <td className="p-3 text-gray-500">{formatDate(m.start_date)}</td>
                     <td className="p-3 text-gray-500">{formatDate(m.due_date)}</td>
                     <td className="p-3">
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-medium border ${
-                        m.status === 'Completed' ? 'text-green-600 bg-green-50 border-green-200' :
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-medium border ${m.status === 'Completed' ? 'text-green-600 bg-green-50 border-green-200' :
                         m.status === 'In Progress' ? 'text-blue-600 bg-blue-50 border-blue-200' :
-                        m.status === 'On Hold' ? 'text-amber-600 bg-amber-50 border-amber-200' :
-                        'text-gray-500 bg-gray-100 border-gray-200'
-                      }`}>
+                          m.status === 'On Hold' ? 'text-amber-600 bg-amber-50 border-amber-200' :
+                            'text-gray-500 bg-gray-100 border-gray-200'
+                        }`}>
                         {m.status === 'Completed' ? '✓ Completed' : m.status}
                       </span>
                     </td>
@@ -903,7 +902,7 @@ const ProjectDetailsPage = () => {
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => { setEditingMilestone(m); setMilestoneForm({ title: m.title, description: m.description || '', owner_id: m.owner_id || '', start_date: m.start_date ? m.start_date.slice(0,10) : '', due_date: m.due_date ? m.due_date.slice(0,10) : '', status: m.status, progress: m.progress }); setIsMilestoneModalOpen(true); }} className="text-blue-500 hover:text-blue-700"><Edit3 size={13} /></button>
+                        <button onClick={() => { setEditingMilestone(m); setMilestoneForm({ title: m.title, description: m.description || '', owner_id: m.owner_id || '', start_date: m.start_date ? m.start_date.slice(0, 10) : '', due_date: m.due_date ? m.due_date.slice(0, 10) : '', status: m.status, progress: m.progress }); setIsMilestoneModalOpen(true); }} className="text-blue-500 hover:text-blue-700"><Edit3 size={13} /></button>
                         <button onClick={() => handleMilestoneDelete(m.id)} className="text-red-500 hover:text-red-700"><Trash2 size={13} /></button>
                       </div>
                     </td>
@@ -945,29 +944,29 @@ const ProjectDetailsPage = () => {
               const isTeamManager = assignedTeam && Number(assignedTeam.manager_id) === Number(m.user_id);
               const displayRole = rosterEntry?.role || (isTeamManager ? (assignedTeam.manager_role || 'Manager') : null) || m.role || '-';
               return (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="p-3 flex items-center gap-1.5">
-                  {m.avatar ? <img src={m.avatar} alt="A" className="w-6 h-6 rounded-full" /> : <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex justify-center items-center  text-xs">{m.first_name?.[0] || 'U'}</div>}
-                  <span className="font-medium text-gray-900">{m.first_name} {m.last_name}</span>
-                </td>
-                <td className="p-3">{displayRole}</td>
-                <td className="p-3">{m.department || project.department_name || '-'}</td>
-                <td className="p-3 text-blue-600 hover:underline cursor-pointer">{m.email}</td>
-                <td className="p-3"><span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[9px] font-medium border border-emerald-100">Active</span></td>
-                <td className="p-3">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 flex-1">
-                      <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full bg-blue-600" style={{ width: `${Math.max(20, 100 - i * 15)}%` }}></div>
+                <tr key={i} className="hover:bg-gray-50">
+                  <td className="p-3 flex items-center gap-1.5">
+                    {m.avatar ? <img src={m.avatar} alt="A" className="w-6 h-6 rounded-full" /> : <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex justify-center items-center  text-xs">{m.first_name?.[0] || 'U'}</div>}
+                    <span className="font-medium text-gray-900">{m.first_name} {m.last_name}</span>
+                  </td>
+                  <td className="p-3">{displayRole}</td>
+                  <td className="p-3">{m.department || project.department_name || '-'}</td>
+                  <td className="p-3 text-blue-600 hover:underline cursor-pointer">{m.email}</td>
+                  <td className="p-3"><span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[9px] font-medium border border-emerald-100">Active</span></td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 flex-1">
+                        <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full bg-blue-600" style={{ width: `${Math.max(20, 100 - i * 15)}%` }}></div>
+                        </div>
+                        <span className="text-xs text-gray-500">{Math.max(20, 100 - i * 15)}%</span>
                       </div>
-                      <span className="text-xs text-gray-500">{Math.max(20, 100 - i * 15)}%</span>
+                      {canManage && (
+                        <button onClick={() => handleRemoveMember(m.user_id)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button>
+                      )}
                     </div>
-                    {canManage && (
-                      <button onClick={() => handleRemoveMember(m.user_id)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button>
-                    )}
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                </tr>
               );
             }) : (
               <tr><td colSpan="6" className="p-6 text-center text-gray-500">No team members assigned.</td></tr>

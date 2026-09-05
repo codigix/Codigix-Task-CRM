@@ -19,7 +19,7 @@ const STATUSES = ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'];
 const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssueCreated }) => {
   const { user } = useAuth();
   const config = DEPARTMENT_KANBAN_CONFIG[department] || DEPARTMENT_KANBAN_CONFIG['IT'];
-  
+
   const selectableSpaces = config.spaces.filter(s => s.id !== 'ALL');
   const [selectedSpace, setSelectedSpace] = useState(selectableSpaces[0] || config.spaces[0]);
   const [issueType, setIssueType] = useState(config.issueTypes[0]?.name || 'Task');
@@ -30,7 +30,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
   const [priority, setPriority] = useState('Medium');
   const [dueDate, setDueDate] = useState('');
   const [storyPoints, setStoryPoints] = useState('');
-  
+
   // UI states
   const [usersList, setUsersList] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -150,11 +150,11 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-sm animate-fade-in flex justify-end">
       <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-gray-200">
-        
+
         {/* DRAWER HEADER */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-red-50/50 to-white">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-red-600 text-white flex items-center justify-center font-bold text-xs">
+            <div className="w-8 h-8 rounded bg-red-600 text-white flex items-center justify-center  text-xs">
               {selectedSpace?.code || config.defaultPrefix}
             </div>
             <div>
@@ -164,7 +164,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
           >
             <X size={18} />
           </button>
@@ -172,7 +172,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
 
         {/* DRAWER BODY */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
-          
+
           {/* SPACE SELECTION */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">{department} Space / Track</label>
@@ -182,7 +182,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
                 const found = selectableSpaces.find(s => s.id === e.target.value);
                 if (found) setSelectedSpace(found);
               }}
-              className="w-full h-9 px-3 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
+              className="w-full h-9 px-3 border border-gray-300 rounded text-xs bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
             >
               {selectableSpaces.map(space => (
                 <option key={space.id} value={space.id}>
@@ -204,11 +204,10 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
                     key={type.name}
                     type="button"
                     onClick={() => setIssueType(type.name)}
-                    className={`flex items-center gap-2 p-2 border rounded-lg text-xs font-medium text-left transition-all ${
-                      isSelected
-                        ? 'border-red-500 bg-red-50/60 text-red-700 ring-1 ring-red-500'
-                        : 'border-gray-200 hover:bg-gray-50 text-gray-700'
-                    }`}
+                    className={`flex items-center gap-2 p-2 border rounded text-xs font-medium text-left transition-all ${isSelected
+                      ? 'border-red-500 bg-red-50/60 text-red-700 ring-1 ring-red-500'
+                      : 'border-gray-200 hover:bg-gray-50 text-gray-700'
+                      }`}
                   >
                     <div className={`p-1.5 rounded-md ${type.color}`}>
                       <Icon size={14} />
@@ -231,7 +230,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
               placeholder="e.g. Implement feature or create deliverable specs..."
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              className="w-full h-9 px-3 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-red-500 focus:outline-none"
+              className="w-full h-9 px-3 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-red-500 focus:outline-none"
             />
           </div>
 
@@ -254,7 +253,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
               placeholder="Provide objective, technical details, requirements, or links..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-red-500 focus:outline-none"
+              className="w-full p-3 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-red-500 focus:outline-none"
             />
           </div>
 
@@ -265,7 +264,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full h-9 px-3 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
+                className="w-full h-9 px-3 border border-gray-300 rounded text-xs bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
               >
                 {STATUSES.map(st => (
                   <option key={st} value={st}>{st}</option>
@@ -278,7 +277,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
-                className="w-full h-9 px-3 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
+                className="w-full h-9 px-3 border border-gray-300 rounded text-xs bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
               >
                 {PRIORITIES.map(p => (
                   <option key={p.name} value={p.name}>{p.name}</option>
@@ -294,7 +293,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
               <select
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
-                className="w-full h-9 px-3 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
+                className="w-full h-9 px-3 border border-gray-300 rounded text-xs bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
               >
                 <option value="Unassigned">Unassigned</option>
                 {usersList.map(u => {
@@ -314,7 +313,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full h-9 px-3 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
+                className="w-full h-9 px-3 border border-gray-300 rounded text-xs bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
               />
             </div>
           </div>
@@ -326,7 +325,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
           <button
             type="button"
             onClick={handleClose}
-            className="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
@@ -334,7 +333,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-5 py-2 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1.5 shadow-sm"
+            className="px-5 py-2 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors flex items-center gap-1.5 shadow-sm"
           >
             {isSubmitting ? 'Creating...' : 'Create Ticket'}
           </button>

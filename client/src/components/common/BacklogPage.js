@@ -179,7 +179,7 @@ const AssigneePicker = ({ assignee, users, currentUserName, onChange }) => {
           setQuery('');
         }}
         title={name || 'Unassigned'}
-        className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold ring-1 ring-white hover:ring-blue-400 transition ${name ? `${avatarColor(name)} text-white` : 'bg-gray-200 text-gray-500'
+        className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px]  ring-1 ring-white hover:ring-blue-400 transition ${name ? `${avatarColor(name)} text-white` : 'bg-gray-200 text-gray-500'
           }`}
       >
         {name ? initials(name) : '?'}
@@ -203,7 +203,7 @@ const AssigneePicker = ({ assignee, users, currentUserName, onChange }) => {
             onClick={() => pick('Unassigned')}
             className="px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
           >
-            <span className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[9px] font-bold">?</span>
+            <span className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[9px] ">?</span>
             <span className="text-gray-700">Unassigned</span>
             {(!assignee || assignee === 'Unassigned') && <Check size={13} className="text-blue-600 ml-auto" />}
           </div>
@@ -213,7 +213,7 @@ const AssigneePicker = ({ assignee, users, currentUserName, onChange }) => {
               onClick={() => pick(currentUserName)}
               className="px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
             >
-              <span className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-[9px] font-bold ${avatarColor(currentUserName)}`}>
+              <span className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-[9px]  ${avatarColor(currentUserName)}`}>
                 {initials(currentUserName)}
               </span>
               <span className="text-gray-700 truncate">
@@ -228,7 +228,7 @@ const AssigneePicker = ({ assignee, users, currentUserName, onChange }) => {
               onClick={() => pick(u.name)}
               className="px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
             >
-              <span className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-[9px] font-bold shrink-0 ${avatarColor(u.name)}`}>
+              <span className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-[9px]  shrink-0 ${avatarColor(u.name)}`}>
                 {initials(u.name)}
               </span>
               <div className="min-w-0">
@@ -910,9 +910,9 @@ const BacklogPage = ({ department }) => {
 
   const CountBadges = ({ counts }) => (
     <div className="flex items-center gap-1">
-      <span className="min-w-[22px] text-center text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-700" title="To Do">{counts.todo}</span>
-      <span className="min-w-[22px] text-center text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700" title="In Progress">{counts.inProgress}</span>
-      <span className="min-w-[22px] text-center text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700" title="Done">{counts.done}</span>
+      <span className="min-w-[22px] text-center text-[10px]  px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-700" title="To Do">{counts.todo}</span>
+      <span className="min-w-[22px] text-center text-[10px]  px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700" title="In Progress">{counts.inProgress}</span>
+      <span className="min-w-[22px] text-center text-[10px]  px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700" title="Done">{counts.done}</span>
     </div>
   );
 
@@ -1003,7 +1003,7 @@ const BacklogPage = ({ department }) => {
               ? `${formatDate(sprint.start_date)} – ${formatDate(sprint.end_date)}` : null;
 
             return (
-              <div key={sprint.id} className="mb-4 border border-gray-200 rounded-lg bg-white overflow-hidden">
+              <div key={sprint.id} className="mb-4 border border-gray-200 rounded bg-white overflow-hidden">
                 <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 border-b border-gray-200">
                   <button onClick={() => toggle(`s${sprint.id}`)} className="text-gray-500 hover:text-gray-800">
                     {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
@@ -1011,7 +1011,7 @@ const BacklogPage = ({ department }) => {
                   <span className="font-semibold text-sm text-gray-900">{sprint.name}</span>
 
                   {sprint.status === 'Active' && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">ACTIVE</span>
+                    <span className="text-[10px]  px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">ACTIVE</span>
                   )}
                   {dates ? (
                     <button
@@ -1093,7 +1093,7 @@ const BacklogPage = ({ department }) => {
           })}
 
           {/* Backlog section */}
-          <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
+          <div className="border border-gray-200 rounded bg-white overflow-hidden">
             <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 border-b border-gray-200">
               <button onClick={() => toggle('backlog')} className="text-gray-500 hover:text-gray-800">
                 {collapsed.backlog ? <ChevronRight size={16} /> : <ChevronDown size={16} />}

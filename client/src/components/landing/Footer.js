@@ -8,10 +8,10 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
           <div className="col-span-1 lg:col-span-2">
             <div className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+              <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center text-white  text-lg">
                 C
               </div>
-              <span className="font-bold text-xl tracking-tight text-white">Codigix<span className="text-red-600">CRM</span></span>
+              <span className=" text-xl tracking-tight text-white">Codigix<span className="text-red-600">CRM</span></span>
             </div>
             <p className="text-slate-400 leading-relaxed mb-8 max-w-sm">
               The only platform you need to run your entire business. Unify your data, automate your workflows, and grow faster.
@@ -19,9 +19,9 @@ const Footer = () => {
             <div className="mb-6">
               <h4 className="text-white font-semibold mb-3">Subscribe to our newsletter</h4>
               <div className="flex gap-2 max-w-sm">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email" 
+                <input
+                  type="email"
+                  placeholder="Enter your email"
                   className="bg-slate-800 border border-slate-700 text-white px-4 py-2.5 rounded-xl focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 w-full transition-colors"
                 />
                 <button className="bg-red-600 hover:bg-red-600 text-white px-4 py-2.5 rounded-xl font-medium transition-colors whitespace-nowrap shadow-lg shadow-red-600/20">
@@ -30,7 +30,7 @@ const Footer = () => {
               </div>
             </div>
           </div>
-          
+
           <div>
             <h4 className="text-white font-semibold mb-4">Modules</h4>
             <ul className="space-y-3">
@@ -41,7 +41,7 @@ const Footer = () => {
               <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Project Management</a></li>
             </ul>
           </div>
-          
+
           <div>
             <h4 className="text-white font-semibold mb-4">Resources</h4>
             <ul className="space-y-3">
@@ -51,7 +51,7 @@ const Footer = () => {
               <li><a href="#" className="text-slate-400 hover:text-white transition-colors">API Reference</a></li>
             </ul>
           </div>
-          
+
           <div>
             <h4 className="text-white font-semibold mb-4">Company</h4>
             <ul className="space-y-3">
@@ -62,7 +62,7 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-        
+
         <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-slate-500 text-sm">
             &copy; {new Date().getFullYear()} Codigix. All rights reserved.

@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, ChevronDown, Check } from 'lucide-react';
 
-const SearchableSelect = ({ 
-  options = [], 
-  value, 
-  onChange, 
-  placeholder = 'Choose', 
+const SearchableSelect = ({
+  options = [],
+  value,
+  onChange,
+  placeholder = 'Choose',
   label,
   required = false,
   disabled = false,
@@ -155,15 +155,14 @@ const SearchableSelect = ({
                         setSearchTerm('');
                       }
                     }}
-                    className={`w-full flex items-center justify-between p-2 text-xs rounded transition-colors text-left ${
-                      isSelected
+                    className={`w-full flex items-center justify-between p-2 text-xs rounded transition-colors text-left ${isSelected
                         ? 'bg-blue-50 text-blue-700 font-semibold'
                         : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2.5 truncate">
                       {opt.avatar && (
-                        <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]  shrink-0">
                           {opt.avatar}
                         </div>
                       )}

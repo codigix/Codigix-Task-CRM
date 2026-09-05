@@ -2393,7 +2393,7 @@ const LeadDetailsPage = () => {
                 <Plus size={14} /> Add Recipient
               </button>
             </div>
-            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+            <div className="p-6 space-y-3 max-h-[70vh] overflow-y-auto">
               {fileModalTab === 'Basic Info' ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
@@ -2682,7 +2682,7 @@ const LeadDetailsPage = () => {
                 <X size={15} />
               </button>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-3">
               <div>
                 <label className="block text-xs font-[500] text-gray-700 mb-1.5  ">Account type <span className="text-red-500">*</span></label>
                 <div className="relative">

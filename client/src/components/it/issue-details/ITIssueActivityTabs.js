@@ -33,7 +33,7 @@ const renderFormattedComment = (rawText) => {
   if (str.includes('<') && (str.includes('<b') || str.includes('<strong') || str.includes('<i') || str.includes('<em') || str.includes('<u') || str.includes('<span') || str.includes('<p') || str.includes('<h') || str.includes('<ul') || str.includes('<ol') || str.includes('<pre') || str.includes('<a'))) {
     return (
       <div
-        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed font-sans [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_a]:text-blue-600 [&_a]:underline [&_pre]:bg-gray-100 [&_pre]:p-1.5 [&_pre]:rounded break-words"
+        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed font-sans [&_strong]: [&_b]: [&_em]:italic [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_a]:text-blue-600 [&_a]:underline [&_pre]:bg-gray-100 [&_pre]:p-1.5 [&_pre]:rounded break-words"
         dangerouslySetInnerHTML={{ __html: str }}
       />
     );
@@ -46,7 +46,7 @@ const renderFormattedComment = (rawText) => {
   if (processed.includes('<strong>') || processed.includes('<em>')) {
     return (
       <div
-        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed font-sans [&_strong]:font-bold [&_b]:font-bold [&_em]:italic [&_i]:italic break-words"
+        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed font-sans [&_strong]: [&_b]: [&_em]:italic [&_i]:italic break-words"
         dangerouslySetInnerHTML={{ __html: processed }}
       />
     );
@@ -198,7 +198,7 @@ const ITIssueActivityTabs = ({
         <div className="space-y-4">
           {/* New Comment Box with JiraCommentEditor */}
           <div className="flex gap-2.5 items-start">
-            <div className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-6 h-6 rounded-full bg-blue-600 text-white  text-[10px] flex items-center justify-center shrink-0 shadow-xs">
               {initialsOf(currentUser)}
             </div>
             <div className="flex-1">
@@ -218,7 +218,7 @@ const ITIssueActivityTabs = ({
               ) : (
                 <div
                   onClick={() => setIsCommenting(true)}
-                  className="border border-gray-200 hover:border-blue-400/80 rounded-lg p-2.5 text-xs text-gray-400 cursor-text transition bg-white shadow-2xs flex items-center justify-between"
+                  className="border border-gray-200 hover:border-blue-400/80 rounded p-2.5 text-xs text-gray-400 cursor-text transition bg-white shadow-2xs flex items-center justify-between"
                 >
                   <span>Add a comment... Type <kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] text-gray-600 border border-gray-200">@</kbd> to mention someone</span>
                   <span className="text-[10px] text-blue-600 font-semibold">Reply</span>
@@ -231,13 +231,13 @@ const ITIssueActivityTabs = ({
           {activeTab === 'Comments' && (
             <div className="space-y-3 pt-2">
               {comments.length === 0 ? (
-                <div className="text-center py-6 text-xs text-gray-400 bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
+                <div className="text-center py-6 text-xs text-gray-400 bg-gray-50/50 rounded border border-dashed border-gray-200">
                   No comments yet. Start the conversation by adding a comment above.
                 </div>
               ) : (
                 comments.map((c, i) => (
                   <div key={i} className="flex gap-2.5 group text-xs">
-                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-[10px] flex items-center justify-center shrink-0 border border-indigo-200/60">
+                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700  text-[10px] flex items-center justify-center shrink-0 border border-indigo-200/60">
                       {initialsOf(c.author)}
                     </div>
                     <div className="flex-1 space-y-1 min-w-0">
@@ -278,7 +278,7 @@ const ITIssueActivityTabs = ({
                           />
                         </div>
                       ) : (
-                        <div className="text-gray-800 leading-relaxed bg-gray-50/75 p-2.5 rounded-lg border border-gray-100 text-xs break-words">
+                        <div className="text-gray-800 leading-relaxed bg-gray-50/75 p-2.5 rounded border border-gray-100 text-xs break-words">
                           {renderFormattedComment(c.text)}
                         </div>
                       )}
@@ -302,7 +302,7 @@ const ITIssueActivityTabs = ({
                 const c = act.data;
                 return (
                   <div key={act.id} className="flex gap-2.5 text-xs py-2 border-b border-gray-50 last:border-0">
-                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700  text-[10px] flex items-center justify-center shrink-0">
                       {initialsOf(c.author)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -311,7 +311,7 @@ const ITIssueActivityTabs = ({
                         <span className="text-gray-400 text-[10px]">commented</span>
                         <span className="text-[10px] text-gray-400 ml-auto">{relativeTime(c.time)}</span>
                       </div>
-                      <div className="text-gray-800 bg-gray-50/75 p-2 rounded-lg border border-gray-100 mt-1">
+                      <div className="text-gray-800 bg-gray-50/75 p-2 rounded border border-gray-100 mt-1">
                         {renderFormattedComment(c.text)}
                       </div>
                     </div>
@@ -323,7 +323,7 @@ const ITIssueActivityTabs = ({
                 const entry = act.data;
                 return (
                   <div key={act.id} className="flex gap-2.5 text-xs py-2 border-b border-gray-50 last:border-0">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700  text-[10px] flex items-center justify-center shrink-0">
                       {initialsOf(entry.changed_by)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -351,14 +351,14 @@ const ITIssueActivityTabs = ({
                 const w = act.data;
                 return (
                   <div key={act.id} className="flex gap-2.5 text-xs py-2 border-b border-gray-50 last:border-0">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700  text-[10px] flex items-center justify-center shrink-0">
                       {initialsOf(w.author)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-800">
                         <span className="font-semibold">{w.author}</span>
                         <span className="text-gray-500"> logged </span>
-                        <span className="font-bold text-emerald-600">{w.time_spent}</span>
+                        <span className=" text-emerald-600">{w.time_spent}</span>
                         <span className="text-[10px] text-gray-400 ml-2">{relativeTime(w.created_at)}</span>
                       </div>
                       {w.description && (
@@ -383,7 +383,7 @@ const ITIssueActivityTabs = ({
           ) : (
             historyEntries.map(entry => (
               <div key={entry.id} className="flex gap-2 py-2 border-b border-gray-50 last:border-0">
-                <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700  text-[10px] flex items-center justify-center shrink-0">
                   {initialsOf(entry.changed_by)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -420,7 +420,7 @@ const ITIssueActivityTabs = ({
             ].map(s => (
               <div key={s.label} className="p-2 bg-gray-50 rounded border border-gray-100">
                 <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">{s.label}</span>
-                <span className={`text-sm font-bold ${s.cls}`}>{s.value}</span>
+                <span className={`text-sm  ${s.cls}`}>{s.value}</span>
               </div>
             ))}
           </div>
@@ -492,7 +492,7 @@ const ITIssueActivityTabs = ({
                 <div key={log.id} className="flex justify-between items-start p-2 bg-gray-50 rounded border border-gray-100 text-xs group">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-800">{log.time_spent}</span>
+                      <span className=" text-gray-800">{log.time_spent}</span>
                       <span className="text-[10px] text-gray-400">by {log.author}</span>
                       <span className="text-[10px] text-gray-400">· {relativeTime(log.started_at || log.created_at)}</span>
                     </div>
@@ -528,7 +528,7 @@ const ITIssueActivityTabs = ({
             <div className="space-y-4">
               {githubData?.prs?.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-gray-700 border-b border-gray-100 pb-1">Pull Requests</h4>
+                  <h4 className="text-xs  text-gray-700 border-b border-gray-100 pb-1">Pull Requests</h4>
                   {githubData.prs.map(pr => (
                     <div key={pr.id} className="text-xs bg-white border border-gray-200 rounded p-2.5 flex items-start gap-3">
                       <div className={`mt-0.5 shrink-0 ${pr.state === 'open' ? 'text-green-600' : 'text-purple-600'}`}>
@@ -548,7 +548,7 @@ const ITIssueActivityTabs = ({
 
               {githubData?.commits?.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-gray-700 border-b border-gray-100 pb-1">Commits</h4>
+                  <h4 className="text-xs  text-gray-700 border-b border-gray-100 pb-1">Commits</h4>
                   {githubData.commits.map(commit => (
                     <div key={commit.id} className="text-xs bg-white border border-gray-200 rounded p-2.5 flex items-start gap-3">
                       <div className="mt-0.5 text-gray-400 shrink-0">
@@ -596,7 +596,7 @@ const ITIssueActivityTabs = ({
 
           {docsData ? (
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-indigo-50/30 border border-indigo-100 rounded-lg space-y-3">
+              <div className="p-3 bg-indigo-50/30 border border-indigo-100 rounded space-y-3">
                 {[
                   ['Implementation Plan', docsData.implementation_plan],
                   ['QA Testing Checklist', docsData.qa_checklist],
@@ -611,7 +611,7 @@ const ITIssueActivityTabs = ({
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+            <div className="text-center py-8 bg-gray-50 rounded border border-dashed border-gray-200">
               <Sparkles size={24} className="mx-auto text-indigo-400 mb-2" />
               <p className="text-xs font-medium text-gray-700">No documentation generated yet</p>
               <p className="text-[11px] text-gray-400 max-w-xs mx-auto mt-1">

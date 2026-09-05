@@ -142,7 +142,7 @@ const AddNewPipelineModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-3">
           {/* Pipeline Name */}
           <div>
             <label className="block text-xs    text-gray-700 mb-2">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ArrowLeft, Edit2, Download, Send, CheckCircle, XCircle, 
-  Calendar, CircleDollarSign, FileText, User, Building2, 
+import {
+  ArrowLeft, Edit2, Download, Send, CheckCircle, XCircle,
+  Calendar, CircleDollarSign, FileText, User, Building2,
   Briefcase, History, AlertTriangle, Layers, ArrowRight,
   Sparkles, RefreshCw, Copy, Check, Clock, ShieldAlert, Tag, Lock
 } from 'lucide-react';
@@ -246,19 +246,19 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
       <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={onBack}
-              className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+              className="p-2 rounded border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
               title="Back"
             >
               <ArrowLeft size={18} />
             </button>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl font-bold text-slate-900">
+                <h1 className="text-xl  text-slate-900">
                   {estimation.estimation_number}
                 </h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs  bg-amber-50 text-amber-800 border border-amber-300">
                   <Lock size={11} className="text-amber-700" /> INTERNAL DOCUMENT
                 </span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
@@ -283,15 +283,15 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleDownloadPDF}
-              className="px-3 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-3 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <Download size={14} className="text-slate-500" /> Export PDF
             </button>
-            
+
             <button
               onClick={handleDuplicate}
               disabled={isProcessing}
-              className="px-3 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-3 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <Copy size={14} className="text-slate-500" /> Duplicate
             </button>
@@ -299,7 +299,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
             <button
               onClick={handleRevise}
               disabled={isProcessing}
-              className="px-3 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+              className="px-3 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded text-xs font-medium flex items-center gap-1.5 transition-colors"
             >
               <RefreshCw size={14} className="text-indigo-600" /> Create Revision
             </button>
@@ -307,7 +307,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
             {onEdit && (
               <button
                 onClick={() => onEdit(estimation)}
-                className="px-3 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+                className="px-3 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
               >
                 <Edit2 size={14} className="text-slate-500" /> Edit
               </button>
@@ -317,7 +317,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
               <button
                 onClick={() => handleStatusChange('Accepted')}
                 disabled={isProcessing}
-                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
               >
                 <CheckCircle size={14} /> Mark Accepted
               </button>
@@ -326,7 +326,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
             <button
               onClick={handleConvertToProposal}
               disabled={isProcessing}
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <Sparkles size={14} /> Convert to Proposal
             </button>
@@ -337,25 +337,22 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-6 border-t border-slate-100 overflow-x-auto">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'overview' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
           >
             Overview & Scope
           </button>
           <button
             onClick={() => setActiveTab('revisions')}
-            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              activeTab === 'revisions' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'revisions' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
           >
             <History size={14} /> Revision History ({revisions.length || 1})
           </button>
           <button
             onClick={() => setActiveTab('timeline')}
-            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              activeTab === 'timeline' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
+            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'timeline' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
           >
             <Clock size={14} /> Activity Timeline
           </button>
@@ -364,7 +361,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
 
       {/* Main Content Body */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6">
-        
+
         {/* Conversion Workflow Banner for Accepted Estimations */}
         {estimation.status === 'Accepted' && (
           <div className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
@@ -373,7 +370,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                 <CheckCircle size={22} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-emerald-900">Estimation Accepted by Client!</h3>
+                <h3 className="text-sm  text-emerald-900">Estimation Accepted by Client!</h3>
                 <p className="text-xs text-emerald-700 mt-0.5">
                   Continue the sales lifecycle by generating a formal proposal or converting directly to an invoice.
                 </p>
@@ -382,7 +379,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleConvertToProposal}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs  rounded transition-colors flex items-center gap-2 shadow-sm"
               >
                 Generate Proposal <ArrowRight size={14} />
               </button>
@@ -393,14 +390,14 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
         {/* Tab 1: Overview & Scope */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Left 2 Columns: Items Table & Scope details */}
             <div className="lg:col-span-2 space-y-6">
-              
+
               {/* Itemized Table */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <h3 className="text-sm  text-slate-800 flex items-center gap-2">
                     <Layers size={16} className="text-blue-600" /> Estimate Line Items
                   </h3>
                   <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
@@ -411,7 +408,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[11px]  text-slate-500 uppercase tracking-wider">
                         <th className="p-3">Item / Service</th>
                         <th className="p-3 text-center">Qty / Unit</th>
                         <th className="p-3 text-right">Unit Rate</th>
@@ -456,7 +453,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                               <td className="p-3 text-right text-slate-500">
                                 {lineTax > 0 ? `${currency} ${lineTax.toLocaleString()}` : '-'}
                               </td>
-                              <td className="p-3 text-right font-bold text-slate-900">
+                              <td className="p-3 text-right  text-slate-900">
                                 {currency} {lineTotal.toLocaleString()}
                               </td>
                             </tr>
@@ -485,7 +482,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                       <span className="font-semibold">{currency} {taxAmount.toLocaleString()}</span>
                     </div>
                   )}
-                  <div className="flex justify-between w-full max-w-xs pt-2 border-t border-slate-300 text-sm font-bold text-slate-900">
+                  <div className="flex justify-between w-full max-w-xs pt-2 border-t border-slate-300 text-sm  text-slate-900">
                     <span>Grand Total:</span>
                     <span className="text-blue-700">{currency} {grandTotal.toLocaleString()}</span>
                   </div>
@@ -495,10 +492,10 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
               {/* Notes & Scope Description */}
               {estimation.description && (
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+                  <h3 className="text-sm  text-slate-800 mb-2 flex items-center gap-2">
                     <FileText size={16} className="text-blue-600" /> Scope & Description
                   </h3>
-                  <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap bg-slate-50 p-3.5 rounded-lg border border-slate-100">
+                  <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap bg-slate-50 p-3.5 rounded border border-slate-100">
                     {estimation.description}
                   </div>
                 </div>
@@ -507,10 +504,10 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
 
             {/* Right Column: Client & Deal Cards */}
             <div className="space-y-6">
-              
+
               {/* Client Info Card */}
               <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <h3 className="text-sm  text-slate-800 mb-3 flex items-center gap-2">
                   <Building2 size={16} className="text-blue-600" /> Client Information
                 </h3>
                 <div className="space-y-3 text-xs">
@@ -535,7 +532,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
 
               {/* Deal Info Card */}
               <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <h3 className="text-sm  text-slate-800 mb-3 flex items-center gap-2">
                   <Briefcase size={16} className="text-blue-600" /> Deal Information
                 </h3>
                 <div className="space-y-3 text-xs">
@@ -560,17 +557,17 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
 
               {/* Validity & Expiry Card */}
               <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <h3 className="text-sm  text-slate-800 mb-3 flex items-center gap-2">
                   <Calendar size={16} className="text-blue-600" /> Estimation Dates
                 </h3>
                 <div className="space-y-2.5 text-xs">
-                  <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded border border-slate-100">
                     <span className="text-slate-500">Estimate Date:</span>
                     <span className="font-semibold text-slate-800">
                       {estimation.estimate_date ? new Date(estimation.estimate_date).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded border border-slate-100">
                     <span className="text-slate-500">Valid Until:</span>
                     <span className="font-semibold text-slate-800">
                       {estimation.expiry_date ? new Date(estimation.expiry_date).toLocaleDateString() : 'N/A'}
@@ -586,21 +583,20 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
         {/* Tab 2: Revision History Inspector */}
         {activeTab === 'revisions' && (
           <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <h3 className="text-base  text-slate-800 mb-4 flex items-center gap-2">
               <History size={18} className="text-blue-600" /> Revision Audit Log ({revisions.length})
             </h3>
-            
+
             <div className="space-y-4">
               {revisions.map((rev) => (
-                <div 
+                <div
                   key={rev.id}
-                  className={`p-4 rounded-xl border transition-all ${
-                    rev.id === estimation.id ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'
-                  }`}
+                  className={`p-4 rounded-xl border transition-all ${rev.id === estimation.id ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold px-2.5 py-1 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">
+                      <span className="text-xs  px-2.5 py-1 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">
                         v{rev.version || 1}
                       </span>
                       <div>
@@ -615,14 +611,14 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                       <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${getStatusColor(rev.status)}`}>
                         {rev.status}
                       </span>
-                      <span className="font-bold text-slate-900 text-sm">
+                      <span className=" text-slate-900 text-sm">
                         {rev.currency || 'INR'} {(rev.amount || rev.total || 0).toLocaleString()}
                       </span>
 
                       {rev.id !== estimation.id && (
                         <button
                           onClick={() => loadEstimationData(rev.id)}
-                          className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-lg transition-colors"
+                          className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded transition-colors"
                         >
                           View Revision
                         </button>
@@ -638,14 +634,14 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
         {/* Tab 3: Activity Timeline */}
         {activeTab === 'timeline' && (
           <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <h3 className="text-base  text-slate-800 mb-4 flex items-center gap-2">
               <Clock size={18} className="text-blue-600" /> Lifecycle Activity Timeline
             </h3>
 
             <div className="space-y-6 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200">
               {activities.map((act) => (
                 <div key={act.id} className="relative flex items-start gap-4 pl-8">
-                  <div className="absolute left-0 top-1 w-7 h-7 rounded-full bg-blue-100 text-blue-600 border border-blue-300 flex items-center justify-center text-xs font-bold">
+                  <div className="absolute left-0 top-1 w-7 h-7 rounded-full bg-blue-100 text-blue-600 border border-blue-300 flex items-center justify-center text-xs ">
                     ✓
                   </div>
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex-1">

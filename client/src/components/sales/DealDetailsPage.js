@@ -479,7 +479,7 @@ const DealDetailsPage = () => {
                   </div>
 
                   {/* Appointment/Meeting Section from Screenshot */}
-                  <div className="mt-10 bg-[#FAFAFA] border border-gray-100 rounded p-6 space-y-6">
+                  <div className="mt-10 bg-[#FAFAFA] border border-gray-100 rounded p-6 space-y-3">
                     <div className="flex gap-4">
                       <div className="w-10 h-10 rounded bg-amber-400 text-white flex items-center justify-center shrink-0">
                         <Users size={20} />

@@ -198,7 +198,7 @@ const SeoGmbDocumentsPage = () => {
           <div key={i} className="bg-white p-2 rounded-xl border border-gray-100  flex items-center gap-2">
             <div className={`p-3 rounded-xl ${k.bg} ${k.color} shrink-0`}><k.icon size={20} /></div>
             <div>
-              <div className="text-sm font-medium text-gray-500 mb-0.5">{k.title}</div>
+              <div className="text-xs font-medium text-gray-500 mb-0.5">{k.title}</div>
               <div className="text-xl  text-gray-900 mb-0.5">{k.val}</div>
               <div className="text-[9px] text-gray-400">{k.sub}</div>
             </div>
@@ -438,7 +438,7 @@ const SeoGmbDocumentsPage = () => {
                       <span className="text-sm font-medium text-gray-600">{d.name}</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-sm font-medium text-gray-500 w-12 text-right">{d.value} GB</span>
+                      <span className="text-xs font-medium text-gray-500 w-12 text-right">{d.value} GB</span>
                       <span className="text-xs text-gray-400 w-8 text-right">({d.pct})</span>
                     </div>
                   </div>

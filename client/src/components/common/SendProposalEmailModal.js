@@ -80,7 +80,7 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-blue-700 to-indigo-900 text-white px-5 py-4 flex items-center justify-between shadow">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-white/20 border border-white/30 flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded bg-white/20 border border-white/30 flex items-center justify-center text-white">
               <Mail size={20} />
             </div>
             <div>
@@ -88,10 +88,10 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
               <p className="text-xs text-blue-100">Review all details before sending proposal to client</p>
             </div>
           </div>
-          <button 
+          <button
             type="button"
             onClick={onClose}
-            className="text-blue-100 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            className="text-blue-100 hover:text-white p-1.5 rounded hover:bg-white/10 transition-colors"
           >
             <X size={20} />
           </button>
@@ -100,40 +100,40 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
         {/* Modal Content */}
         <div className="p-5 overflow-y-auto space-y-4 text-xs text-gray-700 custom-scrollbar">
           {/* Email Meta Fields */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3.5 space-y-2.5">
+          <div className="bg-gray-50 border border-gray-200 rounded p-3.5 space-y-2.5">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-700 w-24 shrink-0">To Email:*</span>
-              <input 
-                type="email" 
-                value={recipientEmail} 
-                onChange={(e) => setRecipientEmail(e.target.value)} 
-                placeholder="Enter client email address..." 
+              <input
+                type="email"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                placeholder="Enter client email address..."
                 className="flex-1 px-3 py-1.5 border border-gray-300 rounded font-medium text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
               />
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-700 w-24 shrink-0">Subject:*</span>
-              <input 
-                type="text" 
-                value={subject} 
-                onChange={(e) => setSubject(e.target.value)} 
-                placeholder="Email subject..." 
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Email subject..."
                 className="flex-1 px-3 py-1.5 border border-gray-300 rounded font-medium text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
               />
             </div>
           </div>
 
           {/* Client & Proposal Info Preview Card */}
-          <div className="grid grid-cols-2 gap-3 bg-blue-50/50 border border-blue-100 rounded-lg p-3.5">
+          <div className="grid grid-cols-2 gap-3 bg-blue-50/50 border border-blue-100 rounded p-3.5">
             <div>
-              <p className="text-[10px] text-blue-700 font-bold uppercase tracking-wider">Client Information</p>
-              <p className="font-bold text-gray-900 text-sm mt-0.5">{clientName}</p>
+              <p className="text-[10px] text-blue-700  uppercase tracking-wider">Client Information</p>
+              <p className=" text-gray-900 text-sm mt-0.5">{clientName}</p>
               {proposal.company_name && <p className="text-gray-600 font-medium">{proposal.company_name}</p>}
               <p className="text-gray-500">{proposal.client_phone || proposal.phone || 'No phone'}</p>
             </div>
             <div>
-              <p className="text-[10px] text-blue-700 font-bold uppercase tracking-wider">Proposal Information</p>
-              <p className="font-bold text-gray-900 text-sm mt-0.5">#{propNo}</p>
+              <p className="text-[10px] text-blue-700  uppercase tracking-wider">Proposal Information</p>
+              <p className=" text-gray-900 text-sm mt-0.5">#{propNo}</p>
               <p className="text-gray-600">Date: {proposal.proposal_date || 'Today'}</p>
               <p className="text-gray-500">Valid Till: {proposal.validity_date || 'N/A'}</p>
             </div>
@@ -141,8 +141,8 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
 
           {/* Services Needed */}
           {proposal.service_needed && (
-            <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-lg">
-              <span className="text-[11px] font-bold text-emerald-900 block mb-1.5">Services Needed:</span>
+            <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded">
+              <span className="text-[11px]  text-emerald-900 block mb-1.5">Services Needed:</span>
               <div className="flex flex-wrap gap-1.5">
                 {proposal.service_needed.split(',').map((s, idx) => (
                   <span key={idx} className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[10px] font-semibold border border-emerald-200">
@@ -155,8 +155,8 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
 
           {/* Scope / Description */}
           {proposal.description && (
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-              <span className="text-[11px] font-bold text-gray-800 block mb-1">Proposal Scope / Description:</span>
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+              <span className="text-[11px]  text-gray-800 block mb-1">Proposal Scope / Description:</span>
               <p className="text-gray-600 whitespace-pre-line text-[11px] leading-relaxed max-h-32 overflow-y-auto">
                 {proposal.description}
               </p>
@@ -165,8 +165,8 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
 
           {/* Attachments list */}
           {attachmentsList.length > 0 && (
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-              <span className="text-[11px] font-bold text-gray-800 block mb-1.5">Attached Files ({attachmentsList.length}):</span>
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+              <span className="text-[11px]  text-gray-800 block mb-1.5">Attached Files ({attachmentsList.length}):</span>
               <div className="space-y-1">
                 {attachmentsList.map((att, idx) => (
                   <div key={idx} className="flex items-center gap-1.5 text-[11px] text-gray-700">

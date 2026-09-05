@@ -56,7 +56,7 @@ const CompleteSprintModal = ({ isOpen, sprints, initialSprintId, onCancel, onCom
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded shadow-2xl w-full max-w-[600px] max-h-[90vh] overflow-y-auto">
         {/* Jira's celebratory banner */}
         <div className="h-[150px] bg-gradient-to-b from-cyan-400 to-cyan-300 flex items-end justify-center relative">
           <div className="absolute -bottom-1 w-20 h-20 rounded-full bg-white/0 flex items-center justify-center">

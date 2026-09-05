@@ -450,7 +450,7 @@ const CrmProjectsPage = ({ department }) => {
                       <div className="text-gray-900 font-medium mb-1">{project.project_id_code || `PRJ-00${project.id}`}</div>
                       {(project.company_name || project.company || project.client) ? (
                         <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 rounded bg-emerald-50 text-emerald-700 flex items-center justify-center text-[10px] font-bold">
+                          <div className="w-5 h-5 rounded bg-emerald-50 text-emerald-700 flex items-center justify-center text-[10px] ">
                             {(project.company_name || project.company || project.client).charAt(0).toUpperCase()}
                           </div>
                           <span className="text-gray-500 text-xs truncate max-w-[120px]">{project.company_name || project.company || project.client}</span>
@@ -644,7 +644,7 @@ const CrmProjectsPage = ({ department }) => {
           };
 
           return (
-            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col mt-4 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded overflow-hidden flex flex-col mt-4 shadow-sm">
               <div className="overflow-x-auto custom-scrollbar" style={{ padding: '20px 24px' }}>
                 <div style={{ minWidth: 1000, position: 'relative' }}>
 
@@ -653,7 +653,7 @@ const CrmProjectsPage = ({ department }) => {
                     {months.map((m, i) => {
                       const leftPos = getLeft(m);
                       return (
-                        <div key={`m-${i}`} className="absolute top-0 text-xs font-bold text-gray-500 uppercase tracking-wider" style={{ left: `${leftPos}%`, transform: leftPos > 95 ? 'translateX(-100%)' : 'none' }}>
+                        <div key={`m-${i}`} className="absolute top-0 text-xs  text-gray-500 uppercase tracking-wider" style={{ left: `${leftPos}%`, transform: leftPos > 95 ? 'translateX(-100%)' : 'none' }}>
                           <div className="pl-1 border-l border-gray-300 h-10 pt-1">
                             {m.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                           </div>
@@ -678,7 +678,7 @@ const CrmProjectsPage = ({ department }) => {
                               </h4>
                               <p className="text-[10px] text-gray-500 truncate mt-0.5">{p.department_name || p.workflow_type || 'Uncategorized'}</p>
                             </div>
-                            <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-600 flex-shrink-0 ml-2" title={p.manager_name || 'No Manager'}>
+                            <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[10px]  text-indigo-600 flex-shrink-0 ml-2" title={p.manager_name || 'No Manager'}>
                               {p.manager_name ? p.manager_name.charAt(0).toUpperCase() : '?'}
                             </div>
                           </div>
@@ -695,7 +695,7 @@ const CrmProjectsPage = ({ department }) => {
                             ))}
                             {/* Today Line */}
                             <div className="absolute top-0 bottom-0 border-l-2 border-red-400 pointer-events-none z-10" style={{ left: `${getLeft(today)}%` }}>
-                              <div className="absolute -top-3 -translate-x-1/2 bg-red-100 text-red-600 text-[9px] font-bold px-1 rounded whitespace-nowrap">TODAY</div>
+                              <div className="absolute -top-3 -translate-x-1/2 bg-red-100 text-red-600 text-[9px]  px-1 rounded whitespace-nowrap">TODAY</div>
                             </div>
 
                             {/* Gantt Bar */}
@@ -878,7 +878,7 @@ const CrmProjectsPage = ({ department }) => {
       {/* Assign Team Modal */}
       {isAssignTeamModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+          <div className="bg-white rounded shadow-xl w-full max-w-md mx-4 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Network size={16} className="text-blue-600" /> Assign Team to Project</h2>
               <button onClick={() => setIsAssignTeamModalOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -888,7 +888,7 @@ const CrmProjectsPage = ({ department }) => {
             <form onSubmit={handleAssignTeamSubmit} className="p-5">
               {selectedProjectToAssign && (selectedProjectToAssign.team_name || selectedProjectToAssign.assigned_team) && (
                 <div className="mb-4 bg-blue-50/50 p-3 rounded border border-blue-100">
-                  <h3 className="text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Currently Assigned Team</h3>
+                  <h3 className="text-xs  text-gray-700 mb-1.5 uppercase tracking-wider">Currently Assigned Team</h3>
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
                     <span className="text-sm font-medium text-blue-700">{selectedProjectToAssign.team_name || selectedProjectToAssign.assigned_team}</span>

@@ -1059,7 +1059,7 @@ export default function ITRepositoriesPage() {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Repository Name</label>
                 <input type="text" defaultValue={selectedRepo.name} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm" />
@@ -1076,7 +1076,7 @@ export default function ITRepositoriesPage() {
               <div className="pt-4 border-t border-gray-200">
                 <h4 className="text-sm font-semibold text-red-600 mb-2">Danger Zone</h4>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50/50">
+                  <div className="flex items-center justify-between p-4 border border-red-200 rounded bg-red-50/50">
                     <div>
                       <p className="text-sm font-semibold text-gray-900">Archive this repository</p>
                       <p className="text-xs text-gray-500">Mark this repository as archived and read-only.</p>
@@ -1084,7 +1084,7 @@ export default function ITRepositoriesPage() {
                     <button className="px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors">Archive</button>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50/50">
+                  <div className="flex items-center justify-between p-4 border border-red-200 rounded bg-red-50/50">
                     <div>
                       <p className="text-sm font-semibold text-gray-900">Delete this repository</p>
                       <p className="text-xs text-gray-500">Permanently remove this repository from the dashboard.</p>

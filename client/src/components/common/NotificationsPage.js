@@ -210,12 +210,12 @@ export default function NotificationsPage() {
       {/* Page Header */}
       <div className="px-6 py-5 bg-white border-b border-gray-100 flex items-center justify-between">
         <div>
-          <h1 className="text-[20px] font-bold text-gray-900">Notifications</h1>
+          <h1 className="text-[20px]  text-gray-900">Notifications</h1>
           <p className="text-[12px] text-gray-500 mt-0.5">Stay updated with important activities, task assignments, and system alerts</p>
         </div>
         <div className="flex items-center gap-2">
           {devicePermission === 'granted' ? (
-            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs font-semibold text-emerald-800">Device Alerts Active</span>
               <button
@@ -233,14 +233,14 @@ export default function NotificationsPage() {
               </button>
             </div>
           ) : devicePermission === 'denied' ? (
-            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded flex items-center gap-1.5">
               <AlertCircle size={14} className="text-amber-600" />
               Device alerts blocked in browser settings.
             </div>
           ) : (
             <button
               onClick={handleEnableDeviceAlerts}
-              className="flex items-center gap-1.5 text-xs bg-blue-600 text-white px-3.5 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 text-xs bg-blue-600 text-white px-3.5 py-1.5 rounded font-semibold hover:bg-blue-700 transition-all shadow-sm active:scale-95"
             >
               <Smartphone size={14} /> Enable Device Alerts
             </button>

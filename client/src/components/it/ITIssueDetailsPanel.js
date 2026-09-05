@@ -19,13 +19,13 @@ import ITSubtaskAiModal from './issue-details/ITSubtaskAiModal';
 import ITManagerReviewGate from './issue-details/ITManagerReviewGate';
 
 const PRIORITY_ICONS = {
-  Highest: <ArrowUp size={14} className="text-red-600 font-bold" />,
+  Highest: <ArrowUp size={14} className="text-red-600 " />,
   High: <ArrowUp size={14} className="text-red-500" />,
-  Medium: <span className="text-orange-500 font-bold text-xs leading-none flex items-center justify-center font-sans">=</span >,
+  Medium: <span className="text-orange-500  text-xs leading-none flex items-center justify-center font-sans">=</span >,
   Low: <ArrowDown size={14} className="text-blue-500" />,
   Lowest: <ArrowDown size={14} className="text-blue-400 opacity-75" />,
-  'Not Decided': <span className="text-gray-400 font-bold text-xs font-mono">-</span>,
-  None: <span className="text-gray-400 font-bold text-xs font-mono">-</span>
+  'Not Decided': <span className="text-gray-400  text-xs font-mono">-</span>,
+  None: <span className="text-gray-400  text-xs font-mono">-</span>
 };
 
 const TYPE_ICONS = {
@@ -819,14 +819,14 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
                         if (!currentSubtask) handleUpdate({ title });
                       }
                     }}
-                    className="w-full text-xl font-bold text-gray-900 border border-blue-500 rounded p-2 outline-none resize-none leading-snug"
+                    className="w-full text-xl  text-gray-900 border border-blue-500 rounded p-2 outline-none resize-none leading-snug"
                     rows={2}
                   />
                 </div>
               ) : (
                 <h2
                   onClick={() => setIsEditingTitle(true)}
-                  className="text-xl font-bold text-gray-900 leading-snug hover:bg-gray-100 p-1 -ml-1 rounded cursor-pointer transition break-words"
+                  className="text-xl  text-gray-900 leading-snug hover:bg-gray-100 p-1 -ml-1 rounded cursor-pointer transition break-words"
                   title="Click to edit title"
                 >
                   {currentSubtask ? currentSubtask.title : title}
