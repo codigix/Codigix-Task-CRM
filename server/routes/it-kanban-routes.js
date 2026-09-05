@@ -39,6 +39,13 @@ module.exports = function setupItKanbanRoutes(app, pool) {
     query: (sql, params) => pool.query(sql, params)
   };
 
+  // Auto-upgrade column types on boot to prevent truncation / size errors on production
+  (async () => {
+    try {
+      await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN title TEXT NOT NULL');
+    } catch (_) {}
+  })();
+
   /**
    * Works out who performed an action, so notifications name a person rather than "Someone".
    * Prefers the x-user-name header, falls back to looking up x-user-id, then to a

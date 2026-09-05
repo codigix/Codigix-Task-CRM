@@ -52,7 +52,7 @@ async function createTableAndSeed() {
       CREATE TABLE IF NOT EXISTS it_kanban_issues (
         id INT AUTO_INCREMENT PRIMARY KEY,
         issue_key VARCHAR(50) NOT NULL UNIQUE,
-        title VARCHAR(255) NOT NULL,
+        title TEXT NOT NULL,
         description TEXT,
         type VARCHAR(50) DEFAULT 'Task',
         priority VARCHAR(50) DEFAULT 'Medium',
