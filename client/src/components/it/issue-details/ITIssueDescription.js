@@ -51,7 +51,7 @@ const renderFormattedDescription = (text) => {
   if (text.includes('<')) {
     return (
       <div
-        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_li]:my-1 [&_li]:text-gray-800 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-xs [&_h4]: [&_h4]:text-gray-900 [&_h4]:mt-2 [&_h4]:mb-1 [&_strong]: [&_b]: font-sans [&_a]:text-blue-600 [&_a]:no-underline [&_img]:max-w-full [&_img]:rounded"
+        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_li]:my-1 [&_li]:text-gray-800 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-xs [&_h4]: [&_h4]:text-gray-900 [&_h4]:mt-2 [&_h4]:mb-1 [&_strong]: [&_b]: font-sans [&_a]:text-blue-600 [&_a]:no-underline [&_img]:max-w-full [&_img]:rounded [&_img]:cursor-pointer [&_img]:hover:opacity-90 [&_img]:transition-opacity"
         dangerouslySetInnerHTML={{ __html: normalizeDescriptionHtml(text) }}
       />
     );
@@ -137,6 +137,37 @@ const ITIssueDescription = ({
   const descriptionFileMeta = () => ({
     project_id: issue?.project_id || undefined
   });
+
+  // Open image or PDF preview modal when clicking on embedded images or documents in description
+  const handleDescriptionImageClick = (e) => {
+    const target = e.target;
+    const imgEl = target.tagName === 'IMG' ? target : target.closest?.('img') || target.querySelector?.('img');
+    const anchorEl = target.tagName === 'A' ? target : target.closest?.('a');
+
+    if (imgEl) {
+      e.preventDefault();
+      e.stopPropagation();
+      const rawSrc = imgEl.getAttribute('src') || imgEl.src || anchorEl?.href || '';
+      const src = toAbsoluteFileUrl(rawSrc);
+      const name = imgEl.getAttribute('alt') || anchorEl?.download || 'Pasted Image';
+      if (src) {
+        setSelectedImage({ url: src, name });
+      }
+      return true;
+    }
+
+    if (anchorEl && anchorEl.href) {
+      const href = anchorEl.href;
+      const isPdf = href.toLowerCase().includes('.pdf') || anchorEl.download?.toLowerCase().endsWith('.pdf');
+      if (isPdf) {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedPdfUrl(toAbsoluteFileUrl(href));
+        return true;
+      }
+    }
+    return false;
+  };
 
   const attachFilesToDescription = async (files) => {
     if (!files || files.length === 0 || !editorRef.current) return;
@@ -339,6 +370,7 @@ const ITIssueDescription = ({
               <div
                 ref={editorRef}
                 contentEditable
+                onClick={handleDescriptionImageClick}
                 onInput={() => {
                   if (editorRef.current) setTempDescription(editorRef.current.innerHTML);
                 }}
@@ -350,7 +382,7 @@ const ITIssueDescription = ({
                     attachFilesToDescription(e.dataTransfer.files);
                   }
                 }}
-                className="w-full text-xs p-3 focus:outline-none font-sans leading-relaxed text-gray-800 bg-white min-h-[180px] outline-none prose prose-xs max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-2 [&_h3]:mb-1 [&_strong]: [&_b]: [&_a]:text-blue-600 [&_a]:underline [&_img]:max-w-full [&_img]:rounded"
+                className="w-full text-xs p-3 focus:outline-none font-sans leading-relaxed text-gray-800 bg-white min-h-[180px] outline-none prose prose-xs max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-2 [&_h3]:mb-1 [&_strong]: [&_b]: [&_a]:text-blue-600 [&_a]:underline [&_img]:max-w-full [&_img]:rounded [&_img]:cursor-pointer [&_img]:hover:opacity-90"
               />
               {isUploadingFile && (
                 <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 border-t border-gray-200 bg-blue-50/50">
@@ -391,7 +423,9 @@ const ITIssueDescription = ({
           </div>
         ) : (
           <div
-            onClick={() => {
+            onClick={(e) => {
+              const handled = handleDescriptionImageClick(e);
+              if (handled) return;
               setTempDescription(description);
               setIsEditingDescription(true);
             }}

@@ -132,8 +132,8 @@ export const buildFileEmbedHtml = ({ url, name, sizeBytes, isImage }) => {
 
   if (isImage) {
     return `<div class="crm-inline-file" contenteditable="false" style="margin:8px 0;">` +
-      `<a href="${absoluteUrl}" target="_blank" rel="noopener noreferrer">` +
-      `<img src="${absoluteUrl}" alt="${safeName}" style="max-width:100%;max-height:320px;border:1px solid #e5e7eb;border-radius:6px;display:block;" />` +
+      `<a href="${absoluteUrl}" class="crm-inline-image-link" style="cursor:pointer;display:inline-block;" title="Click to preview ${safeName}">` +
+      `<img src="${absoluteUrl}" alt="${safeName}" style="max-width:100%;max-height:320px;border:1px solid #e5e7eb;border-radius:6px;display:block;cursor:pointer;" />` +
       `</a>` +
       `<div style="font-size:11px;color:#6b7280;margin-top:4px;">${safeName}${size ? ` (${size})` : ''}</div>` +
       `</div><p><br/></p>`;
