@@ -102,13 +102,19 @@ export const uploadDescriptionFile = async (file, meta = {}) => {
   }
 
   const saved = await res.json();
+  const rawMime = saved.mime_type || file.type || '';
+  const fileName = saved.name || file.name || 'file';
+  const isImage = String(rawMime).startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(fileName);
+  const resolvedMime = rawMime || (isImage ? 'image/png' : 'document');
+
   return {
     id: saved.id,
-    name: saved.name || file.name,
+    name: fileName,
     url: toAbsoluteFileUrl(saved.file_path),
+    filePath: saved.file_path,
     sizeBytes: saved.size_bytes ?? file.size,
-    mimeType: saved.mime_type || file.type,
-    isImage: String(saved.mime_type || file.type || '').startsWith('image/')
+    mimeType: resolvedMime,
+    isImage
   };
 };
 
