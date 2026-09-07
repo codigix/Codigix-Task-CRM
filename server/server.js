@@ -16,8 +16,27 @@ const { testConnection } = require('./database/init');
 const { hashPassword, checkPermission } = require('./middleware/helpers');
 const automationService = require('./services/automationService');
 
+const allowedOrigins = [
+  process.env.CORS_ORIGIN,
+  process.env.CLIENT_URL,
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://allinonecrm.codigixinfotech.com',
+  'http://allinonecrm.codigixinfotech.com'
+].filter(Boolean);
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.codigixinfotech.com') ||
+      /^http:\/\/localhost:[0-9]+$/.test(origin)
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   optionsSuccessStatus: 200,
 };

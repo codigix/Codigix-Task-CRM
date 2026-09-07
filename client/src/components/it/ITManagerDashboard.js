@@ -9,6 +9,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import BoardTabs from '../common/BoardTabs';
 import { useAuth } from '../../hooks/useAuth';
 import { projectAPI, taskAPI, activitiesAPI } from '../../services/api';
+import { API_BASE_URL } from '../../config/environment';
 
 const ITManagerDashboard = () => {
   const { user } = useAuth();
@@ -59,7 +60,7 @@ const ITManagerDashboard = () => {
 
         // Fetch Performance Metrics
         try {
-          const perfRes = await fetch('http://localhost:5000/api/performance/it/1'); // Using IT department id 1
+          const perfRes = await fetch(`${API_BASE_URL}/performance/it/1`); // Using IT department id 1
           const perfData = await perfRes.json();
           if (perfRes.ok) {
             setPerformanceMetrics(perfData.metrics);
