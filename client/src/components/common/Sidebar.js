@@ -467,6 +467,12 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       {/* Hidden specifically in SEO & GMB user login; only Super Admin retains visibility */}
       {isSuperAdmin && renderSEOGMBPages()}
       {(isSuperAdmin || userRole.includes('HR')) && renderHRPages()}
+      {(isManager && !isSuperAdmin && !userRole.includes('HR')) && (
+        <>
+          <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Team Performance</div>
+          <SubmenuItem label="Performance" page="performance" icon={TrendingUp} prefix="/hr" />
+        </>
+      )}
       {renderBottomCommonPages()}
     </>
   );

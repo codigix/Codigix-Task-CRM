@@ -1261,6 +1261,19 @@ const AllEmployeesTab = ({ onSelectEmployee, handleGenerateReport }) => {
   const allEmployees = Array.isArray(employees) ? employees : [];
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const filteredEmployees = allEmployees.filter(emp => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (emp.name && emp.name.toLowerCase().includes(term)) ||
+           (emp.department && emp.department.toLowerCase().includes(term)) ||
+           (emp.role && emp.role.toLowerCase().includes(term));
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / itemsPerPage));
+  const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-4">
@@ -1302,7 +1315,7 @@ const AllEmployeesTab = ({ onSelectEmployee, handleGenerateReport }) => {
       {/* Large Table */}
       <div className="">
         <div className="py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-          <h2 className="text-lg  text-gray-800">All Employees (42)</h2>
+          <h2 className="text-lg  text-gray-800">All Employees ({filteredEmployees.length})</h2>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
             <input
@@ -1333,9 +1346,9 @@ const AllEmployeesTab = ({ onSelectEmployee, handleGenerateReport }) => {
               </tr>
             </thead>
             <tbody className="text-sm divide-y divide-slate-100">
-              {allEmployees.map((emp, idx) => (
+              {paginatedEmployees.map((emp, idx) => (
                 <tr key={emp.id} className="hover:bg-slate-50/80 transition-colors text-xs">
-                  <td className="p-2 text-gray-400 text-xs  text-center">{idx + 1}</td>
+                  <td className="p-2 text-gray-400 text-xs  text-center">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                   <td className="p-2">
                     <div className="flex items-center gap-3">
                       <img src={emp.avatar} alt={emp.name} className="w-9 h-9 rounded-full border border-gray-200 shadow-sm" />
@@ -1383,19 +1396,40 @@ const AllEmployeesTab = ({ onSelectEmployee, handleGenerateReport }) => {
           </table>
         </div>
 
-        {/* Pagination mock */}
+        {/* Pagination */}
         <div className="p-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 bg-slate-50">
-          <span>Showing 1 to 10 of 42 employees</span>
+          <span>
+            Showing {filteredEmployees.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{' '}
+            {Math.min(currentPage * itemsPerPage, filteredEmployees.length)} of {filteredEmployees.length} employees
+          </span>
           <div className="flex items-center gap-1">
-            <button className="px-2 py-1 border border-gray-200 rounded bg-white hover:bg-gray-50 text-gray-400">&lt;</button>
-            <button className="px-2.5 py-1 border border-blue-600 bg-red-600 text-white rounded font-medium">1</button>
-            <button className="px-2.5 py-1 border border-gray-200 bg-white hover:bg-gray-50 rounded">2</button>
-            <button className="px-2.5 py-1 border border-gray-200 bg-white hover:bg-gray-50 rounded">3</button>
-            <span className="px-1">...</span>
-            <button className="px-2 py-1 border border-gray-200 rounded bg-white hover:bg-gray-50 text-gray-400">&gt;</button>
-            <select className="ml-2 border border-gray-200 rounded px-2 py-1 bg-white outline-none">
-              <option>10 / page</option>
-            </select>
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              className="px-2 py-1 border border-gray-200 rounded bg-white hover:bg-gray-50 text-gray-400 disabled:opacity-50"
+            >
+              &lt;
+            </button>
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button 
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`px-2.5 py-1 border rounded font-medium ${
+                  currentPage === i + 1 
+                    ? 'border-red-600 bg-red-600 text-white' 
+                    : 'border-gray-200 bg-white hover:bg-gray-50'
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              className="px-2 py-1 border border-gray-200 rounded bg-white hover:bg-gray-50 text-gray-400 disabled:opacity-50"
+            >
+              &gt;
+            </button>
           </div>
         </div>
       </div>
