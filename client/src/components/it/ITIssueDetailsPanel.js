@@ -139,6 +139,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [selectedPdfUrl, setSelectedPdfUrl] = useState(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   // AI & Docs States
   const [improvedDescription, setImprovedDescription] = useState('');
@@ -584,46 +585,96 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   };
 
   // Upload attachments to the server and persist in it_kanban_attachments so they survive a reload
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files || []);
+  const handleFileUpload = React.useCallback(async (e) => {
+    let files = [];
+    if (Array.isArray(e)) {
+      files = e;
+    } else if (e instanceof FileList) {
+      files = Array.from(e);
+    } else if (e?.target?.files) {
+      files = Array.from(e.target.files);
+    } else if (e?.dataTransfer?.files) {
+      files = Array.from(e.dataTransfer.files);
+    } else if (e?.clipboardData?.files) {
+      files = Array.from(e.clipboardData.files);
+    }
     if (files.length === 0) return;
 
-    for (const f of files) {
-      try {
-        const saved = await uploadDescriptionFile(f, {
-          project_id: issue?.project_id || undefined
-        });
-
-        if (issueKey) {
-          const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/attachments`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              file_name: saved.name,
-              file_path: saved.url,
-              file_size: formatFileSize(saved.sizeBytes),
-              file_type: saved.mimeType || 'document',
-              issue_id: issue?.id || null
-            })
+    setUploadingAttachment(true);
+    try {
+      for (const f of files) {
+        try {
+          const saved = await uploadDescriptionFile(f, {
+            project_id: issue?.project_id || undefined,
+            userId: 1
           });
-          if (res.ok) {
+
+          if (issueKey) {
+            const isImg = Boolean(saved.isImage || f.type?.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(saved.name));
+            const mime = saved.mimeType || (isImg ? 'image/png' : (f.type || 'document'));
+            const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/attachments`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                file_name: saved.name,
+                file_path: saved.filePath || saved.url,
+                file_size: formatFileSize(saved.sizeBytes),
+                file_type: mime,
+                issue_id: issue?.id || null
+              })
+            });
+
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || errData.details || 'Failed to save attachment');
+            }
+
             const created = await res.json();
             setAttachments(prev => [{
               id: created.id,
               name: saved.name,
               size: formatFileSize(saved.sizeBytes),
               url: saved.url,
-              type: saved.mimeType
+              type: mime
             }, ...prev]);
             showSuccessToast('Attachment added');
           }
+        } catch (err) {
+          console.error('Failed to attach file:', err);
+          showErrorToast(err.message || 'Upload failed');
         }
-      } catch (err) {
-        showErrorToast(err.message || 'Upload failed');
       }
+    } finally {
+      setUploadingAttachment(false);
+      if (e?.target && 'value' in e.target) e.target.value = '';
     }
-    if (e.target) e.target.value = '';
-  };
+  }, [issue?.project_id, issue?.id, issueKey]);
+
+  // Global paste handler on panel: allows pasting screenshots directly into attachments when not in an editor
+  useEffect(() => {
+    const handlePanelPaste = (e) => {
+      const target = e.target;
+      if (
+        target && (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable ||
+          target.closest?.('[contenteditable="true"]')
+        )
+      ) {
+        return;
+      }
+
+      const files = Array.from(e.clipboardData?.files || []);
+      if (files.length > 0) {
+        e.preventDefault();
+        handleFileUpload(files);
+      }
+    };
+
+    window.addEventListener('paste', handlePanelPaste);
+    return () => window.removeEventListener('paste', handlePanelPaste);
+  }, [handleFileUpload]);
 
   const handleRemoveAttachment = async (idx) => {
     const target = attachments[idx];
@@ -881,6 +932,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               setImprovedDescription={setImprovedDescription}
               attachments={attachments}
               handleFileUpload={handleFileUpload}
+              uploadingAttachment={uploadingAttachment}
               handleRemoveAttachment={handleRemoveAttachment}
               selectedPdfUrl={selectedPdfUrl}
               setSelectedPdfUrl={setSelectedPdfUrl}

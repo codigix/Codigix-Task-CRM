@@ -1155,11 +1155,31 @@ Acceptance Criteria
     try {
       const { key } = req.params;
       const { file_name, file_path, file_size, file_type, issue_id } = req.body;
+      let resolvedIssueId = issue_id || null;
+      if (!resolvedIssueId) {
+        const [issues] = await db.query('SELECT id FROM it_kanban_issues WHERE issue_key = ? LIMIT 1', [key]);
+        if (issues && issues.length > 0) resolvedIssueId = issues[0].id;
+      }
       const [result] = await db.query(
         'INSERT INTO it_kanban_attachments (issue_key, issue_id, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?, ?)',
-        [key, issue_id || null, file_name, file_path || '', file_size || '0 KB', file_type || 'document']
+        [
+          key,
+          resolvedIssueId,
+          String(file_name || 'attachment').substring(0, 255),
+          String(file_path || '').substring(0, 500),
+          String(file_size || '0 KB').substring(0, 50),
+          String(file_type || 'document').substring(0, 100)
+        ]
       );
-      res.status(201).json({ id: result.insertId, issue_key: key, issue_id, file_name, file_path, file_size, file_type });
+      res.status(201).json({
+        id: result.insertId,
+        issue_key: key,
+        issue_id: resolvedIssueId,
+        file_name,
+        file_path,
+        file_size,
+        file_type
+      });
     } catch (error) {
       responseError(res, 500, 'Failed to save attachment', error);
     }

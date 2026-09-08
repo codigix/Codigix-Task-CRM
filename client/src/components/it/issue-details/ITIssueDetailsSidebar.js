@@ -6,6 +6,7 @@ import {
   RefreshCw, CheckCircle, ExternalLink, X, Copy, Terminal, User, Search
 } from 'lucide-react';
 import { normalizeLabel } from '../../../utils/labels';
+import { API_BASE_URL } from '../../../config/environment';
 
 // Read-only timestamp, shown in local time.
 const formatStamp = (value) => {
@@ -83,7 +84,7 @@ const ITIssueDetailsSidebar = ({
     try {
       setLoadingPoints(true);
       const subtasksList = typeof issue.subtasks === 'string' ? JSON.parse(issue.subtasks) : (issue.subtasks || []);
-      const res = await fetch('http://localhost:5000/api/it-kanban/calculate-points', {
+      const res = await fetch(`${API_BASE_URL}/it-kanban/calculate-points`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

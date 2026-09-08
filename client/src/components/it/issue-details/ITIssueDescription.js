@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import {
   Sparkles, Paperclip, Check, X, FileText, Trash2,
   Bold, Italic, List, ListOrdered, Code, Link, Plus,
-  Type
+  Type, Image as ImageIcon, Download, ExternalLink, UploadCloud
 } from 'lucide-react';
 import { API_BASE_URL } from '../../../config/environment';
 import { insertFilesIntoEditor, makeEditorPasteHandler, normalizeDescriptionHtml, toAbsoluteFileUrl } from '../../../utils/descriptionFiles';
@@ -51,7 +51,7 @@ const renderFormattedDescription = (text) => {
   if (text.includes('<')) {
     return (
       <div
-        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_li]:my-1 [&_li]:text-gray-800 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-xs [&_h4]: [&_h4]:text-gray-900 [&_h4]:mt-2 [&_h4]:mb-1 [&_strong]: [&_b]: font-sans [&_a]:text-blue-600 [&_a]:no-underline [&_img]:max-w-full [&_img]:rounded"
+        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_li]:my-1 [&_li]:text-gray-800 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-xs [&_h4]: [&_h4]:text-gray-900 [&_h4]:mt-2 [&_h4]:mb-1 [&_strong]: [&_b]: font-sans [&_a]:text-blue-600 [&_a]:no-underline [&_img]:max-w-full [&_img]:rounded [&_img]:cursor-pointer [&_img]:hover:opacity-90 [&_img]:transition-opacity"
         dangerouslySetInnerHTML={{ __html: normalizeDescriptionHtml(text) }}
       />
     );
@@ -119,6 +119,7 @@ const ITIssueDescription = ({
   setImprovedDescription,
   attachments,
   handleFileUpload,
+  uploadingAttachment,
   handleRemoveAttachment,
   selectedPdfUrl,
   setSelectedPdfUrl,
@@ -128,12 +129,45 @@ const ITIssueDescription = ({
   const editorRef = useRef(null);
   const [isAiWriting, setIsAiWriting] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isDraggingAttachments, setIsDraggingAttachments] = useState(false);
 
   // Files pasted/dropped into the description are uploaded and embedded as real server
   // URLs, so they stay openable after the issue is saved and reloaded.
   const descriptionFileMeta = () => ({
     project_id: issue?.project_id || undefined
   });
+
+  // Open image or PDF preview modal when clicking on embedded images or documents in description
+  const handleDescriptionImageClick = (e) => {
+    const target = e.target;
+    const imgEl = target.tagName === 'IMG' ? target : target.closest?.('img') || target.querySelector?.('img');
+    const anchorEl = target.tagName === 'A' ? target : target.closest?.('a');
+
+    if (imgEl) {
+      e.preventDefault();
+      e.stopPropagation();
+      const rawSrc = imgEl.getAttribute('src') || imgEl.src || anchorEl?.href || '';
+      const src = toAbsoluteFileUrl(rawSrc);
+      const name = imgEl.getAttribute('alt') || anchorEl?.download || 'Pasted Image';
+      if (src) {
+        setSelectedImage({ url: src, name });
+      }
+      return true;
+    }
+
+    if (anchorEl && anchorEl.href) {
+      const href = anchorEl.href;
+      const isPdf = href.toLowerCase().includes('.pdf') || anchorEl.download?.toLowerCase().endsWith('.pdf');
+      if (isPdf) {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedPdfUrl(toAbsoluteFileUrl(href));
+        return true;
+      }
+    }
+    return false;
+  };
 
   const attachFilesToDescription = async (files) => {
     if (!files || files.length === 0 || !editorRef.current) return;
@@ -336,6 +370,7 @@ const ITIssueDescription = ({
               <div
                 ref={editorRef}
                 contentEditable
+                onClick={handleDescriptionImageClick}
                 onInput={() => {
                   if (editorRef.current) setTempDescription(editorRef.current.innerHTML);
                 }}
@@ -347,7 +382,7 @@ const ITIssueDescription = ({
                     attachFilesToDescription(e.dataTransfer.files);
                   }
                 }}
-                className="w-full text-xs p-3 focus:outline-none font-sans leading-relaxed text-gray-800 bg-white min-h-[180px] outline-none prose prose-xs max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-2 [&_h3]:mb-1 [&_strong]: [&_b]: [&_a]:text-blue-600 [&_a]:underline [&_img]:max-w-full [&_img]:rounded"
+                className="w-full text-xs p-3 focus:outline-none font-sans leading-relaxed text-gray-800 bg-white min-h-[180px] outline-none prose prose-xs max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-2 [&_h3]:mb-1 [&_strong]: [&_b]: [&_a]:text-blue-600 [&_a]:underline [&_img]:max-w-full [&_img]:rounded [&_img]:cursor-pointer [&_img]:hover:opacity-90"
               />
               {isUploadingFile && (
                 <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 border-t border-gray-200 bg-blue-50/50">
@@ -388,7 +423,9 @@ const ITIssueDescription = ({
           </div>
         ) : (
           <div
-            onClick={() => {
+            onClick={(e) => {
+              const handled = handleDescriptionImageClick(e);
+              if (handled) return;
               setTempDescription(description);
               setIsEditingDescription(true);
             }}
@@ -411,6 +448,7 @@ const ITIssueDescription = ({
             Attachments ({attachments.length})
           </label>
           <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-1 text-xs text-blue-600 font-semibold hover:underline bg-transparent cursor-pointer"
           >
@@ -425,38 +463,182 @@ const ITIssueDescription = ({
           />
         </div>
 
+        {/* Dropzone & Paste trigger area */}
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDraggingAttachments(true);
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget)) {
+              setIsDraggingAttachments(false);
+            }
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDraggingAttachments(false);
+            if (e.dataTransfer?.files?.length) {
+              handleFileUpload(e.dataTransfer.files);
+            }
+          }}
+          className={`rounded border-2 border-dashed transition-all p-3 text-center cursor-pointer ${
+            isDraggingAttachments
+              ? 'border-blue-500 bg-blue-50/70 shadow-inner'
+              : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50/60'
+          }`}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+            <UploadCloud size={16} className={isDraggingAttachments ? 'text-blue-600 animate-bounce' : 'text-gray-400'} />
+            <span>
+              Drop files/images here, paste screenshots (<kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">Ctrl+V</kbd>), or <strong className="text-blue-600 font-semibold hover:underline">Browse</strong>
+            </span>
+          </div>
+        </div>
+
+        {uploadingAttachment && (
+          <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+            <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
+            <span>Uploading attachment...</span>
+          </div>
+        )}
+
         {attachments.length > 0 && (
           <div className="grid grid-cols-2 gap-2 my-2">
-            {attachments.map((file, idx) => (
-              <div key={idx} className="p-2 border border-gray-200 rounded flex items-center justify-between bg-gray-50/50 hover:bg-gray-50 transition group">
+            {attachments.map((file, idx) => {
+              const fileUrl = toAbsoluteFileUrl(file.url);
+              const typeStr = String(file.type || '').toLowerCase();
+              const nameStr = String(file.name || file.url || '').toLowerCase();
+              const isImg = typeStr.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(nameStr);
+              const isPdf = typeStr.includes('pdf') || nameStr.endsWith('.pdf');
+
+              return (
                 <div
-                  className="flex items-center gap-2 cursor-pointer truncate min-w-0"
-                  onClick={() => {
-                    const fileUrl = toAbsoluteFileUrl(file.url);
-                    if (file.type?.includes('pdf') || file.name?.endsWith('.pdf')) {
-                      setSelectedPdfUrl(fileUrl);
-                    } else if (fileUrl) {
-                      window.open(fileUrl, '_blank');
-                    }
-                  }}
+                  key={idx}
+                  className="p-2 border border-gray-200 rounded flex items-center justify-between bg-white hover:border-blue-300 hover:bg-blue-50/20 transition shadow-sm group"
                 >
-                  <FileText size={14} className="text-blue-500 shrink-0" />
-                  <div className="truncate">
-                    <div className="text-xs font-medium text-gray-800 truncate" title={file.name}>{file.name}</div>
-                    <div className="text-[10px] text-gray-400">{file.size || 'Attachment'}</div>
+                  <div
+                    className="flex items-center gap-2.5 cursor-pointer truncate min-w-0 flex-1"
+                    onClick={() => {
+                      if (isImg) {
+                        setSelectedImage({ url: fileUrl, name: file.name });
+                      } else if (isPdf) {
+                        setSelectedPdfUrl(fileUrl);
+                      } else if (fileUrl) {
+                        window.open(fileUrl, '_blank', 'noopener,noreferrer');
+                      }
+                    }}
+                    title={`Click to preview ${file.name}`}
+                  >
+                    {isImg ? (
+                      <div className="w-9 h-9 rounded bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center relative">
+                        <img
+                          src={fileUrl}
+                          alt={file.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const fallback = e.currentTarget.parentElement?.querySelector('.img-fallback-icon');
+                            if (fallback) fallback.classList.remove('hidden');
+                          }}
+                        />
+                        <ImageIcon size={16} className="text-indigo-500 hidden img-fallback-icon shrink-0" />
+                      </div>
+                    ) : isPdf ? (
+                      <div className="w-9 h-9 rounded bg-red-50 text-red-600 flex items-center justify-center text-[11px] font-bold shrink-0 border border-red-100">
+                        PDF
+                      </div>
+                    ) : (
+                      <div className="w-9 h-9 rounded bg-blue-50 text-blue-600 flex items-center justify-center text-sm shrink-0 border border-blue-100">
+                        <FileText size={16} />
+                      </div>
+                    )}
+                    <div className="truncate flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-gray-800 truncate" title={file.name}>
+                        {file.name}
+                      </div>
+                      <div className="text-[10px] text-gray-400 font-medium">
+                        {file.size || 'Attachment'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 ml-1">
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={file.name}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-gray-100 transition cursor-pointer"
+                      title="Open / Download"
+                    >
+                      <Download size={13} />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveAttachment(idx);
+                      }}
+                      className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 transition cursor-pointer"
+                      title="Delete attachment"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleRemoveAttachment(idx)}
-                  className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 p-1 transition cursor-pointer shrink-0"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* IMAGE PREVIEW MODAL / LIGHTBOX */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div
+            className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-3 bg-gray-100 border-b flex justify-between items-center gap-3">
+              <div className="flex items-center gap-2 truncate">
+                <ImageIcon size={16} className="text-indigo-600 shrink-0" />
+                <span className="text-xs font-semibold text-gray-800 truncate" title={selectedImage.name}>
+                  {selectedImage.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={selectedImage.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:underline px-2 py-1 rounded hover:bg-gray-200 transition"
+                >
+                  <ExternalLink size={13} /> Open full size
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setSelectedImage(null)}
+                  className="p-1 hover:bg-gray-200 rounded text-gray-600 cursor-pointer transition"
+                  title="Close"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-gray-900/5 min-h-[300px]">
+              <img
+                src={selectedImage.url}
+                alt={selectedImage.name}
+                className="max-w-full max-h-[75vh] object-contain rounded shadow border border-gray-200"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PDF PREVIEW MODAL */}
       {selectedPdfUrl && (
@@ -465,6 +647,7 @@ const ITIssueDescription = ({
             <div className="p-3 bg-gray-100 border-b flex justify-between items-center">
               <span className="text-xs font-semibold text-gray-700">PDF Viewer</span>
               <button
+                type="button"
                 onClick={() => setSelectedPdfUrl(null)}
                 className="p-1 hover:bg-gray-200 rounded text-gray-600 cursor-pointer"
               >

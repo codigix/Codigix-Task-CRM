@@ -102,13 +102,19 @@ export const uploadDescriptionFile = async (file, meta = {}) => {
   }
 
   const saved = await res.json();
+  const rawMime = saved.mime_type || file.type || '';
+  const fileName = saved.name || file.name || 'file';
+  const isImage = String(rawMime).startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(fileName);
+  const resolvedMime = rawMime || (isImage ? 'image/png' : 'document');
+
   return {
     id: saved.id,
-    name: saved.name || file.name,
+    name: fileName,
     url: toAbsoluteFileUrl(saved.file_path),
+    filePath: saved.file_path,
     sizeBytes: saved.size_bytes ?? file.size,
-    mimeType: saved.mime_type || file.type,
-    isImage: String(saved.mime_type || file.type || '').startsWith('image/')
+    mimeType: resolvedMime,
+    isImage
   };
 };
 
@@ -126,8 +132,8 @@ export const buildFileEmbedHtml = ({ url, name, sizeBytes, isImage }) => {
 
   if (isImage) {
     return `<div class="crm-inline-file" contenteditable="false" style="margin:8px 0;">` +
-      `<a href="${absoluteUrl}" target="_blank" rel="noopener noreferrer">` +
-      `<img src="${absoluteUrl}" alt="${safeName}" style="max-width:100%;max-height:320px;border:1px solid #e5e7eb;border-radius:6px;display:block;" />` +
+      `<a href="${absoluteUrl}" class="crm-inline-image-link" style="cursor:pointer;display:inline-block;" title="Click to preview ${safeName}">` +
+      `<img src="${absoluteUrl}" alt="${safeName}" style="max-width:100%;max-height:320px;border:1px solid #e5e7eb;border-radius:6px;display:block;cursor:pointer;" />` +
       `</a>` +
       `<div style="font-size:11px;color:#6b7280;margin-top:4px;">${safeName}${size ? ` (${size})` : ''}</div>` +
       `</div><p><br/></p>`;
