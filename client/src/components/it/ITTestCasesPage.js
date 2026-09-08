@@ -239,7 +239,7 @@ const ITTestCasesPage = () => {
               />
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 ml-2 "
+                className="flex items-center gap-2 px-4 py-1.5 bg-red-600 text-white rounded hover:bg-blue-700 ml-2 "
               >
                 <Plus size={14} /> New Test Case
               </button>

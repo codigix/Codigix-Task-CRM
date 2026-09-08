@@ -297,14 +297,14 @@ export default function ChatPage() {
                     {msg.sender === 'other' ? (
                       <div className="flex items-start gap-3">
                         <img src={currentChat.avatar} className="w-10 h-10 rounded-full" alt="user" />
-                        <div className="p-2 bg-gray-100 rounded-2xl max-w-[70%]">
+                        <div className="p-2 bg-gray-100 rounded max-w-[70%]">
                           <p className="text-gray-700">{msg.text}</p>
                           <span className="text-xs text-[#1F2020] block mt-1">{msg.timestamp}</span>
                         </div>
                       </div>
                     ) : (
                       <div className="flex justify-end">
-                        <div className="p-2 bg-red-500 text-white rounded-2xl max-w-[70%]">
+                        <div className="p-2 bg-red-500 text-white rounded max-w-[70%]">
                           <p>{msg.text}</p>
                           <div className="text-xs text-red-100 text-right mt-1">{msg.timestamp}</div>
                         </div>
@@ -323,7 +323,7 @@ export default function ChatPage() {
                 <div className="flex justify-start">
                   <div className="flex items-start gap-3">
                     <img src={currentChat?.avatar} className="w-10 h-10 rounded-full" alt="user" />
-                    <div className="p-2 bg-gray-100 rounded-2xl">
+                    <div className="p-2 bg-gray-100 rounded">
                       <div className="flex gap-1">
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

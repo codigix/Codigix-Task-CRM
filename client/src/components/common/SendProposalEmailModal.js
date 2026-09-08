@@ -207,7 +207,7 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
             type="button"
             onClick={onClose}
             disabled={isSending}
-            className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100 rounded text-xs font-medium transition"
+            className="p-2 border border-gray-300 text-gray-700 hover:bg-gray-100 rounded text-xs font-medium transition"
           >
             Cancel
           </button>
@@ -215,7 +215,7 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
             type="button"
             onClick={handleSend}
             disabled={isSending}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
+            className="p-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
           >
             {isSending ? (
               <>

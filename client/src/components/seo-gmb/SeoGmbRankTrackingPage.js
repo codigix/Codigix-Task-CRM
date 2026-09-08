@@ -154,7 +154,7 @@ const changeBadge = (c) => {
 
 // ── Mini Table for Overview ───────────────────────────────────────────────
 const MiniTable = ({ title, period, data, onMore }) => (
-  <div className="bg-white rounded-2xl border border-slate-200 p-4">
+  <div className="bg-white rounded border border-slate-200 p-4">
     <div className="flex justify-between items-center mb-3">
       <h4 className="text-xs  text-slate-900 m-0">{title}</h4>
       <span className="text-xs text-slate-400 border border-slate-200 rounded px-2 py-0.5">{period}</span>
@@ -266,7 +266,7 @@ export default function SeoGmbRankTrackingPage() {
                 { label: 'No Change', val: '156', sub: '-3.21% vs last 7 days', pos: false, icon: Minus, color: 'text-slate-500 bg-slate-100' },
                 { label: 'Dropped Rankings', val: '88', sub: '-10.43% vs last 7 days', pos: false, icon: TrendingDown, color: 'text-rose-500 bg-rose-50' },
               ].map((c, i) => (
-                <div key={i} className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+                <div key={i} className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
                   <div>
                     <span className="text-xs text-slate-400  block mb-1">{c.label}</span>
                     <strong className="text-xl font-black text-slate-900 block">{c.val}</strong>
@@ -284,7 +284,7 @@ export default function SeoGmbRankTrackingPage() {
             {/* Charts Row */}
             <div className="grid grid-cols-3 gap-2">
               {/* Ranking Overview */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Ranking Overview</h3>
                   <span className="text-xs border border-slate-200 rounded px-2 py-0.5 text-slate-400 ">Last 7 Days ▾</span>
@@ -309,7 +309,7 @@ export default function SeoGmbRankTrackingPage() {
               </div>
 
               {/* Ranking Distribution */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <h3 className="text-sm  text-slate-900 m-0 mb-3">Ranking Distribution</h3>
                 <div className="flex items-center gap-4">
                   <div className="relative flex-shrink-0">
@@ -337,7 +337,7 @@ export default function SeoGmbRankTrackingPage() {
               </div>
 
               {/* Average Position */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <h3 className="text-sm  text-slate-900 m-0 mb-1">Average Position</h3>
                 <div className="flex items-end gap-2 mb-2">
                   <strong className="text-4xl font-black text-slate-900">18.7</strong>
@@ -371,7 +371,7 @@ export default function SeoGmbRankTrackingPage() {
             </div>
 
             {/* Top Keywords Table */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm  text-slate-900 m-0">Top Keywords</h3>
                 <div className="flex items-center gap-2">
@@ -455,7 +455,7 @@ export default function SeoGmbRankTrackingPage() {
               <MiniTable title="Weekly Ranking" period="May 8 – May 15, 2026" data={tableData.weekly} onMore={() => setActiveTab('Weekly Ranking')} />
               <MiniTable title="Monthly Ranking" period="May 2026" data={tableData.monthly} onMore={() => setActiveTab('Monthly Ranking')} />
               {/* City Rankings mini */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="bg-white rounded border border-slate-200 p-4">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-xs  text-slate-900 m-0">City Rankings</h4>
                 </div>
@@ -474,7 +474,7 @@ export default function SeoGmbRankTrackingPage() {
                 <button onClick={() => setActiveTab('City Rankings')} className="w-full text-center text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline mt-2">View Full Report →</button>
               </div>
               {/* Mobile mini */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="bg-white rounded border border-slate-200 p-4">
                 <div className="flex items-center gap-1 mb-3"><Smartphone size={12} className="text-indigo-500" /><h4 className="text-xs  text-slate-900 m-0">Mobile Rankings</h4></div>
                 <table className="w-full text-xs">
                   <thead><tr className="text-[9px] text-slate-400   border-b border-slate-100"><th className="pb-1.5 text-left">Device</th><th className="pb-1.5 text-center">Avg</th><th className="pb-1.5 text-center">Δ</th></tr></thead>
@@ -491,7 +491,7 @@ export default function SeoGmbRankTrackingPage() {
                 <button onClick={() => setActiveTab('Mobile Rankings')} className="w-full text-center text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline mt-2">View Full Report →</button>
               </div>
               {/* Desktop mini */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="bg-white rounded border border-slate-200 p-4">
                 <div className="flex items-center gap-1 mb-3"><Monitor size={12} className="text-indigo-500" /><h4 className="text-xs  text-slate-900 m-0">Desktop Rankings</h4></div>
                 <table className="w-full text-xs">
                   <thead><tr className="text-[9px] text-slate-400   border-b border-slate-100"><th className="pb-1.5 text-left">Device</th><th className="pb-1.5 text-center">Avg</th><th className="pb-1.5 text-center">Δ</th></tr></thead>
@@ -517,7 +517,7 @@ export default function SeoGmbRankTrackingPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Improved', v: '186', c: '+22 today' }, { l: 'Declined', v: '42', c: '-8 today' }, { l: 'New', v: '12', c: '+12 today' }, { l: 'Dropped Out', v: '6', c: '-6 today' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  mt-1 block">{s.c}</span>
@@ -533,14 +533,14 @@ export default function SeoGmbRankTrackingPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Improved', v: '248', c: '+31 this week' }, { l: 'Declined', v: '56', c: '-12 this week' }, { l: 'New', v: '28', c: '+28 this week' }, { l: 'No Change', v: '68', c: 'stable' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  mt-1 block">{s.c}</span>
                 </div>
               ))}
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <h3 className="text-sm  text-slate-900 m-0 mb-3">Weekly Ranking Trend</h3>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={RANKING_TREND}>
@@ -563,7 +563,7 @@ export default function SeoGmbRankTrackingPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Improved', v: '412', c: '+68 this month' }, { l: 'Declined', v: '124', c: '-24 this month' }, { l: 'New Keywords', v: '86', c: '+86 this month' }, { l: 'Lost Keywords', v: '18', c: '-18 this month' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  mt-1 block">{s.c}</span>
@@ -579,7 +579,7 @@ export default function SeoGmbRankTrackingPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-5 gap-4">
               {tableData.city.slice(0, 5).map(c => (
-                <div key={c.id} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={c.id} className="bg-white rounded p-4 border border-slate-200">
                   <div className="flex items-center gap-1.5 mb-2"><MapPin size={12} className="text-indigo-500" /><span className="text-xs text-slate-400 ">{c.city}</span></div>
                   <strong className="text-xl font-black text-slate-900 block">{c.avgRank}</strong>
                   <span className="text-xs text-slate-400  block">Avg. Rank</span>
@@ -596,7 +596,7 @@ export default function SeoGmbRankTrackingPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-5 gap-4">
               {[{ l: 'Top 3', v: '320', c: '↑ 12' }, { l: 'Top 10', v: '690', c: '↑ 21' }, { l: 'Top 20', v: '940', c: '↑ 22' }, { l: 'Top 50', v: '1,120', c: '↑ 15' }, { l: 'Top 100', v: '1,210', c: '↑ 12' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
                   <div>
                     <span className="text-xs text-slate-400  block">{s.l}</span>
                     <strong className="text-xl font-black text-slate-900 block mt-1">{s.v}</strong>
@@ -615,7 +615,7 @@ export default function SeoGmbRankTrackingPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-5 gap-4">
               {[{ l: 'Top 3', v: '340', c: '↑ 16' }, { l: 'Top 10', v: '750', c: '↑ 25' }, { l: 'Top 20', v: '980', c: '↑ 22' }, { l: 'Top 50', v: '1,180', c: '↑ 17' }, { l: 'Top 100', v: '1,240', c: '↑ 12' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
                   <div>
                     <span className="text-xs text-slate-400  block">{s.l}</span>
                     <strong className="text-xl font-black text-slate-900 block mt-1">{s.v}</strong>

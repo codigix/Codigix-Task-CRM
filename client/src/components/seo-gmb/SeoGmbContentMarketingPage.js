@@ -186,7 +186,7 @@ export default function SeoGmbContentMarketingPage() {
           </button>
           <button
             onClick={() => setActiveTab('Content Planner')}
-            className="bg-blue-500 hover:bg-blue-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="bg-blue-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Plus size={14} /> Create New Content
           </button>
@@ -205,7 +205,7 @@ export default function SeoGmbContentMarketingPage() {
             { label: 'Scheduled', value: 17, sub: '+8.9% vs last 30 days', color: 'text-purple-500', bg: 'bg-purple-50', icon: Calendar },
             { label: 'Avg. Engagement', value: '4.8K', sub: '+15.6% vs last 30 days', color: 'text-indigo-500', bg: 'bg-indigo-50', icon: TrendingUp },
           ].map((card, i) => (
-            <div key={i} className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+            <div key={i} className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
               <div>
                 <span className="text-xs text-slate-400  block">{card.label}</span>
                 <strong className="text-xl font-black text-slate-900 mt-1 block">{card.value}</strong>
@@ -254,7 +254,7 @@ export default function SeoGmbContentMarketingPage() {
               </div>
 
               {/* Content Calendar mini preview */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Content Calendar</h3>
                   <button
@@ -294,7 +294,7 @@ export default function SeoGmbContentMarketingPage() {
                 { tab: 'Content Performance', icon: BarChart2, color: 'text-amber-500 bg-amber-50', title: 'Content Performance', desc: 'Track content performance metrics', count: performance.length },
                 { tab: 'Duplicate Content', icon: Copy, color: 'text-rose-500 bg-rose-50', title: 'Duplicate Content', desc: 'Check for duplicate content issues', count: duplicate.length },
               ].map((card) => (
-                <div key={card.tab} className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col justify-between hover: transition-shadow">
+                <div key={card.tab} className="bg-white rounded border border-slate-200 p-4 flex flex-col justify-between hover: transition-shadow">
                   <div className={`w-8 h-8 rounded flex items-center justify-center mb-2 ${card.color}`}>
                     <card.icon size={16} />
                   </div>
@@ -313,7 +313,7 @@ export default function SeoGmbContentMarketingPage() {
 
             {/* Pillar Pages + Topic Clusters preview */}
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 bg-teal-50 rounded flex items-center justify-center">
@@ -345,7 +345,7 @@ export default function SeoGmbContentMarketingPage() {
                 </table>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 bg-violet-50 rounded flex items-center justify-center">
@@ -396,7 +396,7 @@ export default function SeoGmbContentMarketingPage() {
         {activeTab === 'AI Content Generator' && (
           <div className="flex flex-col gap-2">
             {/* Generator form */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6">
+            <div className="bg-white rounded border border-slate-200 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-purple-50 rounded flex items-center justify-center">
                   <Cpu size={16} className="text-purple-500" />
@@ -436,7 +436,7 @@ export default function SeoGmbContentMarketingPage() {
                   </div>
                 </div>
               </div>
-              <button className="w-full bg-blue-500 hover:bg-blue-600 text-white border-none rounded py-2.5 text-sm  cursor-pointer transition-colors flex items-center justify-center gap-2">
+              <button className="w-full bg-blue-500 hover:bg-red-600 text-white border-none rounded py-2.5 text-sm  cursor-pointer transition-colors flex items-center justify-center gap-2">
                 <Cpu size={15} /> Generate Content
               </button>
             </div>
@@ -480,7 +480,7 @@ export default function SeoGmbContentMarketingPage() {
         {activeTab === 'Content Performance' && (
           <div className="flex flex-col gap-2">
             {/* Chart */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <h3 className="text-sm  text-slate-900 m-0 mb-4">Views & Engagement Over Time</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart data={PERFORMANCE_DATA}>
@@ -519,7 +519,7 @@ export default function SeoGmbContentMarketingPage() {
                   onDelete={makeDel(setDuplicate)}
                 />
               </div>
-              <div className="bg-white rounded-2xl border border-slate-200 p-2 flex flex-col items-center justify-center">
+              <div className="bg-white rounded border border-slate-200 p-2 flex flex-col items-center justify-center">
                 <h3 className="text-sm  text-slate-900 m-0 mb-4 self-start">Risk Distribution</h3>
                 <ResponsiveContainer width="100%" height={150}>
                   <PieChart>
@@ -573,7 +573,7 @@ export default function SeoGmbContentMarketingPage() {
               onDelete={makeDel(setCluster)}
             />
             {/* Visual cluster map */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <h3 className="text-sm  text-slate-900 m-0 mb-4">Cluster Relationship Map</h3>
               <div className="relative w-full h-64 bg-slate-50 rounded overflow-hidden">
                 {/* Center pillar */}

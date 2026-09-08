@@ -918,7 +918,7 @@ const ProfileSettingsPage = () => {
                         </div>
                         <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${idx === 0 ? 'bg-blue-600' : idx === 1 ? 'bg-emerald-500' : idx === 2 ? 'bg-purple-500' : idx === 3 ? 'bg-amber-500' : 'bg-rose-500'
+                            className={`h-full rounded-full transition-all duration-500 ${idx === 0 ? 'bg-red-600' : idx === 1 ? 'bg-emerald-500' : idx === 2 ? 'bg-purple-500' : idx === 3 ? 'bg-amber-500' : 'bg-rose-500'
                               }`}
                             style={{ width: `${Math.min(100, Math.max(userItem.workload, userItem.taskCount > 0 ? 10 : 0))}%` }}
                           ></div>
@@ -2587,7 +2587,7 @@ const ProfileSettingsPage = () => {
                     value="http://your-ngrok-url.com/api/github/webhook"
                     className="flex-1 border border-gray-300 rounded-l p-2 text-xs bg-gray-50 text-gray-600 outline-none"
                   />
-                  <button className="bg-blue-600 text-white p-2 text-xs rounded-r font-medium hover:bg-blue-700 transition">
+                  <button className="bg-red-600 text-white p-2 text-xs rounded-r font-medium hover:bg-blue-700 transition">
                     Copy URL
                   </button>
                 </div>

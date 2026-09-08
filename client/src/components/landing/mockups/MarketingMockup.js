@@ -8,7 +8,7 @@ const MarketingMockup = () => {
       <div className="h-12 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-10 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center text-white  text-[10px]">C</div>
-          <span className="font-semibold text-slate-800 text-sm">Codigix CRM</span>
+          <span className=" text-slate-800 text-sm">Codigix CRM</span>
           <div className="h-4 w-px bg-slate-300 mx-2"></div>
           <div className="flex gap-4 text-xs font-medium text-slate-500">
             <span className="text-red-600 border-b-2 border-red-600 pb-[14px] mt-[14px]">Campaigns</span>
@@ -26,7 +26,7 @@ const MarketingMockup = () => {
 
       <div className="flex-1 p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar">
         <div className="flex justify-between items-end">
-          <h1 className="text-xl font-semibold text-slate-800">Marketing Overview</h1>
+          <h1 className="text-xl  text-slate-800">Marketing Overview</h1>
           <span className="text-xs text-slate-500 font-medium">Last 30 Days</span>
         </div>
 
@@ -55,7 +55,7 @@ const MarketingMockup = () => {
           {/* Active Campaigns List */}
           <div className="col-span-2 bg-white rounded border border-slate-200 shadow-sm flex flex-col min-h-[250px]">
             <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+              <h3 className="text-sm  text-slate-800 flex items-center gap-2">
                 <BarChart2 size={14} className="text-slate-400" /> Active Campaigns
               </h3>
               <span className="text-[10px] text-red-600 font-medium cursor-pointer">View All</span>
@@ -97,7 +97,7 @@ const MarketingMockup = () => {
 
           {/* Traffic Sources */}
           <div className="col-span-1 bg-white rounded border border-slate-200 shadow-sm flex flex-col p-4">
-            <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <h3 className="text-sm  text-slate-800 mb-4 flex items-center gap-2">
               <MousePointerClick size={14} className="text-slate-400" /> Traffic Sources
             </h3>
 

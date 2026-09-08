@@ -107,7 +107,7 @@ const ITSubtaskAiModal = ({
                 timer: 2000
               });
             }}
-            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition cursor-pointer"
+            className="px-3.5 py-1.5 bg-red-600 hover:bg-blue-700 text-white rounded font-semibold transition cursor-pointer"
           >
             Accept Specifications
           </button>

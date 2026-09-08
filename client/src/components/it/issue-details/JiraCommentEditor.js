@@ -362,7 +362,7 @@ const JiraCommentEditor = ({
           <button
             type="button"
             onClick={handleSave}
-            className="px-3.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition cursor-pointer shadow-xs active:scale-95"
+            className="px-3.5 py-1 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition cursor-pointer shadow-xs active:scale-95"
           >
             Save
           </button>

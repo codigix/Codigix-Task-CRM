@@ -48,7 +48,7 @@ const titleCase = (s) => String(s || '')
   .replace(/\b\w/g, (c) => c.toUpperCase());
 
 const AVATAR_COLORS = [
-  'bg-blue-600', 'bg-emerald-600', 'bg-purple-600',
+  'bg-red-600', 'bg-emerald-600', 'bg-purple-600',
   'bg-orange-500', 'bg-pink-600', 'bg-teal-600', 'bg-indigo-600'
 ];
 
@@ -304,7 +304,7 @@ const InlineCreateRow = ({ sprintId, onCreate }) => {
         onMouseDown={(e) => e.preventDefault()} /* keep focus so onBlur doesn't fire first */
         onClick={submit}
         disabled={!title.trim() || isSaving}
-        className="px-3 py-1 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+        className="px-3 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
       >
         {isSaving ? 'Creating…' : 'Create'}
       </button>
@@ -1052,7 +1052,7 @@ const BacklogPage = ({ department }) => {
                     ) : (
                       <button
                         onClick={() => setSprintToStart(sprint)}
-                        className="px-3 py-1 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition"
+                        className="px-3 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-blue-700 transition"
                       >
                         Start sprint
                       </button>

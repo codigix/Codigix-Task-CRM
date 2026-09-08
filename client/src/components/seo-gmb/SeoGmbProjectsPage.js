@@ -177,7 +177,7 @@ export default function SeoGmbProjectsPage() {
       {!viewingProjectId ? (
         /* ─── LIST VIEW: ALL PROJECTS TABLE ─── */
         <div className="p-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 ">
+          <div className="bg-white rounded border border-slate-200 p-6 ">
             <div className="flex justify-between items-center mb-5">
               <div>
                 <h2 className="text-base  text-slate-900 m-0">All SEO &amp; GMB Projects</h2>
@@ -185,7 +185,7 @@ export default function SeoGmbProjectsPage() {
               </div>
               <button
                 onClick={() => window.location.href = '/seo-gmb/project-setup?mode=create'}
-                className="bg-blue-500 hover:bg-blue-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors "
+                className="bg-blue-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors "
               >
                 <Plus size={14} /> Add New Project
               </button>
@@ -351,7 +351,7 @@ export default function SeoGmbProjectsPage() {
                 <div className="text-[14px] font-extrabold text-slate-900">₹ {parseFloat(currentBudget).toLocaleString()}</div>
               </div>
               <div className="flex gap-2">
-                <a href={`/seo-gmb/project-setup?id=${project?.id}`} className="bg-blue-500 hover:bg-blue-600 text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer border-none no-underline transition-colors ">
+                <a href={`/seo-gmb/project-setup?id=${project?.id}`} className="bg-blue-500 hover:bg-red-600 text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer border-none no-underline transition-colors ">
                   <Edit3 size={14} /> Edit Project
                 </a>
                 <button className="bg-white border border-slate-200 hover:bg-slate-50 rounded w-9 h-9 flex items-center justify-center cursor-pointer">
@@ -425,7 +425,7 @@ export default function SeoGmbProjectsPage() {
                 <div className="col-span-3 flex flex-col gap-2">
 
                   {/* Project Summary and SEO Performance combined card */}
-                  <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                  <div className="bg-white rounded p-6 border border-slate-200 ">
                     <div className="flex justify-between items-center mb-5">
                       <h3 className="text-base  text-slate-900 m-0">Project Overview</h3>
                       <AdvancedDateRangePicker
@@ -500,7 +500,7 @@ export default function SeoGmbProjectsPage() {
                   {/* Grid for Recent Tasks and Project Health side-by-side */}
                   <div className="grid grid-cols-3 gap-2">
                     {/* Recent Tasks */}
-                    <div className="bg-white rounded-2xl p-6 border border-slate-200 flex flex-col col-span-2 ">
+                    <div className="bg-white rounded p-6 border border-slate-200 flex flex-col col-span-2 ">
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="text-base  text-slate-900 m-0">Recent Tasks</h3>
                         <a href="/seo-gmb/tasks" className="text-blue-500 text-xs  no-underline hover:underline">View All Tasks</a>
@@ -555,7 +555,7 @@ export default function SeoGmbProjectsPage() {
                     </div>
 
                     {/* Project Health */}
-                    <div className="bg-white rounded-2xl p-6 border border-slate-200 col-span-1 ">
+                    <div className="bg-white rounded p-6 border border-slate-200 col-span-1 ">
                       <h3 className="text-base  text-slate-900 m-0 mb-4">Project Health</h3>
                       <div className="flex items-center justify-around mb-4">
                         <div className="relative w-[90px] h-[90px]">
@@ -609,7 +609,7 @@ export default function SeoGmbProjectsPage() {
                   </div>
 
                   {/* Project Timeline Snapshot */}
-                  <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                  <div className="bg-white rounded p-6 border border-slate-200 ">
                     <h3 className="text-base  text-slate-900 m-0 mb-4">Project Timeline Snapshot</h3>
                     <div className="flex items-center gap-1 overflow-x-auto pb-2">
                       {[
@@ -640,7 +640,7 @@ export default function SeoGmbProjectsPage() {
                 {/* Right Column content */}
                 <div className="col-span-1 flex flex-col gap-2">
                   {/* Recent Activity */}
-                  <div className="bg-white rounded-2xl p-2 border border-slate-200 ">
+                  <div className="bg-white rounded p-2 border border-slate-200 ">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-sm  text-slate-900 m-0">Project Activity</h3>
                     </div>
@@ -650,7 +650,7 @@ export default function SeoGmbProjectsPage() {
                   </div>
 
                   {/* Upcoming Milestones */}
-                  <div className="bg-white rounded-2xl p-2 border border-slate-200 ">
+                  <div className="bg-white rounded p-2 border border-slate-200 ">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-sm  text-slate-900 m-0">Upcoming Milestones</h3>
                     </div>
@@ -660,7 +660,7 @@ export default function SeoGmbProjectsPage() {
                   </div>
 
                   {/* Team Members */}
-                  <div className="bg-white rounded-2xl p-2 border border-slate-200 ">
+                  <div className="bg-white rounded p-2 border border-slate-200 ">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-sm  text-slate-900 m-0">Team Members</h3>
                     </div>
@@ -692,7 +692,7 @@ export default function SeoGmbProjectsPage() {
           {/* ── 2. CLIENT INFORMATION TAB ── */}
           {activeTab === 'Client Information' && (
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-white rounded-2xl p-6 border border-slate-200  flex flex-col gap-4">
+              <div className="bg-white rounded p-6 border border-slate-200  flex flex-col gap-4">
                 <h3 className="text-base  text-slate-900 m-0 border-b border-slate-100 pb-2">Client Details</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div><span className="text-slate-400  block">Company Name</span><p className="m-0 mt-0.5  text-slate-800">{project?.company_name || project?.name || 'TechNova Solutions'}</p></div>
@@ -703,7 +703,7 @@ export default function SeoGmbProjectsPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 border border-slate-200  flex flex-col gap-4">
+              <div className="bg-white rounded p-6 border border-slate-200  flex flex-col gap-4">
                 <h3 className="text-base  text-slate-900 m-0 border-b border-slate-100 pb-2">Primary Communications</h3>
                 <div className="flex flex-col gap-3">
                   <div className="text-xs text-slate-500 py-4 text-center">No communications recorded yet.</div>
@@ -715,13 +715,13 @@ export default function SeoGmbProjectsPage() {
           {/* ── 3. TEAM ASSIGNMENT TAB ── */}
           {activeTab === 'Team Assignment' && (
             <div className="flex flex-col gap-2 text-xs">
-              <div className="bg-white rounded-2xl p-2 border border-slate-200 ">
+              <div className="bg-white rounded p-2 border border-slate-200 ">
                 <h3 className="text-base  text-slate-900 m-0 mb-4">Team Load Allocations</h3>
                 <div className="text-xs text-slate-500 py-8 text-center">No team allocations found.</div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-white rounded-2xl p-2 border border-slate-200 ">
+                <div className="bg-white rounded p-2 border border-slate-200 ">
                   <h3 className="text-base  text-slate-900 m-0 mb-4">Team Availability / Leaves</h3>
                   <div className="text-xs text-slate-500 py-8 text-center">No leave data available.</div>
                 </div>
@@ -731,7 +731,7 @@ export default function SeoGmbProjectsPage() {
 
           {/* ── 4. PROJECT TIMELINE TAB ── */}
           {activeTab === 'Project Timeline' && (
-            <div className="bg-white rounded-2xl p-6 border border-slate-200  text-xs">
+            <div className="bg-white rounded p-6 border border-slate-200  text-xs">
               <div className="flex justify-between items-center mb-5">
                 <div>
                   <h3 className="text-base  text-slate-900 m-0">Project Timeline</h3>
@@ -753,7 +753,7 @@ export default function SeoGmbProjectsPage() {
           {/* ── 5. MILESTONES TAB ── */}
           {activeTab === 'Milestones' && (
             <div className="flex flex-col gap-2">
-              <div className="bg-white rounded-2xl p-2 border border-slate-200 ">
+              <div className="bg-white rounded p-2 border border-slate-200 ">
                 <h3 className="text-sm  text-slate-900 mb-3.5">Milestones</h3>
                 <div className="text-xs text-slate-500 py-12 text-center">No milestones found for this project.</div>
               </div>
@@ -763,7 +763,7 @@ export default function SeoGmbProjectsPage() {
           {/* ── 6. PROJECT DOCUMENTS TAB ── */}
           {activeTab === 'Project Documents' && (
             <div className="flex justify-between items-center mb-5">
-              <div className="bg-white rounded-2xl p-2 border border-slate-200  w-full">
+              <div className="bg-white rounded p-2 border border-slate-200  w-full">
                 <div className="text-xs text-slate-500 py-12 text-center">No documents uploaded yet.</div>
               </div>
             </div>

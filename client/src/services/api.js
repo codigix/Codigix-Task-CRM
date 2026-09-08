@@ -257,11 +257,17 @@ export const taskAPI = {
   update: (projectId, taskId, data) => apiService.put(`/projects/${projectId}/tasks/${taskId}`, data),
   delete: (projectId, taskId) => apiService.delete(`/projects/${projectId}/tasks/${taskId}`),
   
+  getAllProjectTasks: () => apiService.get('/tasks'),
+  
   createGeneral: (data) => apiService.post('/tasks', data),
-  getAllGeneral: () => apiService.get('/tasks'),
+  getAllGeneral: () => apiService.get('/general-tasks'),
   getById: (taskId) => apiService.get(`/tasks/${taskId}`),
   updateGeneral: (taskId, data) => apiService.put(`/tasks/${taskId}`, data),
   deleteGeneral: (taskId) => apiService.delete(`/tasks/${taskId}`),
+};
+
+export const itKanbanAPI = {
+  getIssues: (params) => apiService.get('/it-kanban/issues', { params }),
 };
 
 export const projectCommentAPI = {

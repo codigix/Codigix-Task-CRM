@@ -920,6 +920,8 @@ model general_tasks {
   original_assignee_id Int?
   current_assignee_id Int?
   
+  timer_start_time   DateTime?                  @db.DateTime(0)
+  is_timer_running   Boolean?                   @default(false)
   activities         activities[]
   entity_notes       entity_notes[]
   files              files[]
@@ -1160,6 +1162,8 @@ model it_kanban_issues {
   original_estimate  String?   @db.VarChar(50)
   remaining_estimate String?   @db.VarChar(50)
   time_spent         String?   @db.VarChar(50)
+  timer_start_time   DateTime? @db.DateTime(0)
+  is_timer_running   Boolean?  @default(false)
   components         String?   @db.VarChar(255)
   environment        String?   @db.VarChar(255)
   vulnerability      String?   @db.VarChar(100)

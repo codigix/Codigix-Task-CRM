@@ -338,7 +338,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                             }
                           }}
                         >
-                          <div className="w-8 h-8 rounded bg-blue-100 text-blue-700 flex items-center justify-center  text-base shrink-0 group-hover:bg-blue-600 group-hover:text-white transition">
+                          <div className="w-8 h-8 rounded bg-blue-100 text-blue-700 flex items-center justify-center  text-base shrink-0 group-hover:bg-red-600 group-hover:text-white transition">
                             📄
                           </div>
                           <div className="min-w-0">
@@ -438,7 +438,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
               {proposal.status === 'Approved' && (
                 <button
                   onClick={() => handleStatusChange('Sent')}
-                  className="w-full p-2.5 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  className="w-full p-2.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
                 >
                   <Send size={15} />
                   Send to Client

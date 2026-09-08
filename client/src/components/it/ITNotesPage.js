@@ -403,7 +403,7 @@ export default function ITNotesPage() {
           <div className="flex-1 overflow-y-auto">
             {/* Type icon */}
             <div className="flex justify-center py-5 border-b border-gray-100">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center  ${selectedNote.type === 'Wiki Page' ? 'bg-blue-100' : 'bg-green-100'}`}>
+              <div className={`w-16 h-16 rounded flex items-center justify-center  ${selectedNote.type === 'Wiki Page' ? 'bg-blue-100' : 'bg-green-100'}`}>
                 {selectedNote.type === 'Wiki Page' ? <BookOpen size={28} className="text-blue-600" /> : <FileText size={28} className="text-green-600" />}
               </div>
             </div>

@@ -408,7 +408,7 @@ export default function VideoCallPage() {
               <span className="text-xs text-gray-500   er">Participants</span>
               <div className="flex -space-x-2">
                 {participants.map(p => (
-                  <div key={p.id} className={`w-6 h-6 rounded-full border border-gray-800 ${p.isClient ? 'bg-green-600' : 'bg-blue-600'} overflow-hidden text-[9px] flex items-center justify-center `}>
+                  <div key={p.id} className={`w-6 h-6 rounded-full border border-gray-800 ${p.isClient ? 'bg-green-600' : 'bg-red-600'} overflow-hidden text-[9px] flex items-center justify-center `}>
                     {p.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
                   </div>
                 ))}
@@ -423,7 +423,7 @@ export default function VideoCallPage() {
               <div className="flex-1 flex flex-col items-center justify-center p-2 text-center relative z-10">
                 {!isExternalWindowOpen ? (
                   <div className="max-w-xl">
-                    <div className="w-10 h-10 bg-blue-600/10 rounded flex items-center justify-center mb-2 mx-auto border border-blue-500/20 shadow-2xl">
+                    <div className="w-10 h-10 bg-red-600/10 rounded flex items-center justify-center mb-2 mx-auto border border-blue-500/20 shadow-2xl">
                       <Calendar size={15} className="text-blue-500" />
                     </div>
 
@@ -440,7 +440,7 @@ export default function VideoCallPage() {
 
                     <button
                       onClick={handleLaunchMeeting}
-                      className="group relative inline-flex items-center justify-center p-2 bg-blue-600 hover:bg-blue-700 text-white rounded  text-xs shadow-2xl shadow-blue-900/40 transition-all hover:scale-[1.02] active:scale-95 border border-blue-400/30 overflow-hidden"
+                      className="group relative inline-flex items-center justify-center p-2 bg-red-600 hover:bg-blue-700 text-white rounded  text-xs shadow-2xl shadow-blue-900/40 transition-all hover:scale-[1.02] active:scale-95 border border-blue-400/30 overflow-hidden"
                     >
                       <Video size={24} className="mr-3" />
                       Conduct Meeting via CRM
@@ -572,7 +572,7 @@ export default function VideoCallPage() {
               <>
                 <div>
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+                    <div className="w-1.5 h-6 bg-red-600 rounded-full"></div>
                     <h4 className=" tracking-wide text-xs  text-gray-400">AI Meeting Analysis</h4>
                   </div>
                   <div className="ml-2 border-l-2 border-white/5 pl-6 space-y-6">
@@ -590,7 +590,7 @@ export default function VideoCallPage() {
             {activeTab === 'notes' && (
               <div className="h-full flex flex-col">
                 <textarea className="flex-1 bg-white/5 p-4 rounded border border-white/5 text-xs text-gray-300 resize-none outline-none" placeholder="Take notes..." defaultValue={followupData?.description || ''}></textarea>
-                <button onClick={() => showSuccessToast('Notes saved')} className="mt-4 bg-blue-600 text-white py-3 rounded text-xs ">Save Notes</button>
+                <button onClick={() => showSuccessToast('Notes saved')} className="mt-4 bg-red-600 text-white py-3 rounded text-xs ">Save Notes</button>
               </div>
             )}
             {activeTab === 'transcript' && (
@@ -598,10 +598,10 @@ export default function VideoCallPage() {
                 <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                   {messages.map((msg) => (
                     <div key={msg.id} className={`flex gap-3 ${msg.sender === 'sales' ? '' : 'flex-row-reverse'}`}>
-                      <div className={`w-8 h-8 rounded flex-shrink-0 flex items-center justify-center  text-white text-xs ${msg.sender === 'sales' ? 'bg-blue-600' : 'bg-green-600'}`}>{msg.name[0]}</div>
+                      <div className={`w-8 h-8 rounded flex-shrink-0 flex items-center justify-center  text-white text-xs ${msg.sender === 'sales' ? 'bg-red-600' : 'bg-green-600'}`}>{msg.name[0]}</div>
                       <div className={`flex-1 ${msg.sender === 'sales' ? '' : 'text-right'}`}>
                         <div className="text-xs  text-gray-200 mb-1">{msg.name}</div>
-                        <div className={`p-1 rounded text-xs leading-relaxed inline-block ${msg.sender === 'sales' ? 'bg-white/5 text-gray-300' : 'bg-blue-600/20 text-blue-100 border border-blue-500/20'}`}>{msg.text}</div>
+                        <div className={`p-1 rounded text-xs leading-relaxed inline-block ${msg.sender === 'sales' ? 'bg-white/5 text-gray-300' : 'bg-red-600/20 text-blue-100 border border-blue-500/20'}`}>{msg.text}</div>
                       </div>
                     </div>
                   ))}
@@ -636,7 +636,7 @@ export default function VideoCallPage() {
         {/* Add Participant Modal */}
         {isAddParticipantModalOpen && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-            <div className="bg-[#1f2129] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-[#1f2129] border border-white/10 rounded w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
               <div className="p-6 border-b border-white/5 flex items-center justify-between">
                 <div>
                   <h3 className="text-lg  text-white">Add Participants</h3>
@@ -674,7 +674,7 @@ export default function VideoCallPage() {
                     .map(u => (
                       <div key={u.id} className="group flex items-center justify-between p-3 rounded hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400  border border-blue-500/20">
+                          <div className="w-10 h-10 rounded-full bg-red-600/20 flex items-center justify-center text-blue-400  border border-blue-500/20">
                             {u.first_name[0]}{u.last_name?.[0] || ''}
                           </div>
                           <div>
@@ -684,7 +684,7 @@ export default function VideoCallPage() {
                         </div>
                         <button
                           onClick={() => handleAddParticipant(u)}
-                          className="bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-1.5 rounded text-xs  transition-all border border-blue-500/20 active:scale-95"
+                          className="bg-red-600/10 hover:bg-red-600 text-blue-400 hover:text-white px-4 py-1.5 rounded text-xs  transition-all border border-blue-500/20 active:scale-95"
                         >
                           Add
                         </button>

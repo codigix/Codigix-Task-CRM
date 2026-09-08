@@ -1384,7 +1384,7 @@ const LeadDetailsPage = () => {
                   isActive = !isQualified && stageIdx === activeIdx;
 
                   if (isActive || isPast) {
-                    bgColor = `${stageColors[stage] || 'bg-blue-600'} text-white`;
+                    bgColor = `${stageColors[stage] || 'bg-red-600'} text-white`;
                     if (isPast && !isActive) bgColor += ' opacity-70';
                   }
                 } else {
@@ -1397,7 +1397,7 @@ const LeadDetailsPage = () => {
                   isPast = stageIdx < dealActiveIdx;
 
                   if (isActive || isPast) {
-                    bgColor = `${stageColors[stage] || 'bg-blue-600'} text-white`;
+                    bgColor = `${stageColors[stage] || 'bg-red-600'} text-white`;
                     if (isPast && !isActive) bgColor += ' opacity-70';
                   }
                 }
@@ -1993,7 +1993,7 @@ const LeadDetailsPage = () => {
                       />
                       <button
                         onClick={() => leadFileInputRef.current?.click()}
-                        className="bg-blue-600 text-white p-2 rounded text-xs font-[500] flex items-center gap-1.5 hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+                        className="bg-red-600 text-white p-2 rounded text-xs font-[500] flex items-center gap-1.5 hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
                       >
                         <Paperclip size={14} /> Upload File
                       </button>

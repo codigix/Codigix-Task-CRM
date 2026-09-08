@@ -173,14 +173,14 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, subtasks, onReviewComplet
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 p-2"
             >
               Cancel
             </button>
             <button
               onClick={handleApprove}
               disabled={loading || !proposal || proposal.length === 0 || !isDone}
-              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium px-4 py-2 rounded shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium p-2 rounded shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
               title={!isDone ? "Task must be marked as Done" : "Approve and lock points"}
             >
               <CheckCircle size={16} />

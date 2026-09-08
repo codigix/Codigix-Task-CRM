@@ -118,7 +118,7 @@ const InvoiceDashboard = () => {
         {metrics && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
             {/* Total Invoices */}
-            <div className="bg-white rounded-2xlp-3  border border-gray-100  hover:shadow-md transition">
+            <div className="bg-white roundedp-3  border border-gray-100  hover:shadow-md transition">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs    text-gray-600">Total Invoices</h3>
                 <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
@@ -130,7 +130,7 @@ const InvoiceDashboard = () => {
             </div>
 
             {/* Total Revenue */}
-            <div className="bg-white rounded-2xlp-3  border border-gray-100  hover:shadow-md transition">
+            <div className="bg-white roundedp-3  border border-gray-100  hover:shadow-md transition">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs    text-gray-600">Total Revenue</h3>
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -142,7 +142,7 @@ const InvoiceDashboard = () => {
             </div>
 
             {/* Amount Paid */}
-            <div className="bg-white rounded-2xlp-3  border border-gray-100  hover:shadow-md transition">
+            <div className="bg-white roundedp-3  border border-gray-100  hover:shadow-md transition">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs    text-gray-600">Amount Paid</h3>
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -154,7 +154,7 @@ const InvoiceDashboard = () => {
             </div>
 
             {/* Amount Due */}
-            <div className="bg-white rounded-2xlp-3  border border-gray-100  hover:shadow-md transition">
+            <div className="bg-white roundedp-3  border border-gray-100  hover:shadow-md transition">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs    text-gray-600">Amount Due</h3>
                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
@@ -171,7 +171,7 @@ const InvoiceDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mb-8">
           {/* Status Cards */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+            <div className="bg-white roundedp-3  border border-gray-100 ">
               <h3 className="text-md  text-gray-900 mb-4">Invoice Status Breakdown</h3>
               <div className="space-y-3">
                 {metrics && (
@@ -205,7 +205,7 @@ const InvoiceDashboard = () => {
 
           {/* Status Details */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+            <div className="bg-white roundedp-3  border border-gray-100 ">
               <h3 className="text-md  text-gray-900 mb-4">Detailed Status Report</h3>
               <div className="space-y-2">
                 {breakdown && breakdown.length > 0 ? (
@@ -255,7 +255,7 @@ const InvoiceDashboard = () => {
         {/* Analytics Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mb-8">
           {/* Average Invoice Value */}
-          <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+          <div className="bg-white roundedp-3  border border-gray-100 ">
             <h3 className="text-md  text-gray-900 mb-4">Average Invoice Value</h3>
             <div className="space-y-3">
               {breakdown && breakdown.length > 0 && (
@@ -272,7 +272,7 @@ const InvoiceDashboard = () => {
           </div>
 
           {/* Collection Rate */}
-          <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+          <div className="bg-white roundedp-3  border border-gray-100 ">
             <h3 className="text-md  text-gray-900 mb-4">Collection Performance</h3>
             {metrics && (
               <div className="space-y-4">

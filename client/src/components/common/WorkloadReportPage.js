@@ -257,7 +257,7 @@ const WorkloadReportPage = ({ department }) => {
             <button
               onClick={() => downloadPdf()}
               disabled={rows.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium rounded bg-red-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
             >
               <Download size={14} /> Download PDF
             </button>
@@ -276,22 +276,22 @@ const WorkloadReportPage = ({ department }) => {
               <table className="w-full text-[13px] whitespace-nowrap">
                 <thead className="bg-gray-50 border-b border-gray-200 text-gray-600">
                   <tr>
-                    <th className="text-left font-medium px-4 py-2.5">
+                    <th className="text-left font-medium p-2.5">
                       <span className="flex items-center gap-1.5"><Users size={13} /> Assignee</span>
                     </th>
                     {COLUMNS.map(c => (
                       <th key={c} className="text-center font-medium px-3 py-2.5">{label(c)}</th>
                     ))}
                     {hasOther && <th className="text-center font-medium px-3 py-2.5">Other</th>}
-                    <th className="text-center font-semibold px-4 py-2.5">Total</th>
+                    <th className="text-center font-semibold p-2.5">Total</th>
                     {/* A manager can pull one person's figures out on their own. */}
-                    {isManager && <th className="text-center font-medium px-4 py-2.5">Action</th>}
+                    {isManager && <th className="text-center font-medium p-2.5">Action</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {rows.map(r => (
                     <tr key={r.person} className="hover:bg-blue-50/40">
-                      <td className="px-4 py-2.5 text-gray-900 font-medium">
+                      <td className="p-2.5 text-gray-900 font-medium">
                         {r.person === 'Unassigned'
                           ? <span className="text-gray-400">Unassigned</span>
                           : r.person}
@@ -306,9 +306,9 @@ const WorkloadReportPage = ({ department }) => {
                           {r.other}
                         </td>
                       )}
-                      <td className="text-center px-4 py-2.5 font-semibold text-gray-900">{r.total}</td>
+                      <td className="text-center p-2.5 font-semibold text-gray-900">{r.total}</td>
                       {isManager && (
-                        <td className="text-center px-4 py-2.5">
+                        <td className="text-center p-2.5">
                           {/* Unassigned isn't a person, so there's nothing to report on. */}
                           {r.person === 'Unassigned' ? (
                             <span className="text-gray-300">—</span>
@@ -329,13 +329,13 @@ const WorkloadReportPage = ({ department }) => {
                 {rows.length > 1 && (
                   <tfoot className="bg-gray-50 border-t border-gray-200">
                     <tr>
-                      <td className="px-4 py-2.5 font-semibold text-gray-700">All</td>
+                      <td className="p-2.5 font-semibold text-gray-700">All</td>
                       {COLUMNS.map(c => (
                         <td key={c} className="text-center px-3 py-2.5 font-semibold text-gray-700">{totals[c]}</td>
                       ))}
                       {hasOther && <td className="text-center px-3 py-2.5 font-semibold text-gray-700">{totals.other}</td>}
-                      <td className="text-center px-4 py-2.5  text-gray-900">{totals.total}</td>
-                      {isManager && <td className="px-4 py-2.5" />}
+                      <td className="text-center p-2.5  text-gray-900">{totals.total}</td>
+                      {isManager && <td className="p-2.5" />}
                     </tr>
                   </tfoot>
                 )}

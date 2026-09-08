@@ -538,7 +538,7 @@ const SeoGmbPage = () => {
                         </div>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${(act.value / 600) * 100}%` }}></div>
+                        <div className="bg-red-600 h-2 rounded-full" style={{ width: `${(act.value / 600) * 100}%` }}></div>
                       </div>
                     </div>
                   ))}
@@ -736,7 +736,7 @@ const SeoGmbPage = () => {
                   <button
                     key={engine.id}
                     onClick={() => setActiveGeoEngine(engine.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold shadow-sm whitespace-nowrap transition-colors border ${isActive ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                    className={`flex items-center gap-2 p-2 rounded text-sm font-semibold shadow-sm whitespace-nowrap transition-colors border ${isActive ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                   >
                     {Icon && <Icon size={16} className={isActive ? 'text-indigo-600' : engine.color} />} {engine.label}
                   </button>
@@ -1384,7 +1384,7 @@ const SeoGmbPage = () => {
                     {/* Abstract map representation */}
                     <Globe size={180} strokeWidth={0.5} className="text-indigo-200 absolute -right-10 -top-10 opacity-60" />
                     <Map size={180} strokeWidth={0.5} className="text-indigo-200 absolute -left-10 -bottom-10 opacity-60" />
-                    <div className="z-10 bg-white/80 px-4 py-2 rounded border border-indigo-100 backdrop-blur-sm text-center">
+                    <div className="z-10 bg-white/80 p-2 rounded border border-indigo-100 backdrop-blur-sm text-center">
                       <span className="block text-indigo-900  text-lg">Global</span>
                       <span className="block text-indigo-600 font-medium text-xs">Reach Tracking</span>
                     </div>

@@ -255,7 +255,7 @@ export default function SeoGmbKeywordManagementPage() {
           </button>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-blue-500 hover:bg-blue-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="bg-blue-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Plus size={14} /> Add Keyword
           </button>
@@ -295,7 +295,7 @@ export default function SeoGmbKeywordManagementPage() {
             <div className="grid grid-cols-3 gap-2">
 
               {/* Left Column: Research Overview Metrics */}
-              <div className="bg-white rounded-2xl p-2 border border-slate-200 col-span-1 flex flex-col justify-between">
+              <div className="bg-white rounded p-2 border border-slate-200 col-span-1 flex flex-col justify-between">
                 <div>
                   <h3 className="text-sm  text-slate-900 m-0">Keyword Research Overview</h3>
                   <p className="text-xs text-slate-400 m-0 mt-0.5 mb-5">Discover new keyword ideas and analyze their potential.</p>
@@ -321,7 +321,7 @@ export default function SeoGmbKeywordManagementPage() {
               </div>
 
               {/* Middle Column: Keyword Trend line chart */}
-              <div className="bg-white rounded-2xl p-2 border border-slate-200 col-span-1">
+              <div className="bg-white rounded p-2 border border-slate-200 col-span-1">
                 <h3 className="text-sm  text-slate-900 m-0 mb-4">Keyword Trend</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <LineChart data={TREND_CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -335,7 +335,7 @@ export default function SeoGmbKeywordManagementPage() {
               </div>
 
               {/* Right Column: Top Performing Keywords */}
-              <div className="bg-white rounded-2xl p-2 border border-slate-200 col-span-1 flex flex-col justify-between">
+              <div className="bg-white rounded p-2 border border-slate-200 col-span-1 flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="text-sm  text-slate-900 m-0">Top Performing Keywords</h3>
@@ -364,7 +364,7 @@ export default function SeoGmbKeywordManagementPage() {
             </div>
 
             {/* Keyword Ideas Table list with search and filters */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+            <div className="bg-white rounded p-6 border border-slate-200">
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-sm  text-slate-900 m-0">Keyword Ideas</h3>
 
@@ -395,7 +395,7 @@ export default function SeoGmbKeywordManagementPage() {
                   <button className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700  p-2 rounded cursor-pointer">
                     Reset
                   </button>
-                  <button className="bg-blue-500 hover:bg-blue-600 text-white  px-4 py-1.5 rounded border-none cursor-pointer transition-colors">
+                  <button className="bg-blue-500 hover:bg-red-600 text-white  px-4 py-1.5 rounded border-none cursor-pointer transition-colors">
                     Apply Filters
                   </button>
                 </div>
@@ -511,7 +511,7 @@ export default function SeoGmbKeywordManagementPage() {
             {/* Bottom charts grid row */}
             <div className="grid grid-cols-3 gap-2">
               {/* Donut intent chart */}
-              <div className="bg-white rounded-2xl p-2 border border-slate-200 col-span-1">
+              <div className="bg-white rounded p-2 border border-slate-200 col-span-1">
                 <h3 className="text-sm  text-slate-900 m-0 mb-4">Keyword Intent Distribution</h3>
                 <div className="flex items-center justify-around">
                   <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
@@ -551,7 +551,7 @@ export default function SeoGmbKeywordManagementPage() {
               </div>
 
               {/* Horizontal Bar: Top SERP Features */}
-              <div className="bg-white rounded-2xl p-2 border border-slate-200 col-span-1">
+              <div className="bg-white rounded p-2 border border-slate-200 col-span-1">
                 <h3 className="text-sm  text-slate-900 m-0 mb-4">Top SERP Features</h3>
                 <div className="flex flex-col gap-3 text-xs">
                   {[
@@ -575,7 +575,7 @@ export default function SeoGmbKeywordManagementPage() {
               </div>
 
               {/* Vertical Bar: Difficulty Distribution */}
-              <div className="bg-white rounded-2xl p-2 border border-slate-200 col-span-1">
+              <div className="bg-white rounded p-2 border border-slate-200 col-span-1">
                 <h3 className="text-sm  text-slate-900 m-0 mb-4">Keyword Difficulty Distribution</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={DIFFICULTY_DIST_DATA} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
@@ -606,7 +606,7 @@ export default function SeoGmbKeywordManagementPage() {
         {/* ── Tab 2: Keyword Planner ── */}
         {activeTab === 'Keyword Planner' && (
           <div className="flex flex-col gap-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6">
+            <div className="bg-white border border-slate-200 rounded p-6">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-sm  text-slate-900 m-0">Campaign Search Planner</h3>
@@ -628,7 +628,7 @@ export default function SeoGmbKeywordManagementPage() {
                     className="border border-slate-200 rounded py-1.5 px-3 outline-none text-xs w-[80px]"
                     placeholder="Budget"
                   />
-                  <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white  p-2 rounded border-none text-xs cursor-pointer flex items-center gap-1 transition-colors">
+                  <button type="submit" className="bg-blue-500 hover:bg-red-600 text-white  p-2 rounded border-none text-xs cursor-pointer flex items-center gap-1 transition-colors">
                     <Plus size={13} /> Create Plan
                   </button>
                 </form>
@@ -675,7 +675,7 @@ export default function SeoGmbKeywordManagementPage() {
         {/* ── Tab 3: Keyword Mapping ── */}
         {activeTab === 'Keyword Mapping' && (
           <div className="flex flex-col gap-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6">
+            <div className="bg-white border border-slate-200 rounded p-6">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-sm  text-slate-900 m-0">Target URL Keyword Mapping</h3>
@@ -698,7 +698,7 @@ export default function SeoGmbKeywordManagementPage() {
                     className="border border-slate-200 rounded py-1.5 px-3 outline-none text-xs w-[200px]"
                     required
                   />
-                  <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white  p-2 rounded border-none text-xs cursor-pointer flex items-center gap-1 transition-colors">
+                  <button type="submit" className="bg-blue-500 hover:bg-red-600 text-white  p-2 rounded border-none text-xs cursor-pointer flex items-center gap-1 transition-colors">
                     <Plus size={13} /> Map URL
                   </button>
                 </form>
@@ -741,7 +741,7 @@ export default function SeoGmbKeywordManagementPage() {
         {/* ── Tab 4: Keyword Clusters ── */}
         {activeTab === 'Keyword Clusters' && (
           <div className="flex flex-col gap-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6">
+            <div className="bg-white border border-slate-200 rounded p-6">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-sm  text-slate-900 m-0">Semantic Clustering</h3>
@@ -764,7 +764,7 @@ export default function SeoGmbKeywordManagementPage() {
                     className="border border-slate-200 rounded py-1.5 px-3 outline-none text-xs w-[240px]"
                     required
                   />
-                  <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white  p-2 rounded border-none text-xs cursor-pointer flex items-center gap-1 transition-colors">
+                  <button type="submit" className="bg-blue-500 hover:bg-red-600 text-white  p-2 rounded border-none text-xs cursor-pointer flex items-center gap-1 transition-colors">
                     <Plus size={13} /> Add Cluster
                   </button>
                 </form>
@@ -801,7 +801,7 @@ export default function SeoGmbKeywordManagementPage() {
 
         {/* ── Tab 5: Search Intent ── */}
         {activeTab === 'Search Intent' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+          <div className="bg-white border border-slate-200 rounded p-6">
             <h3 className="text-sm  text-slate-900 m-0 mb-2">Search Intent Re-classification</h3>
             <p className="text-xs text-slate-400 m-0 mb-6">Verify and update intent types (Informational, Transactional, Navigational, Commercial).</p>
 
@@ -851,7 +851,7 @@ export default function SeoGmbKeywordManagementPage() {
 
         {/* ── Tab 6: Keyword Opportunities ── */}
         {activeTab === 'Keyword Opportunities' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+          <div className="bg-white border border-slate-200 rounded p-6">
             <h3 className="text-sm  text-slate-900 m-0 mb-2">High-Opportunity Keywords (Low Difficulty, High Volume)</h3>
             <p className="text-xs text-slate-400 m-0 mb-6">Quickly add opportunities directly to your tracking dashboard.</p>
 
@@ -887,7 +887,7 @@ export default function SeoGmbKeywordManagementPage() {
                           ]);
                           alert(`Added "${row.keyword}" to tracking list!`);
                         }}
-                        className="bg-blue-500 hover:bg-blue-600 text-white  px-3 py-1 rounded text-xs border-none cursor-pointer transition-colors"
+                        className="bg-blue-500 hover:bg-red-600 text-white  px-3 py-1 rounded text-xs border-none cursor-pointer transition-colors"
                       >
                         Track Keyword
                       </button>
@@ -901,7 +901,7 @@ export default function SeoGmbKeywordManagementPage() {
 
         {/* ── Tab 7: Competitor Keywords ── */}
         {activeTab === 'Competitor Keywords' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+          <div className="bg-white border border-slate-200 rounded p-6">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-sm  text-slate-900 m-0">Competitor SEO Overlap Analysis</h3>
@@ -916,7 +916,7 @@ export default function SeoGmbKeywordManagementPage() {
                   className="border border-slate-200 rounded py-1.5 px-3 outline-none text-xs w-[180px]"
                   required
                 />
-                <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white  p-2 rounded border-none text-xs cursor-pointer transition-colors">
+                <button type="submit" className="bg-blue-500 hover:bg-red-600 text-white  p-2 rounded border-none text-xs cursor-pointer transition-colors">
                   Add Domain
                 </button>
               </form>
@@ -954,7 +954,7 @@ export default function SeoGmbKeywordManagementPage() {
 
         {/* ── Tab 8: Keyword Ranking ── */}
         {activeTab === 'Keyword Ranking' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+          <div className="bg-white border border-slate-200 rounded p-6">
             <div className="flex justify-between items-center mb-4">
               <div>
                 <h3 className="text-sm  text-slate-900 m-0">Rank History Timeline</h3>
@@ -1013,7 +1013,7 @@ export default function SeoGmbKeywordManagementPage() {
 
         {/* ── Tab 9: Lost Keywords ── */}
         {activeTab === 'Lost Keywords' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+          <div className="bg-white border border-slate-200 rounded p-6">
             <h3 className="text-sm  text-slate-900 m-0 mb-2">Lost Rankings Alert</h3>
             <p className="text-xs text-slate-400 m-0 mb-6">Analyze search phrases that recently dropped out of top search results.</p>
 
@@ -1054,7 +1054,7 @@ export default function SeoGmbKeywordManagementPage() {
 
         {/* ── Tab 10: Seasonal Keywords ── */}
         {activeTab === 'Seasonal Keywords' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+          <div className="bg-white border border-slate-200 rounded p-6">
             <h3 className="text-sm  text-slate-900 m-0 mb-2">Traffic Seasonality Metrics</h3>
             <p className="text-xs text-slate-400 m-0 mb-6">Review keyword volume fluctuations across seasonal calendar periods.</p>
 
@@ -1096,7 +1096,7 @@ export default function SeoGmbKeywordManagementPage() {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/45" onClick={() => setIsAddModalOpen(false)} />
-          <div className="bg-white rounded-2xl p-6 shadow-2xl border border-slate-200 w-[420px] relative z-10 text-xs">
+          <div className="bg-white rounded p-6 shadow-2xl border border-slate-200 w-[420px] relative z-10 text-xs">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3.5 mb-4">
               <h3 className="text-sm font-extrabold text-slate-900 m-0">Add Target Keyword</h3>
               <button onClick={() => setIsAddModalOpen(false)} className="bg-transparent border-none text-slate-400 hover:text-slate-700 cursor-pointer">
@@ -1152,7 +1152,7 @@ export default function SeoGmbKeywordManagementPage() {
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-500 hover:bg-blue-600 text-white  px-5 py-2 rounded border-none cursor-pointer transition-colors"
+                  className="bg-blue-500 hover:bg-red-600 text-white  px-5 py-2 rounded border-none cursor-pointer transition-colors"
                 >
                   Add Keyword
                 </button>

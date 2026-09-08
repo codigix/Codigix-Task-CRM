@@ -36,7 +36,8 @@ const ITManagerDashboard = () => {
     workload: true,
     timeTracking: true,
     openTasks: true,
-    aiSummary: true
+    aiSummary: true,
+    ticketList: true
   });
 
   useEffect(() => {
@@ -133,7 +134,7 @@ const ITManagerDashboard = () => {
       { color: 'bg-indigo-500', phaseBg: 'bg-indigo-50 text-indigo-600' },
       { color: 'bg-amber-500', phaseBg: 'bg-amber-50 text-amber-600' },
       { color: 'bg-green-500', phaseBg: 'bg-green-50 text-green-600' },
-      { color: 'bg-blue-600', phaseBg: 'bg-blue-50 text-blue-600' },
+      { color: 'bg-red-600', phaseBg: 'bg-blue-50 text-blue-600' },
       { color: 'bg-teal-500', phaseBg: 'bg-teal-50 text-teal-600' },
       { color: 'bg-rose-500', phaseBg: 'bg-rose-50 text-rose-600' }
     ];
@@ -413,7 +414,7 @@ const ITManagerDashboard = () => {
                 <div className="space-y-5">
                   {[
                     { label: 'To Do', count: todoCount, color: 'bg-indigo-600', icon: Folder, iconBg: 'bg-indigo-50' },
-                    { label: 'In Progress', count: inProgressTasksCount, color: 'bg-blue-600', icon: ClipboardCheck, iconBg: 'bg-blue-50' },
+                    { label: 'In Progress', count: inProgressTasksCount, color: 'bg-red-600', icon: ClipboardCheck, iconBg: 'bg-blue-50' },
                     { label: 'In Review', count: inReviewCount, color: 'bg-amber-500', icon: FileText, iconBg: 'bg-amber-50' },
                     { label: 'Completed', count: completedCount, color: 'bg-emerald-500', icon: CheckCircle, iconBg: 'bg-emerald-50' },
                   ].map((stat, idx) => (
@@ -545,6 +546,62 @@ const ITManagerDashboard = () => {
             )}
           </div>
 
+          {/* TICKET ASSIGNMENTS TABLE */}
+          {widgets.ticketList && (
+            <div className="mb-6 bg-white p-4 rounded border border-gray-100">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-semibold text-gray-900">Ticket Creation & Assignment Overview</h3>
+                <span onClick={() => navigate(urlPrefix + '/tasks')} className="text-xs text-indigo-600 font-medium hover:underline cursor-pointer">View All Tickets</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-gray-50 text-gray-500">
+                    <tr>
+                      <th className="p-2 font-medium">Ticket Title</th>
+                      <th className="p-2 font-medium">Project</th>
+                      <th className="p-2 font-medium">Created By</th>
+                      <th className="p-2 font-medium">Assigned To</th>
+                      <th className="p-2 font-medium">Status</th>
+                      <th className="p-2 font-medium">Priority</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {tasks.slice(0, 10).map((task, idx) => {
+                      let priorityColor = 'text-gray-600 bg-gray-50';
+                      if (task.priority === 'High') priorityColor = 'text-rose-600 bg-rose-50';
+                      else if (task.priority === 'Medium') priorityColor = 'text-amber-600 bg-amber-50';
+                      else if (task.priority === 'Low') priorityColor = 'text-green-600 bg-green-50';
+
+                      let statusColor = 'text-gray-600 bg-gray-50';
+                      if (task.status === 'In Progress') statusColor = 'text-blue-600 bg-blue-50';
+                      else if (task.status === 'Completed' || task.status === 'Done') statusColor = 'text-emerald-600 bg-emerald-50';
+
+                      return (
+                        <tr key={idx} className="hover:bg-gray-50/50">
+                          <td className="p-2 font-medium text-gray-900">{task.title || 'Untitled'}</td>
+                          <td className="p-2 text-gray-500">{projects.find(p => p.id === task.project_id)?.name || 'General IT'}</td>
+                          <td className="p-2 text-gray-600">{task.created_by_name || 'System'}</td>
+                          <td className="p-2 text-gray-600">{task.assigned_to_name || 'Unassigned'}</td>
+                          <td className="p-2">
+                            <span className={`px-2 py-0.5 rounded text-[10px] ${statusColor}`}>{task.status || 'Pending'}</span>
+                          </td>
+                          <td className="p-2">
+                            <span className={`px-2 py-0.5 rounded text-[10px] ${priorityColor}`}>{task.priority || 'Normal'}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {tasks.length === 0 && (
+                      <tr>
+                        <td colSpan="6" className="p-4 text-center text-gray-500">No tickets found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* FOOTER BAR */}
           <div className="bg-white p-4 rounded border border-gray-100  flex items-center justify-between overflow-x-auto gap-8 whitespace-nowrap">
             <div className="flex items-center gap-3 min-w-[120px]">
@@ -615,7 +672,8 @@ const ITManagerDashboard = () => {
                 { key: 'taskSummary', label: 'Task Summary' },
                 { key: 'workload', label: 'Team Workload' },
                 { key: 'timeTracking', label: 'Time Tracking' },
-                { key: 'openTasks', label: 'Top Open Tasks' }
+                { key: 'openTasks', label: 'Top Open Tasks' },
+                { key: 'ticketList', label: 'Ticket Assignments' }
               ].map(w => (
                 <div key={w.key} className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">{w.label}</span>

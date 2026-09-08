@@ -68,7 +68,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       const getDepartmentPrefix = () => {
         // Super Admin gets their own prefix
         if (user?.role === 'Super Admin') return '/super-admin';
-        
+
         const role = user?.role || '';
         const dept = user?.department || '';
 
@@ -93,7 +93,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       const prefix = propPrefix || getDepartmentPrefix();
 
       const sharedModules = [
-        'calendar', 'tasks', 'followups', 'analytics', 'reports',
+        'calendar', 'tasks', 'followups', 'analytics', 'reports', 'attendance',
         'dashboard', 'list', 'details', 'kanban', 'quotations',
         'customers', 'targets', 'performance', 'commission', 'distribution',
         'contacts', 'companies', 'campaign', 'proposals', 'contracts',
@@ -102,12 +102,12 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
         'notes', 'file-manager', 'social-feed', 'seo-gmb', 'ppc-ads',
         'graphics-video', 'content-calendar', 'blogs-calendar', 'marketing-drive',
         'it-inventory', 'it-ticketing', 'seo-', 'gmb-', 'teams',
-        'documents', 'projects', 'leads', 'bugs', 'test-cases', 'repositories', 'backlog'
+        'documents', 'projects', 'leads', 'bugs', 'test-cases', 'repositories', 'backlog', 'ticket-assignments'
       ];
 
       const userNameValue = user?.username || user?.first_name || user?.name || 'user';
       const username = userNameValue.toLowerCase().replace(/\s+/g, '-');
-      
+
       const formatUrlSlug = (str) => {
         if (!str) return 'employee';
         return str.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
@@ -333,6 +333,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
         <>
           <div className="p-2 text-xs  text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">IT Management</div>
           <SubmenuItem label="Manager Overview" page="manager-dashboard" icon={Gauge} prefix="/it" />
+          <SubmenuItem label="Ticket Assignments" page="ticket-assignments" icon={ListChecks} prefix="/it" />
         </>
       )}
     </>
@@ -444,16 +445,15 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const renderHRPages = () => (
     <>
       <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">HR Management</div>
-      <SubmenuItem label="Employees" page="employees" icon={Users} prefix="/hr" />
+      {/* <SubmenuItem label="Employees" page="employees" icon={Users} prefix="/hr" /> */}
       <SubmenuItem label="Attendance" page="attendance" icon={Calendar} prefix="/hr" />
-      <SubmenuItem label="Leave Requests" page="leaves" icon={FileCheck} prefix="/hr" />
-      <SubmenuItem label="HR Tasks" page="tasks" icon={ClipboardList} prefix="/hr" />
-      <SubmenuItem label="HR Board" page="kanban" icon={Layers} prefix="/hr" />
+      {/* <SubmenuItem label="Leave Requests" page="leaves" icon={FileCheck} prefix="/hr" /> */}
+
       <SubmenuItem label="Team Chat" page="chat" icon={MessageCircle} prefix="/hr" />
       <SubmenuItem label="Activities" page="activities" icon={Activity} prefix="/hr" />
-      <SubmenuItem label="Recruitment" page="recruitment" icon={Briefcase} prefix="/hr" />
+      {/* <SubmenuItem label="Recruitment" page="recruitment" icon={Briefcase} prefix="/hr" /> */}
       <SubmenuItem label="Performance" page="performance" icon={TrendingUp} prefix="/hr" />
-      <SubmenuItem label="Payroll" page="payroll" icon={Banknote} prefix="/hr" />
+      {/* <SubmenuItem label="Payroll" page="payroll" icon={Banknote} prefix="/hr" /> */}
     </>
   );
 

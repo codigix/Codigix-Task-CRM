@@ -1172,7 +1172,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className={`px-4 py-1.5 rounded-[3px] text-[14px] font-medium transition-colors flex items-center justify-center ${!formData.summary || isSubmitting ? 'bg-blue-600/50 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+              className={`px-4 py-1.5 rounded-[3px] text-[14px] font-medium transition-colors flex items-center justify-center ${!formData.summary || isSubmitting ? 'bg-red-600/50 text-white cursor-not-allowed' : 'bg-red-600 text-white hover:bg-blue-700'}`}
             >
               {isSubmitting ? 'Creating...' : 'Create'}
             </button>

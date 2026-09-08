@@ -72,7 +72,7 @@ export default function CrudTable({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 ">
+    <div className="bg-white rounded border border-slate-200 p-6 ">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
@@ -81,7 +81,7 @@ export default function CrudTable({
         </div>
         <button
           onClick={openAdd}
-          className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white border-none rounded p-2 text-xs  cursor-pointer transition-colors"
+          className="flex items-center gap-1.5 bg-blue-500 hover:bg-red-600 text-white border-none rounded p-2 text-xs  cursor-pointer transition-colors"
         >
           <Plus size={14} /> Add New
         </button>
@@ -161,7 +161,7 @@ export default function CrudTable({
           onClick={() => setDeleteConfirm(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4"
+            className="bg-white rounded shadow-2xl p-6 w-full max-w-sm mx-4"
             onClick={e => e.stopPropagation()}
           >
             <div className="text-center">
@@ -197,7 +197,7 @@ export default function CrudTable({
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg mx-4"
+            className="bg-white rounded shadow-2xl p-6 w-full max-w-lg mx-4"
             onClick={e => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -257,7 +257,7 @@ export default function CrudTable({
                   </button>
                   <button
                     type="submit"
-                    className="p-2 rounded bg-blue-500 hover:bg-blue-600 text-white text-xs  border-none cursor-pointer transition-colors"
+                    className="p-2 rounded bg-blue-500 hover:bg-red-600 text-white text-xs  border-none cursor-pointer transition-colors"
                   >
                     {modalMode === 'add' ? 'Create' : 'Update'}
                   </button>

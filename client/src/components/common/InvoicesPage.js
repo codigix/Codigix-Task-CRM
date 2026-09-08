@@ -347,7 +347,7 @@ const InvoicesPage = () => {
                 return (
                   <div
                     key={invoice.id}
-                    className="bg-white rounded-2xl p-2 shadow border border-gray-100 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer"
+                    className="bg-white rounded p-2 shadow border border-gray-100 hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer"
                     onClick={() => setSelectedInvoiceId(invoice.id)}
                   >
                     {/* Card Header */}

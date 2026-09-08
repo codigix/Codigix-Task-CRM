@@ -291,7 +291,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     setAssignee({
       name: isUnass ? 'Unassigned' : ass,
       initial: isUnass ? 'U' : getInitials(ass),
-      color: isUnass ? 'bg-gray-200 text-gray-500' : 'bg-blue-600 text-white'
+      color: isUnass ? 'bg-gray-200 text-gray-500' : 'bg-red-600 text-white'
     });
 
     const rep = issue.reporter || loggedUser;
@@ -468,7 +468,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
 
   const handleAssignToMe = () => {
     const me = loggedUser;
-    const newAss = { name: me, initial: getInitials(me), color: 'bg-blue-600 text-white' };
+    const newAss = { name: me, initial: getInitials(me), color: 'bg-red-600 text-white' };
     setAssignee(newAss);
     handleUpdate({ assignee: me });
   };

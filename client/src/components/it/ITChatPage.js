@@ -608,7 +608,7 @@ export default function ITChatPage() {
                   onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit(msg.id)}
                   className="flex-1 text-xs outline-none px-2 py-1 bg-gray-50 border border-gray-200 rounded"
                 />
-                <button onClick={() => handleSaveEdit(msg.id)} className="px-2.5 py-1 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 cursor-pointer">
+                <button onClick={() => handleSaveEdit(msg.id)} className="px-2.5 py-1 bg-red-600 text-white rounded text-xs font-semibold hover:bg-blue-700 cursor-pointer">
                   Save
                 </button>
                 <button onClick={() => setEditingMessageId(null)} className="px-2 py-1 text-gray-500 hover:bg-gray-100 rounded text-xs cursor-pointer">
@@ -617,7 +617,7 @@ export default function ITChatPage() {
               </div>
             ) : (
               msg.text && (
-                <div className={`px-3.5 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap flex flex-col relative
+                <div className={`px-3.5 py-2 rounded text-xs leading-relaxed whitespace-pre-wrap flex flex-col relative
                   ${isDeleted ? 'bg-gray-100 text-gray-400 italic border border-gray-200' : isMine ? 'bg-[#d9fdd3] text-gray-900 border border-[#bceab4] rounded-tr-xs self-end shadow-2xs' : 'bg-white border border-gray-200 text-gray-800 rounded-tl-xs self-start shadow-2xs'}`}>
                   {isDeleted ? (
                     <div className="flex items-center gap-1 text-gray-400">
@@ -1077,7 +1077,7 @@ export default function ITChatPage() {
                 />
                 <button
                   onClick={handleAddTask}
-                  className="px-3 py-2 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 cursor-pointer"
+                  className="px-3 py-2 bg-red-600 text-white rounded text-xs font-semibold hover:bg-blue-700 cursor-pointer"
                 >
                   Add Task
                 </button>
@@ -1238,7 +1238,7 @@ export default function ITChatPage() {
       {/* ── Create Team Group Modal ── */}
       {isCreateTeamOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn border border-gray-100">
+          <div className="bg-white rounded shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn border border-gray-100">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center ">
@@ -1313,10 +1313,10 @@ export default function ITChatPage() {
             </div>
 
             <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
-              <button onClick={() => setIsCreateTeamOpen(false)} className="px-4 py-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-100 text-xs font-medium cursor-pointer">
+              <button onClick={() => setIsCreateTeamOpen(false)} className="p-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-100 text-xs font-medium cursor-pointer">
                 Cancel
               </button>
-              <button onClick={handleCreateTeam} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-xs cursor-pointer">
+              <button onClick={handleCreateTeam} className="p-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-xs cursor-pointer">
                 Create Group
               </button>
             </div>
@@ -1327,7 +1327,7 @@ export default function ITChatPage() {
       {/* ── Add Members to Group Modal ── */}
       {isAddMemberOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn border border-gray-100">
+          <div className="bg-white rounded shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn border border-gray-100">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center ">
@@ -1382,10 +1382,10 @@ export default function ITChatPage() {
             </div>
 
             <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
-              <button onClick={() => setIsAddMemberOpen(false)} className="px-4 py-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-100 text-xs font-medium cursor-pointer">
+              <button onClick={() => setIsAddMemberOpen(false)} className="p-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-100 text-xs font-medium cursor-pointer">
                 Cancel
               </button>
-              <button onClick={handleAddMembers} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow-xs cursor-pointer">
+              <button onClick={handleAddMembers} className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow-xs cursor-pointer">
                 Add Selected Members
               </button>
             </div>

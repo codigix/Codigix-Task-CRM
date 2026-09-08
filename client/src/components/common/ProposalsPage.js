@@ -482,7 +482,7 @@ const ProposalsPage = ({ onViewDetails }) => {
     return (
       <tr className="border-b hover:bg-gray-50 transition-colors">
         <td className="p-3 text-xs cursor-pointer" onClick={() => setSelectedProposalId(proposal.id)}>
-          <div className="font-semibold text-slate-800 hover:text-blue-600 transition-colors">
+          <div className=" text-slate-800 hover:text-blue-600 transition-colors">
             {proposal.proposal_number || `PROP-${proposal.id}`}
           </div>
           <div className="text-xs text-gray-500 font-medium truncate max-w-xs">{proposal.title}</div>

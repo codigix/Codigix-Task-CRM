@@ -377,7 +377,7 @@ const CrmProjectsPage = ({ department }) => {
             {isManager && (
               <button
                 onClick={handleAddProject}
-                className="flex items-center gap-1.5 text-xs font-medium text-white bg-blue-600 px-4 py-1.5 rounded hover:bg-blue-700 transition "
+                className="flex items-center gap-1.5 text-xs font-medium text-white bg-red-600 px-4 py-1.5 rounded hover:bg-blue-700 transition "
               >
                 <Plus size={14} /> New Project
               </button>
@@ -497,7 +497,7 @@ const CrmProjectsPage = ({ department }) => {
                     {visibleColumns.includes('Progress') && <td className="p-3">
                       <div className="flex items-center gap-2">
                         <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-600 rounded-full" style={{ width: `${progress}%` }}></div>
+                          <div className="h-full bg-red-600 rounded-full" style={{ width: `${progress}%` }}></div>
                         </div>
                         <span className="text-xs text-gray-600">{progress}%</span>
                       </div>
@@ -844,7 +844,7 @@ const CrmProjectsPage = ({ department }) => {
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`w-6 h-6 flex items-center justify-center rounded ${page === currentPage ? 'bg-blue-600 text-white font-medium' : 'border border-gray-200 hover:bg-gray-50'}`}
+                className={`w-6 h-6 flex items-center justify-center rounded ${page === currentPage ? 'bg-red-600 text-white font-medium' : 'border border-gray-200 hover:bg-gray-50'}`}
               >
                 {page}
               </button>
@@ -916,13 +916,13 @@ const CrmProjectsPage = ({ department }) => {
                 <button
                   type="button"
                   onClick={() => setIsAssignTeamModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded text-xs font-medium hover:bg-gray-50 transition"
+                  className="p-2 border border-gray-300 text-gray-700 rounded text-xs font-medium hover:bg-gray-50 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition"
+                  className="p-2 bg-red-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition"
                 >
                   Assign Team
                 </button>

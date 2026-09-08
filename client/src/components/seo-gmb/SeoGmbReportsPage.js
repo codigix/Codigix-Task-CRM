@@ -221,7 +221,7 @@ export default function SeoGmbReportsPage() {
           <button className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer">
             <Download size={13} /> Export All Reports
           </button>
-          <button className="bg-blue-500 hover:bg-blue-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors">
+          <button className="bg-blue-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors">
             <Plus size={14} /> Create Custom Report
           </button>
         </div>
@@ -247,7 +247,7 @@ export default function SeoGmbReportsPage() {
             {/* 12 Report Type Cards */}
             <div className="grid grid-cols-6 gap-4">
               {REPORT_TYPES.map((rt) => (
-                <div key={rt.name} className="bg-white rounded-2xl border border-slate-200 p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab(rt.name === 'Client Reports' ? 'Client Reports' : rt.name === 'Executive Reports' ? 'Executive Reports' : rt.name === 'SEO Reports' ? 'SEO Reports' : rt.name)}>
+                <div key={rt.name} className="bg-white rounded border border-slate-200 p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab(rt.name === 'Client Reports' ? 'Client Reports' : rt.name === 'Executive Reports' ? 'Executive Reports' : rt.name === 'SEO Reports' ? 'SEO Reports' : rt.name)}>
                   <div className="flex items-center gap-2 mb-2">
                     <div className={`w-7 h-7 rounded flex items-center justify-center ${rt.color}`}><rt.icon size={13} /></div>
                     <p className="text-xs  text-slate-800 m-0 leading-tight">{rt.name}</p>
@@ -265,7 +265,7 @@ export default function SeoGmbReportsPage() {
             {/* Charts Row + Top Clients */}
             <div className="grid grid-cols-3 gap-2">
               {/* Reports Overview */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Reports Overview</h3>
                   <span className="text-xs border border-slate-200 rounded px-2 py-0.5 text-slate-400 ">Last 30 Days ▾</span>
@@ -304,7 +304,7 @@ export default function SeoGmbReportsPage() {
               </div>
 
               {/* Reports by Type donut */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <h3 className="text-sm  text-slate-900 m-0 mb-3">Reports by Type</h3>
                 <div className="flex items-center gap-4">
                   <div className="relative flex-shrink-0">
@@ -332,7 +332,7 @@ export default function SeoGmbReportsPage() {
               </div>
 
               {/* Top Clients */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Top Clients <span className="text-slate-400 font-normal text-xs">(By Reports)</span></h3>
                 </div>
@@ -361,7 +361,7 @@ export default function SeoGmbReportsPage() {
             </div>
 
             {/* Recent Reports Table */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm  text-slate-900 m-0">Recent Reports</h3>
                 <div className="flex items-center gap-2">
@@ -374,7 +374,7 @@ export default function SeoGmbReportsPage() {
                   </button>
                   <button
                     onClick={() => makeAdd('recent')({ name: 'New Report', type: 'SEO Report', client: 'ABC Digital', date: new Date().toLocaleDateString(), by: 'John Smith', format: 'PDF', status: 'Draft' })}
-                    className="bg-blue-500 hover:bg-blue-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
+                    className="bg-blue-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
                     <Plus size={13} /> Create Report
                   </button>
@@ -456,7 +456,7 @@ export default function SeoGmbReportsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Total SEO Reports', v: '12', c: 'This Month' }, { l: 'Scheduled', v: '4', c: 'Upcoming' }, { l: 'Clients Covered', v: '5', c: 'Active' }, { l: 'Avg. Open Rate', v: '76%', c: '+8.2%' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  mt-1 block">{s.c}</span>
@@ -487,7 +487,7 @@ export default function SeoGmbReportsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-5 gap-4">
               {tableData.clients.map(c => (
-                <div key={c.id} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={c.id} className="bg-white rounded p-4 border border-slate-200">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-black text-blue-600">{c.client[0]}</div>
                     <span className="text-xs  text-slate-800 leading-tight">{c.client}</span>
@@ -509,7 +509,7 @@ export default function SeoGmbReportsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Executive Reports', v: '6', c: 'This Quarter' }, { l: 'Scheduled', v: '2', c: 'Upcoming' }, { l: 'Recipients', v: '12', c: 'Board Members' }, { l: 'Avg. Read Rate', v: '92%', c: 'High Engagement' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  mt-1 block">{s.c}</span>
@@ -525,7 +525,7 @@ export default function SeoGmbReportsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Total Templates', v: '5', c: 'Active' }, { l: 'SEO Templates', v: '2', c: 'In Use' }, { l: 'Client Templates', v: '1', c: 'Active' }, { l: 'Custom Templates', v: '2', c: 'Available' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-blue-500  mt-1 block">{s.c}</span>
@@ -541,7 +541,7 @@ export default function SeoGmbReportsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Active Schedules', v: '4', c: 'Running' }, { l: 'Paused', v: '1', c: 'Needs Review' }, { l: 'Next Send', v: 'May 22', c: 'This Week' }, { l: 'Total Recipients', v: '15', c: 'Contacts' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  mt-1 block">{s.c}</span>

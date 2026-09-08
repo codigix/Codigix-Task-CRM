@@ -212,7 +212,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
 
   // Metric card helper
   const MetricCard = ({ label, value, change, pos = true, icon: Icon, color }) => (
-    <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+    <div className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
       <div>
         <span className="text-xs text-slate-400  block mb-1">{label}</span>
         <strong className="text-xl font-black text-slate-900 block">{value}</strong>
@@ -262,7 +262,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
           <button className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer">
             <Download size={13} /> Export Report
           </button>
-          <button className="bg-blue-500 hover:bg-blue-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors">
+          <button className="bg-blue-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors">
             <Plus size={14} /> Add Integration
           </button>
         </div>
@@ -291,7 +291,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
             {/* Integration Status Cards */}
             <div className="grid grid-cols-5 gap-4">
               {INTEGRATION_STATUS.map((intg) => (
-                <div key={intg.name} className="bg-white rounded-2xl border border-slate-200 p-4">
+                <div key={intg.name} className="bg-white rounded border border-slate-200 p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-8 h-8 rounded flex items-center justify-center text-base" style={{ backgroundColor: `${intg.color}15` }}>
                       <span>{intg.icon}</span>
@@ -323,7 +323,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
             {/* Charts Row */}
             <div className="grid grid-cols-3 gap-2">
               {/* Search Performance */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <div>
                     <h3 className="text-sm  text-slate-900 m-0">Search Performance</h3>
@@ -356,7 +356,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
               </div>
 
               {/* Organic Traffic */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <div>
                     <h3 className="text-sm  text-slate-900 m-0">Organic Traffic</h3>
@@ -387,7 +387,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
               </div>
 
               {/* Top Landing Pages */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Top Landing Pages</h3>
                   <button onClick={() => setActiveTab('Landing Pages')} className="text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline">View All Pages →</button>
@@ -411,7 +411,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
             {/* User Behavior + Goals + Conversions Funnel */}
             <div className="grid grid-cols-3 gap-2">
               {/* User Behavior donut */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <div><h3 className="text-sm  text-slate-900 m-0">User Behavior</h3><p className="text-xs text-slate-400 m-0">GA4</p></div>
                   <span className="text-xs border border-slate-200 rounded px-2 py-0.5 text-slate-400 ">Last 7 Days ▾</span>
@@ -443,7 +443,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
               </div>
 
               {/* Goals & Events */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <div><h3 className="text-sm  text-slate-900 m-0">Goals & Events</h3><p className="text-xs text-slate-400 m-0">GA4</p></div>
                   <span className="text-xs border border-slate-200 rounded px-2 py-0.5 text-slate-400 ">Last 7 Days ▾</span>
@@ -467,7 +467,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
               </div>
 
               {/* Conversions Funnel */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Conversions Overview</h3>
                   <span className="text-xs border border-slate-200 rounded px-2 py-0.5 text-slate-400 ">Last 7 Days ▾</span>
@@ -499,7 +499,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
             </div>
 
             {/* Integration Status Footer */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <div className="bg-white rounded border border-slate-200 p-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm  text-slate-900 m-0">Integration Status</h3>
                 <button className="text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline">Manage Integrations →</button>
@@ -528,14 +528,14 @@ export default function SeoGmbGoogleIntegrationsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Total Clicks', v: '12,842', c: '+16.3%' }, { l: 'Impressions', v: '248,146', c: '+22.6%' }, { l: 'Average CTR', v: '5.18%', c: '+0.8%' }, { l: 'Average Position', v: '18.7', c: '+2.1' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  flex items-center gap-0.5 mt-1"><ArrowUpRight size={10} /> {s.c} vs last 30 days</span>
                 </div>
               ))}
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 p-2 mb-1">
+            <div className="bg-white rounded border border-slate-200 p-2 mb-1">
               <h3 className="text-sm  text-slate-900 m-0 mb-3">Clicks & Impressions Trend</h3>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={SEARCH_PERF_DATA}>
@@ -557,14 +557,14 @@ export default function SeoGmbGoogleIntegrationsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Total Users', v: '24,562', c: '+18.5%' }, { l: 'Sessions', v: '32,195', c: '+14.2%' }, { l: 'Engaged Sessions', v: '21,234', c: '+16.3%' }, { l: 'Engagement Rate', v: '65.9%', c: '+6.3%' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  flex items-center gap-0.5 mt-1"><ArrowUpRight size={10} /> {s.c} vs last 7 days</span>
                 </div>
               ))}
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <h3 className="text-sm  text-slate-900 m-0 mb-3">User & Session Trend</h3>
               <ResponsiveContainer width="100%" height={180}>
                 <AreaChart data={ORGANIC_DATA}>
@@ -585,7 +585,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-5 gap-4">
               {[{ l: 'Profile Views', v: '24,562', c: '+18.6%' }, { l: 'Search Views', v: '15,263', c: '+21.4%' }, { l: 'Map Views', v: '9,299', c: '+16.2%' }, { l: 'Website Clicks', v: '2,396', c: '+22.8%' }, { l: 'Direction Requests', v: '933', c: '+16.3%' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  flex items-center gap-0.5 mt-1"><ArrowUpRight size={10} /> {s.c} vs last 30 days</span>
@@ -601,7 +601,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Total Tags', v: '24', c: 'Active' }, { l: 'Active Tags', v: '20', c: 'Published' }, { l: 'Paused Tags', v: '3', c: 'Review' }, { l: 'Triggers', v: '18', c: 'Configured' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-blue-500  mt-1 block">{s.c}</span>
@@ -617,7 +617,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Total Conversions', v: '1,306', c: '+24.6%' }, { l: 'Conversion Rate', v: '4.02%', c: '+8.7%' }, { l: 'Total Value', v: '$58,350', c: '+31.2%' }, { l: 'Avg. Conv. Value', v: '$44.68', c: '+5.9%' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  flex items-center gap-0.5 mt-1"><ArrowUpRight size={10} /> {s.c} vs last 7 days</span>
@@ -631,7 +631,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
         {/* ═══════════════════ SEARCH PERFORMANCE ═══════════════════ */}
         {activeTab === 'Search Performance' && (
           <div className="flex flex-col gap-2">
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <h3 className="text-sm  text-slate-900 m-0 mb-3">Clicks & Impressions</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={SEARCH_PERF_DATA}>
@@ -651,7 +651,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
         {/* ═══════════════════ ORGANIC TRAFFIC ═══════════════════ */}
         {activeTab === 'Organic Traffic' && (
           <div className="flex flex-col gap-2">
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <h3 className="text-sm  text-slate-900 m-0 mb-3">Organic User Trend</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart data={ORGANIC_DATA}>
@@ -676,7 +676,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
         {activeTab === 'User Behavior' && (
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <h3 className="text-sm  text-slate-900 m-0 mb-3">User Distribution</h3>
                 <div className="flex items-center gap-6">
                   <div className="relative flex-shrink-0">
@@ -702,7 +702,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <h3 className="text-sm  text-slate-900 m-0 mb-3">User Trend</h3>
                 <ResponsiveContainer width="100%" height={140}>
                   <AreaChart data={ORGANIC_DATA}>
@@ -724,7 +724,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Total Events', v: '1,306', c: '+24.6%' }, { l: 'Unique Completions', v: '1,258', c: '+22.1%' }, { l: 'Total Value', v: '$58,350', c: '+31.2%' }, { l: 'Top Conversion', v: 'Form Submit', c: '482 completions' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200">
                   <span className="text-xs text-slate-400  block">{s.l}</span>
                   <strong className="text-xl font-black text-slate-900 block mt-1">{s.v}</strong>
                   <span className="text-xs text-emerald-500  mt-1 block">{s.c}</span>

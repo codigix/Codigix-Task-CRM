@@ -155,7 +155,7 @@ export default function SeoGmbOnPageSeoPage() {
           </button>
           <button
             onClick={handleRunAudit}
-            className="bg-blue-500 hover:bg-blue-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="bg-blue-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <RefreshCw size={14} className={retestLoading ? 'animate-spin' : ''} />
             {retestLoading ? 'Auditing...' : 'Run On-Page Audit'}
@@ -192,7 +192,7 @@ export default function SeoGmbOnPageSeoPage() {
 
             {/* Metric Cards */}
             <div className="grid grid-cols-5 gap-4">
-              <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+              <div className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-slate-400  block">Overall On-Page Score</span>
                   <div className="flex items-baseline gap-2 mt-2">
@@ -212,7 +212,7 @@ export default function SeoGmbOnPageSeoPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+              <div className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-slate-400  block">Pages Analyzed</span>
                   <strong className="text-2xl font-black text-slate-900 mt-2 block">142</strong>
@@ -223,7 +223,7 @@ export default function SeoGmbOnPageSeoPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+              <div className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-slate-400  block">Issues Found</span>
                   <strong className="text-2xl font-black text-slate-900 mt-2 block">58</strong>
@@ -236,7 +236,7 @@ export default function SeoGmbOnPageSeoPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+              <div className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-slate-400  block">Optimized Pages</span>
                   <strong className="text-2xl font-black text-slate-900 mt-2 block">112</strong>
@@ -247,7 +247,7 @@ export default function SeoGmbOnPageSeoPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+              <div className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-slate-400  block">Avg. Page Load Impact</span>
                   <strong className="text-2xl font-black text-slate-900 mt-2 block">1.8s</strong>
@@ -262,7 +262,7 @@ export default function SeoGmbOnPageSeoPage() {
             {/* Charts Row */}
             <div className="grid grid-cols-3 gap-2">
               {/* Landing Pages Table */}
-              <div className="col-span-2 bg-white rounded-2xl p-2 border border-slate-200">
+              <div className="col-span-2 bg-white rounded p-2 border border-slate-200">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-sm  text-slate-900 m-0">Landing Pages Overview</h3>
                   <button className="bg-transparent border-none text-blue-500 hover:text-blue-700 text-xs  cursor-pointer">View All &rarr;</button>
@@ -313,7 +313,7 @@ export default function SeoGmbOnPageSeoPage() {
               </div>
 
               {/* Radar Chart */}
-              <div className="col-span-1 bg-white rounded-2xl p-2 border border-slate-200">
+              <div className="col-span-1 bg-white rounded p-2 border border-slate-200">
                 <h3 className="text-sm  text-slate-900 m-0 mb-4">On-Page SEO Health</h3>
                 <ResponsiveContainer width="100%" height={200}>
                   <RadarChart data={ON_PAGE_HEALTH_DATA}>
@@ -340,7 +340,7 @@ export default function SeoGmbOnPageSeoPage() {
                 { title: 'Featured Snippets', desc: 'SERP feature opportunities.', count: 7, score: 78, icon: Zap, color: 'text-rose-500 bg-rose-50 border-rose-100' },
                 { title: 'Content Optimization', desc: 'Readability checks.', count: 20, score: 81, icon: ClipboardList, color: 'text-violet-500 bg-violet-50 border-violet-100' },
               ].map((card, i) => (
-                <div key={i} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover: transition-shadow">
+                <div key={i} className="bg-white border border-slate-200 rounded p-4 flex flex-col justify-between hover: transition-shadow">
                   <div>
                     <div className="flex justify-between items-start mb-2">
                       <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${card.color}`}>

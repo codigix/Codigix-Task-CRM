@@ -163,7 +163,7 @@ export default function SeoGmbGmbProfilePage() {
           </button>
           <button
             onClick={() => handleMainTab('Business Management')}
-            className="bg-blue-500 hover:bg-blue-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="bg-blue-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Plus size={14} /> Add Location
           </button>
@@ -216,7 +216,7 @@ export default function SeoGmbGmbProfilePage() {
                 { label: 'Direction Requests', val: '933', sub: '+16.3%', icon: Navigation, color: 'text-sky-500 bg-sky-50' },
                 { label: 'Website Clicks', val: '2,396', sub: '+22.8%', icon: Globe, color: 'text-rose-500 bg-rose-50' },
               ].map((c, i) => (
-                <div key={i} className="bg-white rounded-2xl p-4 border border-slate-200">
+                <div key={i} className="bg-white rounded p-4 border border-slate-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-slate-400 ">{c.label}</span>
                     <div className={`w-7 h-7 rounded flex items-center justify-center ${c.color}`}><c.icon size={13} /></div>
@@ -231,7 +231,7 @@ export default function SeoGmbGmbProfilePage() {
 
             {/* Charts Row */}
             <div className="grid grid-cols-4 gap-4">
-              <div className="col-span-2 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-2 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Business Profile Performance</h3>
                   <span className="text-xs border border-slate-200 rounded px-2 py-0.5 text-slate-400 ">Last 30 Days</span>
@@ -252,7 +252,7 @@ export default function SeoGmbGmbProfilePage() {
                 </ResponsiveContainer>
               </div>
 
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <h3 className="text-sm  text-slate-900 m-0 mb-3">Top Actions</h3>
                 <div className="flex items-center gap-3">
                   <div className="relative flex-shrink-0">
@@ -279,7 +279,7 @@ export default function SeoGmbGmbProfilePage() {
                 </div>
               </div>
 
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <h3 className="text-sm  text-slate-900 m-0 mb-3">Profile Completeness</h3>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="relative flex-shrink-0">
@@ -311,7 +311,7 @@ export default function SeoGmbGmbProfilePage() {
             {/* 4-panel row */}
             <div className="grid grid-cols-4 gap-4">
               {/* Recent Posts */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="bg-white rounded border border-slate-200 p-4">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Recent Google Posts</h3>
                   <button onClick={() => handleMainTab('Google Posts')} className="text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline">View All Posts →</button>
@@ -332,7 +332,7 @@ export default function SeoGmbGmbProfilePage() {
               </div>
 
               {/* Latest Reviews */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="bg-white rounded border border-slate-200 p-4">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Latest Reviews</h3>
                   <button onClick={() => handleMainTab('Customer Engagement')} className="text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline">View All →</button>
@@ -357,7 +357,7 @@ export default function SeoGmbGmbProfilePage() {
               </div>
 
               {/* Customer Engagement */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="bg-white rounded border border-slate-200 p-4">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Customer Engagement</h3>
                   <button onClick={() => handleMainTab('Customer Engagement')} className="text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline">View All →</button>
@@ -382,7 +382,7 @@ export default function SeoGmbGmbProfilePage() {
               </div>
 
               {/* Business Info */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="bg-white rounded border border-slate-200 p-4">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Business Information</h3>
                   <button onClick={() => { handleMainTab('Business Management'); setSubTab('Business Information'); }} className="text-blue-500 text-xs  border-none bg-transparent cursor-pointer">Edit</button>
@@ -401,7 +401,7 @@ export default function SeoGmbGmbProfilePage() {
             {/* Bottom 3-col row */}
             <div className="grid grid-cols-3 gap-4">
               {/* Local SEO Overview */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="bg-white rounded border border-slate-200 p-4">
                 <h3 className="text-sm  text-slate-900 m-0 mb-3">Local SEO Overview</h3>
                 {[{ label: 'Citation Score', val: '87%', c: '+2' }, { label: 'NAP Consistency', val: '95%', c: '+1' }, { label: 'Local Keywords', val: '128', c: '+5' }, { label: 'Geo Rankings', val: 'Top 3: 12', c: '+3' }, { label: 'Local Backlinks', val: '342', c: '+18' }].map(s => (
                   <div key={s.label} className="flex items-center justify-between py-1.5 border-b border-slate-50">
@@ -413,7 +413,7 @@ export default function SeoGmbGmbProfilePage() {
               </div>
 
               {/* Top Local Keywords */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="bg-white rounded border border-slate-200 p-4">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Top Local Keywords</h3>
                   <button onClick={() => { handleMainTab('Local SEO'); setSubTab('Local Keywords'); }} className="text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline">View All →</button>
@@ -434,7 +434,7 @@ export default function SeoGmbGmbProfilePage() {
               </div>
 
               {/* Local Competitors */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <div className="bg-white rounded border border-slate-200 p-4">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Local Competitors</h3>
                   <button onClick={() => { handleMainTab('Local SEO'); setSubTab('Local Competitors'); }} className="text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline">View All →</button>
@@ -452,7 +452,7 @@ export default function SeoGmbGmbProfilePage() {
             </div>
 
             {/* Media strip */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <div className="bg-white rounded border border-slate-200 p-4">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm  text-slate-900 m-0">Media Management</h3>
                 <button onClick={() => handleMainTab('Media Management')} className="text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline">View All Media →</button>
@@ -479,7 +479,7 @@ export default function SeoGmbGmbProfilePage() {
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-4 gap-4">
                 {[{ label: 'Total Reviews', val: '124', color: 'text-blue-500' }, { label: 'Average Rating', val: '4.6 ⭐', color: 'text-amber-500' }, { label: 'Response Rate', val: '87%', color: 'text-emerald-500' }, { label: 'Avg Response Time', val: '4.2 hrs', color: 'text-purple-500' }].map(c => (
-                  <div key={c.label} className="bg-white rounded-2xl p-4 border border-slate-200">
+                  <div key={c.label} className="bg-white rounded p-4 border border-slate-200">
                     <span className="text-xs text-slate-400  block">{c.label}</span>
                     <strong className={`text-2xl font-black mt-1 block ${c.color}`}>{c.val}</strong>
                   </div>
@@ -501,7 +501,7 @@ export default function SeoGmbGmbProfilePage() {
 
         {/* Placeholder when no sub-tab selected (shouldn't happen due to auto-select) */}
         {mainTab !== 'Overview' && !activeKey && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400 text-sm">
+          <div className="bg-white rounded border border-slate-200 p-12 text-center text-slate-400 text-sm">
             Select a sub-tab above to view and manage data.
           </div>
         )}

@@ -94,7 +94,7 @@ const HeroSection = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-rose-500 blur-[80px] opacity-20 pointer-events-none transform -translate-y-4"></div>
 
           {/* Floating Explanatory Badges (Hidden on mobile, visible on lg screens) */}
-          <div className="absolute -left-16 top-24 bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/80 flex items-center gap-3 z-30 animate-fade-in-up animation-delay-500 hidden lg:flex hover:scale-105 transition-transform cursor-pointer">
+          <div className="absolute -left-16 top-24 bg-white/90 backdrop-blur-md px-4 py-3 rounded shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/80 flex items-center gap-3 z-30 animate-fade-in-up animation-delay-500 hidden lg:flex hover:scale-105 transition-transform cursor-pointer">
             <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
               <Zap size={18} />
             </div>
@@ -104,7 +104,7 @@ const HeroSection = () => {
             </div>
           </div>
 
-          <div className="absolute -right-20 top-1/3 bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/80 flex items-center gap-3 z-30 animate-fade-in-up animation-delay-700 hidden lg:flex hover:scale-105 transition-transform cursor-pointer">
+          <div className="absolute -right-20 top-1/3 bg-white/90 backdrop-blur-md px-4 py-3 rounded shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/80 flex items-center gap-3 z-30 animate-fade-in-up animation-delay-700 hidden lg:flex hover:scale-105 transition-transform cursor-pointer">
             <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm">
               <BarChart3 size={18} />
             </div>
@@ -114,7 +114,7 @@ const HeroSection = () => {
             </div>
           </div>
 
-          <div className="absolute -left-8 bottom-24 bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/80 flex items-center gap-3 z-30 animate-fade-in-up animation-delay-600 hidden lg:flex hover:scale-105 transition-transform cursor-pointer">
+          <div className="absolute -left-8 bottom-24 bg-white/90 backdrop-blur-md px-4 py-3 rounded shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/80 flex items-center gap-3 z-30 animate-fade-in-up animation-delay-600 hidden lg:flex hover:scale-105 transition-transform cursor-pointer">
             <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shadow-sm">
               <Users size={18} />
             </div>
@@ -125,7 +125,7 @@ const HeroSection = () => {
           </div>
 
           {/* Main Dashboard Window */}
-          <div className="relative rounded-2xl bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-200/80 overflow-hidden text-left z-20">
+          <div className="relative rounded bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-200/80 overflow-hidden text-left z-20">
             <div className="flex items-center px-4 py-3 border-b border-slate-200/80 bg-slate-100/80 backdrop-blur-md">
               <div className="flex space-x-2">
                 <div className="w-3 h-3 rounded-full bg-red-400 border border-red-500/20"></div>

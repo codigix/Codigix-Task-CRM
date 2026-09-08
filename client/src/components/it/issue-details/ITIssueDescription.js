@@ -370,7 +370,7 @@ const ITIssueDescription = ({
               <button
                 type="button"
                 onClick={handleSave}
-                className="px-3.5 py-1.5 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 cursor-pointer transition shadow-xs"
+                className="px-3.5 py-1.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-blue-700 cursor-pointer transition shadow-xs"
               >
                 Save
               </button>

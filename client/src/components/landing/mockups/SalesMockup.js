@@ -73,7 +73,7 @@ const SalesMockup = () => {
           <div className="flex-1 overflow-y-auto">
             {deals.map((deal, i) => (
               <div key={i} className="grid grid-cols-12 gap-3 p-3 border-b border-slate-100 items-center hover:bg-slate-50 transition-colors group cursor-pointer text-xs">
-                <div className="col-span-4 font-semibold text-slate-800 flex items-center justify-between pr-2">
+                <div className="col-span-4  text-slate-800 flex items-center justify-between pr-2">
                   {deal.name}
                   <ArrowUpRight size={12} className="text-slate-300 group-hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>

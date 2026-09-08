@@ -776,7 +776,7 @@ const SeoGmbLocationIntelligencePage = () => {
           <button className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">
             <RefreshCw size={14} />
           </button>
-          <button className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+          <button className="p-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
             <Download size={14} /> Export Report
           </button>
         </div>

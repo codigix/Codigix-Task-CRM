@@ -240,7 +240,7 @@ export default function NotificationsPage() {
           ) : (
             <button
               onClick={handleEnableDeviceAlerts}
-              className="flex items-center gap-1.5 text-xs bg-blue-600 text-white px-3.5 py-1.5 rounded font-semibold hover:bg-blue-700 transition-all shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 text-xs bg-red-600 text-white px-3.5 py-1.5 rounded font-semibold hover:bg-blue-700 transition-all shadow-sm active:scale-95"
             >
               <Smartphone size={14} /> Enable Device Alerts
             </button>
@@ -381,7 +381,7 @@ export default function NotificationsPage() {
               <div className="flex-1 overflow-y-auto">
                 {/* Icon + Title */}
                 <div className="flex flex-col items-center py-6 border-b border-gray-100">
-                  <div className={`w-16 h-16 rounded-2xl ${cfg.color} flex items-center justify-center mb-3 `}>
+                  <div className={`w-16 h-16 rounded ${cfg.color} flex items-center justify-center mb-3 `}>
                     {React.cloneElement(cfg.icon, { size: 28 })}
                   </div>
                   <h4 className="text-[16px]  text-gray-900 mb-1">{selectedNotif.title}</h4>

@@ -24,7 +24,7 @@ const VideoMockup = () => {
         <div className="flex-1 flex flex-col gap-4 relative">
 
           {/* Main Speaker View */}
-          <div className="flex-1 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden relative group">
+          <div className="flex-1 bg-slate-800 rounded border border-slate-700 overflow-hidden relative group">
             <img
               src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800"
               alt="Main Speaker"
@@ -56,7 +56,7 @@ const VideoMockup = () => {
         </div>
 
         {/* Right Sidebar (Participants/Chat) */}
-        <div className="w-64 bg-slate-800 rounded-2xl border border-slate-700 flex flex-col overflow-hidden shrink-0 hidden lg:flex">
+        <div className="w-64 bg-slate-800 rounded border border-slate-700 flex flex-col overflow-hidden shrink-0 hidden lg:flex">
           <div className="flex border-b border-slate-700">
             <div className="flex-1 text-center py-3 text-xs  text-slate-200 border-b-2 border-red-500 bg-slate-700/50">Participants (4)</div>
             <div className="flex-1 text-center py-3 text-xs  text-slate-400 hover:text-slate-200 cursor-pointer">Chat</div>

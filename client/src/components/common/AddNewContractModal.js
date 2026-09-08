@@ -690,7 +690,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs  text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
                   >
                     {CONTRACT_STATUSES.map(st => (
                       <option key={st} value={st}>{st}</option>
@@ -837,7 +837,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
               type="button"
               onClick={handleCancel}
               disabled={isLoading}
-              className="px-4 py-2 border border-slate-300 rounded text-xs font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
+              className="p-2 border border-slate-300 rounded text-xs font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
             >
               Cancel
             </button>
@@ -849,7 +849,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 setFormData(prev => ({ ...prev, status: 'Draft' }));
                 handleSubmit(e);
               }}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded text-xs font-semibold transition disabled:opacity-50"
+              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded text-xs font-semibold transition disabled:opacity-50"
             >
               Save as Draft
             </button>
@@ -861,7 +861,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 setFormData(prev => ({ ...prev, status: 'Active' }));
                 handleSubmit(e);
               }}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              className="p-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
             >
               {isLoading ? (
                 <>

@@ -53,23 +53,23 @@ const ReviseQuotationModal = ({ isOpen, onClose, quotation, onUpdate }) => {
       const taxAmt = quotation.tax !== undefined ? parseFloat(quotation.tax) : (quotation.tax_amount !== undefined ? parseFloat(quotation.tax_amount) : (sub * (taxPct / 100)));
       const tot = quotation.total !== undefined ? parseFloat(quotation.total) : (quotation.amount !== undefined ? parseFloat(quotation.amount) : (sub + taxAmt));
 
-      const initialItems = (quotation.items && quotation.items.length > 0) 
+      const initialItems = (quotation.items && quotation.items.length > 0)
         ? quotation.items.map(item => ({
-            ...item,
-            productName: item.productName || item.item_name || item.product_name || item.name || '',
-            original_rate: item.original_rate || item.rate || 0,
-            rate: item.rate || 0,
-            adjustment: item.adjustment || 0
-          }))
+          ...item,
+          productName: item.productName || item.item_name || item.product_name || item.name || '',
+          original_rate: item.original_rate || item.rate || 0,
+          rate: item.rate || 0,
+          adjustment: item.adjustment || 0
+        }))
         : [{
-            id: Date.now(),
-            productName: quotation.project_name || quotation.deal_name || quotation.client || 'Service',
-            description: quotation.description || '',
-            original_rate: sub,
-            rate: sub,
-            adjustment: 0,
-            quantity: 1
-          }];
+          id: Date.now(),
+          productName: quotation.project_name || quotation.deal_name || quotation.client || 'Service',
+          description: quotation.description || '',
+          original_rate: sub,
+          rate: sub,
+          adjustment: 0,
+          quantity: 1
+        }];
 
       setFormData({
         ...quotation,
@@ -184,11 +184,11 @@ const ReviseQuotationModal = ({ isOpen, onClose, quotation, onUpdate }) => {
       if (Array.isArray(estimations)) {
         const qNum = quotation?.estimation_number || quotation?.quotation_number || quotation?.quotationNumber || '';
         const baseNumber = qNum ? qNum.split('-v')[0] : '';
-        const filteredEstimations = baseNumber 
+        const filteredEstimations = baseNumber
           ? estimations.filter(est => {
-              const num = est.estimation_number || est.quotation_number || '';
-              return num.startsWith(baseNumber);
-            })
+            const num = est.estimation_number || est.quotation_number || '';
+            return num.startsWith(baseNumber);
+          })
           : estimations;
 
         const sorted = [...filteredEstimations].sort((a, b) =>
@@ -764,13 +764,13 @@ const ReviseQuotationModal = ({ isOpen, onClose, quotation, onUpdate }) => {
                     key={v.id}
                     onClick={() => setCompareWith(v)}
                     className={`p-2 border rounded cursor-pointer transition-all mb-2 ${compareWith?.id === v.id
-                        ? 'bg-blue-50 border-blue-200 '
-                        : 'bg-[#F8FAFC] border-[#E2E8F0] hover:bg-gray-50'
+                      ? 'bg-blue-50 border-blue-200 '
+                      : 'bg-[#F8FAFC] border-[#E2E8F0] hover:bg-gray-50'
                       }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded flex items-center justify-center text-white ${compareWith?.id === v.id ? 'bg-blue-600' : 'bg-[#3B82F6]'}`}>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center text-white ${compareWith?.id === v.id ? 'bg-red-600' : 'bg-[#3B82F6]'}`}>
                           <FileText size={10} />
                         </div>
                         <div>

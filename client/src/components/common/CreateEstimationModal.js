@@ -435,7 +435,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
   return (
     <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200 font-sans">
-      <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-slate-200">
+      <div className="bg-white w-full max-w-5xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-slate-200">
 
         {/* ================= MODAL HEADER ================= */}
         <div className="p-4 sm:p-5 border-b border-slate-200 bg-white sticky top-0 z-20 flex items-start justify-between">
@@ -528,7 +528,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs  text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
                   <option value="Draft">Draft</option>
                   <option value="Under Review">Under Review</option>
@@ -680,7 +680,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               <button
                 type="button"
                 onClick={handleAddTask}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
               >
                 <Plus size={14} /> Add Task
               </button>
@@ -1053,7 +1053,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 <select
                   value={durationUnit}
                   onChange={(e) => setDurationUnit(e.target.value)}
-                  className="px-3 py-1.5 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500"
+                  className="px-3 py-1.5 bg-white border border-slate-300 rounded text-xs  text-slate-800 focus:outline-none focus:border-blue-500"
                 >
                   {DURATION_UNITS.map(u => (
                     <option key={u} value={u}>{u}</option>
@@ -1211,7 +1211,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-300 rounded text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="p-2 border border-slate-300 rounded text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
             >
               Cancel
             </button>
@@ -1220,7 +1220,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               type="button"
               disabled={isSubmitting}
               onClick={() => handleFormSubmit('Draft')}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded text-xs font-semibold transition-colors disabled:opacity-50"
+              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded text-xs font-semibold transition-colors disabled:opacity-50"
             >
               Save as Draft
             </button>
@@ -1229,7 +1229,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               type="button"
               disabled={isSubmitting}
               onClick={() => handleFormSubmit('Under Review')}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              className="p-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
             >
               <Clock size={14} /> Submit for Internal Review
             </button>
@@ -1238,7 +1238,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               type="button"
               disabled={isSubmitting}
               onClick={() => handleFormSubmit('Approved Internally')}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
             >
               <CheckCircle2 size={14} /> Approve Estimation
             </button>

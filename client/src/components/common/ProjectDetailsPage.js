@@ -456,7 +456,7 @@ const ProjectDetailsPage = () => {
       <div className="w-full h-screen p-8 bg-gray-50 flex flex-col items-center justify-center">
         <h2 className="text-xl  text-gray-900 mb-2">Project not found</h2>
         <p className="text-gray-600 mb-4">{error || "The project you're looking for doesn't exist."}</p>
-        <button onClick={() => navigate(-1)} className="p-2 bg-blue-600 text-white rounded-md font-medium text-sm">
+        <button onClick={() => navigate(-1)} className="p-2 bg-red-600 text-white rounded-md font-medium text-sm">
           Go Back
         </button>
       </div>
@@ -526,7 +526,7 @@ const ProjectDetailsPage = () => {
                 ['Status', <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-[9px] font-medium border border-blue-200">{project.status || '-'}</span>],
                 ['Progress',
                   <div className="flex items-center gap-2 w-full">
-                    <div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-blue-600 rounded-full" style={{ width: `${progress}%` }}></div></div>
+                    <div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-red-600 rounded-full" style={{ width: `${progress}%` }}></div></div>
                     <span className="text-xs">{progress}%</span>
                   </div>
                 ],
@@ -626,7 +626,7 @@ const ProjectDetailsPage = () => {
                 <span className="font-medium">{stats.completed} ({Math.round((stats.completed / stats.total) * 100)}%)</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-600"></div> <span className="text-gray-600">In Progress</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-600"></div> <span className="text-gray-600">In Progress</span></div>
                 <span className="font-medium">{stats.inProgress} ({Math.round((stats.inProgress / stats.total) * 100)}%)</span>
               </div>
               <div className="flex items-center justify-between text-xs">
@@ -642,7 +642,7 @@ const ProjectDetailsPage = () => {
           <div className="flex flex-col gap-2">
             {[
               { label: 'To Do', count: stats.todo, color: 'bg-gray-200' },
-              { label: 'In Progress', count: stats.inProgress, color: 'bg-blue-600' },
+              { label: 'In Progress', count: stats.inProgress, color: 'bg-red-600' },
               { label: 'Review', count: stats.review, color: 'bg-yellow-500' },
               { label: 'Completed', count: stats.completed, color: 'bg-[#0ea5e9]' },
             ].map((status, i) => {
@@ -677,7 +677,7 @@ const ProjectDetailsPage = () => {
           </div>
           <button className="flex items-center gap-1.5 text-xs text-gray-600 bg-white border border-gray-200 p-2 rounded hover:bg-gray-50"><Filter size={12} /> Filter</button>
         </div>
-        <button onClick={() => setIsCreateDrawerOpen(true)} className="flex items-center gap-1.5 text-xs text-white bg-blue-600 p-2 rounded font-medium hover:bg-blue-700"><Plus size={12} /> Create Task</button>
+        <button onClick={() => setIsCreateDrawerOpen(true)} className="flex items-center gap-1.5 text-xs text-white bg-red-600 p-2 rounded font-medium hover:bg-blue-700"><Plus size={12} /> Create Task</button>
       </div>
       <table className="w-full text-left whitespace-nowrap text-xs">
         <thead className="bg-gray-50 border-b border-gray-100 text-gray-500">
@@ -724,7 +724,7 @@ const ProjectDetailsPage = () => {
               <td className="p-3">
                 <div className="flex items-center gap-2">
                   <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${t.status === 'Completed' || t.status === 'DONE' ? 'bg-green-500' : 'bg-blue-600'}`} style={{ width: t.status === 'Completed' || t.status === 'DONE' ? '100%' : t.status === 'In Progress' || t.status === 'IN PROGRESS' ? '60%' : '0%' }}></div>
+                    <div className={`h-full rounded-full ${t.status === 'Completed' || t.status === 'DONE' ? 'bg-green-500' : 'bg-red-600'}`} style={{ width: t.status === 'Completed' || t.status === 'DONE' ? '100%' : t.status === 'In Progress' || t.status === 'IN PROGRESS' ? '60%' : '0%' }}></div>
                   </div>
                   <span className="text-xs text-gray-500">{t.status === 'Completed' || t.status === 'DONE' ? '100%' : t.status === 'In Progress' || t.status === 'IN PROGRESS' ? '60%' : '0%'}</span>
                 </div>
@@ -837,8 +837,8 @@ const ProjectDetailsPage = () => {
                   </select>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
-                  <button type="button" onClick={() => { setIsMilestoneModalOpen(false); setEditingMilestone(null); }} className="px-4 py-2 text-xs font-medium text-gray-700 border border-gray-200 rounded hover:bg-gray-50">Cancel</button>
-                  <button type="submit" className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700">{editingMilestone ? 'Update' : 'Create'} Milestone</button>
+                  <button type="button" onClick={() => { setIsMilestoneModalOpen(false); setEditingMilestone(null); }} className="p-2 text-xs font-medium text-gray-700 border border-gray-200 rounded hover:bg-gray-50">Cancel</button>
+                  <button type="submit" className="p-2 text-xs font-medium text-white bg-red-600 rounded hover:bg-blue-700">{editingMilestone ? 'Update' : 'Create'} Milestone</button>
                 </div>
               </form>
             </div>
@@ -848,7 +848,7 @@ const ProjectDetailsPage = () => {
         <div className="bg-white rounded border border-gray-200 animate-fade-in">
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
             <h3 className="text-gray-900 text-sm font-semibold">Project Milestones ({milestones.length})</h3>
-            <button onClick={() => { setEditingMilestone(null); setMilestoneForm({ title: '', description: '', owner_id: '', start_date: '', due_date: '', status: 'Not Started', progress: 0 }); setIsMilestoneModalOpen(true); }} className="flex items-center gap-1.5 text-xs text-white bg-blue-600 p-2 rounded font-medium hover:bg-blue-700">
+            <button onClick={() => { setEditingMilestone(null); setMilestoneForm({ title: '', description: '', owner_id: '', start_date: '', due_date: '', status: 'Not Started', progress: 0 }); setIsMilestoneModalOpen(true); }} className="flex items-center gap-1.5 text-xs text-white bg-red-600 p-2 rounded font-medium hover:bg-blue-700">
               <Plus size={12} /> Add Milestone
             </button>
           </div>
@@ -895,7 +895,7 @@ const ProjectDetailsPage = () => {
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${m.status === 'Completed' ? 'bg-green-500' : 'bg-blue-600'}`} style={{ width: `${m.progress}%` }}></div>
+                          <div className={`h-full rounded-full ${m.status === 'Completed' ? 'bg-green-500' : 'bg-red-600'}`} style={{ width: `${m.progress}%` }}></div>
                         </div>
                         <span className="text-xs text-gray-500">{m.progress}%</span>
                       </div>
@@ -922,7 +922,7 @@ const ProjectDetailsPage = () => {
       <div className="bg-white rounded border border-gray-200  animate-fade-in">
         {canManage && (
           <div className="p-4 border-b border-gray-100 flex justify-end">
-            <button onClick={() => setIsTeamModalOpen(true)} className="flex items-center gap-1.5 text-xs text-white bg-blue-600 p-2 rounded font-medium hover:bg-blue-700"><Plus size={12} /> Add Member</button>
+            <button onClick={() => setIsTeamModalOpen(true)} className="flex items-center gap-1.5 text-xs text-white bg-red-600 p-2 rounded font-medium hover:bg-blue-700"><Plus size={12} /> Add Member</button>
           </div>
         )}
         <table className="w-full text-left whitespace-nowrap text-xs">
@@ -957,7 +957,7 @@ const ProjectDetailsPage = () => {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2 flex-1">
                         <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full bg-blue-600" style={{ width: `${Math.max(20, 100 - i * 15)}%` }}></div>
+                          <div className="h-full rounded-full bg-red-600" style={{ width: `${Math.max(20, 100 - i * 15)}%` }}></div>
                         </div>
                         <span className="text-xs text-gray-500">{Math.max(20, 100 - i * 15)}%</span>
                       </div>
@@ -1117,7 +1117,7 @@ const ProjectDetailsPage = () => {
             <h3 className=" text-gray-900 text-sm">Time Log History</h3>
             <div className="flex gap-2">
               <button className="flex items-center gap-1.5 text-xs text-gray-700 bg-white border border-gray-200 p-2 rounded font-medium hover:bg-gray-50"><Download size={12} /> Export</button>
-              <button onClick={() => setIsTimeLogModalOpen(true)} className="flex items-center gap-1.5 text-xs text-white bg-blue-600 p-2 rounded font-medium hover:bg-blue-700"><Clock size={12} /> Log Time</button>
+              <button onClick={() => setIsTimeLogModalOpen(true)} className="flex items-center gap-1.5 text-xs text-white bg-red-600 p-2 rounded font-medium hover:bg-blue-700"><Clock size={12} /> Log Time</button>
             </div>
           </div>
           <table className="w-full text-left whitespace-nowrap text-xs">
@@ -1267,7 +1267,7 @@ const ProjectDetailsPage = () => {
             <Edit3 size={14} /> Edit Project
           </button>
         )}
-        <button onClick={() => setIsCreateDrawerOpen(true)} className="p-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 flex items-center gap-2 ">
+        <button onClick={() => setIsCreateDrawerOpen(true)} className="p-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 flex items-center gap-2 ">
           <Plus size={14} /> Create Task
         </button>
       </div>
@@ -1365,7 +1365,7 @@ const ProjectDetailsPage = () => {
                   <span className=" text-gray-900">{progress}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-600 rounded-full" style={{ width: `${progress}%` }}></div>
+                  <div className="h-full bg-red-600 rounded-full" style={{ width: `${progress}%` }}></div>
                 </div>
               </div>
 

@@ -206,7 +206,7 @@ export default function SeoGmbWebsiteAuditPage() {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Inter', sans-serif;
+      // font-family: 'Inter', sans-serif;
       margin: 0;
       padding: 0;
       background-color: #f8fafc;
@@ -1323,12 +1323,12 @@ export default function SeoGmbWebsiteAuditPage() {
       {/* ── Full Page Audit Loading Overlay ── */}
       {auditLoading && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl flex flex-col items-center gap-4 border border-slate-100">
+          <div className="bg-white rounded p-8 max-w-sm w-full text-center shadow-2xl flex flex-col items-center gap-4 border border-slate-100">
             <RefreshCw size={40} className="text-blue-600 animate-spin" />
             <h3 className="text-sm font-extrabold text-slate-900 m-0">Running Automated Audit Scan</h3>
             <p className="text-xs text-slate-400 m-0">{auditStep}</p>
             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
-              <div className="h-full bg-blue-600 animate-[pulse_1.5s_infinite]" style={{ width: '70%' }} />
+              <div className="h-full bg-red-600 animate-[pulse_1.5s_infinite]" style={{ width: '70%' }} />
             </div>
           </div>
         </div>
@@ -1349,7 +1349,7 @@ export default function SeoGmbWebsiteAuditPage() {
             <button onClick={handleDownloadReport} className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer">
               <FileText size={14} /> Download Report
             </button>
-            <button onClick={handleRunNewAudit} className="bg-blue-500 hover:bg-blue-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors">
+            <button onClick={handleRunNewAudit} className="bg-blue-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors">
               <RefreshCw size={14} /> Run New Audit
             </button>
           </div>
@@ -1358,7 +1358,7 @@ export default function SeoGmbWebsiteAuditPage() {
         {/* ── Grid Row: Audit Overview + Statistics Summary ── */}
         <div className="grid grid-cols-3 gap-2 mb-5">
           {/* Card 1: Audit Overview */}
-          <div className="col-span-2 bg-white rounded-2xl p-2 border border-slate-200 flex justify-between items-center gap-6">
+          <div className="col-span-2 bg-white rounded p-2 border border-slate-200 flex justify-between items-center gap-6">
             <div className="flex gap-4 items-center">
               {/* Site preview mockup thumbnail */}
               <div className="w-32 h-20 bg-slate-100 border border-slate-200 rounded shrink-0 overflow-hidden flex items-center justify-center relative ">
@@ -1430,7 +1430,7 @@ export default function SeoGmbWebsiteAuditPage() {
         {/* ── Middle Grid Section: Audit Summary Chart + Top Issues + Crawl Status Donut ── */}
         <div className="grid grid-cols-3 gap-2 mb-5">
           {/* Card 1: Audit Summary LineChart */}
-          <div className="bg-white rounded-2xl p-2 border border-slate-200 col-span-1">
+          <div className="bg-white rounded p-2 border border-slate-200 col-span-1">
             <h3 className="text-sm  text-slate-900 m-0 mb-4">Audit Summary</h3>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={HISTORY_DATA} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
@@ -1454,7 +1454,7 @@ export default function SeoGmbWebsiteAuditPage() {
           </div>
 
           {/* Card 2: Top Issues list */}
-          <div className="bg-white rounded-2xl p-2 border border-slate-200 col-span-1 flex flex-col justify-between">
+          <div className="bg-white rounded p-2 border border-slate-200 col-span-1 flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-sm  text-slate-900 m-0">Top Issues</h3>
@@ -1481,7 +1481,7 @@ export default function SeoGmbWebsiteAuditPage() {
           </div>
 
           {/* Card 3: Crawl Status Donut chart */}
-          <div className="bg-white rounded-2xl p-2 border border-slate-200 col-span-1">
+          <div className="bg-white rounded p-2 border border-slate-200 col-span-1">
             <h3 className="text-sm  text-slate-900 m-0 mb-4">Crawl Status</h3>
             <div className="flex items-center justify-around">
               <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
@@ -1509,13 +1509,13 @@ export default function SeoGmbWebsiteAuditPage() {
         </div>
 
         {/* ── Bottom Grid Section: 15 Audit Categories cards ── */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200">
+        <div className="bg-white rounded p-6 border border-slate-200">
           <h3 className="text-sm  text-slate-900 m-0 mb-4">Audit Categories</h3>
           <div className="grid grid-cols-3 gap-4">
             {CATEGORIES_DATA.map((c) => {
               const currentScore = categoryScores[c.id] || c.score;
               return (
-                <div key={c.id} className="border border-slate-200 rounded-2xl p-4 flex flex-col justify-between hover: hover:border-slate-300 transition-all">
+                <div key={c.id} className="border border-slate-200 rounded p-4 flex flex-col justify-between hover: hover:border-slate-300 transition-all">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded flex items-center justify-center shrink-0 border ${c.color.split(' ')[1]} ${c.color.split(' ')[0]} ${c.color.split(' ')[2]}`}>
@@ -1611,7 +1611,7 @@ export default function SeoGmbWebsiteAuditPage() {
             {/* Diagnostics and flow content body */}
             <div className="flex-1 p-6 overflow-y-auto">
               {/* Score widget */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-6 flex justify-between items-center">
+              <div className="bg-slate-50 rounded p-4 border border-slate-100 mb-6 flex justify-between items-center">
                 <div>
                   <span className="text-xs text-slate-500  block">Diagnostics Health Index</span>
                   <span className="text-2xl font-extrabold text-slate-900 mt-1 block">
@@ -1707,7 +1707,7 @@ export default function SeoGmbWebsiteAuditPage() {
               <button
                 onClick={() => runCategoryRetest(selectedCategory)}
                 disabled={retestLoading}
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded p-2 text-xs  cursor-pointer border-none flex items-center gap-1.5 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                className="bg-blue-500 hover:bg-red-600 text-white rounded p-2 text-xs  cursor-pointer border-none flex items-center gap-1.5 disabled:bg-slate-300 disabled:cursor-not-allowed"
               >
                 <RefreshCw size={14} className={retestLoading ? 'animate-spin' : ''} />
                 Run Retest

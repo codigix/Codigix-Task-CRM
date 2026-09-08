@@ -296,7 +296,10 @@ authRouter.post('/check-permission', async (req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/it-documents', require('./routes/it-documents-routes'));
 app.use('/api/seo-gmb', require('./routes/seo-gmb-routes')(pool));
-app.use('/api/hr/performance', require('./routes/hr_performance'));
+
+app.use('/api/hr/dashboard', require('./routes/hr-dashboard-routes')(pool));
+app.use('/api/hr/attendance', require('./routes/hr-attendance-routes')(pool));
+app.use('/api/hr/performance', require('./routes/hr-performance-routes')(pool));
 
 // Register Performance Engine (Phase 2)
 require('./routes/performance-engine-routes')(app, pool);

@@ -229,7 +229,7 @@ export default function SeoGmbOffPageSeoPage() {
                 { label: 'New Backlinks', value: newBacklinks.toLocaleString(), sub: '+7.1% vs last 30 days', pos: true, icon: ArrowUpRight, color: 'text-indigo-500 bg-indigo-50' },
                 { label: 'Lost Backlinks', value: lostBacklinks.toLocaleString(), sub: '-7.9% vs last 30 days', pos: false, icon: ArrowDownRight, color: 'text-rose-500 bg-rose-50' },
               ].map((card, i) => (
-                <div key={i} className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+                <div key={i} className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
                   <div>
                     <span className="text-xs text-slate-400  block">{card.label}</span>
                     <strong className="text-xl font-black text-slate-900 mt-1 block">{card.value}</strong>
@@ -247,7 +247,7 @@ export default function SeoGmbOffPageSeoPage() {
             {/* Charts Row */}
             <div className="grid grid-cols-3 gap-2">
               {/* Backlink Overview Chart */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Backlink Overview</h3>
                   <span className="text-xs text-slate-400  border border-slate-200 rounded px-2 py-1">Last 30 Days</span>
@@ -269,7 +269,7 @@ export default function SeoGmbOffPageSeoPage() {
               </div>
 
               {/* Backlink Sources Donut */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <h3 className="text-sm  text-slate-900 m-0 mb-3">Backlink Sources</h3>
                 <div className="flex items-center gap-4">
                   <div className="relative flex-shrink-0">
@@ -303,7 +303,7 @@ export default function SeoGmbOffPageSeoPage() {
               </div>
 
               {/* Top Anchors */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Top Anchors</h3>
                   <button onClick={() => setActiveTab('Backlink Management')} className="text-blue-500 text-xs  border-none bg-transparent cursor-pointer hover:underline">View All Anchors →</button>
@@ -368,7 +368,7 @@ export default function SeoGmbOffPageSeoPage() {
                   stats: [{ label: 'Submitted', val: bookmarks.length * 62 }, { label: 'Approved', val: bookmarks.filter(i => i.status === 'Approved').length * 40 }, { label: 'Pending', val: bookmarks.filter(i => i.status === 'Pending').length * 16 }, { label: 'Rejected', val: bookmarks.filter(i => i.status === 'Rejected').length * 7 }],
                 },
               ].map((card) => (
-                <div key={card.tab} className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col justify-between">
+                <div key={card.tab} className="bg-white rounded border border-slate-200 p-4 flex flex-col justify-between">
                   <div className="flex items-center gap-2 mb-2">
                     <div className={`w-7 h-7 rounded flex items-center justify-center ${card.color}`}>
                       <card.icon size={14} />
@@ -394,7 +394,7 @@ export default function SeoGmbOffPageSeoPage() {
             {/* Forum + Profile + Competitor + Backlink Health */}
             <div className="grid grid-cols-4 gap-2">
               {/* Forum Submission */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-7 h-7 rounded flex items-center justify-center bg-sky-50 text-sky-500">
                     <MessageSquare size={14} />
@@ -416,7 +416,7 @@ export default function SeoGmbOffPageSeoPage() {
               </div>
 
               {/* Profile Creation */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-7 h-7 rounded flex items-center justify-center bg-violet-50 text-violet-500">
                     <User size={14} />
@@ -438,7 +438,7 @@ export default function SeoGmbOffPageSeoPage() {
               </div>
 
               {/* Competitor Backlinks */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-7 h-7 rounded flex items-center justify-center bg-rose-50 text-rose-500">
                     <Target size={14} />
@@ -460,7 +460,7 @@ export default function SeoGmbOffPageSeoPage() {
               </div>
 
               {/* Backlink Health */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="bg-white rounded border border-slate-200 p-2">
                 <h4 className="text-xs  text-slate-900 m-0 mb-3">Backlink Health</h4>
                 <div className="flex items-center gap-4">
                   <div className="relative flex-shrink-0">

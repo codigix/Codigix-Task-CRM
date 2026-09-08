@@ -264,7 +264,7 @@ export default function SeoGmbAutomationPage() {
                 { label: 'Time Saved', val: '36h 45m', sub: '+20% vs last 7 days', icon: Clock, color: 'text-indigo-500 bg-indigo-50' },
                 { label: 'Success Rate', val: '98%', sub: '+3% vs last 7 days', icon: Target, color: 'text-teal-500 bg-teal-50' },
               ].map((c, i) => (
-                <div key={i} className="bg-white rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
+                <div key={i} className="bg-white rounded p-4 border border-slate-200 flex items-center justify-between">
                   <div>
                     <span className="text-xs text-slate-400  block mb-1">{c.label}</span>
                     <strong className="text-xl font-black text-slate-900 block">{c.val}</strong>
@@ -277,7 +277,7 @@ export default function SeoGmbAutomationPage() {
 
             <div className="grid grid-cols-3 gap-2">
               {/* Automation Activity Chart */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Automation Activity</h3>
                   <span className="text-xs border border-slate-200 rounded px-2 py-0.5 text-slate-400 ">Last 7 Days ▾</span>
@@ -301,7 +301,7 @@ export default function SeoGmbAutomationPage() {
               </div>
 
               {/* Automation Status donut */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <h3 className="text-sm  text-slate-900 m-0 mb-3">Automation Status</h3>
                 <div className="flex items-center gap-4">
                   <div className="relative flex-shrink-0">
@@ -330,7 +330,7 @@ export default function SeoGmbAutomationPage() {
               </div>
 
               {/* Upcoming Automations */}
-              <div className="col-span-1 bg-white rounded-2xl border border-slate-200 p-2">
+              <div className="col-span-1 bg-white rounded border border-slate-200 p-2">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm  text-slate-900 m-0">Upcoming Automations</h3>
                 </div>
@@ -358,7 +358,7 @@ export default function SeoGmbAutomationPage() {
             </div>
 
             {/* Automation Categories */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <h3 className="text-sm  text-slate-900 m-0 mb-4">Automation Categories</h3>
               <div className="grid grid-cols-4 gap-4">
                 {CATEGORIES.map(cat => (
@@ -381,7 +381,7 @@ export default function SeoGmbAutomationPage() {
             </div>
 
             {/* All Automations Table */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm  text-slate-900 m-0">All Automations</h3>
                 <div className="flex items-center gap-2">
@@ -470,7 +470,7 @@ export default function SeoGmbAutomationPage() {
             </div>
 
             {/* Recent Automation Activity */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-2">
+            <div className="bg-white rounded border border-slate-200 p-2">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm  text-slate-900 m-0">Recent Automation Activity</h3>
               </div>
@@ -500,7 +500,7 @@ export default function SeoGmbAutomationPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Total Audits', v: '3', c: 'Active' }, { l: 'Paused', v: '1', c: 'Review needed' }, { l: 'Last Run', v: 'Today 02:00', c: 'Successful' }, { l: 'Success Rate', v: '100%', c: 'All passed' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
               ))}
             </div>
             <CrudTable title="Scheduled Audits" columns={scheduledAuditCols} data={tableData.scheduledAudits} onAdd={makeAdd('scheduledAudits')} onEdit={makeEdit('scheduledAudits')} onDelete={makeDel('scheduledAudits')} />
@@ -512,7 +512,7 @@ export default function SeoGmbAutomationPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Active Schedules', v: '4', c: 'Running' }, { l: 'Paused', v: '1', c: 'Review needed' }, { l: 'Reports Sent This Month', v: '18', c: '+22%' }, { l: 'Open Rate', v: '76%', c: '+8.2%' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
               ))}
             </div>
             <CrudTable title="Scheduled Reports" columns={scheduledReportCols} data={tableData.scheduledReports} onAdd={makeAdd('scheduledReports')} onEdit={makeEdit('scheduledReports')} onDelete={makeDel('scheduledReports')} />
@@ -524,7 +524,7 @@ export default function SeoGmbAutomationPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Active Alerts', v: '6', c: 'Monitoring' }, { l: 'Triggered This Week', v: '3', c: 'Alerts fired' }, { l: 'Keywords Monitored', v: '6', c: 'Tracked' }, { l: 'Avg. Response Time', v: '< 5 min', c: 'Instant alerts' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
               ))}
             </div>
             <CrudTable title="Keyword Alerts" columns={keywordAlertCols} data={tableData.keywordAlerts} onAdd={makeAdd('keywordAlerts')} onEdit={makeEdit('keywordAlerts')} onDelete={makeDel('keywordAlerts')} />
@@ -536,7 +536,7 @@ export default function SeoGmbAutomationPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Active Alerts', v: '5', c: 'Monitoring' }, { l: 'Paused', v: '1', c: 'Review' }, { l: 'Triggered This Week', v: '4', c: 'Alerts fired' }, { l: 'Keywords Tracked', v: '6', c: 'Active' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
               ))}
             </div>
             <CrudTable title="Ranking Alerts" columns={rankingAlertCols} data={tableData.rankingAlerts} onAdd={makeAdd('rankingAlerts')} onEdit={makeEdit('rankingAlerts')} onDelete={makeDel('rankingAlerts')} />
@@ -548,7 +548,7 @@ export default function SeoGmbAutomationPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Active Scans', v: '2', c: 'Running' }, { l: 'Broken Links Found', v: '15', c: 'Today' }, { l: 'Last Scan', v: '01:30 PM', c: 'Today' }, { l: 'Sites Monitored', v: '2', c: 'Active' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
               ))}
             </div>
             <CrudTable title="Broken Link Alerts" columns={brokenLinkCols} data={tableData.brokenLinks} onAdd={makeAdd('brokenLinks')} onEdit={makeEdit('brokenLinks')} onDelete={makeDel('brokenLinks')} />
@@ -560,7 +560,7 @@ export default function SeoGmbAutomationPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Active Alerts', v: '2', c: 'Monitoring' }, { l: 'Alerts Triggered', v: '8', c: 'This month' }, { l: 'Platforms', v: '1', c: 'Google' }, { l: 'Avg. Response', v: '< 2 hrs', c: 'Fast response' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
               ))}
             </div>
             <CrudTable title="Review Alerts" columns={reviewAlertCols} data={tableData.reviewAlerts} onAdd={makeAdd('reviewAlerts')} onEdit={makeEdit('reviewAlerts')} onDelete={makeDel('reviewAlerts')} />
@@ -572,7 +572,7 @@ export default function SeoGmbAutomationPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Active Workflows', v: '2', c: 'Running' }, { l: 'Paused', v: '1', c: 'Review needed' }, { l: 'Items Processed', v: '24', c: 'This month' }, { l: 'Pending Approvals', v: '3', c: 'Action required' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
               ))}
             </div>
             <CrudTable title="Content Workflows" columns={contentWorkflowCols} data={tableData.contentWorkflow} onAdd={makeAdd('contentWorkflow')} onEdit={makeEdit('contentWorkflow')} onDelete={makeDel('contentWorkflow')} />
@@ -584,7 +584,7 @@ export default function SeoGmbAutomationPage() {
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-4 gap-4">
               {[{ l: 'Active Notifications', v: '5', c: 'Running' }, { l: 'Emails Sent Today', v: '18', c: '+12%' }, { l: 'Total Recipients', v: '21', c: 'Contacts' }, { l: 'Open Rate', v: '82%', c: 'Above average' }].map(s => (
-                <div key={s.l} className="bg-white rounded-2xl p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
+                <div key={s.l} className="bg-white rounded p-4 border border-slate-200"><span className="text-xs text-slate-400  block">{s.l}</span><strong className="text-2xl font-black text-slate-900 block mt-1">{s.v}</strong><span className="text-xs text-emerald-500  mt-1 block">{s.c}</span></div>
               ))}
             </div>
             <CrudTable title="Email Notifications" columns={emailNotifCols} data={tableData.emailNotifications} onAdd={makeAdd('emailNotifications')} onEdit={makeEdit('emailNotifications')} onDelete={makeDel('emailNotifications')} />

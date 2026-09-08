@@ -41,10 +41,10 @@ const SeoGmbAiContentGenerationPage = () => {
             endDate={dateRange.endDate}
             onChange={(start, end) => setDateRange({ startDate: start, endDate: end })}
           />
-          <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition">
+          <button className="p-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition">
             Save as Draft
           </button>
-          <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition shadow-sm">
+          <button className="p-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition shadow-sm">
             Publish / Export ▾
           </button>
         </div>

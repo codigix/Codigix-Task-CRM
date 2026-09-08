@@ -170,7 +170,7 @@ const ITBugTrackingPage = () => {
               </button>
               <button
                 onClick={() => setIsReportModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 ml-2 "
+                className="flex items-center gap-2 px-4 py-1.5 bg-red-600 text-white rounded hover:bg-blue-700 ml-2 "
               >
                 <Plus size={14} /> Report New Bug
               </button>
@@ -445,7 +445,7 @@ const ITBugTrackingPage = () => {
               </div>
             </div>
 
-            <div className="p-6 flex-1 overflow-y-auto text-sm custom-scrollbar bg-white">
+            <div className="p-4 flex-1 overflow-y-auto text-sm custom-scrollbar bg-white">
               <div className="flex items-start gap-4 mb-8">
                 <div className="w-10 h-10 rounded bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
                   <Bug size={20} />
@@ -527,7 +527,7 @@ const ITBugTrackingPage = () => {
               <button className="px-4 py-1.5 border border-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 flex items-center gap-2  transition">
                 Edit Bug
               </button>
-              <button className="px-4 py-1.5 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 flex items-center gap-2  transition">
+              <button className="px-4 py-1.5 bg-red-600 text-white rounded text-sm font-medium hover:bg-blue-700 flex items-center gap-2  transition">
                 <Plus size={14} /> Add Comment
               </button>
             </div>

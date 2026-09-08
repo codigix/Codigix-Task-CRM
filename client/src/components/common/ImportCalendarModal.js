@@ -229,14 +229,14 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
           <button
             onClick={() => { reset(); onCancel(); }}
             disabled={isBusy}
-            className="px-4 py-2 text-[14px] font-medium text-gray-700 hover:bg-gray-200 rounded transition disabled:opacity-50"
+            className="p-2 text-[14px] font-medium text-gray-700 hover:bg-gray-200 rounded transition disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleImport}
             disabled={isBusy || !preview || chosenRows.length === 0}
-            className="px-5 py-2 text-[14px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition disabled:opacity-50"
+            className="px-5 py-2 text-[14px] font-medium text-white bg-red-600 hover:bg-blue-700 rounded transition disabled:opacity-50"
           >
             {isBusy ? 'Creating…' : 'Create Task'}
           </button>

@@ -65,15 +65,15 @@ const ModuleShowcase = () => {
                   key={module.id}
                   onClick={() => setActiveModule(module.id)}
                   className={`relative flex flex-col items-start p-6 rounded-3xl text-left transition-all duration-500 border ${isActive
-                      ? 'bg-white border-red-600 shadow-xl shadow-red-600/5 translate-x-2'
-                      : 'bg-transparent border-transparent hover:bg-white/50 hover:border-slate-200'
+                    ? 'bg-white border-red-600 shadow-xl shadow-red-600/5 translate-x-2'
+                    : 'bg-transparent border-transparent hover:bg-white/50 hover:border-slate-200'
                     }`}
                 >
                   {isActive && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-red-600 rounded-r-full"></div>
                   )}
                   <div className={`flex items-center gap-4 mb-2 ${isActive ? 'text-red-600' : 'text-slate-500'}`}>
-                    <div className={`p-3 rounded-2xl transition-colors duration-500 ${isActive ? 'bg-red-100 text-red-600' : 'bg-slate-200/50 text-slate-500'}`}>
+                    <div className={`p-3 rounded transition-colors duration-500 ${isActive ? 'bg-red-100 text-red-600' : 'bg-slate-200/50 text-slate-500'}`}>
                       {module.icon}
                     </div>
                     <h4 className={`text-lg  tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>

@@ -92,7 +92,7 @@ const AddTeamMemberModal = ({ isOpen, onClose, projectId, onAdd }) => {
             <button type="button" onClick={onClose} className="p-2 text-sm text-gray-600 hover:bg-gray-50 rounded border border-gray-200">
               Cancel
             </button>
-            <button type="submit" disabled={isLoading} className="p-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded disabled:opacity-50">
+            <button type="submit" disabled={isLoading} className="p-2 text-sm text-white bg-red-600 hover:bg-blue-700 rounded disabled:opacity-50">
               {isLoading ? 'Adding...' : 'Add Member'}
             </button>
           </div>

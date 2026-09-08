@@ -486,7 +486,7 @@ const ITTasksPage = () => {
 
                         const colors = [
                           'bg-emerald-600 text-white',
-                          'bg-blue-600 text-white',
+                          'bg-red-600 text-white',
                           'bg-purple-600 text-white',
                           'bg-amber-600 text-white',
                           'bg-pink-600 text-white',
@@ -634,14 +634,14 @@ const ITTasksPage = () => {
 
                         <button
                           onClick={() => setOnlyMyIssues(!onlyMyIssues)}
-                          className={`px-3 py-1.5 rounded text-xs font-semibold border transition cursor-pointer ${onlyMyIssues ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                          className={`px-3 py-1.5 rounded text-xs font-semibold border transition cursor-pointer ${onlyMyIssues ? 'bg-red-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
                         >
                           Only My Issues
                         </button>
                       </>
                     )}
 
-                    <button onClick={() => setIsCreateDrawerOpen(true)} className="flex items-center gap-1.5 p-2 rounded text-xs bg-blue-600 text-white hover:bg-blue-700 transition-colors ml-2 font-medium">
+                    <button onClick={() => setIsCreateDrawerOpen(true)} className="flex items-center gap-1.5 p-2 rounded text-xs bg-red-600 text-white hover:bg-blue-700 transition-colors ml-2 font-medium">
                       <Plus size={14} /> Create Issue
                     </button>
                   </div>

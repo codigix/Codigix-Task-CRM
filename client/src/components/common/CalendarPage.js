@@ -198,7 +198,7 @@ function AddEventModal({ onClose, onSave, defaultDate, eventToEdit }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded shadow-2xl w-full max-w-lg overflow-hidden" onClick={e => e.stopPropagation()}>
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
@@ -386,7 +386,7 @@ function EventDetail({ event, onClose, onEdit, onDelete, onSyncTrigger }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className={`px-5 py-4 ${cat.bg} border-b ${cat.border} flex items-start justify-between`}>
           <div>
             <span className={`text-xs  tracking-wider ${cat.text}`}>{event.category}</span>
@@ -494,7 +494,7 @@ function SyncMeetLinkModal({ event, onClose, onSync }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded shadow-2xl w-full max-w-sm overflow-hidden p-6 space-y-4" onClick={e => e.stopPropagation()}>
         <div>
           <h3 className="text-sm font-extrabold text-gray-900">Sync Google Meet Link</h3>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
@@ -525,7 +525,7 @@ function SyncMeetLinkModal({ event, onClose, onSync }) {
               }
             }}
             disabled={!linkInput.trim()}
-            className="px-4 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-blue-700 font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Sync Link
           </button>

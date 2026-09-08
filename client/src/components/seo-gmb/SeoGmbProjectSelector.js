@@ -110,7 +110,7 @@ export default function SeoGmbProjectSelector({ onProjectChange }) {
           <div className="p-2 border-t border-slate-100 flex gap-1">
             <a
               href="/seo-gmb/project-setup?mode=create"
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white rounded py-1.5 text-center  no-underline flex items-center justify-center gap-1 cursor-pointer transition-colors"
+              className="flex-1 bg-blue-500 hover:bg-red-600 text-white rounded py-1.5 text-center  no-underline flex items-center justify-center gap-1 cursor-pointer transition-colors"
             >
               <Plus size={12} /> Add New Project
             </a>

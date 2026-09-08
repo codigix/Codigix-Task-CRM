@@ -36,6 +36,7 @@ import ITCalendarPage from './components/it/ITCalendarPage';
 import ITNotesPage from './components/it/ITNotesPage';
 import ITTesterDashboard from './components/it/ITTesterDashboard';
 import CreateNotePage from './components/common/CreateNotePage';
+import HRAttendance from './components/hr/HRAttendance';
 
 
 
@@ -126,16 +127,17 @@ import SeoGmbLocationIntelligencePage from './components/seo-gmb/SeoGmbLocationI
 
 import ITTeamsPage from './components/it/ITTeamsPage';
 import ITManagerDashboard from './components/it/ITManagerDashboard';
+import ITTicketAssignmentsPage from './components/it/ITTicketAssignmentsPage';
 import ITBugTrackingPage from './components/it/ITBugTrackingPage';
 import ITTestCasesPage from './components/it/ITTestCasesPage';
 import ITRepositoriesPage from './components/it/ITRepositoriesPage';
 import HRDashboard from './components/hr/HRDashboard';
 import HREmployees from './components/hr/HREmployees';
-import HRAttendance from './components/hr/HRAttendance';
 import HRLeaveRequests from './components/hr/HRLeaveRequests';
 import HRRecruitment from './components/hr/HRRecruitment';
 import HRPerformance from './components/hr/HRPerformance';
 import HRPayroll from './components/hr/HRPayroll';
+import EmployeeMonthlyReport from './components/common/EmployeeMonthlyReport';
 
 // Shared modules across departments
 const SHARED_MODULES = [
@@ -477,9 +479,13 @@ function AppContent() {
         <Route path="/video-call/:code" element={<VideoCallPage />} />
         <Route path="/audio-call" element={<AudioCallPage />} />
         <Route path="/call-history" element={<CallHistoryPage />} />
+
+
+        {/* Catch-all route mapping unhandled routes based on URL structure */}
         
         {/* Dynamic calendar routes based on department */}
         <Route path="/deals/:designation/:username/calendar" element={<CalendarPage />} />
+        <Route path="/hr/:designation/:username/calendar" element={<CalendarPage />} />
         <Route path="/leads/:designation/:username/calendar" element={<CalendarPage />} />
         <Route path="/projects/:designation/:username/calendar" element={<CalendarPage />} />
         <Route path="/sales/:designation/:username/calendar" element={<CalendarPage />} />
@@ -554,6 +560,7 @@ function AppContent() {
         <Route path="/:dept/:designation/:username/notes/create" element={<CreateNotePage />} />
         <Route path="/it/:designation/:username/teams" element={<ITTeamsPage />} />
         <Route path="/it/:designation/:username/manager-dashboard" element={<ITManagerDashboard />} />
+        <Route path="/it/:designation/:username/ticket-assignments" element={<ITTicketAssignmentsPage />} />
         
         {/* HR Routes */}
         <Route path="/hr/:designation/:username/dashboard" element={<HRDashboard />} />

@@ -43,7 +43,7 @@ module.exports = function setupItKanbanRoutes(app, pool) {
   (async () => {
     try {
       await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN title TEXT NOT NULL');
-    } catch (_) {}
+    } catch (_) { }
   })();
 
   /**
@@ -205,7 +205,7 @@ module.exports = function setupItKanbanRoutes(app, pool) {
                 </tr>
                 <tr>
                   <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Status</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;"><span style="background-color: #eff6ff; color: #1e3a8a; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bfdbfe;">${ticketStatus || 'TO DO'}</span></td>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee;"><span style="background-color: #eff6ff; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bfdbfe;">${ticketStatus || 'TO DO'}</span></td>
                 </tr>
               </table>
 
@@ -1247,10 +1247,51 @@ Acceptance Criteria
       // backlog filter on, so the details panel has to be able to write it.
       // 'flagged' and 'story_points' are written by the backlog row menu, which mirrors
       // Jira's Add flag and Story point estimate actions.
-      const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability', 'contribution_review_status', 'contribution_method', 'effort_points'];
+      const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability', 'contribution_review_status', 'contribution_method', 'effort_points', 'timer_start_time', 'is_timer_running'];
       // 'labels' belongs here, not in allowedFields: it is stored as JSON, and without it
       // labels could be set at creation but never changed afterwards.
       const jsonFields = ['subtasks', 'linked_issues', 'comments', 'labels'];
+
+      // --- Automatic Timer Logic ---
+      if (updates.status) {
+        try {
+          const [[currentState]] = await db.query('SELECT status, timer_start_time, is_timer_running, time_spent FROM it_kanban_issues WHERE issue_key = ?', [key]);
+
+          if (currentState) {
+            const newStatus = String(updates.status).trim().toUpperCase();
+            const activeStatuses = ['IN PROGRESS', 'IN-PROGRESS'];
+
+            // Handle stopping timer when moving OUT of an active status
+            if (!activeStatuses.includes(newStatus) && currentState.is_timer_running && currentState.timer_start_time) {
+              const now = new Date();
+              const start = new Date(currentState.timer_start_time);
+              if (!isNaN(start.getTime())) {
+                const diffMs = now - start;
+                const diffHours = diffMs / (1000 * 60 * 60);
+
+                let currentSpent = parseFloat(currentState.time_spent) || 0;
+                currentSpent += diffHours;
+
+                updates.time_spent = currentSpent.toFixed(2) + 'h';
+                updates.is_timer_running = false;
+                updates.timer_start_time = null;
+
+                // Optional: log to worklogs? (We rely on time_spent for now)
+              }
+            }
+          }
+        } catch (timerErr) {
+          console.error('Failed to process automatic timer logic:', timerErr);
+        }
+      }
+      // --- End Timer Logic ---
+
+      if (updates.timer_start_time) {
+        const d = new Date(updates.timer_start_time);
+        if (!isNaN(d.getTime())) {
+          updates.timer_start_time = d.toISOString().slice(0, 19).replace('T', ' ');
+        }
+      }
 
       for (const [field, value] of Object.entries(updates)) {
         if (allowedFields.includes(field)) {
@@ -1658,8 +1699,8 @@ Acceptance Criteria
       }
 
       // Don't leave orphaned audit/worklog rows behind.
-      await db.query('DELETE FROM it_kanban_history WHERE issue_key = ?', [key]).catch(() => {});
-      await db.query('DELETE FROM it_kanban_worklogs WHERE issue_key = ?', [key]).catch(() => {});
+      await db.query('DELETE FROM it_kanban_history WHERE issue_key = ?', [key]).catch(() => { });
+      await db.query('DELETE FROM it_kanban_worklogs WHERE issue_key = ?', [key]).catch(() => { });
 
       res.json({ message: 'Issue deleted successfully' });
     } catch (error) {
@@ -1962,7 +2003,7 @@ Comment Summary for ${key} (Local Fallback):
         try {
           const [rows] = await db.query('SELECT title FROM it_kanban_issues WHERE issue_key = ?', [key]);
           if (rows && rows.length > 0) title = rows[0].title;
-        } catch (e) {}
+        } catch (e) { }
       }
       if (!title) title = 'CRM Feature';
 

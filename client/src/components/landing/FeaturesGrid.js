@@ -70,7 +70,7 @@ const FeaturesGrid = () => {
           {departments.map((dept, index) => (
             <div
               key={index}
-              className={`group relative bg-white p-8 rounded-2xl border border-slate-200/80 hover:border-red-300 transition-all duration-500 hover:shadow-[0_8px_30px_rgb(220,38,38,0.08)] hover:-translate-y-1 overflow-hidden flex flex-col justify-between ${dept.className}`}
+              className={`group relative bg-white p-8 rounded border border-slate-200/80 hover:border-red-300 transition-all duration-500 hover:shadow-[0_8px_30px_rgb(220,38,38,0.08)] hover:-translate-y-1 overflow-hidden flex flex-col justify-between ${dept.className}`}
             >
               {/* Fancy mesh background for bento box */}
               <div className={`absolute inset-0 bg-gradient-to-br ${dept.bgColor} to-transparent opacity-0 group-hover:opacity-40 transition-opacity duration-700`}></div>

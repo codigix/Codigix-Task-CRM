@@ -527,7 +527,7 @@ const Header = ({ toggleSidebar }) => {
                         <>
                           <button
                             onClick={handleTestDeviceAlert}
-                            className="px-2 py-0.5 bg-blue-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition-colors shadow-xs"
+                            className="px-2 py-0.5 bg-red-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition-colors shadow-xs"
                             title="Send a test notification to your screen"
                           >
                             Test Alert
@@ -545,7 +545,7 @@ const Header = ({ toggleSidebar }) => {
                       ) : (
                         <button
                           onClick={handleEnableDeviceAlerts}
-                          className="px-2.5 py-1 bg-blue-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition-colors shadow-xs animate-pulse"
+                          className="px-2.5 py-1 bg-red-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition-colors shadow-xs animate-pulse"
                         >
                           Enable Alerts
                         </button>
@@ -688,7 +688,7 @@ const Header = ({ toggleSidebar }) => {
 
       {/* Floating Device Alert Activation Banner (shows if not yet enabled and not dismissed) */}
       {devicePermission === 'default' && !dismissBanner && (
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white px-4 py-2 text-xs flex items-center justify-between shadow-md">
+        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white p-2 text-xs flex items-center justify-between shadow-md">
           <div className="flex items-center gap-2">
             <span className="p-1 bg-white/20 rounded-full flex items-center justify-center">
               <Bell size={13} className="text-white animate-bounce" />

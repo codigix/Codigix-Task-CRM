@@ -107,22 +107,22 @@ const BookDemoSection = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600">First Name</label>
-                    <input required type="text" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="Jane" />
+                    <input required type="text" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="Jane" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600">Last Name</label>
-                    <input required type="text" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="Doe" />
+                    <input required type="text" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="Doe" />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600">Work Email</label>
-                  <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="jane@company.com" />
+                  <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all" placeholder="jane@company.com" />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600">Company Size</label>
-                  <select required value={formData.companySize} onChange={(e) => setFormData({ ...formData, companySize: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all text-slate-700">
+                  <select required value={formData.companySize} onChange={(e) => setFormData({ ...formData, companySize: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all text-slate-700">
                     <option value="">Select size...</option>
                     <option value="1-10">1-10 employees</option>
                     <option value="11-50">11-50 employees</option>
@@ -134,7 +134,7 @@ const BookDemoSection = () => {
 
                 <div className="space-y-1.5 pb-2">
                   <label className="text-xs font-semibold text-slate-600">How can we help?</label>
-                  <textarea required rows="3" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all resize-none" placeholder="Tell us about your current challenges..."></textarea>
+                  <textarea required rows="3" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all resize-none" placeholder="Tell us about your current challenges..."></textarea>
                 </div>
 
                 <button type="submit" disabled={isSubmitting || isSuccess} className={`w-full rounded-xl py-3.5  text-sm transition-all shadow-md hover:-translate-y-0.5 flex items-center justify-center gap-2 ${isSuccess ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-red-600 hover:bg-red-700 text-white disabled:bg-red-400 shadow-[0_4px_15px_rgb(220,38,38,0.2)]'}`}>

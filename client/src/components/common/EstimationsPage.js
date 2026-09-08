@@ -495,7 +495,7 @@ const EstimationsPage = () => {
                       onChange={() => setIsReviseModalOpen(true)}
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
                   </div>
                 </div>
               </div>
@@ -1553,7 +1553,7 @@ const EstimationsPage = () => {
                               {visibleColumns['Estimations ID'] && (
                                 <div className="flex items-center justify-between">
                                   <span className="text-slate-400 text-[11px]">Estimate ID:</span>
-                                  <span className="font-semibold text-slate-800">{getCardValue(item, 'estimateId')}</span>
+                                  <span className=" text-slate-800">{getCardValue(item, 'estimateId')}</span>
                                 </div>
                               )}
                               {visibleColumns['Amount'] && (
@@ -1703,7 +1703,7 @@ const EstimationsPage = () => {
                     <td className="p-2 text-center"><input type="checkbox" className="rounded border-gray-300" /></td>
                     <td className="p-2 text-center"><Star size={16} className="text-gray-300 hover:text-yellow-400 cursor-pointer" /></td>
                     {visibleColumns['Estimations ID'] && (
-                      <td className="p-2 text-xs font-semibold text-slate-800 cursor-pointer hover:text-blue-600" onClick={() => setSelectedEstimationId(item.id)}>
+                      <td className="p-2 text-xs  text-slate-800 cursor-pointer hover:text-blue-600" onClick={() => setSelectedEstimationId(item.id)}>
                         <div className="flex items-center gap-1.5">
                           <span>{getCardValue(item, 'estimateId')}</span>
                           <span className="text-[10px]  px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">

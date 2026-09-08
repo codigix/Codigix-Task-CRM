@@ -175,7 +175,7 @@ const InvoiceReportPage = () => {
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white rounded-2xlp-3  border border-gray-100  mb-8">
+        <div className="bg-white roundedp-3  border border-gray-100  mb-8">
           <h3 className="text-md  text-gray-900 mb-4">Report Filters</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
@@ -232,19 +232,19 @@ const InvoiceReportPage = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-8">
-          <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+          <div className="bg-white roundedp-3  border border-gray-100 ">
             <p className="text-xs    text-gray-600 mb-2">Total Invoices</p>
             <p className="text-xl  text-gray-900">{reportData.totalInvoices}</p>
           </div>
-          <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+          <div className="bg-white roundedp-3  border border-gray-100 ">
             <p className="text-xs    text-gray-600 mb-2">Total Amount</p>
             <p className="text-xl  text-gray-900">{formatCurrency(reportData.totalAmount)}</p>
           </div>
-          <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+          <div className="bg-white roundedp-3  border border-gray-100 ">
             <p className="text-xs    text-gray-600 mb-2">Total Paid</p>
             <p className="text-3xl  text-green-600">{formatCurrency(reportData.totalPaid)}</p>
           </div>
-          <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+          <div className="bg-white roundedp-3  border border-gray-100 ">
             <p className="text-xs    text-gray-600 mb-2">Total Due</p>
             <p className="text-3xl  text-red ">{formatCurrency(reportData.totalDue)}</p>
           </div>
@@ -254,7 +254,7 @@ const InvoiceReportPage = () => {
         {reportType === 'summary' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* By Status */}
-            <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+            <div className="bg-white roundedp-3  border border-gray-100 ">
               <h3 className="text-md  text-gray-900 mb-4 flex items-center gap-2">
                 <PieChartIcon size={20} /> Invoices by Status
               </h3>
@@ -272,7 +272,7 @@ const InvoiceReportPage = () => {
             </div>
 
             {/* By Company */}
-            <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+            <div className="bg-white roundedp-3  border border-gray-100 ">
               <h3 className="text-md  text-gray-900 mb-4 flex items-center gap-2">
                 <BarChart3 size={20} /> Invoices by Client
               </h3>
@@ -295,7 +295,7 @@ const InvoiceReportPage = () => {
 
         {/* Overdue Invoices */}
         {reportData.overdue.length > 0 && (
-          <div className="bg-white rounded-2xlp-3  border border-orange-200 bg-orange-50  mb-8">
+          <div className="bg-white roundedp-3  border border-orange-200 bg-orange-50  mb-8">
             <h3 className="text-lg  text-orange-900 mb-4 flex items-center gap-2">
               ⚠ Overdue Invoices ({reportData.overdue.length})
             </h3>
@@ -335,7 +335,7 @@ const InvoiceReportPage = () => {
 
         {/* Detailed Invoice List */}
         {(reportType === 'detailed' || reportType === 'summary') && filteredInvoices.length > 0 && (
-          <div className="bg-white rounded-2xlp-3  border border-gray-100 ">
+          <div className="bg-white roundedp-3  border border-gray-100 ">
             <h3 className="text-md  text-gray-900 mb-4 flex items-center gap-2">
               <FileText size={20} /> Invoice Details
             </h3>
@@ -394,7 +394,7 @@ const InvoiceReportPage = () => {
         )}
 
         {filteredInvoices.length === 0 && (
-          <div className="bg-white rounded-2xl p-12 border border-gray-100  text-center">
+          <div className="bg-white rounded p-12 border border-gray-100  text-center">
             <p className="text-gray-600   text-lg">No invoices match your filters</p>
             <p className="text-gray-500 text-xs  mt-2">Try adjusting your search criteria</p>
           </div>

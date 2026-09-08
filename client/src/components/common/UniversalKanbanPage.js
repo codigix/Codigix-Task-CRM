@@ -539,7 +539,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
               </div>
               <button
                 onClick={() => setIsCreateDrawerOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1.5 shadow-sm transition"
+                className="bg-red-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1.5 shadow-sm transition"
               >
                 <Plus size={14} />
                 Create Issue
@@ -556,7 +556,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                   onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'space' ? null : 'space')}
                   className="flex items-center space-x-2 bg-white px-3 py-1.5 rounded border border-gray-200 hover:border-gray-300 font-medium text-gray-700 shadow-sm"
                 >
-                  <span className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center text-[10px] ">
+                  <span className="w-4 h-4 rounded bg-red-600 text-white flex items-center justify-center text-[10px] ">
                     {selectedSpace !== 'ALL' ? selectedSpace : config.defaultPrefix}
                   </span>
                   <span>
@@ -709,7 +709,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
               {/* ONLY MY ISSUES TOGGLE */}
               <button
                 onClick={() => setOnlyMyIssues(!onlyMyIssues)}
-                className={`px-3 py-1.5 rounded border text-xs font-medium transition ${onlyMyIssues ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                className={`px-3 py-1.5 rounded border text-xs font-medium transition ${onlyMyIssues ? 'bg-red-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
               >
                 Only My Issues
               </button>
@@ -871,7 +871,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                                         <div className="flex items-center justify-between">
                                           <button
                                             onClick={() => handleCreateInlineIssue(col)}
-                                            className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 transition"
+                                            className="px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded hover:bg-blue-700 transition"
                                           >
                                             Add
                                           </button>
@@ -932,7 +932,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                             </button>
                             <button
                               onClick={handleAddColumn}
-                              className="px-3 py-1 text-xs bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
+                              className="px-3 py-1 text-xs bg-red-600 text-white rounded font-semibold hover:bg-blue-700"
                             >
                               Add
                             </button>
@@ -1016,7 +1016,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
             />
             <button
               onClick={() => handleAddCardSubtask(openSubtasksPopover)}
-              className="px-2.5 py-1 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 text-xs"
+              className="px-2.5 py-1 bg-red-600 text-white rounded font-medium hover:bg-blue-700 text-xs"
             >
               Add
             </button>

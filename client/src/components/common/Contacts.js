@@ -149,7 +149,7 @@ const ProjectTeamModal = ({ isOpen, onClose, projectId, currentTeam, users, team
             <button
               onClick={handleAssign}
               disabled={(assignType === 'user' ? !selectedUser : !selectedTeam) || isSubmitting}
-              className="w-full bg-blue-600 text-white rounded p-2.5 text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-all "
+              className="w-full bg-red-600 text-white rounded p-2.5 text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-all "
             >
               {isSubmitting ? 'Assigning...' : assignType === 'user' ? 'Assign Member' : 'Assign Team'}
             </button>

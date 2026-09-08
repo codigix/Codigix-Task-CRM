@@ -396,7 +396,7 @@ export default function ITFileManagerPage() {
           {selectedFiles.length > 0 && (
             <div className="p-2 bg-blue-50 border-b border-blue-100 flex items-center gap-3 text-[12px]  text-blue-700">
               <span>{selectedFiles.length} item{selectedFiles.length > 1 ? 's' : ''} selected</span>
-              <button onClick={() => showNotif('Downloading selected files...')} className="flex items-center gap-1 px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 text-xs"><Download size={12} /> Download</button>
+              <button onClick={() => showNotif('Downloading selected files...')} className="flex items-center gap-1 px-2 py-1 rounded bg-red-600 text-white hover:bg-blue-700 text-xs"><Download size={12} /> Download</button>
               <button onClick={() => showNotif('Sharing selected files...')} className="flex items-center gap-1 px-2 py-1 rounded border border-blue-300 hover:bg-blue-100 text-xs"><Share2 size={12} /> Share</button>
               <button onClick={() => { showNotif('Deleted selected files'); setSelectedFiles([]); }} className="flex items-center gap-1 px-2 py-1 rounded border border-red-300 text-red-600 hover:bg-red-50 text-xs"><Trash2 size={12} /> Delete</button>
               <button onClick={() => setSelectedFiles([])} className="ml-auto text-gray-500 hover:text-gray-700"><X size={14} /></button>

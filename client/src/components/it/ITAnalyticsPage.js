@@ -122,7 +122,7 @@ const ITAnalyticsPage = () => {
   const recentDeployments = [];
 
   const projectsTimeline = projects.slice(0, 6).map((p, idx) => {
-    const colors = ['bg-indigo-500', 'bg-amber-500', 'bg-blue-600', 'bg-rose-500', 'bg-teal-500', 'bg-purple-500'];
+    const colors = ['bg-indigo-500', 'bg-amber-500', 'bg-red-600', 'bg-rose-500', 'bg-teal-500', 'bg-purple-500'];
     return {
       name: p.name,
       start: 10 + (idx * 5),
@@ -385,7 +385,7 @@ const ITAnalyticsPage = () => {
             <div className="flex-1 flex flex-col justify-center space-y-5">
               {[
                 { label: 'To Do', count: 86, color: 'bg-indigo-200', icon: Folder, text: 'text-indigo-600' },
-                { label: 'In Progress', count: 132, color: 'bg-blue-600', icon: ClipboardCheck, text: 'text-blue-600' },
+                { label: 'In Progress', count: 132, color: 'bg-red-600', icon: ClipboardCheck, text: 'text-blue-600' },
                 { label: 'In Review', count: 28, color: 'bg-amber-500', icon: FileText, text: 'text-amber-500' },
                 { label: 'Completed', count: 156, color: 'bg-emerald-500', icon: CheckCircle, text: 'text-emerald-500' },
               ].map((stat, idx) => (

@@ -346,7 +346,7 @@ export default function SeoGmbProjectSetupPage() {
               </button>
               <button
                 onClick={() => createStep === 6 ? handleCreateProject() : setCreateStep(s => Math.min(6, s + 1))}
-                className="bg-blue-600 hover:bg-blue-700 border-none text-white rounded p-2 text-xs  flex items-center gap-1 cursor-pointer transition-colors"
+                className="bg-red-600 hover:bg-blue-700 border-none text-white rounded p-2 text-xs  flex items-center gap-1 cursor-pointer transition-colors"
               >
                 {createStep === 6 ? 'Create Project' : 'Save & Continue'} &rarr;
               </button>
@@ -356,7 +356,7 @@ export default function SeoGmbProjectSetupPage() {
           <div className="flex flex-col flex-1 p-6 gap-6">
             {/* Top Steps Navigation */}
             <div className="w-full shrink-0">
-              <div className="bg-white border border-slate-200 rounded-2xl p-2 flex flex-row gap-2  overflow-x-auto no-scrollbar">
+              <div className="bg-white border border-slate-200 rounded p-2 flex flex-row gap-2  overflow-x-auto no-scrollbar">
                 {[
                   { step: 1, title: 'Project Setup', sub: 'Basic project details', icon: ClipboardList },
                   { step: 2, title: 'SEO Settings', sub: 'Configure SEO modules', icon: Globe },
@@ -373,7 +373,7 @@ export default function SeoGmbProjectSetupPage() {
                       : 'bg-transparent text-slate-500 hover:bg-slate-50'
                       }`}
                   >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 ${createStep === s.step ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 ${createStep === s.step ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-500'
                       }`}>
                       {s.step}
                     </div>
@@ -387,7 +387,7 @@ export default function SeoGmbProjectSetupPage() {
             </div>
 
             {/* Middle Main Scrollable Panel */}
-            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-2xl p-6  overflow-y-auto max-h-[calc(100vh-210px)]">
+            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded p-6  overflow-y-auto max-h-[calc(100vh-210px)]">
 
               {/* STEP 1: PROJECT SETUP */}
               {createStep === 1 && (
@@ -857,7 +857,7 @@ export default function SeoGmbProjectSetupPage() {
 
             {/* Right Panel "What's Next" & Checkbox List */}
             <div className="w-64 shrink-0 flex flex-col gap-4">
-              <div className="bg-white border border-slate-200 rounded-2xl p-2 ">
+              <div className="bg-white border border-slate-200 rounded p-2 ">
                 <h3 className="text-xs  text-slate-900 m-0 mb-3.5">What's Next?</h3>
                 <div className="flex flex-col gap-3">
                   {[
@@ -878,7 +878,7 @@ export default function SeoGmbProjectSetupPage() {
                 </div>
                 <button
                   onClick={handleCreateProject}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded py-2.5 mt-5 text-xs font-black border-none cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full bg-red-600 hover:bg-blue-700 text-white rounded py-2.5 mt-5 text-xs font-black border-none cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <CheckCircle size={13} /> Create Project
                 </button>
@@ -934,7 +934,7 @@ export default function SeoGmbProjectSetupPage() {
                 <button
                   onClick={handleNextTab}
                   disabled={activeTab === 'Monthly Roadmap'}
-                  className={`rounded p-2 text-xs  flex items-center gap-1.5 border-none cursor-pointer text-white transition-colors ${activeTab === 'Monthly Roadmap' ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+                  className={`rounded p-2 text-xs  flex items-center gap-1.5 border-none cursor-pointer text-white transition-colors ${activeTab === 'Monthly Roadmap' ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-red-600'
                     }`}
                 >
                   Save &amp; Continue <ChevronRight size={14} />
@@ -976,7 +976,7 @@ export default function SeoGmbProjectSetupPage() {
             {/* ── 1. PROJECT ONBOARDING STEP ── */}
             {activeTab === 'Project Onboarding' && (
               <div className="flex flex-col gap-6">
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 flex justify-between items-center relative overflow-hidden ">
+                <div className="bg-white rounded p-6 border border-slate-200 flex justify-between items-center relative overflow-hidden ">
                   <div className="max-w-xl">
                     <h2 className="text-lg  text-slate-900 m-0 mb-2 flex items-center gap-2">
                       Welcome to Project Setup 🚀
@@ -1004,7 +1004,7 @@ export default function SeoGmbProjectSetupPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                <div className="bg-white rounded p-6 border border-slate-200 ">
                   <h3 className="text-[14px]  text-slate-900 m-0 mb-4">Project Basic Information</h3>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div>
@@ -1073,7 +1073,7 @@ export default function SeoGmbProjectSetupPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                <div className="bg-white rounded p-6 border border-slate-200 ">
                   <h3 className="text-[14px]  text-slate-900 m-0 mb-3.5">Project Description</h3>
                   <textarea
                     value={description}
@@ -1088,7 +1088,7 @@ export default function SeoGmbProjectSetupPage() {
             {/* ── 2. WEBSITE INFORMATION STEP ── */}
             {activeTab === 'Website Information' && (
               <div className="flex flex-col gap-6">
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                <div className="bg-white rounded p-6 border border-slate-200 ">
                   <h3 className="text-[14px]  text-slate-900 m-0 mb-4">Website Details</h3>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div>
@@ -1113,7 +1113,7 @@ export default function SeoGmbProjectSetupPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                <div className="bg-white rounded p-6 border border-slate-200 ">
                   <h3 className="text-[14px]  text-slate-900 m-0 mb-4">Website Statistics (Current)</h3>
                   <div className="grid grid-cols-4 gap-4">
                     {[
@@ -1140,7 +1140,7 @@ export default function SeoGmbProjectSetupPage() {
             {/* ── 3. BUSINESS INFORMATION STEP ── */}
             {activeTab === 'Business Information' && (
               <div className="flex flex-col gap-6">
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                <div className="bg-white rounded p-6 border border-slate-200 ">
                   <h3 className="text-[14px]  text-slate-900 m-0 mb-4">Company Details</h3>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div>
@@ -1158,7 +1158,7 @@ export default function SeoGmbProjectSetupPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                <div className="bg-white rounded p-6 border border-slate-200 ">
                   <h3 className="text-[14px]  text-slate-900 m-0 mb-4">Business Goals for SEO</h3>
                   <div className="flex flex-wrap gap-2 text-xs">
                     {goals.map((g, i) => (
@@ -1198,7 +1198,7 @@ export default function SeoGmbProjectSetupPage() {
             {/* ── 4. DOMAIN & HOSTING STEP ── */}
             {activeTab === 'Domain & Hosting' && (
               <div className="flex flex-col gap-6 text-xs">
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                <div className="bg-white rounded p-6 border border-slate-200 ">
                   <h3 className="text-[14px]  text-slate-900 m-0 mb-4">Domain Information</h3>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
@@ -1217,7 +1217,7 @@ export default function SeoGmbProjectSetupPage() {
             {/* ── 5. COMPETITOR SETUP STEP ── */}
             {activeTab === 'Competitor Setup' && (
               <div className="flex flex-col gap-6">
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                <div className="bg-white rounded p-6 border border-slate-200 ">
                   <h3 className="text-[14px]  text-slate-900 m-0 mb-1">Add Your Competitors</h3>
                   <form onSubmit={handleAddCompetitor} className="flex gap-2 text-xs mt-3">
                     <input
@@ -1227,13 +1227,13 @@ export default function SeoGmbProjectSetupPage() {
                       onChange={e => setNewCompDomain(e.target.value)}
                       className="flex-1 border border-slate-200 rounded p-2.5 outline-none bg-white font-medium focus:border-blue-500"
                     />
-                    <button type="submit" className="bg-blue-500 hover:bg-blue-600 border-none rounded px-5 py-2.5 text-white  cursor-pointer shrink-0 transition-colors">
+                    <button type="submit" className="bg-blue-500 hover:bg-red-600 border-none rounded px-5 py-2.5 text-white  cursor-pointer shrink-0 transition-colors">
                       Add Competitor
                     </button>
                   </form>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                <div className="bg-white rounded p-6 border border-slate-200 ">
                   <h3 className="text-[14px]  text-slate-900 m-0 mb-4">Competitor List</h3>
                   <table className="w-full border-collapse text-xs">
                     <thead>
@@ -1266,7 +1266,7 @@ export default function SeoGmbProjectSetupPage() {
             {/* ── 6. MONTHLY ROADMAP STEP ── */}
             {activeTab === 'Monthly Roadmap' && (
               <div className="flex flex-col gap-6">
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 ">
+                <div className="bg-white rounded p-6 border border-slate-200 ">
                   <h3 className="text-[14px]  text-slate-900 m-0 mb-1">Monthly Roadmap Overview</h3>
                   <table className="w-full border-collapse text-xs mt-4">
                     <thead>
@@ -1317,7 +1317,7 @@ export default function SeoGmbProjectSetupPage() {
                 onClick={handleNextTab}
                 className={`rounded px-5 py-2.5 text-xs  border-none cursor-pointer transition-colors text-white ${activeTab === 'Monthly Roadmap'
                   ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-blue-500 hover:bg-blue-600'
+                  : 'bg-blue-500 hover:bg-red-600'
                   }`}
               >
                 {activeTab === 'Monthly Roadmap' ? 'Setup Complete' : 'Save & Continue'} &rarr;

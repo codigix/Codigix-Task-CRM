@@ -352,7 +352,7 @@ const DealDetailsPage = () => {
 
                 let bgColor = 'bg-[#F8F9FA] text-[#B8BBBD]';
                 if (isActive || isPast) {
-                  bgColor = 'bg-blue-600 text-white';
+                  bgColor = 'bg-red-600 text-white';
                 }
 
                 return (

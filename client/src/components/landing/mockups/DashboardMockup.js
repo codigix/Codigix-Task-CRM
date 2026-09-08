@@ -8,7 +8,7 @@ const DashboardMockup = () => {
       <div className="h-12 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center text-white  text-[10px]">C</div>
-          <span className="font-semibold text-slate-800 text-sm">Codigix CRM</span>
+          <span className=" text-slate-800 text-sm">Codigix CRM</span>
           <div className="h-4 w-px bg-slate-300 mx-2"></div>
           <div className="flex gap-4 text-xs font-medium text-slate-500">
             <span className="text-red-600 border-b-2 border-red-600 pb-[14px] mt-[14px]">Dashboard</span>
@@ -38,7 +38,7 @@ const DashboardMockup = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar">
-        <h1 className="text-xl font-semibold text-slate-800">Sales Dashboard</h1>
+        <h1 className="text-xl  text-slate-800">Sales Dashboard</h1>
 
         {/* KPI Row */}
         <div className="grid grid-cols-5 gap-4">
@@ -64,7 +64,7 @@ const DashboardMockup = () => {
         <div className="grid grid-cols-3 gap-4">
           {/* Main Chart */}
           <div className="col-span-2 bg-white rounded border border-slate-200 shadow-sm p-5 flex flex-col relative overflow-hidden min-h-[220px]">
-            <h3 className="text-sm font-semibold text-slate-800 mb-6">Pipeline Overview</h3>
+            <h3 className="text-sm  text-slate-800 mb-6">Pipeline Overview</h3>
             <div className="flex-1 relative border-l border-b border-slate-100 flex items-end pt-4 pr-2">
               {/* Y Axis */}
               <div className="absolute left-0 bottom-0 h-full w-full flex flex-col justify-between pointer-events-none pb-5">
@@ -112,7 +112,7 @@ const DashboardMockup = () => {
           {/* Side Panels */}
           <div className="col-span-1 flex flex-col gap-4">
             <div className="bg-white rounded border border-slate-200 shadow-sm p-4 flex-1 flex flex-col relative min-h-[140px]">
-              <h3 className="text-sm font-semibold text-slate-800 absolute top-4 left-4">Sales Targets Progress</h3>
+              <h3 className="text-sm  text-slate-800 absolute top-4 left-4">Sales Targets Progress</h3>
 
               <div className="flex-1 flex flex-col items-center justify-center mt-4">
                 <div className="relative w-24 h-24 mb-2">
@@ -137,7 +137,7 @@ const DashboardMockup = () => {
 
         {/* Added 3rd column box for 'Upcoming Event' to match screenshot structure exactly */}
         <div className="absolute top-[162px] right-5 w-[24%] bg-white rounded border border-slate-200 shadow-sm p-4 min-h-[220px]">
-          <h3 className="text-sm font-semibold text-slate-800 mb-4">Upcoming Event</h3>
+          <h3 className="text-sm  text-slate-800 mb-4">Upcoming Event</h3>
           <div className="flex flex-col gap-3">
             <div className="p-2 border border-slate-100 rounded-md bg-slate-50 flex flex-col gap-1">
               <span className="text-[10px]  text-slate-700">Client Sync: Acme Corp</span>
@@ -158,7 +158,7 @@ const DashboardMockup = () => {
         <div className="grid grid-cols-3 gap-4 pb-4">
           {/* Sales Targets */}
           <div className="bg-white rounded border border-slate-200 shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-slate-800 mb-3">Sales Targets</h3>
+            <h3 className="text-sm  text-slate-800 mb-3">Sales Targets</h3>
             <div className="flex items-baseline gap-2 mb-4">
               <span className="text-2xl  text-slate-800">48%</span>
               <span className="text-xs text-green-500 font-medium">↑ +2.3%</span>
@@ -177,7 +177,7 @@ const DashboardMockup = () => {
 
           {/* Performance Metrics */}
           <div className="bg-white rounded border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
-            <h3 className="text-sm font-semibold text-slate-800 mb-2">Performance Metrics</h3>
+            <h3 className="text-sm  text-slate-800 mb-2">Performance Metrics</h3>
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-600 flex items-center gap-1"><TrendingUp size={10} /> Win Rate</span>
@@ -200,7 +200,7 @@ const DashboardMockup = () => {
 
           {/* Alerts */}
           <div className="bg-white rounded border border-slate-200 shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+            <h3 className="text-sm  text-slate-800 mb-3 flex items-center gap-2">
               Alerts <span className="bg-red-500 text-white text-[8px] px-1.5 rounded-full">1</span>
             </h3>
             <div className="flex flex-col gap-2.5">

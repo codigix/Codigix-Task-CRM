@@ -121,7 +121,7 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
                 </tr>
                 <tr>
                   <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Status</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;"><span style="background-color: #eff6ff; color: #1e3a8a; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bfdbfe;">${ticketStatus || 'TO DO'}</span></td>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee;"><span style="background-color: #eff6ff; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bfdbfe;">${ticketStatus || 'TO DO'}</span></td>
                 </tr>
               </table>
 
@@ -239,9 +239,11 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
       let sql = `
         SELECT t.*, 
                u1.first_name as assigned_to_name, 
-               u1.avatar as assigned_to_avatar
+               u1.avatar as assigned_to_avatar,
+               u2.first_name as created_by_name
         FROM project_tasks t
         LEFT JOIN users u1 ON t.assigned_to = u1.id
+        LEFT JOIN users u2 ON t.created_by = u2.id
         LEFT JOIN projects p ON t.project_id = p.id
         LEFT JOIN departments d ON p.department_id = d.id
         WHERE 1=1
@@ -249,7 +251,7 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
       const params = [];
 
       // Removed role-based validation to allow everyone to view tasks of everyone
-      
+
       sql += ` ORDER BY t.created_at DESC`;
 
       const [tasks] = await db.query(sql, params);
@@ -283,7 +285,7 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
   app.put('/api/project-tasks/:id', async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, description, status, priority, assigned_to, due_date, completed_date, task_source } = req.body;
+      const { title, description, status, priority, assigned_to, due_date, completed_date, task_source, timer_start_time, is_timer_running } = req.body;
 
       // Service checklist tasks live in general_tasks; ids are not shared between the two
       // tables, so route by source to avoid updating an unrelated project_task with the same id.
@@ -343,20 +345,78 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
         }
       }
 
-      await db.query(`
+      // --- Automatic Timer Logic ---
+      let final_time_running = is_timer_running;
+      let final_start_time = timer_start_time;
+      if (final_start_time) {
+        const d = new Date(final_start_time);
+        if (!isNaN(d.getTime())) {
+          final_start_time = d.toISOString().slice(0, 19).replace('T', ' ');
+        }
+      }
+      let final_actual_hours = undefined;
+
+      if (status) {
+        try {
+          const [[currentState]] = await db.query('SELECT status, timer_start_time, is_timer_running, actual_hours FROM project_tasks WHERE id = ?', [id]);
+          if (currentState) {
+            const newStatus = String(status).trim().toUpperCase();
+            const activeStatuses = ['IN PROGRESS', 'IN-PROGRESS'];
+
+            // Handle stopping timer
+            if (!activeStatuses.includes(newStatus) && currentState.is_timer_running && currentState.timer_start_time) {
+              const now = new Date();
+              const start = new Date(currentState.timer_start_time);
+              if (!isNaN(start.getTime())) {
+                const diffMs = now - start;
+                const diffHours = diffMs / (1000 * 60 * 60);
+
+                let currentSpent = parseFloat(currentState.actual_hours) || 0;
+                currentSpent += diffHours;
+
+                final_actual_hours = currentSpent;
+                final_time_running = false;
+                final_start_time = null;
+              }
+            }
+          }
+        } catch (timerErr) {
+          console.error('Failed to process automatic timer logic:', timerErr);
+        }
+      }
+      // --- End Timer Logic ---
+
+      let updateQuery = `
         UPDATE project_tasks 
         SET title = ?, description = ?, status = ?, priority = ?, assigned_to = ?, due_date = ?, completed_date = ?, updated_at = NOW()
-        WHERE id = ?
-      `, [
+      `;
+      let queryParams = [
         title || null,
         description || null,
         status || 'Open',
         priority || 'Medium',
         assigned_to || null,
         due_date || null,
-        completed_date || null,
-        id
-      ]);
+        completed_date || null
+      ];
+
+      if (final_time_running !== undefined) {
+        updateQuery += `, is_timer_running = ?`;
+        queryParams.push(final_time_running);
+      }
+      if (final_start_time !== undefined || final_time_running === false) {
+        updateQuery += `, timer_start_time = ?`;
+        queryParams.push(final_start_time || null);
+      }
+      if (final_actual_hours !== undefined) {
+        updateQuery += `, actual_hours = ?`;
+        queryParams.push(final_actual_hours);
+      }
+
+      updateQuery += ` WHERE id = ?`;
+      queryParams.push(id);
+
+      await db.query(updateQuery, queryParams);
 
       res.json({ message: 'Task updated successfully' });
     } catch (error) {
@@ -525,7 +585,7 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
     }
   });
 
-  app.get('/api/tasks', async (req, res) => {
+  app.get('/api/general-tasks', async (req, res) => {
     try {
       const { skip = 0, limit = 50, status, search } = req.query;
 
@@ -745,13 +805,54 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
   app.put('/api/tasks/:taskId', async (req, res) => {
     try {
       const { taskId } = req.params;
-      const { title, description, status, priority, assigned_to, due_date, due_time, tags, linked_type, linked_id, created_by, task_type, next_followup_date } = req.body;
+      const { title, description, status, priority, assigned_to, due_date, due_time, tags, linked_type, linked_id, created_by, task_type, next_followup_date, timer_start_time, is_timer_running } = req.body;
 
-      await db.query(`
+      // --- Automatic Timer Logic ---
+      let final_time_running = is_timer_running;
+      let final_start_time = timer_start_time;
+      if (final_start_time) {
+        const d = new Date(final_start_time);
+        if (!isNaN(d.getTime())) {
+          final_start_time = d.toISOString().slice(0, 19).replace('T', ' ');
+        }
+      }
+      let final_actual_hours = undefined;
+
+      if (status) {
+        try {
+          const [[currentState]] = await db.query('SELECT status, timer_start_time, is_timer_running, actual_hours FROM general_tasks WHERE id = ?', [taskId]);
+          if (currentState) {
+            const newStatus = String(status).trim().toUpperCase();
+            const activeStatuses = ['IN PROGRESS', 'IN-PROGRESS'];
+
+            // Handle stopping timer
+            if (!activeStatuses.includes(newStatus) && currentState.is_timer_running && currentState.timer_start_time) {
+              const now = new Date();
+              const start = new Date(currentState.timer_start_time);
+              if (!isNaN(start.getTime())) {
+                const diffMs = now - start;
+                const diffHours = diffMs / (1000 * 60 * 60);
+
+                let currentSpent = parseFloat(currentState.actual_hours) || 0;
+                currentSpent += diffHours;
+
+                final_actual_hours = currentSpent;
+                final_time_running = false;
+                final_start_time = null;
+              }
+            }
+          }
+        } catch (timerErr) {
+          console.error('Failed to process automatic timer logic:', timerErr);
+        }
+      }
+      // --- End Timer Logic ---
+
+      let updateQuery = `
         UPDATE general_tasks 
         SET title = ?, description = ?, status = ?, priority = ?, assigned_to = ?, due_date = ?, due_time = ?, tags = ?, linked_type = ?, linked_id = ?, task_type = ?, next_followup_date = ?, updated_at = NOW()
-        WHERE id = ?
-      `, [
+      `;
+      let queryParams = [
         title || null,
         description || null,
         status || null,
@@ -763,9 +864,26 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
         linked_type || null,
         linked_id || null,
         task_type || null,
-        next_followup_date || null,
-        taskId
-      ]);
+        next_followup_date || null
+      ];
+
+      if (final_time_running !== undefined) {
+        updateQuery += `, is_timer_running = ?`;
+        queryParams.push(final_time_running);
+      }
+      if (final_start_time !== undefined || final_time_running === false) {
+        updateQuery += `, timer_start_time = ?`;
+        queryParams.push(final_start_time || null);
+      }
+      if (final_actual_hours !== undefined) {
+        updateQuery += `, actual_hours = ?`;
+        queryParams.push(final_actual_hours);
+      }
+
+      updateQuery += ` WHERE id = ?`;
+      queryParams.push(taskId);
+
+      await db.query(updateQuery, queryParams);
 
       // Create activity log for status change
       if (status) {
@@ -1119,12 +1237,12 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
     try {
       const { projectId } = req.params;
       const { message, user_id } = req.body;
-      
+
       const [result] = await db.query(
         'INSERT INTO project_discussions (project_id, user_id, message) VALUES (?, ?, ?)',
         [projectId, user_id || 1, message] // Default user_id to 1 if missing for now
       );
-      
+
       const [newMsg] = await db.query(
         `SELECT d.*, u.first_name, u.last_name, u.avatar 
          FROM project_discussions d 
@@ -1132,7 +1250,7 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
          WHERE d.id = ?`,
         [result.insertId]
       );
-      
+
       // Log activity
       await db.query(
         'INSERT INTO project_activities (project_id, user_id, action, details) VALUES (?, ?, ?, ?)',
@@ -1166,3 +1284,4 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
   });
 
 };
+

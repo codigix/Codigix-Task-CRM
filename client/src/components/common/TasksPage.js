@@ -365,60 +365,60 @@ const TasksPage = ({ department }) => {
                         if (!Array.isArray(labels)) labels = [];
                         const due = row.due_date ? new Date(row.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
                         return (
-                        <tr key={rowKey || i} className={`hover:bg-blue-50 cursor-pointer ${selectedIssue === rowKey ? 'bg-blue-50' : ''}`} onClick={() => setSelectedIssue(rowKey)}>
-                          <td className="p-3 text-center text-gray-400 text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
-                          {/* Jira strikes through the key of a finished work item. */}
-                          <td className={`p-3 text-blue-600 font-medium hover:underline ${isDoneStatus(row.status) ? 'line-through' : ''}`}>{rowKey}</td>
-                          <td className="p-3 text-gray-900 font-medium">{row.title}</td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-1.5 text-gray-600 text-xs">
-                              {TYPE_ICONS[row.type] || TYPE_ICONS.Task} {row.type}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded text-xs   tracking-wide border ${row.status === 'TO DO' ? 'bg-gray-100 text-gray-600 border-gray-200' :
-                              row.status === 'IN PROGRESS' ? 'bg-orange-100 text-orange-700 border-orange-200' :
-                                row.status === 'IN REVIEW' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                                  row.status === 'TESTING' ? 'bg-green-100 text-green-700 border-green-200' :
-                                    'bg-teal-100 text-teal-700 border-teal-200'
-                              }`}>
-                              {row.status}
-                            </span>
-                          </td>
-                          <td className="p-3 flex items-center gap-2">
-                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] ">{assignee.charAt(0).toUpperCase()}</div>
-                            {assignee}
-                          </td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                              {PRIORITY_ICONS[row.priority]} {row.priority || 'Medium'}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-1">
-                              {labels.map(l => (
-                                <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 rounded text-xs font-medium">{l}</span>
-                              ))}
-                            </div>
-                          </td>
-                          {/* The joined sprint, not the stored text label — the label is
+                          <tr key={rowKey || i} className={`hover:bg-blue-50 cursor-pointer ${selectedIssue === rowKey ? 'bg-blue-50' : ''}`} onClick={() => setSelectedIssue(rowKey)}>
+                            <td className="p-3 text-center text-gray-400 text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                            {/* Jira strikes through the key of a finished work item. */}
+                            <td className={`p-3 text-blue-600 font-medium hover:underline ${isDoneStatus(row.status) ? 'line-through' : ''}`}>{rowKey}</td>
+                            <td className="p-3 text-gray-900 font-medium">{row.title}</td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1.5 text-gray-600 text-xs">
+                                {TYPE_ICONS[row.type] || TYPE_ICONS.Task} {row.type}
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <span className={`px-2 py-0.5 rounded text-xs   tracking-wide border ${row.status === 'TO DO' ? 'bg-gray-100 text-gray-600 border-gray-200' :
+                                row.status === 'IN PROGRESS' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                  row.status === 'IN REVIEW' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                                    row.status === 'TESTING' ? 'bg-green-100 text-green-700 border-green-200' :
+                                      'bg-teal-100 text-teal-700 border-teal-200'
+                                }`}>
+                                {row.status}
+                              </span>
+                            </td>
+                            <td className="p-3 flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] ">{assignee.charAt(0).toUpperCase()}</div>
+                              {assignee}
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                {PRIORITY_ICONS[row.priority]} {row.priority || 'Medium'}
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1">
+                                {labels.map(l => (
+                                  <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 rounded text-xs font-medium">{l}</span>
+                                ))}
+                              </div>
+                            </td>
+                            {/* The joined sprint, not the stored text label — the label is
                               written once and goes stale as soon as the item moves. */}
-                          <td className="p-3 text-gray-600 text-xs">
-                            {row.sprint_name
-                              ? <>{row.sprint_name}{row.sprint_status === 'Active' && <span className="ml-1 text-[10px] text-emerald-600 font-medium">active</span>}</>
-                              : <span className="text-gray-400">Backlog</span>}
-                          </td>
-                          <td className="p-3 text-gray-500 text-xs">{due}</td>
-                          <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={(e) => confirmDeleteTask(e, rowKey)}
-                              className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"
-                              title="Delete task"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </td>
-                        </tr>
+                            <td className="p-3 text-gray-600 text-xs">
+                              {row.sprint_name
+                                ? <>{row.sprint_name}{row.sprint_status === 'Active' && <span className="ml-1 text-[10px] text-emerald-600 font-medium">active</span>}</>
+                                : <span className="text-gray-400">Backlog</span>}
+                            </td>
+                            <td className="p-3 text-gray-500 text-xs">{due}</td>
+                            <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={(e) => confirmDeleteTask(e, rowKey)}
+                                className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"
+                                title="Delete task"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
+                          </tr>
                         );
                       })}
                       {pagedTasks.length === 0 && (
@@ -449,7 +449,7 @@ const TasksPage = ({ department }) => {
                         <button
                           key={p}
                           onClick={() => setCurrentPage(p)}
-                          className={`w-6 h-6 flex items-center justify-center rounded ${p === page ? 'bg-blue-600 text-white font-medium' : 'hover:bg-gray-100'}`}
+                          className={`w-6 h-6 flex items-center justify-center rounded ${p === page ? 'bg-red-600 text-white font-medium' : 'hover:bg-gray-100'}`}
                         >{p}</button>
                       ))}
                       <button

@@ -1322,7 +1322,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
       {isCreateDocumentOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 sm:px-6">
           <div className="absolute inset-0 bg-black/40" onClick={closeCreateDocumentModal}></div>
-          <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="relative w-full max-w-4xl bg-white rounded shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-2  border-b border-gray-200">
               <h3 className="text-md  text-gray-900">Create New File</h3>
               <button
@@ -1402,7 +1402,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                       placeholder="Enter Title"
                     />
                   </div>
-                  <div className="border border-gray-200 rounded-2xl bg-gray-50 p-2 space-y-4">
+                  <div className="border border-gray-200 rounded bg-gray-50 p-2 space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs   text-gray-900">Signature</h4>
                       <span className="text-xs text-red-500 ">Required</span>
@@ -1411,7 +1411,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                       {companyData.documentForm.signatureOptions.map((option) => (
                         <label
                           key={option.id}
-                          className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition ${selectedSignature === option.value
+                          className={`flex items-start gap-3 p-3 rounded border cursor-pointer transition ${selectedSignature === option.value
                             ? 'bg-white border-red-200 '
                             : 'border-gray-200'
                             }`}
@@ -1496,7 +1496,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
 
               {documentTab === 'recipient' && (
                 <div className="space-y-5">
-                  <div className="border border-gray-200 rounded-2xl bg-gray-50 p-2 space-y-4">
+                  <div className="border border-gray-200 rounded bg-gray-50 p-2 space-y-4">
                     <div>
                       <h4 className="text-xs   text-gray-900">Send the document to following signers</h4>
                       <p className="text-xs text-gray-600">In order to send the document to the signers</p>
@@ -1555,7 +1555,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                     <button className="inline-flex items-center justify-center px-5 py-2 text-xs   text-green-600 bg-green-50 border border-green-200 rounded  hover:bg-green-100">
                       Send Now
                     </button>
-                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-2 text-xs text-emerald-700">
+                    <div className="rounded border border-emerald-100 bg-emerald-50 p-2 text-xs text-emerald-700">
                       <p className="flex items-start gap-2">
                         <span className="text-base">✔</span>
                         Document sent successfully to the selected recipients
@@ -1604,7 +1604,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                 <input
                   type="text"
                   placeholder={companyData.noteForm.titlePlaceholder}
-                  className="w-full border border-gray-200 rounded-2xl h-12 px-4 text-xs  text-gray-800 bg-white  focus:ring-2 focus:ring-red-100 focus:border-red-500"
+                  className="w-full border border-gray-200 rounded h-12 px-4 text-xs  text-gray-800 bg-white  focus:ring-2 focus:ring-red-100 focus:border-red-500"
                 />
               </div>
               <div>
@@ -1614,14 +1614,14 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                 <textarea
                   rows="4"
                   placeholder={companyData.noteForm.notePlaceholder}
-                  className="w-full border border-gray-200 rounded-2xl p-2 text-xs text-gray-800 bg-white  focus:ring-2 focus:ring-red-100 focus:border-red-500"
+                  className="w-full border border-gray-200 rounded p-2 text-xs text-gray-800 bg-white  focus:ring-2 focus:ring-red-100 focus:border-red-500"
                 ></textarea>
               </div>
               <div>
                 <label className="block text-xs  text-gray-700 mb-2">
                   {companyData.noteForm.attachmentLabel} <span className="text-red-500">*</span>
                 </label>
-                <div className="rounded-2xl border border-dashed border-gray-200 bg-whitep-3  text-center flex flex-col items-center gap-3 shadow-[0_24px_65px_rgba(15,23,42,0.08)]">
+                <div className="rounded border border-dashed border-gray-200 bg-whitep-3  text-center flex flex-col items-center gap-3 shadow-[0_24px_65px_rgba(15,23,42,0.08)]">
                   <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
                     <FolderOpen className="w-6 h-6 text-red-500" />
                   </div>
@@ -1640,9 +1640,9 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                   {companyData.noteForm.attachments.map((attachment) => {
                     const badge = getFileBadgeStyle(attachment.type);
                     return (
-                      <div key={attachment.id} className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-[0_22px_70px_rgba(15,23,42,0.1)]">
+                      <div key={attachment.id} className="flex items-center justify-between rounded border border-gray-100 bg-white px-4 py-3 shadow-[0_22px_70px_rgba(15,23,42,0.1)]">
                         <div className="flex items-center gap-3">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xs  ${badge.bg} ${badge.text}`}>
+                          <div className={`w-12 h-12 rounded flex items-center justify-center text-xs  ${badge.bg} ${badge.text}`}>
                             {badge.label}
                           </div>
                           <div>
@@ -1680,7 +1680,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
       {isCreateCallOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 sm:px-6">
           <div className="absolute inset-0 bg-black/40" onClick={closeCreateCallModal}></div>
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-lg bg-white rounded shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between p-2  border-b border-gray-200">
               <h3 className="text-md  text-gray-900">Create Call Log</h3>
               <button
@@ -1749,7 +1749,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
       {isComposeEmailOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 sm:px-6">
           <div className="absolute inset-0 bg-black/40" onClick={() => setIsComposeEmailOpen(false)}></div>
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="relative w-full max-w-2xl bg-white rounded shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-2  border-b border-gray-200">
               <h3 className="text-md  text-gray-900">Compose Email</h3>
               <button

@@ -325,7 +325,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
           <button
             type="button"
             onClick={handleClose}
-            className="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+            className="p-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>

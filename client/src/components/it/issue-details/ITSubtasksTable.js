@@ -122,7 +122,7 @@ const ITSubtasksTable = ({
               <button
                 onClick={handleAddSubtask}
                 disabled={!newSubtaskTitle.trim()}
-                className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs transition"
+                className="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs transition"
               >
                 Create
               </button>
@@ -237,7 +237,7 @@ const ITSubtasksTable = ({
                             <User size={10} className="text-gray-500" />
                           </div>
                         ) : (
-                          <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[8px]  shrink-0">
+                          <div className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[8px]  shrink-0">
                             {getInitials(stAssignee)}
                           </div>
                         )}
@@ -447,7 +447,7 @@ const ITSubtasksTable = ({
                 </button>
                 <button
                   onClick={() => setSelectedSubtaskForView(null)}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold cursor-pointer"
+                  className="px-3 py-1.5 bg-red-600 hover:bg-blue-700 text-white rounded font-semibold cursor-pointer"
                 >
                   Done / Close
                 </button>

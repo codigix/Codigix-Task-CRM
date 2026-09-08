@@ -1159,7 +1159,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
               <div className="bg-white rounded border border-gray-200  overflow-hidden mt-2">
                 <div className="p-2 bg-blue-50/50 border-b border-gray-200 flex items-center gap-2">
                   <div className="bg-blue-100 p-1.5 rounded border border-blue-200">
-                    <div className="w-4 h-4 bg-blue-600 rounded flex items-center justify-center text-xs text-white font-[500]">C</div>
+                    <div className="w-4 h-4 bg-red-600 rounded flex items-center justify-center text-xs text-white font-[500]">C</div>
                   </div>
                   <h3 className="text-sm  text-gray-800">Client & Deal Details</h3>
                 </div>
@@ -1455,7 +1455,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                           }`}
                       >
                         <div className={`w-8 h-8 rounded border flex items-center justify-center text-xs font-[500] ${isSelected
-                          ? 'bg-blue-600 text-white border-blue-600'
+                          ? 'bg-red-600 text-white border-blue-600'
                           : 'bg-gray-50 border-gray-200 text-gray-500'
                           }`}>
                           {v.version.toUpperCase()}
@@ -1552,7 +1552,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                 setEmailToRecipient(email);
                 setIsEmailPreviewOpen(true);
               }}
-              className="p-2 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-all font-medium flex items-center gap-1"
+              className="p-2 bg-blue-500 text-white rounded text-xs hover:bg-red-600 transition-all font-medium flex items-center gap-1"
             >
               <Mail size={12} />
               Send to Client
@@ -1697,7 +1697,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
               <button
                 type="button"
                 onClick={() => setIsEmailPreviewOpen(false)}
-                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded text-xs font-semibold hover:bg-gray-100 transition-colors"
+                className="p-2 bg-white border border-gray-300 text-gray-700 rounded text-xs font-semibold hover:bg-gray-100 transition-colors"
               >
                 Cancel
               </button>
@@ -1723,7 +1723,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                   setFormData(updatedFormData);
                   await handleSubmit(e, 'Sent', true, updatedFormData);
                 }}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-md flex items-center gap-2 transition-all"
+                className="px-5 py-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-md flex items-center gap-2 transition-all"
               >
                 <Mail size={14} />
                 Confirm & Send Email

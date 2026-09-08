@@ -6,11 +6,11 @@ module.exports = function (pool) {
   router.get('/geo-optimization', async (req, res) => {
     try {
       const { projectId, startDate, endDate } = req.query;
-      
+
       // In a real application, you would use these query parameters 
       // to filter database queries. We are returning structured mock data here 
       // as a stand-in for the database logic.
-      
+
       const geoOptimizationData = {
         overview: {
           geoScore: { value: 86, change: 12.4, changeLabel: 'vs last 7 days' },
@@ -45,7 +45,7 @@ module.exports = function (pool) {
           { p: 'Gemini', s: 74, c: '+ 12%', color: 'bg-indigo-500' },
           { p: 'Perplexity', s: 68, c: '+ 8%', color: 'bg-cyan-500' },
           { p: 'Claude', s: 68, c: '+ 7%', color: 'bg-orange-500' },
-          { p: 'Microsoft Copilot', s: 60, c: '+ 4%', color: 'bg-blue-600' },
+          { p: 'Microsoft Copilot', s: 60, c: '+ 4%', color: 'bg-red-600' },
           { p: 'Grok', s: 48, c: '+ 4%', color: 'bg-gray-800' }
         ],
         aiEngineOverview: [

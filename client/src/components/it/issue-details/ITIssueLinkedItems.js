@@ -70,7 +70,7 @@ const ITIssueLinkedItems = ({
             <button
               onClick={handleCreateLinkedIssue}
               disabled={!linkSearchInput.trim()}
-              className={`px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition cursor-pointer ${!linkSearchInput.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`px-3 py-1 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition cursor-pointer ${!linkSearchInput.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Link
             </button>

@@ -636,6 +636,37 @@ const ITIssueDetailsSidebar = ({
                 </select>
               </div>
             </div>
+            {/* Estimated Time */}
+            <div className="flex items-center min-h-[32px] gap-2">
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Est. Time</span>
+              <div className="flex-1 min-w-0">
+                <input
+                  type="text"
+                  placeholder="e.g. 2h 30m"
+                  value={issue?.original_estimate || ''}
+                  onChange={(e) => {
+                    handleUpdate({ original_estimate: e.target.value });
+                  }}
+                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium w-full"
+                />
+              </div>
+            </div>
+
+            {/* Timer Start Time */}
+            {issue?.timer_start_time && (
+              <div className="flex items-center min-h-[32px] gap-2">
+                <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Timer Started</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                    <span className="relative flex h-2 w-2 mr-1">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    {new Date(issue.timer_start_time).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Effort Points */}
             <div className="flex items-center min-h-[32px] gap-2">
@@ -1040,7 +1071,7 @@ const ITIssueDetailsSidebar = ({
             </div>
 
             <div className="p-3 border-t bg-gray-50 flex justify-end gap-2 text-xs">
-              <button onClick={() => setShowDevModal(false)} className="px-3.5 py-1.5 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 cursor-pointer">
+              <button onClick={() => setShowDevModal(false)} className="px-3.5 py-1.5 bg-red-600 text-white rounded font-semibold hover:bg-blue-700 cursor-pointer">
                 Done
               </button>
             </div>
@@ -1097,7 +1128,7 @@ const ITIssueDetailsSidebar = ({
             </div>
 
             <div className="p-3 border-t bg-gray-50 flex justify-end gap-2 text-xs">
-              <button onClick={() => setShowAutomationModal(false)} className="px-3.5 py-1.5 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 cursor-pointer">
+              <button onClick={() => setShowAutomationModal(false)} className="px-3.5 py-1.5 bg-red-600 text-white rounded font-semibold hover:bg-blue-700 cursor-pointer">
                 Close
               </button>
             </div>

@@ -198,7 +198,7 @@ const ITIssueActivityTabs = ({
         <div className="space-y-4">
           {/* New Comment Box with JiraCommentEditor */}
           <div className="flex gap-2.5 items-start">
-            <div className="w-6 h-6 rounded-full bg-blue-600 text-white  text-[10px] flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-6 h-6 rounded-full bg-red-600 text-white  text-[10px] flex items-center justify-center shrink-0 shadow-xs">
               {initialsOf(currentUser)}
             </div>
             <div className="flex-1">
@@ -429,7 +429,7 @@ const ITIssueActivityTabs = ({
             <span className="text-xs font-semibold text-gray-700">Work Logs</span>
             <button
               onClick={() => setIsLoggingWork(v => !v)}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs bg-blue-600 text-white rounded font-medium hover:bg-blue-700 transition cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs bg-red-600 text-white rounded font-medium hover:bg-blue-700 transition cursor-pointer"
             >
               <Plus size={12} /> Log Work
             </button>
@@ -476,7 +476,7 @@ const ITIssueActivityTabs = ({
                 </button>
                 <button
                   onClick={submitWorkLog}
-                  className="px-3 py-1 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 text-xs cursor-pointer"
+                  className="px-3 py-1 bg-red-600 text-white rounded font-medium hover:bg-blue-700 text-xs cursor-pointer"
                 >
                   Save Log
                 </button>

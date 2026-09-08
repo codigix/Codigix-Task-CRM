@@ -954,8 +954,8 @@ export default function ITRepositoriesPage() {
             </div>
 
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 border border-gray-300 rounded-md  text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">Cancel</button>
-              <button className="px-4 py-2 border border-transparent rounded-md  text-sm font-semibold text-white bg-[#1F883D] hover:bg-[#1a7032] transition-colors flex items-center gap-2">
+              <button onClick={() => setShowAddModal(false)} className="p-2 border border-gray-300 rounded-md  text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">Cancel</button>
+              <button className="p-2 border border-transparent rounded-md  text-sm font-semibold text-white bg-[#1F883D] hover:bg-[#1a7032] transition-colors flex items-center gap-2">
                 Create repository
               </button>
             </div>
@@ -1032,11 +1032,11 @@ export default function ITRepositoriesPage() {
             </div>
 
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-              <button onClick={() => setShowImportModal(false)} className="px-4 py-2 border border-gray-300 rounded-md  text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</button>
+              <button onClick={() => setShowImportModal(false)} className="p-2 border border-gray-300 rounded-md  text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</button>
               <button
                 onClick={handleImport}
                 disabled={importing}
-                className={`px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-[#4F46E5] hover:bg-indigo-600 transition-colors flex items-center gap-2 ${importing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`p-2 border border-transparent rounded-md text-sm font-medium text-white bg-[#4F46E5] hover:bg-indigo-600 transition-colors flex items-center gap-2 ${importing ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 {importing && <RefreshCw size={14} className="animate-spin" />}
                 {importing ? 'Importing...' : 'Begin Import'}
@@ -1097,8 +1097,8 @@ export default function ITRepositoriesPage() {
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-              <button onClick={() => setShowSettingsModal(false)} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</button>
-              <button onClick={() => setShowSettingsModal(false)} className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-[#4F46E5] hover:bg-indigo-600">Save Changes</button>
+              <button onClick={() => setShowSettingsModal(false)} className="p-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</button>
+              <button onClick={() => setShowSettingsModal(false)} className="p-2 border border-transparent rounded-md text-sm font-medium text-white bg-[#4F46E5] hover:bg-indigo-600">Save Changes</button>
             </div>
           </div>
         </div>
@@ -1145,8 +1145,8 @@ export default function ITRepositoriesPage() {
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
               <span className="text-xs text-green-600 font-medium flex items-center gap-1"><CheckCircle size={12} /> Webhook is active</span>
               <div className="flex gap-3">
-                <button onClick={() => setShowWebhookModal(false)} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Close</button>
-                <button onClick={() => setShowWebhookModal(false)} className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-[#4F46E5] hover:bg-indigo-600">Update Webhook</button>
+                <button onClick={() => setShowWebhookModal(false)} className="p-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Close</button>
+                <button onClick={() => setShowWebhookModal(false)} className="p-2 border border-transparent rounded-md text-sm font-medium text-white bg-[#4F46E5] hover:bg-indigo-600">Update Webhook</button>
               </div>
             </div>
           </div>
@@ -1222,7 +1222,7 @@ export default function ITRepositoriesPage() {
               </button>
             </div>
             <div className="px-6 py-4 border-t border-gray-50 bg-gray-50 flex justify-end">
-              <button onClick={() => setShowConnectionModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+              <button onClick={() => setShowConnectionModal(false)} className="p-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
                 Cancel
               </button>
             </div>

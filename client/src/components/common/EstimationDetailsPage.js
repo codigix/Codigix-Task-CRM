@@ -326,7 +326,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
             <button
               onClick={handleConvertToProposal}
               disabled={isProcessing}
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-3 py-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <Sparkles size={14} /> Convert to Proposal
             </button>
@@ -379,7 +379,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleConvertToProposal}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs  rounded transition-colors flex items-center gap-2 shadow-sm"
+                className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs  rounded transition-colors flex items-center gap-2 shadow-sm"
               >
                 Generate Proposal <ArrowRight size={14} />
               </button>
@@ -436,7 +436,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                           return (
                             <tr key={item.id || idx} className="hover:bg-slate-50 transition-colors">
                               <td className="p-3">
-                                <p className="font-semibold text-slate-800">{item.item_name}</p>
+                                <p className=" text-slate-800">{item.item_name}</p>
                                 {item.description && (
                                   <p className="text-[11px] text-slate-500 mt-0.5">{item.description}</p>
                                 )}
@@ -468,7 +468,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                 <div className="bg-slate-50 p-4 border-t border-slate-200 flex flex-col items-end space-y-2 text-xs">
                   <div className="flex justify-between w-full max-w-xs text-slate-600">
                     <span>Subtotal:</span>
-                    <span className="font-semibold text-slate-800">{currency} {subtotal.toLocaleString()}</span>
+                    <span className=" text-slate-800">{currency} {subtotal.toLocaleString()}</span>
                   </div>
                   {discountAmount > 0 && (
                     <div className="flex justify-between w-full max-w-xs text-amber-600">
@@ -513,7 +513,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                 <div className="space-y-3 text-xs">
                   <div>
                     <p className="text-slate-400 font-medium">Company Name</p>
-                    <p className="font-semibold text-slate-800 text-sm mt-0.5">{estimation.client_name || 'N/A'}</p>
+                    <p className=" text-slate-800 text-sm mt-0.5">{estimation.client_name || 'N/A'}</p>
                   </div>
                   {estimation.contact_name && (
                     <div>
@@ -538,7 +538,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                 <div className="space-y-3 text-xs">
                   <div>
                     <p className="text-slate-400 font-medium">Linked Deal ID</p>
-                    <p className="font-semibold text-slate-800 text-sm mt-0.5">
+                    <p className=" text-slate-800 text-sm mt-0.5">
                       {estimation.deal_id ? `#DEAL-${estimation.deal_id}` : 'Unassigned'}
                     </p>
                   </div>
@@ -563,13 +563,13 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                 <div className="space-y-2.5 text-xs">
                   <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded border border-slate-100">
                     <span className="text-slate-500">Estimate Date:</span>
-                    <span className="font-semibold text-slate-800">
+                    <span className=" text-slate-800">
                       {estimation.estimate_date ? new Date(estimation.estimate_date).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded border border-slate-100">
                     <span className="text-slate-500">Valid Until:</span>
-                    <span className="font-semibold text-slate-800">
+                    <span className=" text-slate-800">
                       {estimation.expiry_date ? new Date(estimation.expiry_date).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>

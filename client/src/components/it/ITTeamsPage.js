@@ -623,7 +623,7 @@ const ITTeamsPage = ({ department }) => {
                               <tr className="bg-gray-50/30">
                                 <td colSpan="7" className="py-3 px-8">
                                   <div className="border border-gray-200 rounded bg-white shadow-sm overflow-hidden mb-2">
-                                    <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                                    <div className="p-2 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
                                       <span className="text-[10px]  text-gray-500 uppercase tracking-wider">Allocated Team Members</span>
                                       <button
                                         onClick={() => { setSelectedTeam(team); setIsAddMemberModalOpen(true); }}
@@ -690,7 +690,7 @@ const ITTeamsPage = ({ department }) => {
                                   </div>
 
                                   <div className="border border-gray-200 rounded bg-white shadow-sm overflow-hidden mt-4 mb-2">
-                                    <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                                    <div className="p-2 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
                                       <span className="text-[10px]  text-gray-500 uppercase tracking-wider">Assigned Projects</span>
                                       <button
                                         onClick={() => { setSelectedTeam(team); setIsAssignProjectModalOpen(true); }}
@@ -1388,13 +1388,13 @@ const ITTeamsPage = ({ department }) => {
                     setIsEditMode(false);
                     setSelectedTeamId(null);
                   }}
-                  className="px-4 py-2 text-xs border border-gray-300 rounded hover:bg-gray-50 text-gray-700"
+                  className="p-2 text-xs border border-gray-300 rounded hover:bg-gray-50 text-gray-700"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs "
+                  className="p-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs "
                 >
                   {isEditMode ? 'Update Team' : 'Create Team'}
                 </button>
@@ -1760,7 +1760,7 @@ const ITTeamsPage = ({ department }) => {
                   setIsViewModalOpen(false);
                   setSelectedTeam(null);
                 }}
-                className="px-4 py-2 text-xs border border-gray-300 rounded hover:bg-gray-50 text-gray-700 "
+                className="p-2 text-xs border border-gray-300 rounded hover:bg-gray-50 text-gray-700 "
               >
                 Close
               </button>

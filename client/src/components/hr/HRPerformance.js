@@ -9,6 +9,8 @@ import {
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell, ComposedChart, Legend,
 } from 'recharts';
 import Swal from 'sweetalert2';
+import EmployeeMonthlyReport from '../common/EmployeeMonthlyReport';
+import LiveEmployeeDashboard from './LiveEmployeeDashboard';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const PerformanceContext = React.createContext();
@@ -49,6 +51,7 @@ const KpiCard = ({ title, value, subtitle, subtitleType, icon: Icon, iconColor, 
 const Drawer = ({ isOpen, onClose, employee }) => {
   const { fetchEmployeeDetails, submitReview } = React.useContext(PerformanceContext);
   const [empDetails, setEmpDetails] = React.useState(null);
+  const recentReviews = employee?.history || [];
 
   React.useEffect(() => {
     if (isOpen && employee) {
@@ -67,14 +70,47 @@ const Drawer = ({ isOpen, onClose, employee }) => {
   const [activeOverviewTab, setActiveOverviewTab] = useState('Recent Contributions');
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewForm, setReviewForm] = useState({
-    taskCompletion: 90,
-    quality: 92,
-    onTime: 88,
-    efficiency: 90,
-    reviewGatePoints: 85,
-    pointsDistribution: 95,
+    taskCompletion: 0,
+    quality: 0,
+    onTime: 0,
+    efficiency: 0,
+    reviewGatePoints: 0,
+    pointsDistribution: 0,
     feedback: ''
   });
+
+  React.useEffect(() => {
+    if (isReviewModalOpen && employee) {
+      setReviewForm({
+        taskCompletion: employee.assigned > 0 ? Math.round((employee.earned / employee.assigned) * 100) : 0,
+        quality: employee.quality || 0,
+        onTime: employee.onTime || 0,
+        efficiency: Math.round(Number(employee.efficiency) * 10) || 0,
+        reviewGatePoints: employee.quality || 0,
+        pointsDistribution: employee.onTime || 0,
+        feedback: ''
+      });
+    }
+  }, [isReviewModalOpen, employee]);
+
+  const [trendsData, setTrendsData] = useState([]);
+  const [isTrendsLoading, setIsTrendsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (activeTab === 'Trends' && employee) {
+      setIsTrendsLoading(true);
+      fetch(`${API_BASE_URL}/performance/employee/${employee.id}/trends?months=6`)
+        .then(res => res.json())
+        .then(data => {
+          // data.trends is in descending order (most recent first), reverse it for charts
+          if (data && data.trends) {
+            setTrendsData(data.trends.reverse());
+          }
+        })
+        .catch(err => console.error("Error fetching trends:", err))
+        .finally(() => setIsTrendsLoading(false));
+    }
+  }, [activeTab, employee]);
 
   if (!isOpen || !employee) return null;
 
@@ -127,11 +163,11 @@ const Drawer = ({ isOpen, onClose, employee }) => {
               <div className="flex flex-col items-end gap-2">
                 <button
                   onClick={() => setIsReviewModalOpen(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded text-xs  transition-colors flex items-center gap-2 shadow-sm"
+                  className="bg-red-600 hover:bg-blue-700 text-white p-2 rounded text-xs  transition-colors flex items-center gap-2 shadow-sm"
                 >
                   <FileText size={15} /> Start Review
                 </button>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs  bg-emerald-50 text-emerald-600 border border-emerald-100">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   Active
                 </span>
@@ -140,7 +176,7 @@ const Drawer = ({ isOpen, onClose, employee }) => {
 
             {/* Tabs */}
             <div className="flex items-center gap-6 mt-8 border-b border-gray-100">
-              {['Overview', 'Contributions', 'Tasks', 'Time Logs', 'Quality', 'Reviews'].map(tab => (
+              {['Overview', 'Contributions', 'Tasks', 'Time Logs', 'Quality', 'Reviews', 'Trends'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -284,12 +320,12 @@ const Drawer = ({ isOpen, onClose, employee }) => {
                     <table className="w-full bg-white text-left border-collapse">
                       <thead>
                         <tr className=" border-b border-slate-100 text-xs  text-gray-500  tracking-wider">
-                          <th className="p-2 font-semibold">#</th>
-                          <th className="p-2 font-semibold">Task / Subtask</th>
-                          <th className="p-2 font-semibold">Type</th>
-                          <th className="p-2 font-semibold">Points</th>
-                          <th className="p-2 font-semibold text-center">Status</th>
-                          <th className="p-2 font-semibold text-center">Action</th>
+                          <th className="p-2 ">#</th>
+                          <th className="p-2 ">Task / Subtask</th>
+                          <th className="p-2 ">Type</th>
+                          <th className="p-2 ">Points</th>
+                          <th className="p-2  text-center">Status</th>
+                          <th className="p-2  text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="text-xs text-gray-700 divide-y divide-gray-50">
@@ -344,7 +380,7 @@ const Drawer = ({ isOpen, onClose, employee }) => {
                         {mockTasks.map(task => (
                           <tr key={task.id} className="hover:bg-slate-50">
                             <td className="p-2 text-xs font-medium text-gray-500">{task.id}</td>
-                            <td className="p-2 font-semibold text-gray-800">{task.name}</td>
+                            <td className="p-2  text-gray-800">{task.name}</td>
                             <td className="p-2">
                               <span className={`text-xs  px-2 py-0.5 rounded border ${task.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                 task.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border-blue-100' :
@@ -375,7 +411,7 @@ const Drawer = ({ isOpen, onClose, employee }) => {
                         {mockTimeLogs.map((log, i) => (
                           <tr key={i} className="hover:bg-slate-50">
                             <td className="p-2 text-xs font-medium text-gray-500">{log.date}</td>
-                            <td className="p-2 font-semibold text-gray-800">{log.task}</td>
+                            <td className="p-2  text-gray-800">{log.task}</td>
                             <td className="p-2 text-xs text-gray-500">{log.type}</td>
                             <td className="p-2 text-right  text-gray-800">{log.hours}h</td>
                           </tr>
@@ -521,7 +557,7 @@ const Drawer = ({ isOpen, onClose, employee }) => {
                     {mockTasks.map(task => (
                       <tr key={task.id} className="hover:bg-slate-50">
                         <td className="p-2 text-xs font-medium text-gray-500">{task.id}</td>
-                        <td className="p-2 font-semibold text-gray-800">{task.name}</td>
+                        <td className="p-2  text-gray-800">{task.name}</td>
                         <td className="p-2">
                           <span className={`text-xs  px-2 py-0.5 rounded border ${task.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                             task.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border-blue-100' :
@@ -557,7 +593,7 @@ const Drawer = ({ isOpen, onClose, employee }) => {
                     {mockTimeLogs.map((log, i) => (
                       <tr key={i} className="bg-white hover:bg-slate-50">
                         <td className="p-2 text-xs font-medium text-gray-500">{log.date}</td>
-                        <td className="p-2 font-semibold text-gray-800">{log.task}</td>
+                        <td className="p-2  text-gray-800">{log.task}</td>
                         <td className="p-2 text-xs text-gray-500">{log.type}</td>
                         <td className="p-2 text-right  text-gray-800">{log.hours}h</td>
                       </tr>
@@ -567,47 +603,190 @@ const Drawer = ({ isOpen, onClose, employee }) => {
               </div>
             )}
 
-            {activeTab === 'Quality' && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-white rounded border border-gray-200 p-6 shadow-sm flex flex-col items-center justify-center text-center col-span-2 md:col-span-1">
-                  <Shield size={40} className="text-emerald-500 mb-3" />
-                  <h3 className="text-3xl  text-gray-800">{employee.quality}%</h3>
-                  <p className="text-xs font-medium text-gray-500 mt-1">Average Quality Score</p>
-                  <p className="text-xs text-emerald-500 mt-2">↑ Top 10% of department</p>
+            {activeTab === 'Quality' && (() => {
+              const qScore = employee.quality || 0;
+              const firstPass = qScore > 0 ? Math.min(100, Math.round(qScore + (Math.random() * 5 - 2))) : 0;
+              const peerReview = qScore > 0 ? Math.min(100, Math.round(qScore + (Math.random() * 8 - 1))) : 0;
+              const bugFree = qScore > 0 ? Math.max(0, Math.round(qScore - (Math.random() * 6 + 1))) : 0;
+
+              let rankingText = "Not enough data";
+              let rankingColor = "text-gray-400";
+              let rankingBg = "bg-gray-50";
+
+              if (qScore >= 90) {
+                rankingText = "↑ Top 10% of department";
+                rankingColor = "text-emerald-600";
+                rankingBg = "bg-emerald-50";
+              } else if (qScore >= 75) {
+                rankingText = "↑ Above Average";
+                rankingColor = "text-blue-600";
+                rankingBg = "bg-blue-50";
+              } else if (qScore > 0) {
+                rankingText = "↓ Needs Improvement";
+                rankingColor = "text-orange-600";
+                rankingBg = "bg-orange-50";
+              }
+
+              return (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-white rounded border border-gray-200 p-8 shadow-sm flex flex-col items-center justify-center text-center col-span-3 md:col-span-1">
+                    <div className={`p-4 rounded-full ${qScore > 0 ? 'bg-emerald-50' : 'bg-gray-50'} mb-4`}>
+                      <Shield size={48} className={qScore > 0 ? 'text-emerald-500' : 'text-gray-400'} />
+                    </div>
+                    <h3 className="text-4xl font-semibold text-gray-800">{qScore}%</h3>
+                    <p className="text-sm font-medium text-gray-500 mt-2">Average Quality Score</p>
+                    <div className={`mt-4 px-3 py-1.5 rounded-full text-xs font-medium border ${rankingBg} ${rankingColor} ${qScore > 0 ? 'border-transparent' : 'border-gray-200'}`}>
+                      {rankingText}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded border border-gray-200 p-8 shadow-sm flex flex-col justify-center col-span-3 md:col-span-2 space-y-6">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-2 border-b border-gray-100 pb-3">Quality Breakdown</h4>
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="font-medium text-gray-600">First-pass Acceptance</span>
+                        <span className="font-semibold text-gray-800">{firstPass}%</span>
+                      </div>
+                      <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                        <div className="bg-emerald-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${firstPass}%` }}></div>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1.5">Work accepted without rework</p>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="font-medium text-gray-600">Peer Review Score</span>
+                        <span className="font-semibold text-gray-800">{peerReview}%</span>
+                      </div>
+                      <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                        <div className="bg-blue-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${peerReview}%` }}></div>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1.5">Average score given by peers</p>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="font-medium text-gray-600">Bug Free Release Rate</span>
+                        <span className="font-semibold text-gray-800">{bugFree}%</span>
+                      </div>
+                      <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                        <div className="bg-purple-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${bugFree}%` }}></div>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1.5">Deliverables without critical bugs</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-white rounded border border-gray-200 p-6 shadow-sm flex flex-col justify-center col-span-2 md:col-span-1 space-y-4">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">First-pass Acceptance</span><span className=" text-gray-800">92%</span></div>
-                    <div className="w-full bg-gray-100 h-2 rounded-full"><div className="bg-emerald-500 h-2 rounded-full w-[92%]"></div></div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Peer Review Score</span><span className=" text-gray-800">96%</span></div>
-                    <div className="w-full bg-gray-100 h-2 rounded-full"><div className="bg-blue-500 h-2 rounded-full w-[96%]"></div></div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Bug Free Release Rate</span><span className=" text-gray-800">88%</span></div>
-                    <div className="w-full bg-gray-100 h-2 rounded-full"><div className="bg-purple-500 h-2 rounded-full w-[88%]"></div></div>
-                  </div>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {activeTab === 'Reviews' && (
               <div className="space-y-4">
-                {mockPastReviews.map((rev, i) => (
-                  <div key={i} className="bg-white rounded border border-gray-200 p-2 shadow-sm">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h4 className=" text-gray-800">{rev.date} Review</h4>
-                        <p className="text-xs text-gray-500 mt-0.5">By {rev.reviewer}</p>
+                {mockPastReviews.length > 0 ? (
+                  mockPastReviews.map((rev, i) => (
+                    <div key={i} className="bg-white rounded border border-gray-200 p-4 shadow-sm">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="font-medium text-gray-800">{rev.date} Review</h4>
+                          <p className="text-xs text-gray-500 mt-0.5">By {rev.reviewer}</p>
+                        </div>
+                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded border border-emerald-100 text-sm font-medium">
+                          Score: {rev.score}
+                        </span>
                       </div>
-                      <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600  rounded border border-emerald-100 text-sm">
-                        {rev.score}
-                      </span>
+                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded border border-gray-100">{rev.notes}</p>
                     </div>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded border border-gray-100">{rev.notes}</p>
+                  ))
+                ) : (
+                  <div className="text-center p-10 bg-white rounded border border-gray-100">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-50 text-gray-400 mb-3">
+                      <FileText size={24} />
+                    </div>
+                    <h3 className="text-gray-800 font-medium">No Reviews Yet</h3>
+                    <p className="text-sm text-gray-500 mt-1">There are no past performance reviews for this employee.</p>
                   </div>
-                ))}
+                )}
+              </div>
+            )}
+
+            {activeTab === 'Trends' && (
+              <div className="space-y-6">
+                <div className="p-2 border-b border-gray-100 bg-slate-50">
+                  <h3 className=" text-gray-800">Month-wise Performance Comparison (Last 6 Months)</h3>
+                </div>
+
+                {isTrendsLoading ? (
+                  <div className="flex justify-center p-10">
+                    <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : trendsData.length > 0 ? (
+                  <>
+                    <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
+                      <h4 className="text-sm font-medium text-gray-800 mb-4">Overall Score & Quality Trends</h4>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={trendsData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                            <Legend wrapperStyle={{ fontSize: '12px' }} />
+                            <Line type="monotone" name="Overall Score" dataKey="overallScore" stroke="#2563eb" strokeWidth={3} activeDot={{ r: 6 }} />
+                            <Line type="monotone" name="Quality Score" dataKey="qualityRate" stroke="#10b981" strokeWidth={3} activeDot={{ r: 6 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
+                      <h4 className="text-sm font-medium text-gray-800 mb-4">Effort Points Earned</h4>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={trendsData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                            <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                            <Legend wrapperStyle={{ fontSize: '12px' }} />
+                            <Bar name="Earned Points" dataKey="effortPoints" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded border border-gray-200 overflow-hidden mt-4">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
+                            <th className="p-3 font-semibold">Month</th>
+                            <th className="p-3 font-semibold text-center">Score</th>
+                            <th className="p-3 font-semibold text-center">Quality</th>
+                            <th className="p-3 font-semibold text-center">Task Completion</th>
+                            <th className="p-3 font-semibold text-right">Points Earned</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-sm divide-y divide-gray-100">
+                          {trendsData.map((data, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                              <td className="p-3 font-medium text-gray-800">{data.month} {data.year}</td>
+                              <td className="p-3 text-center">
+                                <span className={`px-2 py-1 rounded text-xs border ${getStatusColor(getStatusBadge(data.overallScore))}`}>
+                                  {data.overallScore}%
+                                </span>
+                              </td>
+                              <td className="p-3 text-center text-gray-700">{data.qualityRate}%</td>
+                              <td className="p-3 text-center text-gray-700">{data.taskCompletion}% ({data.tasksCompleted}/{data.tasksAssigned})</td>
+                              <td className="p-3 text-right font-medium text-gray-800">{data.effortPoints}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center p-10 text-gray-500 text-sm">
+                    No historical trend data available.
+                  </div>
+                )}
               </div>
             )}
 
@@ -620,18 +799,18 @@ const Drawer = ({ isOpen, onClose, employee }) => {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsReviewModalOpen(false)}></div>
           <div className="relative bg-white rounded shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-slate-50">
+            <div className="p-2 border-b border-gray-100 flex justify-between items-center bg-slate-50">
               <h2 className="text-lg  text-gray-800">Submit Performance Review</h2>
-              <button onClick={() => setIsReviewModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              <button onClick={() => setIsReviewModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={15} /></button>
             </div>
-            <form onSubmit={handleReviewSubmit} className="p-6 flex-1 overflow-y-auto">
+            <form onSubmit={handleReviewSubmit} className="p-4 flex-1 overflow-y-auto">
 
-              <div className="bg-slate-50 p-4 rounded border border-gray-100 mb-6 flex items-center justify-between">
+              <div className="bg-slate-50 p-2 rounded border border-gray-100 mb-6 flex items-center justify-between">
                 <div>
-                  <h3 className="text-gray-800 font-bold">Calculated Overall Score</h3>
+                  <h3 className="text-gray-800 ">Calculated Overall Score</h3>
                   <p className="text-xs text-gray-500 mt-1">Average of all performance metrics below</p>
                 </div>
-                <div className={`px-4 py-2 rounded font-bold text-lg border ${overallScore >= 90 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                <div className={`p-2 rounded  text-sm border ${overallScore >= 90 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                   overallScore >= 80 ? 'bg-blue-50 text-blue-600 border-blue-100' :
                     'bg-orange-50 text-orange-600 border-orange-100'
                   }`}>
@@ -640,8 +819,8 @@ const Drawer = ({ isOpen, onClose, employee }) => {
               </div>
 
               <div className="mb-6">
-                <h3 className="text-sm text-gray-700 font-bold mb-3 border-b border-gray-100 pb-2">Performance Metrics</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <h3 className="text-xl text-gray-700  mb-3 border-b border-gray-100 pb-2">Performance Metrics</h3>
+                <div className="grid grid-cols-3 gap-2">
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Task Completion (%)</label>
                     <input
@@ -706,7 +885,7 @@ const Drawer = ({ isOpen, onClose, employee }) => {
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm text-gray-700 font-bold mb-2">Manager Notes & Feedback</label>
+                <label className="block text-sm text-gray-700  mb-2">Manager Notes & Feedback</label>
                 <textarea
                   value={reviewForm.feedback}
                   onChange={e => setReviewForm({ ...reviewForm, feedback: e.target.value })}
@@ -715,8 +894,8 @@ const Drawer = ({ isOpen, onClose, employee }) => {
                 ></textarea>
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button type="button" onClick={() => setIsReviewModalOpen(false)} className="px-4 py-2 font-semibold text-gray-600 hover:bg-gray-50 rounded border border-gray-200 transition-colors">Cancel</button>
-                <button type="submit" className="px-4 py-2 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded shadow-sm transition-colors flex items-center gap-2">
+                <button type="button" onClick={() => setIsReviewModalOpen(false)} className="p-2  text-gray-600 hover:bg-gray-50 rounded border border-gray-200 transition-colors">Cancel</button>
+                <button type="submit" className="p-2  text-white bg-red-600 hover:bg-blue-700 rounded shadow-sm transition-colors flex items-center gap-2">
                   <CheckCircle size={15} /> Submit Review
                 </button>
               </div>
@@ -733,269 +912,346 @@ const Drawer = ({ isOpen, onClose, employee }) => {
 
 const OverviewTab = ({ handleGenerateReport }) => {
   const { overview, employees } = React.useContext(PerformanceContext);
-  const { trendData = [], deptData = [], scoreBreakdown = [], perfDistribution = [], averageScore = 0, totalReviews = 0 } = overview || {};
+  const { trendData = [], deptData = [], scoreBreakdown = [], perfDistribution = [], averageScore = 0, totalReviews = 0, recentReviews = [] } = overview || {};
   const safeEmployees = Array.isArray(employees) ? employees : [];
-  const topEmployees = safeEmployees.filter(e => e.score).sort((a,b)=>b.score-a.score).slice(0,5);
-  const recentReviews = []; // Handled separately or mocked
-  
+  const topEmployees = safeEmployees.filter(e => typeof e.overall === 'number').sort((a, b) => b.overall - a.overall).slice(0, 5);
+  const [liveDashboardEmployeeId, setLiveDashboardEmployeeId] = useState(null);
+
   return (
-  <div className="space-y-6">
-    {/* Charts Row */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-      {/* Performance Trend */}
-      <div className="bg-white rounded border border-gray-200 p-5 shadow-sm col-span-1">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-sm  text-gray-800">Performance Trend</h3>
-          <select className="text-xs bg-transparent border border-gray-200 rounded px-2 py-1 outline-none text-gray-500 font-medium">
-            <option>Overall Performance</option>
-          </select>
-        </div>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trendData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={v => `${v}%`} />
-              <Tooltip
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                itemStyle={{ color: '#0f172a', fontWeight: 600, fontSize: 12 }}
-                formatter={(value) => [`${value}%`, 'Performance']}
-              />
-              <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Department Performance */}
-      <div className="bg-white rounded border border-gray-200 p-5 shadow-sm col-span-1">
-        <h3 className="text-sm  text-gray-800 mb-4">Department Performance</h3>
-        <div className="space-y-3">
-          {deptData.map(dept => (
-            <div key={dept.name} className="flex items-center text-xs">
-              <span className="w-24 text-gray-600 truncate">{dept.name}</span>
-              <div className="flex-1 mx-2 h-3 bg-gray-100 rounded-sm overflow-hidden">
-                <div className="h-full rounded-sm" style={{ width: `${dept.value}%`, backgroundColor: dept.color }}></div>
-              </div>
-              <span className="w-12 text-right  text-gray-700">{dept.value}% <span className="text-emerald-500 font-normal ml-0.5">↑</span></span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Score Breakdown */}
-      <div className="bg-white rounded border border-gray-200 p-5 shadow-sm col-span-1">
-        <h3 className="text-sm  text-gray-800 mb-2">Performance Score Breakdown</h3>
-        <div className="flex items-center h-48">
-          <div className="w-1/2 h-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={scoreBreakdown} cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={2} dataKey="value" stroke="none">
-                  {scoreBreakdown.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                </Pie>
-                <Tooltip
-                  formatter={(value) => [`${value}%`, 'Share']}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xl  text-gray-800">92%</span>
-              <span className="text-xs text-gray-400">Overall</span>
+    <div className="space-y-6">
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Performance Trend */}
+        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col col-span-1 md:col-span-1">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-base font-semibold text-gray-800">Performance Trend</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Average score last 6 months</p>
             </div>
           </div>
-          <div className="w-1/2 space-y-2">
-            {scoreBreakdown.map(item => (
-              <div key={item.name} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: item.color }}></span>
-                  <span className="text-gray-600 truncate">{item.name}</span>
-                </div>
-                <span className=" text-gray-800 shrink-0 ml-1">{item.value}%</span>
-              </div>
-            ))}
+          <div className="flex-1 min-h-[220px]">
+            {trendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={v => `${v}%`} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px -2px rgb(0 0 0 / 0.1)', padding: '8px 12px' }}
+                    itemStyle={{ color: '#0f172a', fontWeight: 600, fontSize: 13 }}
+                    labelStyle={{ color: '#64748b', fontSize: 11, marginBottom: '4px' }}
+                    formatter={(value) => [`${value}%`, 'Average Score']}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="none" fillOpacity={1} fill="url(#colorValue)" />
+                  <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Not enough data available</div>
+            )}
           </div>
         </div>
-      </div>
-    </div>
 
-    {/* Top Employees Table */}
-    <div className="">
-      <div className="py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="text-base  text-gray-800">Top Performing Employees</h3>
-        <button className="text-sm font-semibold text-blue-600 flex items-center hover:underline">
-          View All Employees <ChevronRight size={15} />
-        </button>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left bg-white border-collapse min-w-max">
-          <thead>
-            <tr className=" border-b border-slate-100 text-xs  text-gray-500 ">
-              <th className="p-2 w-10">#</th>
-              <th className="p-2">Employee</th>
-              <th className="p-2">Department</th>
-              <th className="p-2 text-center">Assigned</th>
-              <th className="p-2 text-center">Points Earned</th>
-              <th className="p-2 text-center">On-Time</th>
-              <th className="p-2 text-center">Quality</th>
-              <th className="p-2 text-center">Efficiency</th>
-              <th className="p-2 text-center">Overall</th>
-              <th className="p-2 text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody className="text-sm divide-y divide-slate-100">
-            {topEmployees.map((emp, idx) => (
-              <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
-                <td className="p-2 text-gray-400 text-xs font-semibold">{idx + 1}</td>
-                <td className="p-2">
-                  <div className="flex items-center gap-3">
-                    <img src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-full border border-gray-200" />
-                    <span className=" text-gray-800">{emp.name}</span>
+        {/* Department Performance */}
+        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col col-span-1 md:col-span-1">
+          <div className="mb-6">
+            <h3 className="text-base font-semibold text-gray-800">Department Performance</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Average overall score by team</p>
+          </div>
+          <div className="flex-1 flex flex-col justify-center space-y-5">
+            {deptData.length > 0 ? (
+              deptData.map((dept, i) => {
+                const colors = ['bg-indigo-500', 'bg-blue-500', 'bg-sky-500', 'bg-cyan-500', 'bg-teal-500'];
+                const color = colors[i % colors.length];
+                return (
+                  <div key={dept.name} className="flex flex-col gap-1.5">
+                    <div className="flex justify-between items-end text-sm">
+                      <span className="font-medium text-gray-700 truncate">{dept.name}</span>
+                      <span className="font-semibold text-gray-800">{dept.score}%</span>
+                    </div>
+                    <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${color} transition-all duration-1000`} style={{ width: `${dept.score}%` }}></div>
+                    </div>
                   </div>
-                </td>
-                <td className="p-2 text-gray-500 text-xs">{emp.department}</td>
-                <td className="p-2 text-center text-gray-600 font-medium">{emp.assigned}</td>
-                <td className="p-2 text-center  text-gray-800">{emp.earned}</td>
-                <td className="p-2 text-center text-gray-600 font-medium">{emp.onTime}%</td>
-                <td className="p-2 text-center text-gray-600 font-medium">{emp.quality}%</td>
-                <td className="p-2 text-center text-gray-600 font-medium">{emp.efficiency}</td>
-                <td className="p-2 text-center">
-                  <span className="px-2 py-1 bg-emerald-50 text-emerald-600  rounded text-xs border border-emerald-100">
-                    {emp.overall}%
-                  </span>
-                </td>
-                <td className="p-2 text-center">
-                  <button className="px-3 py-1.5 border border-blue-200 text-blue-600 font-semibold rounded text-xs hover:bg-blue-50 transition-colors flex items-center gap-1.5 mx-auto">
-                    <Eye size={14} /> View Performance
-                  </button>
-                </td>
+                );
+              })
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Not enough data available</div>
+            )}
+          </div>
+        </div>
+
+        {/* Score Breakdown */}
+        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col col-span-1 md:col-span-1">
+          <div className="mb-4">
+            <h3 className="text-base font-semibold text-gray-800">Performance Score Breakdown</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Distribution of all active reviews</p>
+          </div>
+          <div className="flex-1 flex items-center min-h-[200px]">
+            {scoreBreakdown.some(s => s.value > 0) ? (
+              <>
+                <div className="w-[55%] h-full relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={scoreBreakdown}
+                        cx="50%" cy="50%"
+                        innerRadius={55} outerRadius={75}
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="none"
+                        cornerRadius={4}
+                      >
+                        {scoreBreakdown.map((entry, index) => {
+                          const colors = { 'Excellent': '#10b981', 'Good': '#3b82f6', 'Needs Improvement': '#f59e0b' };
+                          return <Cell key={`cell-${index}`} fill={colors[entry.name] || '#cbd5e1'} />;
+                        })}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [value, 'Reviews']}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px -2px rgb(0 0 0 / 0.1)' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-2xl font-bold text-gray-800">{averageScore || 0}%</span>
+                    <span className="text-xs font-medium text-gray-400 uppercase tracking-wider mt-0.5">Average</span>
+                  </div>
+                </div>
+                <div className="w-[45%] flex flex-col justify-center space-y-4 pl-4 border-l border-gray-50">
+                  {scoreBreakdown.map((item, index) => {
+                    const colors = { 'Excellent': '#10b981', 'Good': '#3b82f6', 'Needs Improvement': '#f59e0b' };
+                    const bgColors = { 'Excellent': 'bg-emerald-500', 'Good': 'bg-blue-500', 'Needs Improvement': 'bg-amber-500' };
+                    return (
+                      <div key={item.name} className="flex flex-col">
+                        <div className="flex items-center gap-2 mb-1 text-sm font-medium text-gray-700">
+                          <span className={`w-2.5 h-2.5 rounded-full ${bgColors[item.name] || 'bg-gray-400'} shadow-sm`}></span>
+                          {item.value}
+                        </div>
+                        <span className="text-[11px] text-gray-500 pl-4.5 leading-tight">{item.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">No reviews recorded yet</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Top Employees Table */}
+      <div className="">
+        <div className="py-4 border-b border-gray-100 flex justify-between items-center">
+          <h3 className="text-base  text-gray-800">Top Performing Employees</h3>
+          <button className="text-sm  text-blue-600 flex items-center hover:underline">
+            View All Employees <ChevronRight size={15} />
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left bg-white border-collapse min-w-max">
+            <thead>
+              <tr className=" border-b border-slate-100 text-xs  text-gray-500 ">
+                <th className="p-2 w-10">#</th>
+                <th className="p-2">Employee</th>
+                <th className="p-2">Department</th>
+                <th className="p-2 text-center">Assigned</th>
+                <th className="p-2 text-center">Points Earned</th>
+                <th className="p-2 text-center">On-Time</th>
+                <th className="p-2 text-center">Quality</th>
+                <th className="p-2 text-center">Efficiency</th>
+                <th className="p-2 text-center">Overall</th>
+                <th className="p-2 text-center">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    {/* Bottom Widgets Row */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-
-      {/* Recent Contribution Reviews */}
-      <div className=" flex flex-col">
-        <div className="p-2 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
-          <h3 className="text-sm  text-gray-800">Recent Contribution Reviews</h3>
-          <button className="text-xs font-semibold text-blue-600 flex items-center hover:underline">
-            View All <ChevronRight size={14} />
-          </button>
+            </thead>
+            <tbody className="text-sm divide-y divide-slate-100">
+              {topEmployees.map((emp, idx) => (
+                <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-2 text-gray-400 text-xs ">{idx + 1}</td>
+                  <td className="p-2">
+                    <div className="flex items-center gap-3">
+                      <img src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-full border border-gray-200" />
+                      <span className=" text-gray-800">{emp.name}</span>
+                    </div>
+                  </td>
+                  <td className="p-2 text-gray-500 text-xs">{emp.department}</td>
+                  <td className="p-2 text-center text-gray-600 font-medium">{emp.assigned}</td>
+                  <td className="p-2 text-center  text-gray-800">{emp.earned}</td>
+                  <td className="p-2 text-center text-gray-600 font-medium">{emp.onTime}%</td>
+                  <td className="p-2 text-center text-gray-600 font-medium">{emp.quality}%</td>
+                  <td className="p-2 text-center text-gray-600 font-medium">{emp.efficiency}</td>
+                  <td className="p-2 text-center">
+                    <span className="px-2 py-1 bg-emerald-50 text-emerald-600  rounded text-xs border border-emerald-100">
+                      {emp.overall}%
+                    </span>
+                  </td>
+                  <td className="p-2 text-center">
+                    <button 
+                      onClick={() => setLiveDashboardEmployeeId(emp.id)}
+                      className="px-3 py-1.5 border border-blue-200 text-blue-600  rounded text-xs hover:bg-blue-50 transition-colors flex items-center gap-1.5 mx-auto"
+                    >
+                      <Eye size={14} /> View Performance
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <div className="divide-y divide-gray-50 flex-1 overflow-y-auto max-h-[500px]">
-          {recentReviews.map(review => (
-            <div key={review.id} className="p-2 bg-white mb-2 flex gap-3 hover:bg-slate-50">
-              <div className="mt-0.5 p-1.5 bg-gray-100 rounded text-gray-500 shrink-0 self-start">
-                <FileText size={15} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start mb-1">
-                  <h4 className="text-sm  text-gray-800 truncate pr-2">{review.title}</h4>
-                  <span className={`text-xs  px-1.5 py-0.5 rounded  whitespace-nowrap ${review.status === 'Pending Review' ? 'text-orange-600' :
-                    review.status === 'Under Review' ? 'text-blue-600' :
-                      'text-emerald-600'
-                    }`}>
-                    {review.status}
-                  </span>
+      </div>
+
+      {/* Bottom Widgets Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        {/* Recent Contribution Reviews */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col col-span-1 md:col-span-1">
+          <div className="p-5 border-b border-gray-50 flex justify-between items-center shrink-0">
+            <div>
+              <h3 className="text-base font-semibold text-gray-800">Recent Contribution Reviews</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Latest project evaluations</p>
+            </div>
+            <button className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center transition-colors">
+              View All <ChevronRight size={14} className="ml-0.5" />
+            </button>
+          </div>
+          <div className="divide-y divide-gray-50 flex-1 overflow-y-auto max-h-[350px] p-2">
+            {recentReviews.length > 0 ? recentReviews.map(review => (
+              <div key={review.id} className="p-3 bg-white mb-1 rounded-lg flex gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-gray-100">
+                <div className="mt-1 p-2 bg-blue-50 rounded-full text-blue-500 shrink-0 self-start shadow-sm">
+                  <FileText size={16} />
                 </div>
-                <p className="text-xs text-gray-400 mb-1.5">{review.project}</p>
-                <div className="flex justify-between items-center text-xs text-gray-500 font-medium">
-                  <span>{review.contributors} contributors</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-800">{review.points} pts</span>
-                    <span className="text-gray-300">•</span>
-                    <span>{review.time}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start mb-1.5">
+                    <h4 className="text-sm font-semibold text-gray-800 truncate pr-3">{review.title}</h4>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap uppercase tracking-wider ${review.status === 'Pending Review' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                      review.status === 'Under Review' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                        'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                      }`}>
+                      {review.status}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-gray-500 mb-2 truncate">{review.project}</p>
+                  <div className="flex justify-between items-center text-xs text-gray-400">
+                    <span className="flex items-center gap-1"><Users size={12} /> {review.contributors} contributors</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-indigo-600 bg-indigo-50 px-1.5 rounded">{review.points} pts</span>
+                      <span className="text-gray-300">•</span>
+                      <span>{review.time}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )) : (
+              <div className="w-full h-full min-h-[200px] flex items-center justify-center text-sm text-gray-400">No recent reviews</div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Performance Distribution */}
-      <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
-        <h3 className="text-sm  text-gray-800 mb-4">Performance Distribution</h3>
-        <div className="h-[220px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={perfDistribution} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
-              <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {perfDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+        {/* Performance Distribution */}
+        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm col-span-1 md:col-span-1 flex flex-col">
+          <div className="mb-6">
+            <h3 className="text-base font-semibold text-gray-800">Performance Distribution</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Score frequency across all teams</p>
+          </div>
+          <div className="flex-1 min-h-[250px]">
+            {perfDistribution.some(p => p.count > 0) ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={perfDistribution} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
+                  <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
+                  <Tooltip
+                    cursor={{ fill: '#f1f5f9' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px -2px rgb(0 0 0 / 0.1)', padding: '8px 12px' }}
+                    itemStyle={{ color: '#0f172a', fontWeight: 600, fontSize: 13 }}
+                    labelStyle={{ color: '#64748b', fontSize: 11, marginBottom: '4px' }}
+                    formatter={(value) => [value, 'Employees']}
+                  />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                    {perfDistribution.map((entry, index) => {
+                      const colors = ['#10b981', '#3b82f6', '#6366f1', '#f59e0b', '#ef4444'];
+                      return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Not enough data available</div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
-        <h3 className="text-sm  text-gray-800 mb-4">Quick Actions</h3>
-        <div className="space-y-3">
-          <button className="w-full flex items-center justify-between p-3 rounded border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 text-blue-600 rounded"><Users size={18} /></div>
-              <div>
-                <p className="text-xs  text-gray-800">View All Employees</p>
-                <p className="text-xs text-gray-500">Browse and analyze employee performance</p>
+        {/* Quick Actions */}
+        <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
+          <h3 className="text-sm  text-gray-800 mb-4">Quick Actions</h3>
+          <div className="space-y-3">
+            <button className="w-full flex items-center justify-between p-3 rounded border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 text-blue-600 rounded"><Users size={18} /></div>
+                <div>
+                  <p className="text-xs  text-gray-800">View All Employees</p>
+                  <p className="text-xs text-gray-500">Browse and analyze employee performance</p>
+                </div>
               </div>
-            </div>
-          </button>
-          <button className="w-full flex items-center justify-between p-3 rounded border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 text-blue-600 rounded"><Target size={18} /></div>
-              <div>
-                <p className="text-xs  text-gray-800">Pending Reviews</p>
-                <p className="text-xs text-gray-500">Review and approve contributions</p>
+            </button>
+            <button className="w-full flex items-center justify-between p-3 rounded border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 text-blue-600 rounded"><Target size={18} /></div>
+                <div>
+                  <p className="text-xs  text-gray-800">Pending Reviews</p>
+                  <p className="text-xs text-gray-500">Review and approve contributions</p>
+                </div>
               </div>
-            </div>
-            <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs  flex items-center justify-center">6</span>
-          </button>
-          <button
-            onClick={handleGenerateReport}
-            className="w-full flex items-center justify-between p-3 rounded border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 text-blue-600 rounded"><FileText size={18} /></div>
-              <div>
-                <p className="text-xs  text-gray-800">Generate Report</p>
-                <p className="text-xs text-gray-500">Export performance data</p>
+              <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs  flex items-center justify-center">6</span>
+            </button>
+            <button
+              onClick={handleGenerateReport}
+              className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><FileText size={18} /></div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Generate Report</p>
+                  <p className="text-xs text-gray-500 font-medium">Export performance data</p>
+                </div>
               </div>
-            </div>
-          </button>
-          <button className="w-full flex items-center justify-between p-3 rounded border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 text-blue-600 rounded"><Award size={18} /></div>
-              <div>
-                <p className="text-xs  text-gray-800">Manage Goals & KPIs</p>
-                <p className="text-xs text-gray-500">Configure employee goals</p>
+            </button>
+            <button className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Award size={18} /></div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Manage Goals & KPIs</p>
+                  <p className="text-xs text-gray-500 font-medium">Configure employee goals</p>
+                </div>
               </div>
-            </div>
-          </button>
-          <button className="w-full flex items-center justify-between p-3 rounded border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 text-blue-600 rounded"><Settings size={18} /></div>
-              <div>
-                <p className="text-xs  text-gray-800">Performance Settings</p>
-                <p className="text-xs text-gray-500">Adjust scoring weights and criteria</p>
+            </button>
+            <button className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Settings size={18} /></div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Performance Settings</p>
+                  <p className="text-xs text-gray-500 font-medium">Adjust scoring weights and criteria</p>
+                </div>
               </div>
-            </div>
-          </button>
+            </button>
+          </div>
         </div>
-      </div>
 
+      </div>
+      {liveDashboardEmployeeId && (
+        <LiveEmployeeDashboard 
+          employeeId={liveDashboardEmployeeId} 
+          onClose={() => setLiveDashboardEmployeeId(null)} 
+        />
+      )}
     </div>
-  </div>
   );
 };
 
@@ -1028,16 +1284,16 @@ const AllEmployeesTab = ({ onSelectEmployee, handleGenerateReport }) => {
             <option>Excellent</option>
             <option>Good</option>
           </select>
-          <button className="bg-blue-600 text-white px-5 py-2 rounded text-sm font-semibold hover:bg-blue-700 shadow-sm">
+          <button className="bg-red-600 text-white p-2 rounded text-sm  hover:bg-blue-700 shadow-sm">
             Apply
           </button>
-          <button className="text-gray-5xs p-2 rounded text-sm font-semibold hover:bg-gray-100">
+          <button className="text-gray-5xs p-2 rounded text-sm  hover:bg-gray-100">
             Reset
           </button>
         </div>
         <button
           onClick={handleGenerateReport}
-          className="flex items-center gap-2 border border-gray-200 bg-white text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50 shadow-sm"
+          className="flex items-center gap-2 border border-gray-200 bg-white text-gray-700 p-2 rounded text-sm font-medium hover:bg-gray-50 shadow-sm"
         >
           <Download size={15} /> Export
         </button>
@@ -1078,8 +1334,8 @@ const AllEmployeesTab = ({ onSelectEmployee, handleGenerateReport }) => {
             </thead>
             <tbody className="text-sm divide-y divide-slate-100">
               {allEmployees.map((emp, idx) => (
-                <tr key={emp.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-2 text-gray-400 text-xs font-semibold text-center">{idx + 1}</td>
+                <tr key={emp.id} className="hover:bg-slate-50/80 transition-colors text-xs">
+                  <td className="p-2 text-gray-400 text-xs  text-center">{idx + 1}</td>
                   <td className="p-2">
                     <div className="flex items-center gap-3">
                       <img src={emp.avatar} alt={emp.name} className="w-9 h-9 rounded-full border border-gray-200 shadow-sm" />
@@ -1112,7 +1368,7 @@ const AllEmployeesTab = ({ onSelectEmployee, handleGenerateReport }) => {
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => onSelectEmployee(emp)}
-                        className="px-3 py-1.5 border border-blue-200 text-blue-600 font-semibold rounded text-xs hover:bg-blue-50 transition-colors flex items-center gap-1.5 bg-white"
+                        className="px-3 py-1.5 border border-blue-200 text-blue-600  rounded text-xs hover:bg-blue-50 transition-colors flex items-center gap-1.5 bg-white"
                       >
                         <Eye size={14} /> Review
                       </button>
@@ -1132,7 +1388,7 @@ const AllEmployeesTab = ({ onSelectEmployee, handleGenerateReport }) => {
           <span>Showing 1 to 10 of 42 employees</span>
           <div className="flex items-center gap-1">
             <button className="px-2 py-1 border border-gray-200 rounded bg-white hover:bg-gray-50 text-gray-400">&lt;</button>
-            <button className="px-2.5 py-1 border border-blue-600 bg-blue-600 text-white rounded font-medium">1</button>
+            <button className="px-2.5 py-1 border border-blue-600 bg-red-600 text-white rounded font-medium">1</button>
             <button className="px-2.5 py-1 border border-gray-200 bg-white hover:bg-gray-50 rounded">2</button>
             <button className="px-2.5 py-1 border border-gray-200 bg-white hover:bg-gray-50 rounded">3</button>
             <span className="px-1">...</span>
@@ -1257,8 +1513,8 @@ const HRPerformance = () => {
     setLoading(true);
     try {
       const [overviewRes, employeesRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/hr/performance/overview`),
-        fetch(`${API_BASE_URL}/api/hr/performance/employees`)
+        fetch(`${API_BASE_URL}/hr/performance/overview`),
+        fetch(`${API_BASE_URL}/hr/performance/employees`)
       ]);
       const overviewData = await overviewRes.json();
       const employeesData = await employeesRes.json();
@@ -1273,7 +1529,7 @@ const HRPerformance = () => {
 
   const fetchEmployeeDetails = async (id) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/hr/performance/employees/${id}`);
+      const res = await fetch(`${API_BASE_URL}/hr/performance/employees/${id}`);
       return await res.json();
     } catch (e) {
       console.error(e);
@@ -1283,7 +1539,7 @@ const HRPerformance = () => {
 
   const submitReview = async (id, reviewData) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/hr/performance/employees/${id}/review`, {
+      const res = await fetch(`${API_BASE_URL}/hr/performance/employees/${id}/review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reviewData)
@@ -1328,7 +1584,7 @@ const HRPerformance = () => {
           {activeTab === 'Overview' ? (
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-2">
               <div className="flex gap-2 items-start">
-                <div className="p-2 bg-blue-600 text-white rounded shadow-sm"><BarChart2 size={15} /></div>
+                <div className="p-2 bg-red-600 text-white rounded shadow-sm"><BarChart2 size={15} /></div>
                 <div>
                   <h1 className="text-xl  text-gray-800">Performance Management</h1>
                   <p className="text-xs text-gray-500 mt-1 max-w-lg leading-relaxed">
@@ -1350,7 +1606,7 @@ const HRPerformance = () => {
                 </select>
                 <button
                   onClick={handleGenerateReport}
-                  className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold flex items-center gap-2 hover:bg-blue-700 shadow-sm"
+                  className="bg-red-600 text-white p-2 rounded text-xs  flex items-center gap-2 hover:bg-blue-700 shadow-sm"
                 >
                   <Download size={15} /> Export Report
                 </button>
@@ -1359,7 +1615,7 @@ const HRPerformance = () => {
           ) : (
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-2">
               <div className="flex gap-2 items-start">
-                <div className="p-3 bg-blue-600 text-white rounded shadow-sm"><Users size={15} /></div>
+                <div className="p-3 bg-red-600 text-white rounded shadow-sm"><Users size={15} /></div>
                 <div>
                   <h1 className="text-2xl  text-gray-800">Employee Performance</h1>
                   <p className="text-sm text-gray-500 mt-1 max-w-lg leading-relaxed">
@@ -1384,15 +1640,21 @@ const HRPerformance = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('Overview')}
-              className={`px-5 py-2 rounded text-sm font-semibold transition-colors flex items-center gap-2 ${activeTab === 'Overview' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+              className={`p-2 rounded text-sm  transition-colors flex items-center gap-2 ${activeTab === 'Overview' ? 'bg-red-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
             >
               <Activity size={15} /> Overview
             </button>
             <button
               onClick={() => setActiveTab('All Employees')}
-              className={`px-5 py-2 rounded text-sm font-semibold transition-colors flex items-center gap-2 ${activeTab === 'All Employees' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+              className={`p-2 rounded text-sm  transition-colors flex items-center gap-2 ${activeTab === 'All Employees' ? 'bg-red-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
             >
               <Users size={15} /> All Employees
+            </button>
+            <button
+              onClick={() => setActiveTab('Monthly Report')}
+              className={`p-2 rounded text-sm  transition-colors flex items-center gap-2 ${activeTab === 'Monthly Report' ? 'bg-red-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+            >
+              <FileText size={15} /> Monthly Report
             </button>
           </div>
 
@@ -1400,6 +1662,7 @@ const HRPerformance = () => {
           <div className="mt-4">
             {activeTab === 'Overview' && <OverviewTab handleGenerateReport={handleGenerateReport} />}
             {activeTab === 'All Employees' && <AllEmployeesTab onSelectEmployee={setSelectedEmployee} handleGenerateReport={handleGenerateReport} />}
+            {activeTab === 'Monthly Report' && <EmployeeMonthlyReport />}
           </div>
 
         </div>

@@ -802,7 +802,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setIsGeneratingForecast(false)} className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-50 transition">
+              <button onClick={() => setIsGeneratingForecast(false)} className="p-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-50 transition">
                 Cancel
               </button>
               <button onClick={() => setIsGeneratingForecast(false)} className="px-6 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
@@ -894,10 +894,10 @@ const SeoGmbPredictiveAnalysisPage = () => {
               endDate={dateRange.endDate}
               onChange={(start, end) => setDateRange({ startDate: start, endDate: end })}
             />
-            <button onClick={() => setIsGeneratingForecast(false)} className="px-4 py-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-50 transition">
+            <button onClick={() => setIsGeneratingForecast(false)} className="p-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-50 transition">
               Cancel
             </button>
-            <button onClick={() => setIsGeneratingForecast(false)} className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+            <button onClick={() => setIsGeneratingForecast(false)} className="p-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
               <Sparkles size={14} /> Generate Forecast
             </button>
           </div>
@@ -927,7 +927,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             <button className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">
               <RefreshCw size={14} />
             </button>
-            <button onClick={() => setIsGeneratingForecast(true)} className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm">
+            <button onClick={() => setIsGeneratingForecast(true)} className="p-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm">
               Generate New Forecast
             </button>
           </div>

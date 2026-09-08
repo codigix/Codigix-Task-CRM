@@ -169,7 +169,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
             </button>
             <button
               onClick={handleSubmit}
-              className="flex items-center gap-2 p-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
+              className="flex items-center gap-2 p-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-blue-700"
             >
               <Bug size={16} /> Submit Bug
             </button>
