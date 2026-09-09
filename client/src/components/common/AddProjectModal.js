@@ -517,7 +517,7 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, initialData, department })
             >
               <option value="">Select</option>
               {assignableUsers
-                .filter(u => u.role_name.toLowerCase().includes('manager') || u.role_name.toLowerCase().includes('admin'))
+                .filter(u => u.role_name?.toLowerCase().includes('manager') || u.role_name?.toLowerCase().includes('admin'))
                 .map(user => (
                   <option key={user.id} value={user.name}>{user.name}</option>
                 ))}
