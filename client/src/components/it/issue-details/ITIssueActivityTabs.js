@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, History, Clock, Sparkles, Trash2, Plus, Edit2, Check, X, Layers } from 'lucide-react';
+import { MessageSquare, History, Clock, Sparkles, Trash2, Plus, Edit2, Check, X, Layers, Play, Pause, Square } from 'lucide-react';
 import JiraCommentEditor from './JiraCommentEditor';
 
 // "2 hours ago" style stamps, matching how Jira presents activity.
@@ -102,6 +102,7 @@ const ITIssueActivityTabs = ({
   aiDocsLoading,
   githubData,
   issueKey,
+  issueStatus,
   department,
   usersList = [],
   currentUser = 'You'
@@ -110,6 +111,105 @@ const ITIssueActivityTabs = ({
   const [workForm, setWorkForm] = useState({ timeSpent: '', description: '', startedAt: '', originalEstimate: '' });
   const [editingCommentIndex, setEditingCommentIndex] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState('');
+
+  // --- LIVE TIMER STATE ---
+  const [timerState, setTimerState] = useState(() => {
+    try {
+      if (!issueKey) return { isActive: false, sessionStart: null, accumulatedSeconds: 0, initialSessionStart: null };
+      const saved = localStorage.getItem(`workTimer_${issueKey}`);
+      return saved ? JSON.parse(saved) : { isActive: false, sessionStart: null, accumulatedSeconds: 0, initialSessionStart: null };
+    } catch {
+      return { isActive: false, sessionStart: null, accumulatedSeconds: 0, initialSessionStart: null };
+    }
+  });
+  const [liveElapsed, setLiveElapsed] = useState(0);
+
+  React.useEffect(() => {
+    if (issueKey) {
+      localStorage.setItem(`workTimer_${issueKey}`, JSON.stringify(timerState));
+    }
+  }, [timerState, issueKey]);
+
+  React.useEffect(() => {
+    let interval;
+    if (timerState.isActive && timerState.sessionStart) {
+      interval = setInterval(() => {
+        const currentElapsed = Math.floor((Date.now() - timerState.sessionStart) / 1000);
+        setLiveElapsed(timerState.accumulatedSeconds + currentElapsed);
+      }, 1000);
+    } else {
+      setLiveElapsed(timerState.accumulatedSeconds);
+    }
+    return () => clearInterval(interval);
+  }, [timerState.isActive, timerState.sessionStart, timerState.accumulatedSeconds]);
+
+  const handlePauseTimer = React.useCallback(() => {
+    setTimerState(prev => {
+      if (!prev.isActive || !prev.sessionStart) return prev;
+      const currentElapsed = Math.floor((Date.now() - prev.sessionStart) / 1000);
+      return {
+        ...prev,
+        isActive: false,
+        sessionStart: null,
+        accumulatedSeconds: prev.accumulatedSeconds + currentElapsed
+      };
+    });
+  }, []);
+
+  const handleStartTimer = React.useCallback(() => {
+    const now = Date.now();
+    setTimerState(prev => {
+      if (prev.isActive) return prev;
+      return {
+        ...prev,
+        isActive: true,
+        sessionStart: now,
+        initialSessionStart: prev.initialSessionStart || now
+      };
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (!issueKey) return;
+    if (issueStatus?.toUpperCase() === 'IN PROGRESS') {
+      handleStartTimer();
+    } else {
+      handlePauseTimer();
+    }
+  }, [issueStatus, issueKey, handleStartTimer, handlePauseTimer]);
+
+  const handleStopAndLog = () => {
+    let finalSeconds = timerState.accumulatedSeconds;
+    if (timerState.isActive && timerState.sessionStart) {
+      finalSeconds += Math.floor((Date.now() - timerState.sessionStart) / 1000);
+    }
+    
+    const h = Math.floor(finalSeconds / 3600);
+    const m = Math.floor((finalSeconds % 3600) / 60);
+    let timeStr = '';
+    if (h > 0) timeStr += `${h}h `;
+    if (m > 0 || h === 0) timeStr += `${Math.max(1, m)}m`;
+    
+    let startDateStr = '';
+    if (timerState.initialSessionStart) {
+       startDateStr = new Date(timerState.initialSessionStart).toISOString().slice(0, 16);
+    } else {
+       startDateStr = new Date().toISOString().slice(0, 16);
+    }
+
+    setWorkForm({ timeSpent: timeStr.trim(), description: '', startedAt: startDateStr, originalEstimate: '' });
+    setIsLoggingWork(true);
+    setTimerState({ isActive: false, sessionStart: null, accumulatedSeconds: 0, initialSessionStart: null });
+    if (issueKey) localStorage.removeItem(`workTimer_${issueKey}`);
+  };
+
+  const formatLiveElapsed = (totalSec) => {
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+  // -------------------------
 
   const submitWorkLog = async () => {
     if (!workForm.timeSpent.trim()) return;
@@ -425,6 +525,26 @@ const ITIssueActivityTabs = ({
             ))}
           </div>
 
+          <div className="bg-slate-50 border border-slate-200 rounded p-3 flex items-center justify-between mt-2 mb-2">
+            <div>
+              <span className="text-xs font-semibold text-slate-700 block mb-0.5">Live Tracker</span>
+              <span className={`font-mono text-lg font-bold tracking-tight ${timerState.isActive ? 'text-red-600' : 'text-slate-600'}`}>
+                {formatLiveElapsed(liveElapsed)}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {(timerState.isActive || timerState.accumulatedSeconds > 0) && (
+                <button
+                  onClick={handleStopAndLog}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 transition"
+                  title="Stop & Log Time"
+                >
+                  <Square size={12} fill="currentColor" />
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="flex justify-between items-center pt-2">
             <span className="text-xs font-semibold text-gray-700">Work Logs</span>
             <button
@@ -488,25 +608,53 @@ const ITIssueActivityTabs = ({
             {worklogData.worklogs.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-4">No work logged on this issue yet.</p>
             ) : (
-              worklogData.worklogs.map(log => (
-                <div key={log.id} className="flex justify-between items-start p-2 bg-gray-50 rounded border border-gray-100 text-xs group">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className=" text-gray-800">{log.time_spent}</span>
-                      <span className="text-[10px] text-gray-400">by {log.author}</span>
-                      <span className="text-[10px] text-gray-400">· {relativeTime(log.started_at || log.created_at)}</span>
+              worklogData.worklogs.map(log => {
+                let endTimeStr = '';
+                let startTimeStr = '';
+                if (log.started_at) {
+                  const start = new Date(log.started_at);
+                  startTimeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                  if (log.seconds) {
+                     const end = new Date(start.getTime() + log.seconds * 1000);
+                     endTimeStr = end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                  }
+                }
+                
+                return (
+                  <div key={log.id} className="flex justify-between items-start p-2 bg-gray-50 rounded border border-gray-100 text-xs group">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-800">{log.time_spent}</span>
+                        <span className="text-[10px] text-gray-400">by {log.author}</span>
+                        <span className="text-[10px] text-gray-400">· {relativeTime(log.started_at || log.created_at)}</span>
+                      </div>
+                      
+                      {startTimeStr && (
+                        <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                           <Clock size={10} />
+                           <span>Started: {startTimeStr}</span>
+                           {endTimeStr && (
+                             <>
+                               <span>→</span>
+                               <span>Stopped: {endTimeStr}</span>
+                             </>
+                           )}
+                        </div>
+                      )}
+                      
+                      {log.description && <p className="text-gray-600 text-[11px] mt-0.5">{log.description}</p>}
                     </div>
-                    {log.description && <p className="text-gray-600 text-[11px]">{log.description}</p>}
+                    {handleDeleteWorklog && (
+                      <button
+                        onClick={() => handleDeleteWorklog(log.id)}
+                        className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
                   </div>
-                  <button
-                    onClick={() => handleDeleteWorklog(log.id)}
-                    className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition p-1 cursor-pointer"
-                    title="Delete log"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

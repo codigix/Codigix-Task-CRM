@@ -1314,7 +1314,7 @@ const ITKanbanPage = ({ department }) => {
                     </div>
 
                     {/* Project Filter (Searchable Select) */}
-                    <div className="w-52">
+                    <div className="w-40">
                       <SearchableSelect
                         prefix="Project:"
                         buttonClassName={`p-2 rounded text-xs font-medium border transition-colors ${selectedProjectId !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
@@ -1511,7 +1511,7 @@ const ITKanbanPage = ({ department }) => {
                     </div>
 
                     {/* Assignee Filter (Searchable Select) */}
-                    <div className="w-52">
+                    <div className="w-40">
                       <SearchableSelect
                         prefix="Assignee:"
                         multiple={true}

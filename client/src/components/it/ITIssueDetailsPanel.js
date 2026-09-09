@@ -998,6 +998,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               aiDocsLoading={aiDocsLoading}
               githubData={githubData}
               issueKey={issue?.issue_key || issue?.key}
+              issueStatus={currentStatus}
               loggedUser={loggedUser}
               department={department || 'IT'}
               currentUser={loggedUser}

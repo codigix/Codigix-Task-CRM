@@ -887,49 +887,50 @@ model followups {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model general_tasks {
-  id                         Int                        @id @default(autoincrement())
-  title                      String                     @db.VarChar(255)
-  description                String?                    @db.LongText
-  status                     general_tasks_status?      @default(To_Do)
-  priority                   general_tasks_priority?    @default(Medium)
-  assigned_to                String?                    @db.LongText
-  due_date                   DateTime?                  @db.Date
-  tags                       String?                    @db.LongText
-  linked_type                general_tasks_linked_type? @default(General)
-  linked_id                  Int?
-  created_at                 DateTime                   @default(now()) @db.Timestamp(0)
-  updated_at                 DateTime                   @default(now()) @db.Timestamp(0)
-  workflow_type              String?                    @db.VarChar(100)
-  department_id              Int?
-  sprint_id                  Int?
-  task_type                  String?                    @db.VarChar(100)
-  created_by                 Int?
-  due_time                   DateTime?                  @db.Time(0)
-  next_followup_date         DateTime?                  @db.Date
-  internal_notes             String?                    @db.LongText
-  reminder_date              DateTime?                  @db.DateTime(0)
-  category                   String?                    @db.VarChar(100)
-  sub_type                   String?                    @db.VarChar(100)
-  project_id                 Int?
-  actual_hours               Decimal?                   @default(0.00) @db.Decimal(10, 2)
-  contribution_method        String?                    @default("WORK_BREAKDOWN") @db.VarChar(50)
-  contribution_review_status String?                    @default("Pending") @db.VarChar(50)
-  current_assignee_id        Int?
-  effort_points              Int?                       @default(0)
-  estimated_hours            Decimal?                   @default(0.00) @db.Decimal(10, 2)
-  original_assignee_id       Int?
-  ticket_type                String?                    @default("Task") @db.VarChar(50)
-  timer_start_time           DateTime?                  @db.DateTime(0)
-  is_timer_running           Boolean?                   @default(false)
-  activities                 activities[]
-  entity_notes               entity_notes[]
-  files                      files[]
-  followups                  followups[]
-  projects                   projects?                  @relation(fields: [project_id], references: [id], onUpdate: NoAction, map: "fk_tasks_project")
-  task_contributions         task_contributions[]
-  task_history               task_history[]
-  task_subtasks              task_subtasks[]
-  task_time_logs             task_time_logs[]
+  id                 Int                        @id @default(autoincrement())
+  title              String                     @db.VarChar(255)
+  description        String?                    @db.LongText
+  status             general_tasks_status?      @default(To_Do)
+  priority           general_tasks_priority?    @default(Medium)
+  assigned_to        String?                    @db.LongText
+  due_date           DateTime?                  @db.Date
+  tags               String?                    @db.LongText
+  linked_type        general_tasks_linked_type? @default(General)
+  linked_id          Int?
+  created_at         DateTime                   @default(now()) @db.Timestamp(0)
+  updated_at         DateTime                   @default(now()) @db.Timestamp(0)
+  workflow_type      String?                    @db.VarChar(100)
+  department_id      Int?
+  sprint_id          Int?
+  task_type          String?                    @db.VarChar(100)
+  created_by         Int?
+  due_time           DateTime?                  @db.Time(0)
+  next_followup_date DateTime?                  @db.Date
+  internal_notes     String?                    @db.LongText
+  reminder_date      DateTime?                  @db.DateTime(0)
+  category           String?                    @db.VarChar(100)
+  sub_type           String?                    @db.VarChar(100)
+  project_id         Int?
+  ticket_type        String?                    @default("Task") @db.VarChar(50)
+  effort_points      Int?                       @default(0)
+  estimated_hours    Decimal?                   @default(0) @db.Decimal(10, 2)
+  actual_hours       Decimal?                   @default(0) @db.Decimal(10, 2)
+  contribution_method String?                   @default("WORK_BREAKDOWN") @db.VarChar(50)
+  contribution_review_status String?            @default("Pending") @db.VarChar(50)
+  original_assignee_id Int?
+  current_assignee_id Int?
+  
+  timer_start_time   DateTime?                  @db.DateTime(0)
+  is_timer_running   Boolean?                   @default(false)
+  activities         activities[]
+  entity_notes       entity_notes[]
+  files              files[]
+  followups          followups[]
+  projects           projects?                  @relation(fields: [project_id], references: [id], onUpdate: NoAction, map: "fk_tasks_project")
+  task_subtasks      task_subtasks[]
+  task_time_logs     task_time_logs[]
+  task_contributions task_contributions[]
+  task_history       task_history[]
 
   @@index([project_id], map: "fk_tasks_project")
   @@index([due_date], map: "idx_due_date")
@@ -1140,46 +1141,43 @@ model it_kanban_history {
 }
 
 model it_kanban_issues {
-  id                         Int       @id @default(autoincrement())
-  issue_key                  String    @unique(map: "issue_key") @db.VarChar(50)
-  title                      String    @db.Text
-  description                String?   @db.LongText
-  type                       String?   @default("Task") @db.VarChar(50)
-  priority                   String?   @default("Medium") @db.VarChar(50)
-  status                     String?   @default("TO DO") @db.VarChar(50)
-  assignee                   String?   @db.VarChar(100)
-  reporter                   String?   @default("Unassigned") @db.VarChar(100)
-  sprint                     String?   @default("Sprint 1") @db.VarChar(50)
-  due_date                   DateTime? @db.Date
-  start_date                 DateTime? @db.Date
-  subtasks                   Json?
-  linked_issues              Json?
-  comments                   Json?
-  created_at                 DateTime? @default(now()) @db.Timestamp(0)
-  updated_at                 DateTime? @default(now()) @db.Timestamp(0)
-  progress                   Int?      @default(0)
-  original_estimate          String?   @db.VarChar(50)
-  remaining_estimate         String?   @db.VarChar(50)
-  time_spent                 String?   @db.VarChar(50)
-  components                 String?   @db.VarChar(255)
-  environment                String?   @db.VarChar(255)
-  vulnerability              String?   @db.VarChar(100)
-  team                       String?   @default("None") @db.VarChar(100)
-  team_id                    Int?
-  project_id                 Int?
-  department                 String?   @default("IT") @db.VarChar(50)
-  labels                     Json?
-  story_points               String?   @db.VarChar(20)
-  flagged                    Boolean?  @default(false)
-  parent_id                  Int?
-  sprint_id                  Int?
-  rank_order                 Int?
-  test_migration_field       String?   @db.VarChar(255)
-  contribution_review_status String?   @default("Pending") @db.VarChar(20)
-  contribution_method        String?   @default("WORK_BREAKDOWN") @db.VarChar(30)
-  effort_points              Int?      @default(0)
-  timer_start_time           DateTime? @db.DateTime(0)
-  is_timer_running           Boolean?  @default(false)
+  id                 Int       @id @default(autoincrement())
+  issue_key          String    @unique(map: "issue_key") @db.VarChar(50)
+  title              String    @db.VarChar(255)
+  description        String?   @db.LongText
+  type               String?   @default("Task") @db.VarChar(50)
+  priority           String?   @default("Medium") @db.VarChar(50)
+  status             String?   @default("TO DO") @db.VarChar(50)
+  assignee           String?   @db.VarChar(100)
+  reporter           String?   @default("Unassigned") @db.VarChar(100)
+  sprint             String?   @default("Sprint 1") @db.VarChar(50)
+  due_date           DateTime? @db.Date
+  start_date         DateTime? @db.Date
+  subtasks           Json?
+  linked_issues      Json?
+  comments           Json?
+  created_at         DateTime? @default(now()) @db.Timestamp(0)
+  updated_at         DateTime? @default(now()) @db.Timestamp(0)
+  progress           Int?      @default(0)
+  original_estimate  String?   @db.VarChar(50)
+  remaining_estimate String?   @db.VarChar(50)
+  time_spent         String?   @db.VarChar(50)
+  timer_start_time   DateTime? @db.DateTime(0)
+  is_timer_running   Boolean?  @default(false)
+  components         String?   @db.VarChar(255)
+  environment        String?   @db.VarChar(255)
+  vulnerability      String?   @db.VarChar(100)
+  team               String?   @default("None") @db.VarChar(100)
+  team_id            Int?
+  project_id         Int?
+  department         String?   @default("IT") @db.VarChar(50)
+  labels             Json?
+  story_points       String?   @db.VarChar(20)
+  flagged            Boolean?  @default(false)
+  parent_id          Int?
+  sprint_id          Int?
+  rank_order         Int?
+  test_migration_field String?   @db.VarChar(255)
 
   @@index([rank_order], map: "idx_rank_order")
   @@index([sprint_id], map: "idx_sprint_id")
@@ -1502,9 +1500,6 @@ model project_tasks {
   completed_date                         DateTime?               @db.DateTime(0)
   created_at                             DateTime                @default(now()) @db.Timestamp(0)
   updated_at                             DateTime                @default(now()) @db.Timestamp(0)
-  timer_start_time                       DateTime?               @db.DateTime(0)
-  is_timer_running                       Boolean?                @default(false)
-  actual_hours                           Decimal?                @default(0.00) @db.Decimal(10, 2)
   projects                               projects                @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "project_tasks_ibfk_1")
   users_project_tasks_assigned_toTousers users?                  @relation("project_tasks_assigned_toTousers", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "project_tasks_ibfk_2")
   users_project_tasks_created_byTousers  users?                  @relation("project_tasks_created_byTousers", fields: [created_by], references: [id], onUpdate: NoAction, map: "project_tasks_ibfk_3")
@@ -1939,8 +1934,6 @@ model users {
   messages_messages_sender_idTousers                      messages[]             @relation("messages_sender_idTousers")
   messages_messages_receiver_idTousers                    messages[]             @relation("messages_receiver_idTousers")
   notifications                                           notifications[]
-  performance_reviews_employee                            performance_reviews[]  @relation("performance_reviews_employee")
-  performance_reviews_reviewer                            performance_reviews[]  @relation("performance_reviews_reviewer")
   project_discussions                                     project_discussions[]
   project_tasks_project_tasks_assigned_toTousers          project_tasks[]        @relation("project_tasks_assigned_toTousers")
   project_tasks_project_tasks_created_byTousers           project_tasks[]        @relation("project_tasks_created_byTousers")
@@ -1958,103 +1951,9 @@ model users {
   @@index([role_id], map: "idx_role_id")
   @@index([status], map: "idx_status")
   @@index([username], map: "idx_username")
-}
 
-model task_subtasks {
-  id                   Int           @id @default(autoincrement())
-  task_id              Int
-  title                String        @db.VarChar(255)
-  description          String?       @db.LongText
-  point_value          Int           @default(0)
-  status               String?       @default("Pending") @db.VarChar(50)
-  assigned_to_user_id  Int?
-  created_by_user_id   Int?
-  completed_by_user_id Int?
-  completed_at         DateTime?     @db.Timestamp(0)
-  created_at           DateTime      @default(now()) @db.Timestamp(0)
-  started_at           DateTime?     @db.Timestamp(0)
-  updated_at           DateTime      @default(now()) @updatedAt @db.Timestamp(0)
-  general_tasks        general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
-
-  @@index([task_id])
-}
-
-model task_time_logs {
-  id            Int           @id @default(autoincrement())
-  task_id       Int
-  user_id       Int
-  hours         Decimal       @db.Decimal(10, 2)
-  description   String?       @db.LongText
-  status        String?       @default("Pending") @db.VarChar(50)
-  created_at    DateTime      @default(now()) @db.Timestamp(0)
-  approved_at   DateTime?     @db.Timestamp(0)
-  approved_by   Int?
-  ended_at      DateTime?     @db.Timestamp(0)
-  started_at    DateTime?     @db.Timestamp(0)
-  subtask_id    Int?
-  updated_at    DateTime      @default(now()) @updatedAt @db.Timestamp(0)
-  work_type     String?       @db.VarChar(100)
-  general_tasks general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
-
-  @@index([task_id])
-  @@index([user_id])
-}
-
-model task_contributions {
-  id                      Int           @id @default(autoincrement())
-  task_id                 Int
-  subtask_id              Int?
-  user_id                 Int
-  role                    String?       @db.VarChar(100)
-  effort_points           Int           @default(0)
-  contribution_percentage Decimal?      @db.Decimal(5, 2)
-  contribution_source     String?       @db.VarChar(100)
-  approval_status         String?       @default("Pending") @db.VarChar(50)
-  approved_by             Int?
-  approved_at             DateTime?     @db.Timestamp(0)
-  created_at              DateTime      @default(now()) @db.Timestamp(0)
-  updated_at              DateTime      @default(now()) @updatedAt @db.Timestamp(0)
-  general_tasks           general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
-
-  @@index([task_id])
-  @@index([user_id])
-}
-
-model task_history {
-  id                 Int           @id @default(autoincrement())
-  task_id            Int
-  changed_by_user_id Int?
-  action_type        String        @db.VarChar(100)
-  field_name         String?       @db.VarChar(100)
-  old_value          String?       @db.Text
-  new_value          String?       @db.Text
-  reason             String?       @db.Text
-  created_at         DateTime      @default(now()) @db.Timestamp(0)
-  metadata           Json?
-  general_tasks      general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
-
-  @@index([task_id])
-}
-
-model performance_reviews {
-  id                  Int      @id @default(autoincrement())
-  employee_id         Int
-  reviewer_id         Int
-  score               Int
-  task_completion     Int
-  quality_of_work     Int
-  on_time_delivery    Int
-  efficiency          Int
-  review_gate_points  Int
-  points_distribution Int
-  feedback            String?  @db.LongText
-  created_at          DateTime @default(now()) @db.Timestamp(0)
-  updated_at          DateTime @default(now()) @db.Timestamp(0)
-  users_employee      users    @relation("performance_reviews_employee", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users_reviewer      users    @relation("performance_reviews_reviewer", fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([employee_id], map: "idx_performance_reviews_employee")
-  @@index([reviewer_id], map: "idx_performance_reviews_reviewer")
+  performance_reviews_employee performance_reviews[] @relation("performance_reviews_employee")
+  performance_reviews_reviewer performance_reviews[] @relation("performance_reviews_reviewer")
 }
 
 enum activities_activity_type {
@@ -2549,4 +2448,101 @@ enum companies_visibility {
   Public
   Private
   People
+}
+
+model task_subtasks {
+  id                   Int           @id @default(autoincrement())
+  task_id              Int
+  title                String        @db.VarChar(255)
+  description          String?       @db.LongText
+  point_value          Int           @default(0)
+  assigned_to_user_id  Int?
+  completed_by_user_id Int?
+  status               String?       @default("Pending") @db.VarChar(50)
+  started_at           DateTime?     @db.Timestamp(0)
+  completed_at         DateTime?     @db.Timestamp(0)
+  created_by_user_id   Int?
+  created_at           DateTime      @default(now()) @db.Timestamp(0)
+  updated_at           DateTime      @default(now()) @updatedAt @db.Timestamp(0)
+  general_tasks        general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+}
+
+model task_time_logs {
+  id           Int            @id @default(autoincrement())
+  task_id      Int
+  subtask_id   Int?
+  user_id      Int
+  hours        Decimal        @db.Decimal(10, 2)
+  description  String?        @db.LongText
+  work_type    String?        @db.VarChar(100)
+  status       String?        @default("Pending") @db.VarChar(50)
+  approved_by  Int?
+  approved_at  DateTime?      @db.Timestamp(0)
+  started_at   DateTime?      @db.Timestamp(0)
+  ended_at     DateTime?      @db.Timestamp(0)
+  created_at   DateTime       @default(now()) @db.Timestamp(0)
+  updated_at   DateTime       @default(now()) @updatedAt @db.Timestamp(0)
+  general_tasks general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+  @@index([user_id])
+}
+
+model task_contributions {
+  id                      Int           @id @default(autoincrement())
+  task_id                 Int
+  subtask_id              Int?
+  user_id                 Int
+  role                    String?       @db.VarChar(100)
+  effort_points           Int           @default(0)
+  contribution_percentage Decimal?      @db.Decimal(5, 2)
+  contribution_source     String?       @db.VarChar(100)
+  approval_status         String?       @default("Pending") @db.VarChar(50)
+  approved_by             Int?
+  approved_at             DateTime?     @db.Timestamp(0)
+  created_at              DateTime      @default(now()) @db.Timestamp(0)
+  updated_at              DateTime      @default(now()) @updatedAt @db.Timestamp(0)
+  general_tasks           general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+  @@index([user_id])
+}
+
+model task_history {
+  id                 Int           @id @default(autoincrement())
+  task_id            Int
+  changed_by_user_id Int?
+  action_type        String        @db.VarChar(100)
+  field_name         String?       @db.VarChar(100)
+  old_value          String?       @db.Text
+  new_value          String?       @db.Text
+  reason             String?       @db.Text
+  metadata           Json?
+  created_at         DateTime      @default(now()) @db.Timestamp(0)
+  general_tasks      general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+}
+
+model performance_reviews {
+  id                   Int       @id @default(autoincrement())
+  employee_id          Int
+  reviewer_id          Int
+  score                Int
+  task_completion      Int
+  quality_of_work      Int
+  on_time_delivery     Int
+  efficiency           Int
+  review_gate_points   Int
+  points_distribution  Int
+  feedback             String?   @db.LongText
+  created_at           DateTime  @default(now()) @db.Timestamp(0)
+  updated_at           DateTime  @default(now()) @db.Timestamp(0)
+  users_employee       users     @relation("performance_reviews_employee", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_reviewer       users     @relation("performance_reviews_reviewer", fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([employee_id], map: "idx_performance_reviews_employee")
+  @@index([reviewer_id], map: "idx_performance_reviews_reviewer")
 }
