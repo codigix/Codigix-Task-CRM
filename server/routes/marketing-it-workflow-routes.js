@@ -364,13 +364,15 @@ module.exports = function setupMarketingITWorkflowRoutes(app, pool) {
       }
 
       // 4. Create Weekly and Monthly Report Follow-ups
-      if (project) {
+      if (project && (project.contact_id || project.company_id)) {
         const today = new Date();
         const nextWeek = new Date(today);
         nextWeek.setDate(today.getDate() + 7);
 
         const nextMonth = new Date(today);
         nextMonth.setMonth(today.getMonth() + 1);
+
+        const relatedId = project.contact_id || project.company_id;
 
         // Weekly Report Follow-up
         await connection.query(`
@@ -381,7 +383,7 @@ module.exports = function setupMarketingITWorkflowRoutes(app, pool) {
             assigned_to, project_id, contact_id, deal_id, status
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
-          'Customer', project.contact_id || project.company_id, 'Report',
+          'Customer', relatedId, 'Report',
           `Weekly Progress Report: ${project.name}`,
           `Standard weekly progress report for ${project.name}`,
           nextWeek.toISOString().split('T')[0], '10:00:00', 'Medium',
@@ -398,7 +400,7 @@ module.exports = function setupMarketingITWorkflowRoutes(app, pool) {
             assigned_to, project_id, contact_id, deal_id, status
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
-          'Customer', project.contact_id || project.company_id, 'Report',
+          'Customer', relatedId, 'Report',
           `Monthly Performance Review: ${project.name}`,
           `Comprehensive monthly performance and health review for ${project.name}`,
           nextMonth.toISOString().split('T')[0], '11:00:00', 'High',
