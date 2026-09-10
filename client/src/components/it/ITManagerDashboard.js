@@ -8,7 +8,7 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import BoardTabs from '../common/BoardTabs';
 import { useAuth } from '../../hooks/useAuth';
-import { projectAPI, taskAPI, activitiesAPI } from '../../services/api';
+import { projectAPI, itKanbanAPI, activitiesAPI } from '../../services/api';
 import { API_BASE_URL } from '../../config/environment';
 
 const ITManagerDashboard = () => {
@@ -47,16 +47,15 @@ const ITManagerDashboard = () => {
         setLoading(true);
         const [projRes, tasksRes] = await Promise.all([
           projectAPI.getAll({ department: 'IT' }),
-          taskAPI.getAllGeneral()
+          itKanbanAPI.getIssues()
         ]);
 
         // Filter projects for IT department if API doesn't fully filter it
         const itProjects = (projRes || []).filter(p => p.department === 'IT' || p.department === 'IT Department');
         setProjects(itProjects);
 
-        // Filter tasks linked to IT projects
-        const itProjectIds = new Set(itProjects.map(p => p.id));
-        const itTasks = (tasksRes || []).filter(t => itProjectIds.has(t.project_id) || t.department === 'IT');
+        // All Kanban issues belong to IT
+        const itTasks = tasksRes || [];
         setTasks(itTasks);
 
         // Fetch Performance Metrics
@@ -91,16 +90,30 @@ const ITManagerDashboard = () => {
 
   // Compute KPI Data
   const activeProjectsCount = projects.filter(p => p.status === 'Active' || p.status === 'In Progress').length;
-  const inProgressTasksCount = tasks.filter(t => t.status === 'In Progress').length;
-  const openBugsCount = tasks.filter(t => (t.task_type === 'Bug' || (t.title && t.title.toLowerCase().includes('bug'))) && (t.status !== 'Completed' && t.status !== 'Done')).length;
+  
+  const totalTicketsCount = tasks.length;
+  const totalBugsCount = tasks.filter(t => (t.type === 'Bug' || (t.title && t.title.toLowerCase().includes('bug')))).length;
+  
+  let totalMinutes = 0;
+  tasks.forEach(t => {
+    if (t.time_spent) {
+      const ts = t.time_spent.toLowerCase();
+      const hMatch = ts.match(/(\d+(\.\d+)?)\s*h/);
+      const mMatch = ts.match(/(\d+)\s*m/);
+      if (hMatch) totalMinutes += parseFloat(hMatch[1]) * 60;
+      if (mMatch) totalMinutes += parseInt(mMatch[1]);
+      if (!hMatch && !mMatch && !isNaN(parseFloat(ts))) totalMinutes += parseFloat(ts) * 60;
+    }
+  });
+  const loggedHoursDisplay = `${Math.floor(totalMinutes / 60)}h ${Math.round(totalMinutes % 60)}m`;
 
   const kpiData = [
     { title: 'Total Projects', value: projects.length.toString(), trend: 'Live Data', icon: Folder, color: 'text-indigo-600', bg: 'bg-indigo-50', trendColor: 'text-gray-500' },
     { title: 'Earned Points', value: performanceMetrics?.earnedEffortPoints?.toString() || '0', trend: 'Approved', icon: Sparkles, color: 'text-emerald-600', bg: 'bg-emerald-50', trendColor: 'text-emerald-600' },
-    { title: 'Tasks In Progress', value: inProgressTasksCount.toString(), trend: 'Live Data', icon: FileText, color: 'text-amber-500', bg: 'bg-amber-50', trendColor: 'text-gray-500' },
-    { title: 'Open Bugs', value: openBugsCount.toString(), trend: 'Live Data', icon: Bug, color: 'text-rose-500', bg: 'bg-rose-50', trendColor: 'text-gray-500' },
+    { title: 'Total Tickets', value: totalTicketsCount.toString(), trend: 'All IT Issues', icon: FileText, color: 'text-amber-500', bg: 'bg-amber-50', trendColor: 'text-gray-500' },
+    { title: 'Total Bugs', value: totalBugsCount.toString(), trend: 'All Time', icon: Bug, color: 'text-rose-500', bg: 'bg-rose-50', trendColor: 'text-gray-500' },
     { title: 'Validated Work', value: performanceMetrics?.approvedContributions?.toString() || '0', trend: 'Subtasks & Logs', icon: CheckCircle, color: 'text-blue-600', bg: 'bg-blue-50', trendColor: 'text-gray-500' },
-    { title: 'Logged Hours', value: '0h', trend: 'Live Data', icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50', trendColor: 'text-gray-400' },
+    { title: 'Logged Hours', value: loggedHoursDisplay, trend: 'All Tickets', icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50', trendColor: 'text-gray-400' },
   ];
 
   // Project Health Data
@@ -119,13 +132,21 @@ const ITManagerDashboard = () => {
     projectHealthData.push({ name: 'No Data', value: 1, color: '#e5e7eb' });
   }
 
-  // Time Tracking (Mocked since we don't have time logs)
-  const timeTrackingData = [
-    { name: 'Development', value: 720, color: '#3b82f6' },
-    { name: 'Testing', value: 240, color: '#8b5cf6' },
-    { name: 'Design', value: 160, color: '#22c55e' },
-    { name: 'Meetings', value: 128, color: '#eab308' },
-  ];
+  // Time Tracking replaced with Tickets by Status
+  const statusCounts = {};
+  tasks.forEach(t => {
+    const status = t.status || 'UNASSIGNED';
+    statusCounts[status] = (statusCounts[status] || 0) + 1;
+  });
+  
+  const timeTrackingData = Object.keys(statusCounts).map((status, idx) => {
+    const colors = ['#3b82f6', '#8b5cf6', '#22c55e', '#eab308', '#ef4444', '#64748b'];
+    return {
+      name: status,
+      value: statusCounts[status],
+      color: colors[idx % colors.length]
+    };
+  });
 
   // Map Real Projects to Gantt Timeline
   const projectsTimeline = projects.slice(0, 6).map((p, idx) => {
@@ -178,11 +199,11 @@ const ITManagerDashboard = () => {
   // Calculate Team Workload dynamically from Tasks
   const taskAssignees = {};
   tasks.forEach(t => {
-    if (t.assigned_to_name || t.assigned_to) {
-      const name = t.assigned_to_name || `User ${t.assigned_to}`;
+    if (t.assignee) {
+      const name = t.assignee;
       if (!taskAssignees[name]) taskAssignees[name] = { total: 0, completed: 0 };
       taskAssignees[name].total += 1;
-      if (t.status === 'Completed' || t.status === 'Done') taskAssignees[name].completed += 1;
+      if (t.status === 'DONE') taskAssignees[name].completed += 1;
     }
   });
 
@@ -221,6 +242,7 @@ const ITManagerDashboard = () => {
 
   // Task Summary Counts
   const todoCount = tasks.filter(t => t.status === 'TO DO' || t.status === 'To Do' || t.status === 'Pending').length;
+  const inProgressTasksCount = tasks.filter(t => t.status === 'IN PROGRESS' || t.status === 'In Progress').length;
   const inReviewCount = tasks.filter(t => t.status === 'IN REVIEW' || t.status === 'In Review').length;
   const completedCount = tasks.filter(t => t.status === 'DONE' || t.status === 'Completed' || t.status === 'Done').length;
 
@@ -468,12 +490,12 @@ const ITManagerDashboard = () => {
               </div>
             )}
 
-            {/* Time Tracking */}
+            {/* Tickets by Status */}
             {widgets.timeTracking && (
               <div className="col-span-3 bg-white p-2 rounded border border-gray-100  flex flex-col">
                 <div className="mb-4">
-                  <h3 className="text-sm  text-gray-900 inline-block">Time Tracking</h3>
-                  <span className="text-xs text-gray-400 ml-2">(This Week)</span>
+                  <h3 className="text-sm  text-gray-900 inline-block">Tickets by Status</h3>
+                  <span className="text-xs text-gray-400 ml-2">(All Kanban Issues)</span>
                 </div>
 
                 <div className="flex-1 flex flex-col justify-center">
@@ -574,15 +596,15 @@ const ITManagerDashboard = () => {
                       else if (task.priority === 'Low') priorityColor = 'text-green-600 bg-green-50';
 
                       let statusColor = 'text-gray-600 bg-gray-50';
-                      if (task.status === 'In Progress') statusColor = 'text-blue-600 bg-blue-50';
-                      else if (task.status === 'Completed' || task.status === 'Done') statusColor = 'text-emerald-600 bg-emerald-50';
+                      if (task.status === 'IN PROGRESS') statusColor = 'text-blue-600 bg-blue-50';
+                      else if (task.status === 'DONE') statusColor = 'text-emerald-600 bg-emerald-50';
 
                       return (
                         <tr key={idx} className="hover:bg-gray-50/50">
                           <td className="p-2 font-medium text-gray-900">{task.title || 'Untitled'}</td>
-                          <td className="p-2 text-gray-500">{projects.find(p => p.id === task.project_id)?.name || 'General IT'}</td>
-                          <td className="p-2 text-gray-600">{task.created_by_name || 'System'}</td>
-                          <td className="p-2 text-gray-600">{task.assigned_to_name || 'Unassigned'}</td>
+                          <td className="p-2 text-gray-500">{task.key ? task.key.split('-')[0] : 'IT Kanban'}</td>
+                          <td className="p-2 text-gray-600">{task.reporter || 'System'}</td>
+                          <td className="p-2 text-gray-600">{task.assignee || 'Unassigned'}</td>
                           <td className="p-2">
                             <span className={`px-2 py-0.5 rounded text-[10px] ${statusColor}`}>{task.status || 'Pending'}</span>
                           </td>
@@ -672,7 +694,7 @@ const ITManagerDashboard = () => {
                 { key: 'activity', label: 'Activity Feed' },
                 { key: 'taskSummary', label: 'Task Summary' },
                 { key: 'workload', label: 'Team Workload' },
-                { key: 'timeTracking', label: 'Time Tracking' },
+                { key: 'timeTracking', label: 'Tickets by Status' },
                 { key: 'openTasks', label: 'Top Open Tasks' },
                 { key: 'ticketList', label: 'Ticket Assignments' }
               ].map(w => (

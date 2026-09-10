@@ -99,7 +99,7 @@ module.exports = function setupPerformanceRoutes(app, pool) {
       // Calculate performance strictly from task_contributions (The Ledger)
       const [contributions] = await pool.query(`
         SELECT COUNT(*) as total_contributions,
-               SUM(effort_points) as total_earned_points
+               SUM(tc.effort_points) as total_earned_points
         FROM task_contributions tc
         JOIN general_tasks t ON tc.task_id = t.id
         WHERE tc.approval_status = 'Approved' 
