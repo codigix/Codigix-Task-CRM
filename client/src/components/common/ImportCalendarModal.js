@@ -20,12 +20,13 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
   // becomes the start date unless told otherwise.
   const [dateField, setDateField] = useState('both');
   const [sprintId, setSprintId] = useState('');
+  const [customProjectName, setCustomProjectName] = useState('');
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState('');
 
   const reset = () => {
     setFile(null); setPreview(null); setExcluded(new Set());
-    setError(''); setIsBusy(false); setSprintId(''); setDateField('both');
+    setError(''); setIsBusy(false); setSprintId(''); setCustomProjectName(''); setDateField('both');
   };
 
   // Opened from a sprint's menu? Then that sprint is the destination, not the Backlog.
@@ -35,7 +36,13 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
 
   if (!isOpen) return null;
 
-  const rowId = (r) => `${r.rowNumber}:${r.colNumber || r.column}:${r.title}`;
+  const rowId = (r) => `${r.rowNumber}:${r.colNumber || r.column}:${r.rawTitle || r.title}`;
+
+  const getRowTitle = (r) => {
+    const p = customProjectName.trim();
+    const raw = r.rawTitle || r.title;
+    return p ? `${p} - ${raw}` : raw;
+  };
 
   const runPreview = async (chosenFile, useDayFirst) => {
     const f = chosenFile || file;
@@ -46,13 +53,14 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
       const body = new FormData();
       body.append('file', f);
       const res = await fetch(
-        `${API_BASE_URL}/it-kanban/import/preview?department=${encodeURIComponent(department)}&dayFirst=${useDayFirst}`,
+        `${API_BASE_URL}/it-kanban/import/preview?department=${encodeURIComponent(department)}&dayFirst=${useDayFirst}&sprintId=${encodeURIComponent(sprintId || '')}`,
         { method: 'POST', body }
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not read the spreadsheet');
 
       setPreview(data);
+      setCustomProjectName(data.projectName || '');
       // Rows already imported start unticked, so a re-upload doesn't duplicate the calendar.
       setExcluded(new Set(data.rows.filter(r => r.duplicate).map(rowId)));
     } catch (err) {
@@ -86,11 +94,19 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
     setIsBusy(true);
     setError('');
     try {
+      // Map rows with the dynamic title and description
+      const payloadRows = chosenRows.map(r => ({
+        ...r,
+        title: getRowTitle(r),
+        description: r.description || '',
+        service: r.service || r.column || ''
+      }));
+
       const res = await fetch(`${API_BASE_URL}/it-kanban/import/commit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          rows: chosenRows,
+          rows: payloadRows,
           department,
           dateField,
           sprintId: sprintId === '' ? null : Number(sprintId),
@@ -112,7 +128,7 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded shadow-2xl w-full max-w-[900px] max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded shadow-2xl w-full max-w-[960px] max-h-[90vh] flex flex-col">
         <div className="flex items-start justify-between px-6 pt-5 pb-3 shrink-0">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Import calendar tasks</h2>
@@ -160,6 +176,19 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
                 </button>
               </div>
 
+              {/* Project name prefix input */}
+              <div className="flex items-center gap-2 mb-3 bg-slate-50 p-2.5 rounded border border-gray-200">
+                <label className="text-[12px] font-semibold text-gray-700 whitespace-nowrap">Project Name Prefix:</label>
+                <input
+                  type="text"
+                  value={customProjectName}
+                  onChange={(e) => setCustomProjectName(e.target.value)}
+                  placeholder="e.g. Project Name (leave blank if not needed)"
+                  className="text-[12px] px-2.5 py-1 border border-gray-300 rounded flex-1 bg-white focus:outline-none focus:border-blue-500"
+                />
+                <span className="text-[11px] text-gray-400">Prepended to all task titles</span>
+              </div>
+
               {summary.ambiguousDates > 0 && (
                 <div className="flex items-start gap-2 text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
                   <AlertTriangle size={14} className="shrink-0 mt-0.5" />
@@ -167,13 +196,6 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
                     <strong>{summary.ambiguousDates}</strong> date{summary.ambiguousDates === 1 ? ' is' : 's are'} written
                     as text and could be read either way — check the order below before importing.
                   </div>
-                </div>
-              )}
-
-              {summary.unmatchedColumns.length > 0 && (
-                <div className="text-[12px] text-gray-700 bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-3">
-                  No project matches {summary.unmatchedColumns.map(c => `“${c}”`).join(', ')}.
-                  Those items take the destination sprint's project instead.
                 </div>
               )}
 
@@ -190,12 +212,13 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
                 </div>
                 <div className="max-h-[340px] overflow-y-auto">
                   <table className="w-full text-[12px]">
-                    <thead className="bg-white sticky top-0 border-b border-gray-100">
+                    <thead className="bg-white sticky top-0 border-b border-gray-100 shadow-sm">
                       <tr className="text-gray-500">
                         <th className="w-8 p-2"></th>
                         <th className="text-left p-2 font-medium">Date</th>
-                        <th className="text-left p-2 font-medium">Work item</th>
-                        <th className="text-left p-2 font-medium">Project</th>
+                        <th className="text-left p-2 font-medium">Service</th>
+                        <th className="text-left p-2 font-medium">Task Title</th>
+                        <th className="text-left p-2 font-medium">Description</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -207,12 +230,17 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
                               <input type="checkbox" checked={!off} onChange={() => toggleRow(r)} className="cursor-pointer" />
                             </td>
                             <td className="p-2 text-gray-700 whitespace-nowrap">{r.date}</td>
-                            <td className="p-2 text-gray-900">
-                              {r.title}
-                              {r.duplicate && <span className="ml-2 text-[10px] text-gray-500">already imported</span>}
+                            <td className="p-2 whitespace-nowrap">
+                              <span className="inline-block px-2 py-0.5 text-[11px] font-medium rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                {r.service || r.column}
+                              </span>
                             </td>
-                            <td className="p-2 text-gray-600">
-                              {r.projectName || <span className="text-gray-400">none</span>}
+                            <td className="p-2 text-gray-900 font-medium">
+                              {getRowTitle(r)}
+                              {r.duplicate && <span className="ml-2 text-[10px] text-gray-500 font-normal">already imported</span>}
+                            </td>
+                            <td className="p-2 text-gray-600 max-w-[280px] truncate" title={r.description}>
+                              {r.description || <span className="text-gray-400 italic">No description</span>}
                             </td>
                           </tr>
                         );

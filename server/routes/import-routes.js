@@ -54,6 +54,12 @@ module.exports = function setupImportRoutes(app, pool) {
     return h === 'day' || h === 'days' || h === 'weekday' || h === 'day of week' || isWeekdayWord(h);
   };
 
+  const isIndexHeader = (header) => {
+    if (!header || typeof header !== 'string') return false;
+    const h = header.trim().toLowerCase();
+    return h === 'no.' || h === 'no' || h === 'sr.' || h === 'sr' || h === 'sr no' || h === 'sr. no.' || h === '#' || h === 'id';
+  };
+
   /**
    * Excel dates arrive as real Date objects when the cell was formatted as a date, and as
    * plain text when someone typed them. Text is genuinely ambiguous — 08/01/26 is either
@@ -78,6 +84,28 @@ module.exports = function setupImportRoutes(app, pool) {
       const d = new Date(year, month - 1, day);
       if (!isNaN(d.getTime()) && d.getMonth() === month - 1) {
         return { date: toISODate(d), ambiguous: false };
+      }
+    }
+
+    // Check for DD-MMM-YYYY or DD MMM YYYY (e.g. 01 Sep 2026, 02-Sep-2026)
+    const monthNames = {
+      jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3,
+      apr: 4, april: 4, may: 5, jun: 6, june: 6,
+      jul: 7, july: 7, aug: 8, august: 8, sep: 9, september: 9,
+      oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12
+    };
+    const mNamed = text.match(/^(\d{1,2})[\s\-/.]([a-zA-Z]{3,9})[\s\-/.],?\s*(\d{2,4})$/);
+    if (mNamed) {
+      const day = Number(mNamed[1]);
+      const monStr = mNamed[2].toLowerCase();
+      let year = Number(mNamed[3]);
+      if (year < 100) year += 2000;
+      const month = monthNames[monStr];
+      if (month) {
+        const d = new Date(year, month - 1, day);
+        if (!isNaN(d.getTime()) && d.getMonth() === month - 1) {
+          return { date: toISODate(d), ambiguous: false };
+        }
       }
     }
 
@@ -134,6 +162,37 @@ module.exports = function setupImportRoutes(app, pool) {
     return String(v).trim();
   };
 
+  /**
+   * Parses the cell string for structured content:
+   * Task: <Title>
+   * Description: <Description>
+   * If not structured with Task:, falls back to the full text as title.
+   * If Task: is present but empty, returns null so the empty template cell is ignored.
+   */
+  const parseCellContent = (text) => {
+    if (!text || typeof text !== 'string') return null;
+    const str = text.trim();
+    if (!str) return null;
+
+    // Check if cell has structured Task: format
+    if (/^task\s*:/i.test(str) || /[\r\n]\s*task\s*:/i.test(str)) {
+      const taskMatch = str.match(/(?:^|[\r\n])\s*task\s*:[ \t]*([^\r\n]*)/i);
+      const rawTitle = (taskMatch && taskMatch[1]) ? taskMatch[1].trim() : '';
+      // If Task: has no title (e.g. "Task:\nDescription:"), skip the template cell
+      if (!rawTitle) return null;
+
+      let desc = '';
+      const descMatch = str.match(/(?:^|[\r\n])\s*description\s*:[ \t]*([\s\S]*)/i);
+      if (descMatch && descMatch[1]) {
+        desc = descMatch[1].trim();
+      }
+      return { title: rawTitle, description: desc };
+    }
+
+    // Fallback for legacy format (e.g. "Creative 1")
+    return { title: str, description: '' };
+  };
+
   // ── Step 1: parse to a preview ────────────────────────────────────────
   app.post('/api/it-kanban/import/preview', upload.single('file'), async (req, res) => {
     try {
@@ -142,11 +201,32 @@ module.exports = function setupImportRoutes(app, pool) {
       const dayFirst = String(req.query.dayFirst || req.body.dayFirst || 'false') === 'true';
       const department = String(req.query.department || req.body.department || 'IT')
         .replace(/\s*department\s*$/i, '').trim();
+      const sprintId = req.query.sprintId || req.body.sprintId || null;
 
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(req.file.buffer);
-      const sheet = workbook.worksheets[0];
-      if (!sheet) return res.status(400).json({ error: 'The file has no worksheets' });
+      if (!workbook.worksheets || workbook.worksheets.length === 0) {
+        return res.status(400).json({ error: 'The file has no worksheets' });
+      }
+
+      // Find the best worksheet: either one that contains a 'Date' header in row 1,
+      // or the first sheet that isn't a README / Guide / Instructions tab.
+      let sheet = null;
+      for (const s of workbook.worksheets) {
+        const hRow = s.getRow(1);
+        let foundDate = false;
+        hRow.eachCell(cell => {
+          const t = String(cellText(cell) || '').trim().toLowerCase();
+          if (t === 'date' || t === 'dates') foundDate = true;
+        });
+        if (foundDate) {
+          sheet = s;
+          break;
+        }
+      }
+      if (!sheet) {
+        sheet = workbook.worksheets.find(s => !/readme|instructions|guide/i.test(s.name)) || workbook.worksheets[0];
+      }
 
       // Find date column and day column if present
       const headerRow = sheet.getRow(1);
@@ -178,7 +258,24 @@ module.exports = function setupImportRoutes(app, pool) {
         }
       }
 
-      // Collect all task / client columns (excluding dateCol and dayCol)
+      // Look up target sprint's project name
+      let targetProjectName = '';
+      let targetProjectId = null;
+      if (sprintId) {
+        const [[s]] = await db.query(
+          `SELECT s.*, p.id AS proj_id, p.name AS proj_name
+           FROM sprints s
+           LEFT JOIN projects p ON s.project_id = p.id
+           WHERE s.id = ?`,
+          [sprintId]
+        );
+        if (s) {
+          targetProjectId = s.proj_id || s.project_id || null;
+          targetProjectName = s.proj_name || s.name || '';
+        }
+      }
+
+      // Collect all service / task columns (excluding dateCol, dayCol, and index columns like "No.")
       const columns = [];
       const totalCols = Math.max(headerRow.cellCount || 0, sheet.columnCount || 0);
 
@@ -189,6 +286,7 @@ module.exports = function setupImportRoutes(app, pool) {
         const rawHeader = cellText(headerRow.getCell(c));
         const headerStr = String(rawHeader || '').trim();
         if (isDayHeader(headerStr)) continue;
+        if (isIndexHeader(headerStr)) continue;
 
         // Check if this column has header or data in subsequent rows
         let hasData = Boolean(headerStr);
@@ -203,18 +301,18 @@ module.exports = function setupImportRoutes(app, pool) {
         }
 
         if (hasData) {
-          const colName = headerStr || `Task ${columns.length + 1}`;
+          const colName = headerStr || `Service ${columns.length + 1}`;
           columns.push({ colNumber: c, name: colName });
         }
       }
 
       if (columns.length === 0) {
         return res.status(400).json({
-          error: 'No task or client columns found. Row 1 should name task columns (e.g. Task 1, Task 2) or client names.'
+          error: 'No service or task columns found. Row 1 should name service columns (e.g. SEO, GMB, Video).'
         });
       }
 
-      // Suggest a project per column by matching the header against project names.
+      // Suggest a project per column if not already bound to a sprint project
       const [projects] = await db.query(
         'SELECT id, name FROM projects WHERE name IS NOT NULL'
       );
@@ -232,9 +330,14 @@ module.exports = function setupImportRoutes(app, pool) {
           return n.includes(h) || h.includes(n) || (hBase.length >= 3 && n.includes(hBase));
         }) || null;
       };
+
       const columnMap = columns.map(c => {
         const p = matchProject(c.name);
-        return { ...c, projectId: p ? p.id : null, projectName: p ? p.name : null };
+        return {
+          ...c,
+          projectId: targetProjectId || (p ? p.id : null),
+          projectName: targetProjectName || (p ? p.name : null)
+        };
       });
 
       const rows = [];
@@ -248,13 +351,16 @@ module.exports = function setupImportRoutes(app, pool) {
         const rawDay = dayCol ? cellText(row.getCell(dayCol)) : '';
         const { date, ambiguous } = parseCellDate(rawDate, dayFirst, rawDay);
 
-        // Skip rows with no content in any task column
+        // Skip rows with no content in any service/task column
         let hasAnyCell = false;
         for (const col of columnMap) {
           const v = cellText(row.getCell(col.colNumber));
           if (v && !isWeekdayWord(v) && !(v instanceof Date)) {
-            hasAnyCell = true;
-            break;
+            const parsed = parseCellContent(String(v));
+            if (parsed && parsed.title) {
+              hasAnyCell = true;
+              break;
+            }
           }
         }
         if (!hasAnyCell) return;
@@ -263,34 +369,31 @@ module.exports = function setupImportRoutes(app, pool) {
           const rawVal = cellText(row.getCell(col.colNumber));
           if (!rawVal || rawVal instanceof Date) continue;
 
-          const title = String(rawVal).trim();
-          if (!title || isWeekdayWord(title)) continue;
+          const parsed = parseCellContent(String(rawVal));
+          if (!parsed || !parsed.title || isWeekdayWord(parsed.title)) continue;
 
           if (!date) { skippedNoDate++; continue; }
           if (ambiguous) ambiguousDates++;
 
-          // Match project: first from column name if matched, else from task title prefix (e.g. "Bakul Caterings-GMB" -> "Bakul Caterings")
-          let rowProjectId = col.projectId;
-          let rowProjectName = col.projectName;
-          if (!rowProjectId) {
-            const prefixPart = title.split(/[-–—:_]/)[0].trim();
-            if (prefixPart) {
-              const matchedP = matchProject(prefixPart);
-              if (matchedP) {
-                rowProjectId = matchedP.id;
-                rowProjectName = matchedP.name;
-              }
-            }
-          }
+          const rawTitle = parsed.title;
+          const description = parsed.description;
+          const service = col.name;
+
+          // If targetProjectName is present, prepend it to the title unless already present
+          const prefix = targetProjectName ? `${targetProjectName} - ` : '';
+          const fullTitle = rawTitle.startsWith(prefix) ? rawTitle : `${prefix}${rawTitle}`;
 
           rows.push({
             rowNumber,
             colNumber: col.colNumber,
             date,
-            title,
+            title: fullTitle,
+            rawTitle,
+            description,
+            service,
             column: col.name,
-            projectId: rowProjectId,
-            projectName: rowProjectName
+            projectId: targetProjectId || col.projectId,
+            projectName: targetProjectName || col.projectName
           });
         }
       });
@@ -323,6 +426,8 @@ module.exports = function setupImportRoutes(app, pool) {
 
       res.json({
         sheetName: sheet.name,
+        projectName: targetProjectName,
+        projectId: targetProjectId,
         columns: columnMap,
         rows,
         summary: {
@@ -363,15 +468,12 @@ module.exports = function setupImportRoutes(app, pool) {
         if (s && s.project_id != null) sprintProjectId = s.project_id;
       }
 
-      // Same rule as single creation: the key's prefix comes from the project the work
-      // lands in, which for an import is the destination sprint's project.
+      // Resolve key prefix
       const prefix = await resolvePrefix(conn, {
         projectId: sprintProjectId ?? (rows.find(r => r.projectId != null)?.projectId ?? null),
         department: dept
       });
 
-      // One key lookup up front, then increment — cheaper than a query per row. Uses the
-      // highest number in use, since issue_key is UNIQUE and a reused number would fail.
       const [existing] = await conn.query(
         'SELECT issue_key FROM it_kanban_issues WHERE issue_key LIKE ?', [`${prefix}-%`]
       );
@@ -389,7 +491,7 @@ module.exports = function setupImportRoutes(app, pool) {
         if (!isNaN(n) && n >= nextNum) nextNum = n + 1;
       }
 
-      const labelsJson = JSON.stringify(Array.isArray(labels) ? labels.filter(Boolean) : []);
+      const baseLabels = Array.isArray(labels) ? labels.filter(Boolean) : [];
       const created = [];
 
       await conn.beginTransaction();
@@ -399,6 +501,12 @@ module.exports = function setupImportRoutes(app, pool) {
 
         const key = `${prefix}-${nextNum++}`;
         const projectId = sprintProjectId ?? (row.projectId != null ? Number(row.projectId) : null);
+        const description = String(row.description || '').trim();
+        const service = String(row.service || row.column || '').trim();
+
+        // Include service in labels and components
+        const rowLabels = [...new Set([...baseLabels, service].filter(Boolean))];
+        const labelsJson = JSON.stringify(rowLabels);
 
         await conn.query(
           `INSERT INTO it_kanban_issues
@@ -407,16 +515,17 @@ module.exports = function setupImportRoutes(app, pool) {
               subtasks, linked_issues, comments, progress, original_estimate, remaining_estimate,
               time_spent, components, environment, vulnerability)
            VALUES (?, ?, ?, ?, 'TO DO', 'Unassigned', ?, 'None', NULL,
-              ?, '', ?, ?, ?, ?, ?,
-              ?, ?, ?, 0, '0h', '0h', '0h', '', '', '')`,
+              ?, ?, ?, ?, ?, ?, ?,
+              ?, ?, ?, 0, '0h', '0h', '0h', ?, '', '')`,
           [
             key, title, type, priority, reporter || 'Unassigned',
-            projectId, dept,
+            projectId, description, dept,
             (dateField === 'due_date' || dateField === 'both') ? row.date : null,
             (dateField === 'start_date' || dateField === 'both') ? row.date : null,
             sprintId ? Number(sprintId) : null,
             labelsJson,
-            JSON.stringify([]), JSON.stringify([]), JSON.stringify([])
+            JSON.stringify([]), JSON.stringify([]), JSON.stringify([]),
+            service
           ]
         );
         created.push({ issue_key: key, title, date: row.date });
