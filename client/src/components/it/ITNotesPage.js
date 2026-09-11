@@ -100,7 +100,7 @@ export default function ITNotesPage() {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const res = await axios.get(API_BASE_URL + '/notes');
+        const res = await axios.get(API_BASE_URL + '/notes?department=IT');
         const formatted = res.data.map(n => {
           let extra = {};
           try {
@@ -116,10 +116,10 @@ export default function ITNotesPage() {
             subtitle: extra.summary || 'Note Document',
             type: extra.type || 'Note',
             category: extra.category || 'General',
-            updatedBy: n.created_by || 'Admin',
+            updatedBy: n.created_by_name || 'Admin',
             updatedAt: new Date(n.created_at).toLocaleDateString(),
             time: new Date(n.created_at).toLocaleTimeString(),
-            createdBy: n.created_by || 'Admin',
+            createdBy: n.created_by_name || 'Admin',
             createdAt: new Date(n.created_at).toLocaleString(),
             lastUpdated: new Date(n.created_at).toLocaleString(),
             tags: extra.tags ? extra.tags.split(',').map(t => t.trim()) : [],

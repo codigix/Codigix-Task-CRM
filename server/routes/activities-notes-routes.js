@@ -1,4 +1,18 @@
 module.exports = function setupActivitiesNotesRoutes(app, pool) {
+  // Ensure department column exists on entity_notes
+  (async () => {
+    try {
+      const conn = await pool.getConnection();
+      await conn.query('ALTER TABLE entity_notes ADD COLUMN department VARCHAR(50) DEFAULT NULL');
+      conn.release();
+      console.log('Added department column to entity_notes');
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') {
+        console.error('Failed to add department to entity_notes:', e.message);
+      }
+    }
+  })();
+  
 
   async function getConnection() {
     return pool.getConnection();
@@ -203,7 +217,7 @@ module.exports = function setupActivitiesNotesRoutes(app, pool) {
   app.post('/api/notes', async (req, res) => {
     let connection;
     try {
-      const { title, description, contact_id, company_id, deal_id, project_id, lead_id, task_id, priority, is_important, created_by } = req.body;
+      const { title, description, contact_id, company_id, deal_id, project_id, lead_id, task_id, priority, is_important, created_by, department } = req.body;
 
       if (!title || !description) {
         return res.status(400).json({ error: 'Title and description are required' });
@@ -211,9 +225,9 @@ module.exports = function setupActivitiesNotesRoutes(app, pool) {
 
       connection = await getConnection();
       const [result] = await connection.query(`
-        INSERT INTO entity_notes (title, description, contact_id, company_id, deal_id, project_id, lead_id, task_id, priority, is_important, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [title, description, contact_id || null, company_id || null, deal_id || null, project_id || null, lead_id || null, task_id || null, priority || 'Medium', is_important || false, created_by || null]);
+        INSERT INTO entity_notes (title, description, contact_id, company_id, deal_id, project_id, lead_id, task_id, priority, is_important, created_by, department)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [title, description, contact_id || null, company_id || null, deal_id || null, project_id || null, lead_id || null, task_id || null, priority || 'Medium', is_important || false, created_by || null, department || null]);
 
       res.status(201).json({
         message: 'Note created successfully',
@@ -229,7 +243,7 @@ module.exports = function setupActivitiesNotesRoutes(app, pool) {
   app.get('/api/notes', async (req, res) => {
     let connection;
     try {
-      const { contact_id, deal_id, project_id, company_id, lead_id, task_id } = req.query;
+      const { contact_id, deal_id, project_id, company_id, lead_id, task_id, department } = req.query;
       connection = await getConnection();
 
       // Combined query to fetch from both entity_notes and followups (remarks)
@@ -247,7 +261,8 @@ module.exports = function setupActivitiesNotesRoutes(app, pool) {
                l.lead_name COLLATE utf8mb4_unicode_ci as lead_name, 
                t.title COLLATE utf8mb4_unicode_ci as task_name,
                u.first_name COLLATE utf8mb4_unicode_ci as created_by_name, 
-               CAST('entity_note' AS CHAR) COLLATE utf8mb4_unicode_ci as source
+               CAST('entity_note' AS CHAR) COLLATE utf8mb4_unicode_ci as source,
+               n.department
         FROM entity_notes n
         LEFT JOIN contacts c ON n.contact_id = c.id
         LEFT JOIN deals d ON n.deal_id = d.id
@@ -259,6 +274,11 @@ module.exports = function setupActivitiesNotesRoutes(app, pool) {
         WHERE 1=1
       `;
       const params = [];
+
+      if (department) {
+        query += ' AND n.department = ?';
+        params.push(department);
+      }
 
       if (contact_id) {
         query += ' AND n.contact_id = ?';

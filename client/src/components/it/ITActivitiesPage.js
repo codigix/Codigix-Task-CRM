@@ -46,7 +46,7 @@ export default function ITActivitiesPage() {
   useEffect(() => {
     const fetchActivities = async () => {
       try {
-        const res = await axios.get(API_BASE_URL + '/activities');
+        const res = await axios.get(API_BASE_URL + '/it-kanban/activities?department=IT');
 
         // Map raw data to UI format
         const formatted = res.data.map(act => {

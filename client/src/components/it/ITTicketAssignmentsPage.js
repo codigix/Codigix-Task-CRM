@@ -296,7 +296,7 @@ const ITTicketAssignmentsPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+            <div className="flex items-center justify-between p-2 border-b border-gray-100 bg-gray-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
                   <FileText size={20} />
@@ -319,7 +319,7 @@ const ITTicketAssignmentsPage = () => {
             </div>
 
             {/* Content Area */}
-            <div className="p-8 pb-10 max-h-[75vh] overflow-y-auto custom-scrollbar">
+            <div className="p-2 pb-10 max-h-[75vh] overflow-y-auto custom-scrollbar">
 
               <div className="relative pl-8 space-y-10 before:absolute before:inset-y-0 before:left-3 before:w-[2px] before:bg-indigo-50 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
@@ -392,8 +392,8 @@ const ITTicketAssignmentsPage = () => {
                           {selectedTicket.status || 'Pending'}
                         </span>
                         <span className={`text-xs font-semibold px-2 py-1 rounded-md border ${selectedTicket.priority === 'High' ? 'text-rose-700 bg-rose-50 border-rose-200' :
-                            selectedTicket.priority === 'Medium' ? 'text-amber-700 bg-amber-50 border-amber-200' :
-                              'text-green-700 bg-green-50 border-green-200'
+                          selectedTicket.priority === 'Medium' ? 'text-amber-700 bg-amber-50 border-amber-200' :
+                            'text-green-700 bg-green-50 border-green-200'
                           }`}>
                           {selectedTicket.priority || 'Normal'} Priority
                         </span>

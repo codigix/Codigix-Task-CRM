@@ -66,7 +66,8 @@ const CreateNotePage = () => {
         title: formData.title,
         description: enrichedDescription,
         is_important: formData.isImportant ? 1 : 0,
-        created_by: user?.name || user?.username || 'Admin'
+        created_by: user?.id || user?.user_id || null,
+        department: dept === 'it' ? 'IT' : 'SEO-GMB'
       });
 
       showSuccessToast('Note / Wiki Page published successfully!');

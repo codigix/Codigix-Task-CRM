@@ -245,6 +245,7 @@ const ITManagerDashboard = () => {
   const inProgressTasksCount = tasks.filter(t => t.status === 'IN PROGRESS' || t.status === 'In Progress').length;
   const inReviewCount = tasks.filter(t => t.status === 'IN REVIEW' || t.status === 'In Review').length;
   const completedCount = tasks.filter(t => t.status === 'DONE' || t.status === 'Completed' || t.status === 'Done').length;
+  const openBugsCount = tasks.filter(t => (t.type === 'Bug' || (t.title && t.title.toLowerCase().includes('bug'))) && (t.status !== 'DONE' && t.status !== 'TESTING')).length;
 
   return (
     <div className="flex w-full min-h-screen bg-[#F8FAFC] font-sans">
@@ -321,7 +322,7 @@ const ITManagerDashboard = () => {
                   </div>
                   <div className="space-y-2.5 text-indigo-900/80 leading-relaxed">
                     <p>
-                      <strong className="text-rose-900 font-semibold">Blockers & Risks:</strong> There are <strong className="text-rose-700 bg-rose-100/50 px-1 rounded">{openBugsCount}</strong> open bugs requiring attention. Priority should be given to the <strong className="text-rose-700 bg-rose-100/50 px-1 rounded">{tasks.filter(t => t.priority === 'High' && t.status !== 'Completed' && t.status !== 'Done').length}</strong> high-priority tasks currently in the pipeline to prevent downstream bottlenecks.
+                      <strong className="text-rose-900 font-semibold">Blockers & Risks:</strong> There are <strong className="text-rose-700 bg-rose-100/50 px-1 rounded">{openBugsCount}</strong> open bugs requiring attention. Priority should be given to the <strong className="text-rose-700 bg-rose-100/50 px-1 rounded">{tasks.filter(t => t.priority === 'High' && t.status !== 'DONE' && t.status !== 'TESTING').length}</strong> high-priority tasks currently in the pipeline to prevent downstream bottlenecks.
                     </p>
                   </div>
                 </div>

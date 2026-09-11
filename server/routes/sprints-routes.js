@@ -176,7 +176,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
             )
           )
           WHERE i.sprint_id = ?
-          ORDER BY i.rank_order IS NULL, i.rank_order ASC, i.id ASC
+          ORDER BY i.rank_order IS NOT NULL, i.rank_order ASC, i.id DESC
         `;
         const [items] = await db.query(itemsQuery, [s.id]);
         s.issues = items;
@@ -215,7 +215,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
           )
         )
         WHERE i.sprint_id IS NULL
-        ORDER BY i.rank_order IS NULL, i.rank_order ASC, i.id ASC
+        ORDER BY i.rank_order IS NOT NULL, i.rank_order ASC, i.id DESC
       `);
 
       // A board can run several sprints at once, so the board filters on the whole set.

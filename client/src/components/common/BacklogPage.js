@@ -996,6 +996,51 @@ const BacklogPage = ({ department }) => {
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="p-6">
 
+          {/* Backlog section */}
+          <div className="mb-4 border border-gray-200 rounded bg-white overflow-hidden">
+            <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 border-b border-gray-200">
+              <button onClick={() => toggle('backlog')} className="text-gray-500 hover:text-gray-800">
+                {collapsed.backlog ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+              </button>
+              <Inbox size={14} className="text-gray-500" />
+              <span className="font-semibold text-sm text-gray-900">Backlog</span>
+              <span className="text-xs text-gray-500">
+                ({backlog.length} work item{backlog.length === 1 ? '' : 's'})
+              </span>
+              <button
+                onClick={() => setIsCreatingSprint(true)}
+                className="ml-auto flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
+              >
+                <Plus size={13} /> Create sprint
+              </button>
+            </div>
+
+            {!collapsed.backlog && (
+              <Droppable droppableId="backlog">
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={snapshot.isDraggingOver ? 'bg-blue-50/60' : ''}
+                  >
+                    <InlineCreateRow sprintId={null} onCreate={createWorkItem} />
+                    {backlog.map((item, i) => (
+                      <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints}
+                        currentSprintId={null} users={assignableUsers}
+                        currentUserName={currentUserName} isSelected={selectedKey === item.issue_key}
+                        onMove={moveItem} onOpen={openIssue} onUpdate={updateItem}
+                        onDelete={(item) => deleteItem(item.issue_key)} onCopy={copyToClipboard} />
+                    ))}
+                    {backlog.length === 0 && (
+                      <div className="px-4 py-8 text-center text-xs text-gray-400">Your backlog is empty.</div>
+                    )}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            )}
+          </div>
+
           {/* Sprint sections */}
           {sprints.map((sprint, idx) => {
             const isCollapsed = collapsed[`s${sprint.id}`];
@@ -1069,6 +1114,7 @@ const BacklogPage = ({ department }) => {
                         {...provided.droppableProps}
                         className={snapshot.isDraggingOver ? 'bg-blue-50/60' : ''}
                       >
+                        <InlineCreateRow sprintId={sprint.id} onCreate={createWorkItem} />
                         {sprint.issues.map((item, i) => (
                           <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints}
                             currentSprintId={sprint.id} users={assignableUsers}
@@ -1083,7 +1129,6 @@ const BacklogPage = ({ department }) => {
                           </div>
                         )}
                         {provided.placeholder}
-                        <InlineCreateRow sprintId={sprint.id} onCreate={createWorkItem} />
                       </div>
                     )}
                   </Droppable>
@@ -1092,50 +1137,6 @@ const BacklogPage = ({ department }) => {
             );
           })}
 
-          {/* Backlog section */}
-          <div className="border border-gray-200 rounded bg-white overflow-hidden">
-            <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 border-b border-gray-200">
-              <button onClick={() => toggle('backlog')} className="text-gray-500 hover:text-gray-800">
-                {collapsed.backlog ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-              </button>
-              <Inbox size={14} className="text-gray-500" />
-              <span className="font-semibold text-sm text-gray-900">Backlog</span>
-              <span className="text-xs text-gray-500">
-                ({backlog.length} work item{backlog.length === 1 ? '' : 's'})
-              </span>
-              <button
-                onClick={() => setIsCreatingSprint(true)}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
-              >
-                <Plus size={13} /> Create sprint
-              </button>
-            </div>
-
-            {!collapsed.backlog && (
-              <Droppable droppableId="backlog">
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={snapshot.isDraggingOver ? 'bg-blue-50/60' : ''}
-                  >
-                    {backlog.map((item, i) => (
-                      <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints}
-                        currentSprintId={null} users={assignableUsers}
-                        currentUserName={currentUserName} isSelected={selectedKey === item.issue_key}
-                        onMove={moveItem} onOpen={openIssue} onUpdate={updateItem}
-                        onDelete={(item) => deleteItem(item.issue_key)} onCopy={copyToClipboard} />
-                    ))}
-                    {backlog.length === 0 && (
-                      <div className="px-4 py-8 text-center text-xs text-gray-400">Your backlog is empty.</div>
-                    )}
-                    {provided.placeholder}
-                    <InlineCreateRow sprintId={null} onCreate={createWorkItem} />
-                  </div>
-                )}
-              </Droppable>
-            )}
-          </div>
         </div>
       </DragDropContext>
 
