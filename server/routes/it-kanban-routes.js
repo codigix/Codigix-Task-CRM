@@ -821,13 +821,19 @@ Acceptance Criteria
   };
 
   const formatSecondsToDuration = (seconds) => {
-    const s = Math.max(0, Math.round(Number(seconds) || 0));
+    let s = Math.round(Number(seconds) || 0);
+    const isOverdue = s < 0;
+    if (isOverdue) s = Math.abs(s);
     if (s === 0) return '0h';
+    if (s > 0 && s < 60) {
+      return isOverdue ? 'Overdue 1m' : '1m';
+    }
     const w = Math.floor(s / 144000);
     const d = Math.floor((s % 144000) / 28800);
     const h = Math.floor((s % 28800) / 3600);
     const m = Math.floor((s % 3600) / 60);
-    return [w && `${w}w`, d && `${d}d`, h && `${h}h`, m && `${m}m`].filter(Boolean).join(' ');
+    const formatted = [w && `${w}w`, d && `${d}d`, h && `${h}h`, m && `${m}m`].filter(Boolean).join(' ');
+    return isOverdue ? `Overdue ${formatted}` : formatted || '0h';
   };
 
   // Recomputes time_spent / remaining_estimate from the issue's logged time.
@@ -1339,6 +1345,18 @@ app.get('/api/it-kanban/labels', async (req, res) => {
               const start = new Date(currentState.timer_start_time);
               if (!isNaN(start.getTime())) {
                 const diffMs = now - start;
+                const diffSeconds = Math.round(diffMs / 1000);
+                if (diffSeconds > 0) {
+                  try {
+                    await db.query(
+                      'INSERT INTO it_kanban_worklogs (issue_key, author, seconds, description, started_at) VALUES (?, ?, ?, ?, ?)',
+                      [key, 'System', diffSeconds, 'Auto-logged time from IN PROGRESS', start]
+                    );
+                    await recalcIssueTime(key);
+                  } catch (worklogErr) {
+                    console.error('Failed to auto-insert worklog:', worklogErr.message);
+                  }
+                }
                 const diffHours = diffMs / (1000 * 60 * 60);
 
                 let currentSpent = parseFloat(currentState.time_spent) || 0;
@@ -1361,7 +1379,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       if (updates.timer_start_time) {
         const d = new Date(updates.timer_start_time);
         if (!isNaN(d.getTime())) {
-          updates.timer_start_time = d.toISOString().slice(0, 19).replace('T', ' ');
+          updates.timer_start_time = d;
         }
       }
 
@@ -1730,7 +1748,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
 
       await db.query(
         'INSERT INTO it_kanban_worklogs (issue_key, author, seconds, description, started_at) VALUES (?, ?, ?, ?, ?)',
-        [key, author || 'Unassigned', seconds, description || null, startedAt ? String(startedAt).slice(0, 19).replace('T', ' ') : null]
+        [key, author || 'Unassigned', seconds, description || null, startedAt ? new Date(startedAt) : null]
       );
 
       const totals = await recalcIssueTime(key);

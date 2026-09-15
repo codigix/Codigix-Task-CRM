@@ -429,9 +429,9 @@ module.exports = function setupPerformanceRoutes(app, pool) {
           u.id as assignee_id, 
           u.first_name, 
           u.last_name,
-          COALESCE(i.effort_points, i.story_points, 0) as effort_points, 
+          COALESCE(i.story_points, 0) as effort_points, 
           0 as estimated_hours, 
-          0 as actual_hours,
+          COALESCE(i.logged_time, 0) as actual_hours,
           i.status
         FROM it_kanban_issues i
         LEFT JOIN users u ON LOWER(i.assignee) COLLATE utf8mb4_unicode_ci = LOWER(CONCAT_WS(' ', u.first_name, u.last_name)) COLLATE utf8mb4_unicode_ci
@@ -446,9 +446,9 @@ module.exports = function setupPerformanceRoutes(app, pool) {
           t.assigned_to as assignee_id, 
           u.first_name, 
           u.last_name,
-          0 as effort_points, 
-          0 as estimated_hours, 
-          0 as actual_hours,
+          CASE WHEN t.effort_points > 0 THEN t.effort_points WHEN t.priority = 'High' THEN 20 WHEN t.priority = 'Medium' THEN 10 ELSE 5 END as effort_points, 
+          COALESCE(t.estimated_hours, 0) as estimated_hours, 
+          COALESCE(t.actual_hours, 0) as actual_hours,
           t.status
         FROM project_tasks t
         LEFT JOIN users u ON t.assigned_to = u.id
@@ -463,13 +463,13 @@ module.exports = function setupPerformanceRoutes(app, pool) {
           u.id as assignee_id, 
           u.first_name, 
           u.last_name,
-          t.effort_points, 
-          t.estimated_hours, 
-          t.actual_hours,
+          CASE WHEN t.effort_points > 0 THEN t.effort_points WHEN t.priority = 'High' THEN 20 WHEN t.priority = 'Medium' THEN 10 ELSE 5 END as effort_points, 
+          COALESCE(t.estimated_hours, 0) as estimated_hours, 
+          COALESCE(t.actual_hours, 0) as actual_hours,
           t.status
         FROM general_tasks t
-        LEFT JOIN users u ON t.created_by = u.id
-        WHERE t.created_by IS NOT NULL
+        LEFT JOIN users u ON CAST(t.assigned_to AS UNSIGNED) = u.id
+        WHERE t.assigned_to IS NOT NULL
           AND LOWER(t.status) IN ('completed', 'done', 'closed')
           AND t.updated_at >= ? AND t.updated_at <= ?
       `, [startDate, endDate]);

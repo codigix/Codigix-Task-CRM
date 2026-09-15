@@ -80,18 +80,29 @@ const Drawer = ({ isOpen, onClose, employee }) => {
   });
 
   React.useEffect(() => {
-    if (isReviewModalOpen && employee) {
+    if (isReviewModalOpen && empDetails) {
+      const tasks = empDetails.tasks || [];
+      const completedTasks = tasks.filter(t => t.status === 'Done' || t.status === 'Completed').length;
+      const totalTasks = tasks.length;
+      const taskCompletion = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      
+      const totalPointsAssigned = tasks.reduce((sum, t) => sum + (t.points || 0), 0);
+      const earnedPoints = tasks.filter(t => t.status === 'Done' || t.status === 'Completed').reduce((sum, t) => sum + (t.points || 0), 0);
+      const pointsDistribution = totalPointsAssigned > 0 ? Math.round((earnedPoints / totalPointsAssigned) * 100) : 0;
+
+      const qMetrics = empDetails.qualityMetrics || {};
+      
       setReviewForm({
-        taskCompletion: employee.assigned > 0 ? Math.round((employee.earned / employee.assigned) * 100) : 0,
-        quality: employee.quality || 0,
-        onTime: employee.onTime || 0,
-        efficiency: Math.round(Number(employee.efficiency) * 10) || 0,
-        reviewGatePoints: employee.quality || 0,
-        pointsDistribution: employee.onTime || 0,
+        taskCompletion: taskCompletion,
+        quality: qMetrics.avgQuality || 0,
+        onTime: qMetrics.avgOnTime || 0,
+        efficiency: qMetrics.avgEfficiency || 0,
+        reviewGatePoints: qMetrics.avgQuality || 0,
+        pointsDistribution: pointsDistribution,
         feedback: ''
       });
     }
-  }, [isReviewModalOpen, employee]);
+  }, [isReviewModalOpen, empDetails]);
 
   const [trendsData, setTrendsData] = useState([]);
   const [isTrendsLoading, setIsTrendsLoading] = useState(false);
@@ -99,7 +110,7 @@ const Drawer = ({ isOpen, onClose, employee }) => {
   React.useEffect(() => {
     if (activeTab === 'Trends' && employee) {
       setIsTrendsLoading(true);
-      fetch(`${API_BASE_URL}/performance/employee/${employee.id}/trends?months=6`)
+      fetch(`${API_BASE_URL}/hr/performance/employees/${employee.id}/trends?months=6`)
         .then(res => res.json())
         .then(data => {
           // data.trends is in descending order (most recent first), reverse it for charts
@@ -604,10 +615,10 @@ const Drawer = ({ isOpen, onClose, employee }) => {
             )}
 
             {activeTab === 'Quality' && (() => {
-              const qScore = employee.quality || 0;
-              const firstPass = qScore > 0 ? Math.min(100, Math.round(qScore + (Math.random() * 5 - 2))) : 0;
-              const peerReview = qScore > 0 ? Math.min(100, Math.round(qScore + (Math.random() * 8 - 1))) : 0;
-              const bugFree = qScore > 0 ? Math.max(0, Math.round(qScore - (Math.random() * 6 + 1))) : 0;
+              const qScore = qualityMetrics.avgQuality || employee.quality || 0;
+              const firstPass = Math.min(100, qualityMetrics.avgQuality > 0 ? qualityMetrics.avgQuality + 2 : 0);
+              const peerReview = qualityMetrics.avgEfficiency > 0 ? qualityMetrics.avgEfficiency : 0;
+              const bugFree = Math.min(100, qualityMetrics.avgOnTime > 0 ? qualityMetrics.avgOnTime : 0);
 
               let rankingText = "Not enough data";
               let rankingColor = "text-gray-400";

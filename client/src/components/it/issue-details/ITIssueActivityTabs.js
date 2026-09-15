@@ -516,7 +516,7 @@ const ITIssueActivityTabs = ({
             {[
               { label: 'Estimated', value: worklogData.originalEstimate || '0h', cls: 'text-gray-700' },
               { label: 'Logged', value: worklogData.totalSpent || '0h', cls: 'text-blue-600' },
-              { label: 'Remaining', value: worklogData.remainingEstimate || '0h', cls: 'text-emerald-600' }
+              { label: 'Remaining', value: worklogData.remainingEstimate || '0h', cls: worklogData.remainingEstimate?.includes('Overdue') ? 'text-red-600 font-bold' : 'text-emerald-600' }
             ].map(s => (
               <div key={s.label} className="p-2 bg-gray-50 rounded border border-gray-100">
                 <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">{s.label}</span>
@@ -525,25 +525,19 @@ const ITIssueActivityTabs = ({
             ))}
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded p-3 flex items-center justify-between mt-2 mb-2">
-            <div>
-              <span className="text-xs font-semibold text-slate-700 block mb-0.5">Live Tracker</span>
-              <span className={`font-mono text-lg font-bold tracking-tight ${timerState.isActive ? 'text-red-600' : 'text-slate-600'}`}>
-                {formatLiveElapsed(liveElapsed)}
-              </span>
+          {(timerState.isActive || liveElapsed > 0) && (
+            <div className="bg-slate-50 border border-slate-200 rounded p-3 flex items-center justify-between mt-2 mb-2">
+              <div>
+                <span className="text-xs font-semibold text-slate-700 block mb-0.5">Live Tracker</span>
+                <span className={`font-mono text-lg font-bold tracking-tight ${timerState.isActive ? 'text-red-600' : 'text-slate-600'}`}>
+                  {formatLiveElapsed(liveElapsed)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {/* The timer is exclusively controlled by the issue status (e.g. IN PROGRESS) */}
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              {(timerState.isActive || timerState.accumulatedSeconds > 0) && (
-                <button
-                  onClick={handleStopAndLog}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 transition"
-                  title="Stop & Log Time"
-                >
-                  <Square size={12} fill="currentColor" />
-                </button>
-              )}
-            </div>
-          </div>
+          )}
 
           <div className="flex justify-between items-center pt-2">
             <span className="text-xs font-semibold text-gray-700">Work Logs</span>

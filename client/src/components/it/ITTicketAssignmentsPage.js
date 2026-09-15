@@ -224,7 +224,7 @@ const ITTicketAssignmentsPage = () => {
 
                       return (
                         <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
-                          <td className="p-4 font-medium text-gray-900">{task.title || 'Untitled'}</td>
+                          <td className="p-4 font-medium text-gray-900 whitespace-normal break-words max-w-[400px] min-w-[250px]">{task.title || 'Untitled'}</td>
                           <td className="p-4 text-gray-600">{projects.find(p => p.id === task.project_id)?.name || 'General IT'}</td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">

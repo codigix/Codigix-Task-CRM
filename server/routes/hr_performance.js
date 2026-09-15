@@ -139,18 +139,34 @@ router.get('/employees/:id', async (req, res) => {
     if (!emp) return res.status(404).json({ error: 'Employee not found' });
 
     const tasks = await prisma.general_tasks.findMany({
-      where: { assigned_to: userId },
+      where: { assigned_to: String(userId) },
       orderBy: { created_at: 'desc' },
       take: 10
     });
 
-    const formattedTasks = tasks.map(t => ({
-      id: `TASK-${t.id}`,
-      name: t.title,
-      status: t.status,
-      time: '2h',
-      points: 5
-    }));
+    // Fetch time logs for these tasks
+    const taskIds = tasks.map(t => t.id);
+    const taskTimeLogs = await prisma.task_time_logs.findMany({
+      where: { task_id: { in: taskIds } }
+    });
+
+    const formattedTasks = tasks.map(t => {
+      const logsForTask = taskTimeLogs.filter(log => log.task_id === t.id);
+      const totalHours = logsForTask.reduce((sum, log) => sum + Number(log.hours || 0), 0);
+      
+      let points = 5;
+      if (t.priority === 'High') points = 20;
+      else if (t.priority === 'Medium') points = 10;
+      else if (t.priority === 'Low') points = 5;
+
+      return {
+        id: `TASK-${t.id}`,
+        name: t.title,
+        status: t.status,
+        time: `${totalHours.toFixed(1)}h`,
+        points: points
+      };
+    });
 
     const timeLogs = await prisma.task_time_logs.findMany({
       where: { user_id: userId },
@@ -158,12 +174,15 @@ router.get('/employees/:id', async (req, res) => {
       take: 5
     });
 
-    const formattedTimeLogs = timeLogs.map(log => ({
-      date: new Date(log.created_at).toLocaleDateString(),
-      task: `Task #${log.task_id}`,
-      type: 'Work',
-      hours: log.hours || log.time_spent || 1
-    }));
+    const formattedTimeLogs = timeLogs.map(log => {
+      const relatedTask = tasks.find(t => t.id === log.task_id);
+      return {
+        date: new Date(log.created_at).toLocaleDateString(),
+        task: relatedTask ? relatedTask.title : `Task #${log.task_id}`,
+        type: 'Work',
+        hours: Number(log.hours || 0).toFixed(1)
+      };
+    });
 
     const reviews = await prisma.performance_reviews.findMany({
       where: { employee_id: userId },
@@ -249,8 +268,63 @@ router.post('/employees/:id/review', async (req, res) => {
 
     res.status(201).json({ success: true, review });
   } catch (error) {
-    console.error('Error saving review:', error);
-    res.status(500).json({ error: 'Failed to save review' });
+    console.error('Error submitting review:', error);
+    res.status(500).json({ error: 'Failed to submit review' });
+  }
+});
+
+router.get('/employees/:id/trends', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const monthsParam = parseInt(req.query.months) || 6;
+    
+    const currentDate = new Date();
+    const trends = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    for (let i = 0; i < monthsParam; i++) {
+      const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const endD = new Date(currentDate.getFullYear(), currentDate.getMonth() - i + 1, 1);
+      
+      const revs = await prisma.performance_reviews.findMany({
+        where: {
+          employee_id: userId,
+          created_at: { gte: d, lt: endD }
+        }
+      });
+      
+      const overallScore = revs.length > 0 ? Math.round(revs.reduce((sum, r) => sum + r.score, 0) / revs.length) : 0;
+      const qualityRate = revs.length > 0 ? Math.round(revs.reduce((sum, r) => sum + r.quality_of_work, 0) / revs.length) : 0;
+      
+      // Calculate effort points for the month based on assigned tasks completed in this month
+      const tasks = await prisma.general_tasks.findMany({
+        where: { 
+          assigned_to: String(userId),
+          updated_at: { gte: d, lt: endD },
+          status: 'Done'
+        }
+      });
+      
+      let effortPoints = 0;
+      for (const t of tasks) {
+        if (t.priority === 'High') effortPoints += 20;
+        else if (t.priority === 'Medium') effortPoints += 10;
+        else if (t.priority === 'Low') effortPoints += 5;
+        else effortPoints += 5;
+      }
+      
+      trends.push({
+        month: monthNames[d.getMonth()],
+        overallScore,
+        qualityRate,
+        effortPoints
+      });
+    }
+
+    res.json({ trends });
+  } catch (error) {
+    console.error('Error fetching employee trends:', error);
+    res.status(500).json({ error: 'Failed to fetch employee trends' });
   }
 });
 

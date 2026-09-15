@@ -926,7 +926,7 @@ model general_tasks {
   entity_notes               entity_notes[]
   files                      files[]
   followups                  followups[]
-  projects                   projects?                  @relation(fields: [project_id], references: [id], onUpdate: NoAction, map: "fk_tasks_project")
+  projects                   projects?                  @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tasks_project")
   task_contributions         task_contributions[]
   task_history               task_history[]
   task_subtasks              task_subtasks[]
@@ -1210,7 +1210,7 @@ model it_projects {
   status          it_projects_status?         @default(Backlog)
   created_at      DateTime?                   @default(now()) @db.Timestamp(0)
   updated_at      DateTime?                   @default(now()) @db.Timestamp(0)
-  teams           teams?                      @relation(fields: [team_id], references: [id], onUpdate: NoAction, map: "fk_it_projects_team")
+  teams           teams?                      @relation(fields: [team_id], references: [id], onDelete: NoAction, map: "fk_it_projects_team")
   projects        projects                    @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "it_projects_ibfk_1")
 
   @@index([project_id], map: "idx_project_id")
@@ -1506,6 +1506,8 @@ model project_tasks {
   timer_start_time                       DateTime?               @db.DateTime(0)
   is_timer_running                       Boolean?                @default(false)
   actual_hours                           Decimal?                @default(0.00) @db.Decimal(10, 2)
+  effort_points                          Int?                    @default(0)
+  estimated_hours                        Decimal?                @default(0.00) @db.Decimal(10, 2)
   projects                               projects                @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "project_tasks_ibfk_1")
   users_project_tasks_assigned_toTousers users?                  @relation("project_tasks_assigned_toTousers", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "project_tasks_ibfk_2")
   users_project_tasks_created_byTousers  users?                  @relation("project_tasks_created_byTousers", fields: [created_by], references: [id], onUpdate: NoAction, map: "project_tasks_ibfk_3")

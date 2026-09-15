@@ -452,6 +452,15 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     const issueKey = issue?.issue_key || issue?.key;
     if (!issueKey || !updateIssue) return;
     updateIssue(issueKey, updatedFields);
+
+    // If status changes, backend might auto-stop timer and create worklog. 
+    // Reload worklogs after a brief delay so the LOGGED time updates in UI.
+    if (updatedFields.status !== undefined) {
+      setTimeout(() => {
+        loadWorklogs();
+        loadHistory();
+      }, 600);
+    }
   };
 
   const toggleDropdown = (name) => {
