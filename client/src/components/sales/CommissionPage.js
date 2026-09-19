@@ -3,7 +3,7 @@ import { DollarSign, CreditCard, History, ArrowUpRight } from 'lucide-react';
 
 const CommissionPage = () => {
   const commissions = [
-    { id: 1, deal: 'Enterprise CRM Setup', amount: '₹1,250', rate: '5%', date: '20 Feb 2026', status: 'Paid' },
+    { id: 1, deal: 'Task Management Setup', amount: '₹1,250', rate: '5%', date: '20 Feb 2026', status: 'Paid' },
     { id: 2, deal: 'SaaS Annual Plan', amount: '₹450', rate: '5%', date: '22 Feb 2026', status: 'Pending' },
     { id: 3, deal: 'Custom Integration', amount: '₹800', rate: '5%', date: '25 Feb 2026', status: 'Processing' },
     { id: 4, deal: 'Consulting Services', amount: '₹300', rate: '3%', date: '26 Feb 2026', status: 'Paid' },

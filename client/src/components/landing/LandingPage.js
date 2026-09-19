@@ -24,7 +24,7 @@ const LandingPage = () => {
       <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-50 transition-all duration-300 bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-4 sm:px-6">
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0 flex items-center cursor-pointer">
-            <img src="/assets/logo.png" alt="Codigix Logo" className="h-8 object-contain" />
+            <img src="/codigix-logo.png" alt="Codigix" className="h-8 object-contain" />
           </div>
           
           <div className="hidden md:flex items-center space-x-8">

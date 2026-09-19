@@ -178,7 +178,7 @@ const SignupPage = () => {
 
   const getRoleName = (department, roleType) => {
     if (!roleType) return 'Employee';
-    
+
     if (department === 'IT Department') {
       if (roleType === 'Manager') return 'IT Manager';
       return roleType;
@@ -192,7 +192,7 @@ const SignupPage = () => {
       if (roleType === 'Super Admin') return 'Super Admin';
       return roleType;
     }
-    
+
     return roleType;
   };
 
@@ -302,7 +302,7 @@ const SignupPage = () => {
             </div>
           </div>
           <h1 className="text-2xl   text-gray-900 mb-1">Create Account</h1>
-          <p className="text-sm text-gray-500 ">Join our Enterprise CRM Platform</p>
+          <p className="text-sm text-gray-500 ">Join our Task Management Platform</p>
         </div>
 
         {/* Signup Card */}

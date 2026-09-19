@@ -5,18 +5,35 @@ module.exports = (pool) => {
   // Helper to fetch and format all employees
   const getAllEmployees = async () => {
     // 1. Fetch all users
-    const [users] = await pool.query("SELECT id, first_name, last_name, email, role_id, created_at, avatar FROM users");
+    const [users] = await pool.query("SELECT id, first_name, last_name, email, role_id, created_at, avatar, department FROM users");
     
-    // 2. Fetch all kanban issues to calculate points and get tasks
-    const [issues] = await pool.query("SELECT id, title, assignee, status, effort_points, story_points, updated_at FROM it_kanban_issues WHERE assignee IS NOT NULL AND assignee != 'Unassigned'");
+    // 2. Fetch all kanban issues
+    const [itIssues] = await pool.query("SELECT id, title, assignee, status, COALESCE(effort_points, story_points, 0) as effort_points, updated_at FROM it_kanban_issues WHERE assignee IS NOT NULL AND assignee != 'Unassigned'");
     
-    // 3. Fetch all performance reviews for averages and history
+    // 3. Fetch project tasks
+    const [projectTasks] = await pool.query(`
+      SELECT id, title, assigned_to as assignee_id, status, COALESCE(effort_points, 0) as effort_points, actual_hours, updated_at 
+      FROM project_tasks 
+      WHERE assigned_to IS NOT NULL
+    `);
+
+    // 4. Fetch general tasks
+    const [generalTasks] = await pool.query(`
+      SELECT id, title, created_by as assignee_id, status, COALESCE(effort_points, CASE priority WHEN 'High' THEN 20 WHEN 'Medium' THEN 10 WHEN 'Low' THEN 5 ELSE 5 END) as effort_points, actual_hours, updated_at 
+      FROM general_tasks 
+      WHERE created_by IS NOT NULL
+    `);
+
+    // 5. Fetch all performance reviews
     const [reviews] = await pool.query("SELECT employee_id, score, quality_of_work, on_time_delivery, efficiency, created_at FROM performance_reviews");
 
     return users.map(user => {
       const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
       
-      const userIssues = issues.filter(issue => issue.assignee && issue.assignee.toLowerCase() === fullName.toLowerCase());
+      const userItIssues = itIssues.filter(issue => issue.assignee && issue.assignee.toLowerCase() === fullName.toLowerCase());
+      const userProjectTasks = projectTasks.filter(t => t.assignee_id === String(user.id) || t.assignee_id == user.id);
+      const userGeneralTasks = generalTasks.filter(t => t.assignee_id === String(user.id) || t.assignee_id == user.id);
+
       let assignedPoints = 0;
       let earnedPoints = 0;
       let completedGoals = 0;
@@ -24,10 +41,19 @@ module.exports = (pool) => {
       const mappedTasks = [];
       const mappedTimeLogs = [];
 
-      userIssues.forEach(issue => {
-        const pts = Number(issue.effort_points) || Number(issue.story_points) || 0;
+      const allUserTasks = [
+        ...userItIssues.map(t => ({ ...t, type: 'IT Issue', actual_hours: null })),
+        ...userProjectTasks.map(t => ({ ...t, type: 'Project Task' })),
+        ...userGeneralTasks.map(t => ({ ...t, type: 'General Task' }))
+      ];
+
+      allUserTasks.forEach(issue => {
+        const pts = Number(issue.effort_points) || 0;
         assignedPoints += pts;
-        if (issue.status && issue.status.toUpperCase() === 'DONE') {
+        const isCompleted = issue.status && ['DONE', 'COMPLETED', 'RESOLVED'].includes(issue.status.toUpperCase());
+        const isInProgress = issue.status && ['IN PROGRESS', 'IN_PROGRESS', 'DEVELOPMENT'].includes(issue.status.toUpperCase());
+
+        if (isCompleted) {
           earnedPoints += pts;
           completedGoals += 1;
         }
@@ -35,19 +61,24 @@ module.exports = (pool) => {
         // Map to frontend task structure
         mappedTasks.push({
           id: issue.id,
-          title: issue.title || `Task #${issue.id}`,
-          status: issue.status === 'DONE' ? 'Completed' : (issue.status === 'IN PROGRESS' ? 'In Progress' : 'Pending'),
+          title: issue.title || `${issue.type} #${issue.id}`,
+          status: isCompleted ? 'Completed' : (isInProgress ? 'In Progress' : 'Pending'),
           points: pts,
           time: issue.updated_at ? new Date(issue.updated_at).toLocaleDateString() : 'Recent'
         });
 
-        // Create a plausible time log from the issue
-        if (issue.status === 'DONE' || issue.status === 'IN PROGRESS') {
+        // Use actual hours if available, otherwise estimate
+        if (isCompleted || isInProgress) {
+          let hrs = Number(issue.actual_hours);
+          if (isNaN(hrs) || hrs === 0) {
+            hrs = pts > 0 ? (pts * 1.5) : 2; // rough estimate if no actual_hours logged yet
+          }
+          
           mappedTimeLogs.push({
             date: issue.updated_at ? new Date(issue.updated_at).toLocaleDateString() : 'Recent',
-            task: issue.title || `Task #${issue.id}`,
-            type: 'Development',
-            hours: (pts * 1.5).toFixed(1) // rough estimate for realism
+            task: issue.title || `${issue.type} #${issue.id}`,
+            type: issue.type,
+            hours: hrs.toFixed(1)
           });
         }
       });
@@ -84,7 +115,7 @@ module.exports = (pool) => {
         efficiency: Number(avgEfficiency).toFixed(1),
         overall: Math.round(avgOverall),
         goalsCompleted: completedGoals,
-        totalGoals: userIssues.length,
+        totalGoals: allUserTasks.length,
         status: avgOverall >= 90 ? 'Excellent' : (avgOverall >= 75 ? 'Good' : (userReviews.length > 0 ? 'Needs Improvement' : 'No Reviews')),
         lastReviewDate: mappedReviews.length > 0 ? mappedReviews[0].date : 'N/A',
         recentFeedback: 'Real data integration complete.',

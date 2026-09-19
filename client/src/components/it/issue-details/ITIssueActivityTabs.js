@@ -144,17 +144,9 @@ const ITIssueActivityTabs = ({
   }, [timerState.isActive, timerState.sessionStart, timerState.accumulatedSeconds]);
 
   const handlePauseTimer = React.useCallback(() => {
-    setTimerState(prev => {
-      if (!prev.isActive || !prev.sessionStart) return prev;
-      const currentElapsed = Math.floor((Date.now() - prev.sessionStart) / 1000);
-      return {
-        ...prev,
-        isActive: false,
-        sessionStart: null,
-        accumulatedSeconds: prev.accumulatedSeconds + currentElapsed
-      };
-    });
-  }, []);
+    setTimerState({ isActive: false, sessionStart: null, accumulatedSeconds: 0, initialSessionStart: null });
+    if (issueKey) localStorage.removeItem(`workTimer_${issueKey}`);
+  }, [issueKey]);
 
   const handleStartTimer = React.useCallback(() => {
     const now = Date.now();

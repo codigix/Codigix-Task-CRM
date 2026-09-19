@@ -39,7 +39,7 @@ const HeroSection = () => {
           <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-tr from-red-600 to-rose-500 shadow-inner">
             <span className="flex h-2 w-2 rounded-full bg-white animate-pulse"></span>
           </div>
-          Codigix CRM 2.0 is now live
+          Codigix 2.0 is now live
           <div className="w-px h-4 bg-slate-300 mx-1"></div>
           <span className="text-red-600 flex items-center gap-1">Read announcement <ArrowRight size={14} /></span>
         </div>

@@ -269,7 +269,7 @@ const ProfileSettingsPage = () => {
         memberDuration: 'Active',
         tags: realTags,
         avatarUrl: user.avatar || null,
-        bio: user.bio || 'Enterprise CRM Team Member',
+        bio: user.bio || 'Task Management Team Member',
         jobTitle: realRole,
         company: 'Codigix'
       });
@@ -288,7 +288,7 @@ const ProfileSettingsPage = () => {
         memberDuration: 'Active',
         tags: realTags,
         avatarUrl: user.avatar || null,
-        bio: user.bio || 'Enterprise CRM Team Member',
+        bio: user.bio || 'Task Management Team Member',
         jobTitle: realRole,
         company: 'Codigix'
       });

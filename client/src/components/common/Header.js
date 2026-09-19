@@ -99,8 +99,8 @@ const Header = ({ toggleSidebar }) => {
             });
 
             showDeviceNotification({
-              title: notif.title || '🔔 Codigix CRM Alert',
-              body: notif.message || (notif.actor_name ? `${notif.actor_name}: You have a new update` : 'New notification in CRM'),
+              title: notif.title || '🔔 Codigix Alert',
+              body: notif.message || (notif.actor_name ? `${notif.actor_name}: You have a new update` : 'New notification in Codigix'),
               tag: `notif-${notif.id}`,
               url: target ? (window.location.origin + target) : window.location.href
             });
@@ -396,7 +396,7 @@ const Header = ({ toggleSidebar }) => {
               {showHelp && (
                 <div className="dropdown-menu absolute right-0 mt-2 w-64 bg-white z-50 p-4 rounded shadow-xl border border-gray-100">
                   <h4 className="text-xs font-semibold text-gray-900 mb-1">Help & Support</h4>
-                  <p className="text-xs text-gray-500 mb-2">Need assistance with your CRM dashboard? Our support team is here to help.</p>
+                  <p className="text-xs text-gray-500 mb-2">Need assistance with your Codigix dashboard? Our support team is here to help.</p>
                   <a href="mailto:support@codigix.com" className="text-xs text-blue-600 hover:underline">Email: support@codigix.com</a>
                 </div>
               )}

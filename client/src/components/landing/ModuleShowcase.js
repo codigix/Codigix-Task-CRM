@@ -51,7 +51,7 @@ const ModuleShowcase = () => {
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 className="text-2xl md:text-3xl  text-slate-900 mb-4 tracking-tight">Powerful tools built right in</h2>
           <p className="text-base text-slate-600 font-light">
-            Stop paying for separate software. Codigix CRM includes premium collaboration and productivity tools out of the box.
+            Stop paying for separate software. Codigix includes premium collaboration and productivity tools out of the box.
           </p>
         </div>
 

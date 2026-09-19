@@ -451,4 +451,4 @@ AND deal_id IN (SELECT id FROM deals WHERE pipeline = 'Won');
 8. ✅ UI updated in real-time
 9. ✅ Server logs document what happened
 
-**This is Enterprise CRM Logic** - Same pattern used in Salesforce, HubSpot, Pipedrive.
+**This is Task Management Logic** - Same pattern used in Salesforce, HubSpot, Pipedrive.

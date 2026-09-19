@@ -577,34 +577,46 @@ module.exports = function setupPerformanceRoutes(app, pool) {
 
       // 3. Project Tasks
       const [projectTasks] = await pool.query(`
-        SELECT 
-          t.id,
-          t.title,
-          t.status,
-          t.priority,
-          0 as effort_points,
-          0 as estimated_hours,
-          0 as actual_hours,
-          t.created_at,
-          t.updated_at
-        FROM project_tasks t
+          SELECT 
+            t.id,
+            t.title,
+            t.status,
+            t.priority,
+            COALESCE(t.effort_points, 
+              CASE t.priority 
+                WHEN 'High' THEN 20 
+                WHEN 'Medium' THEN 10 
+                WHEN 'Low' THEN 5 
+                ELSE 0 END
+            ) as effort_points,
+            COALESCE(t.estimated_hours, 0) as estimated_hours,
+            COALESCE(t.actual_hours, 0) as actual_hours,
+            t.created_at,
+            t.updated_at
+          FROM project_tasks t
         WHERE t.assigned_to = ?
           AND t.updated_at >= ? AND t.updated_at <= ?
       `, [empId, startDate, endDate]);
 
       // 4. General Tasks
       const [generalTasks] = await pool.query(`
-        SELECT 
-          t.id,
-          t.title,
-          t.status,
-          t.priority,
-          t.effort_points,
-          t.estimated_hours,
-          t.actual_hours,
-          t.created_at,
-          t.updated_at
-        FROM general_tasks t
+          SELECT 
+            t.id,
+            t.title,
+            t.status,
+            t.priority,
+            COALESCE(t.effort_points, 
+              CASE t.priority 
+                WHEN 'High' THEN 20 
+                WHEN 'Medium' THEN 10 
+                WHEN 'Low' THEN 5 
+                ELSE 0 END
+            ) as effort_points,
+            COALESCE(t.estimated_hours, 0) as estimated_hours,
+            COALESCE(t.actual_hours, 0) as actual_hours,
+            t.created_at,
+            t.updated_at
+          FROM general_tasks t
         WHERE t.created_by = ?
           AND t.updated_at >= ? AND t.updated_at <= ?
       `, [empId, startDate, endDate]);

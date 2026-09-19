@@ -98,7 +98,7 @@ export const playNotificationChime = () => {
  * Dispatches a native operating system notification to the user's device.
  */
 export const showDeviceNotification = async ({
-  title = 'Codigix CRM',
+  title = 'Codigix',
   body = '',
   icon = '/logo192.png',
   badge = '/favicon.svg',
@@ -181,7 +181,7 @@ export const sendTestDeviceNotification = async () => {
   }
 
   const result = await showDeviceNotification({
-    title: '🔔 Codigix CRM - System Alert',
+    title: '🔔 Codigix - System Alert',
     body: 'Device notifications are active! You will receive instant system alerts on this device.',
     tag: `test-alert-${Date.now()}`,
     url: window.location.href

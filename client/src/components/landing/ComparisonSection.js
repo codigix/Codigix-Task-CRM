@@ -4,7 +4,7 @@ import { CheckCircle2, X } from 'lucide-react';
 const ComparisonSection = () => {
   const features = [
     { name: 'Advanced IT Kanban & Bug Tracking', legacy: false, point: false, codigix: true },
-    { name: 'Built-in Sales CRM & Lead Pipelines', legacy: true, point: false, codigix: true },
+    { name: 'Built-in Sales & Lead Pipelines', legacy: true, point: false, codigix: true },
     { name: 'Native Video Calls, Audio & Chat', legacy: false, point: false, codigix: true },
     { name: 'Integrated Marketing & SEO Tools', legacy: false, point: false, codigix: true },
     { name: 'Dedicated HR & Payroll integration', legacy: false, point: false, codigix: true },
@@ -20,7 +20,7 @@ const ComparisonSection = () => {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-100/50 text-red-600 text-xs  uppercase tracking-widest mb-6">
-            Why Codigix CRM?
+            Why Codigix?
           </div>
           <h3 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Beyond Issue Tracking</h3>
           <p className="text-lg text-slate-600 font-light leading-relaxed">
@@ -41,7 +41,7 @@ const ComparisonSection = () => {
             </div>
             <div className="col-span-1 text-center">
               <span className="inline-block bg-red-600 text-white text-[11px]  uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg shadow-red-600/20">
-                Codigix CRM
+                Codigix
               </span>
             </div>
           </div>
@@ -61,7 +61,7 @@ const ComparisonSection = () => {
                 {/* Mobile labels */}
                 <div className="md:hidden flex justify-between p-2 bg-slate-50 rounded mt-2 mb-1 text-xs font-medium text-slate-500">
                   <span>Legacy Tools</span>
-                  <span className="text-red-600 ">Codigix CRM</span>
+                  <span className="text-red-600 ">Codigix</span>
                 </div>
 
                 <div className="col-span-1 flex justify-between md:justify-center px-6 md:px-0 py-3 md:py-0 border-b md:border-0 border-slate-100">
@@ -73,7 +73,7 @@ const ComparisonSection = () => {
                   )}
                 </div>
                 <div className="col-span-1 flex justify-between md:justify-center px-6 md:px-0 py-4 md:py-3 bg-red-50/40 rounded-xl border border-transparent group-hover:bg-red-50 group-hover:border-red-100 transition-colors relative overflow-hidden">
-                  <span className="md:hidden text-xs  text-red-600">Codigix CRM:</span>
+                  <span className="md:hidden text-xs  text-red-600">Codigix:</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-pulse transition-opacity"></div>
                   {feature.codigix ? (
                     <div className="relative">

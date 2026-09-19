@@ -150,13 +150,15 @@ const LoginPage = () => {
       <div className="w-full max-w-md m-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-red-50 border border-red-100 rounded  mb-4">
-            <div className="w-10 h-10 bg-red-600 rounded  flex items-center justify-center text-white   text-xl">
-              D
-            </div>
+          <div className="flex items-center justify-center mb-4">
+            <img
+              src="/codigix-logo.png"
+              alt="Codigix"
+              className="h-12 w-auto object-contain"
+            />
           </div>
-          <h1 className="text-2xl   text-gray-900 mb-1">Welcome Back</h1>
-          <p className="text-sm text-gray-500 ">Enterprise CRM Access Center</p>
+          <h1 className="text-2xl text-gray-900 mb-1">Welcome Back</h1>
+          <p className="text-sm text-gray-500">Sign in to your Codigix workspace</p>
         </div>
 
         {/* Login Card */}

@@ -520,7 +520,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
         <div className="bg-white border-b border-gray-200 shrink-0">
           <div className="px-6 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-2 text-xs text-gray-500">
-              <span className="hover:text-gray-700 cursor-pointer">Enterprise CRM</span>
+              <span className="hover:text-gray-700 cursor-pointer">Task Management</span>
               <ChevronRight size={12} />
               <span className="hover:text-gray-700 cursor-pointer">{config.departmentName}</span>
               <ChevronRight size={12} />

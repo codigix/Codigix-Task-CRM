@@ -10,6 +10,14 @@ module.exports = {
       },
       colors: {
         'border-light': '#E8E8E8',
+        'codigix': {
+          navy: '#1e2b4a',
+          'navy-dark': '#141d32',
+          'navy-light': '#2a3d66',
+          red: '#e02626',
+          'red-dark': '#b81f1f',
+          'red-light': '#f03434',
+        }
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out forwards',

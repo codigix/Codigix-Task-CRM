@@ -351,7 +351,7 @@ export default function VideoCallPage() {
         <div className="flex items-center gap-4">
           <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center  text-white shadow-lg shadow-red-900/20">D</div>
           <div className="flex items-center gap-2 text-xs">
-            <span className=" text-gray-200">Enterprise CRM</span>
+            <span className=" text-gray-200">Task Management</span>
             <span className="text-gray-600">/</span>
             <span className="text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => navigate('/sales/dashboard')}>Sales Dashboard</span>
             <span className="text-gray-600">/</span>

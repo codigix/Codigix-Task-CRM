@@ -7,8 +7,7 @@ const DashboardMockup = () => {
       {/* Top Header */}
       <div className="h-12 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center text-white  text-[10px]">C</div>
-          <span className=" text-slate-800 text-sm">Codigix CRM</span>
+          <img src="/codigix-logo.png" alt="Codigix" className="h-5 w-auto object-contain" />
           <div className="h-4 w-px bg-slate-300 mx-2"></div>
           <div className="flex gap-4 text-xs font-medium text-slate-500">
             <span className="text-red-600 border-b-2 border-red-600 pb-[14px] mt-[14px]">Dashboard</span>

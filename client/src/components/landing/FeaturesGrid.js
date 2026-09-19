@@ -3,7 +3,7 @@ import { LineChart, Users, Laptop, Megaphone, CheckCircle2, Shield } from 'lucid
 
 const departments = [
   {
-    title: 'Sales & CRM',
+    title: 'Sales & Pipeline',
     description: 'Pipeline management, lead distribution, quotations, and revenue forecasting to close deals faster.',
     icon: <LineChart className="w-6 h-6 text-red-600" />,
     bgColor: 'bg-red-50',
@@ -62,7 +62,7 @@ const FeaturesGrid = () => {
           </div>
           <h2 className="text-3xl md:text-4xl  text-slate-900 mb-6 tracking-tight">One platform. Every department.</h2>
           <p className="text-lg text-slate-600 font-light leading-relaxed">
-            Codigix CRM breaks down silos by providing tailored workspaces for every team in your organization, while keeping all data unified in one central system.
+            Codigix breaks down silos by providing tailored workspaces for every team in your organization, while keeping all data unified in one central system.
           </p>
         </div>
 

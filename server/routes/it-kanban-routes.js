@@ -848,7 +848,7 @@ Acceptance Criteria
     );
     const spent = Number(totals.total) || 0;
     const original = parseDurationToSeconds(issue?.original_estimate);
-    const remaining = original > 0 ? Math.max(0, original - spent) : 0;
+    const remaining = original > 0 ? (original - spent) : 0;
     await db.query(
       'UPDATE it_kanban_issues SET time_spent = ?, remaining_estimate = ? WHERE issue_key = ?',
       [formatSecondsToDuration(spent), formatSecondsToDuration(remaining), key]
@@ -1357,15 +1357,9 @@ app.get('/api/it-kanban/labels', async (req, res) => {
                     console.error('Failed to auto-insert worklog:', worklogErr.message);
                   }
                 }
-                const diffHours = diffMs / (1000 * 60 * 60);
 
-                let currentSpent = parseFloat(currentState.time_spent) || 0;
-                currentSpent += diffHours;
-
-                updates.time_spent = currentSpent.toFixed(2) + 'h';
                 updates.is_timer_running = false;
                 updates.timer_start_time = null;
-
                 // Optional: log to worklogs? (We rely on time_spent for now)
               }
             }

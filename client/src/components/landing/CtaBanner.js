@@ -11,7 +11,7 @@ const CtaBanner = () => {
           Ready to unify your entire business?
         </h2>
         <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto font-light leading-relaxed">
-          Join hundreds of fast-growing companies that use Codigix CRM to replace fragmented tools, align their teams, and accelerate growth.
+          Join hundreds of fast-growing companies that use Codigix to replace fragmented tools, align their teams, and accelerate growth.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

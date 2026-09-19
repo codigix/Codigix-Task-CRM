@@ -411,7 +411,7 @@ Body:
 [
   {
     "id": 1,
-    "deal_name": "Enterprise CRM License",
+    "deal_name": "Task Management License",
     "company_id": 5,
     "company_name": "SkyHigh Solutions",
     "contact_id": 12,

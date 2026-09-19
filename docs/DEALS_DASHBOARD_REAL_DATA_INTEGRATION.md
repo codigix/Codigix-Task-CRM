@@ -488,7 +488,7 @@ const filteredDeals = filterDealsByDateRange(deals, dateRange);
 [
   {
     "id": 1,
-    "deal_name": "Enterprise CRM License",
+    "deal_name": "Task Management License",
     "company_id": 5,
     "company_name": "SkyHigh Solutions",
     "contact_id": 12,
@@ -527,7 +527,7 @@ const filteredDeals = filterDealsByDateRange(deals, dateRange);
 [
   {
     "id": 1,
-    "name": "Enterprise CRM License",
+    "name": "Task Management License",
     "company": "SkyHigh Solutions",
     "contact": "John Anderson",
     "stage": "Proposal Made",

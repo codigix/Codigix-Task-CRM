@@ -169,11 +169,11 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
         onClick={handleClick}
         title={isViewOnly ? 'View-only access' : ''}
         className={`menu-item w-full flex items-center gap-3 p-2 text-xs rounded transition-all duration-200 ${currentPage === page
-          ? 'bg-red-600 text-white    border border-red-100'
+          ? 'bg-[#1e2b4a] text-white border border-[#1e2b4a]'
           : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
           }`}
       >
-        {Icon ? <Icon size={14} className={currentPage === page ? 'text-red ' : ''} /> : <span className={`w-1 h-1 rounded-full bg-current transition-transform ${currentPage === page ? 'scale-125' : ''}`}></span>}
+        {Icon ? <Icon size={14} className={currentPage === page ? 'text-white' : ''} /> : <span className={`w-1 h-1 rounded-full bg-current transition-transform ${currentPage === page ? 'scale-125' : ''}`}></span>}
         <span className="flex-1 text-left text-sm">{label}</span>
         {isViewOnly && <Lock size={14} className="opacity-60" title="View-only" />}
       </button>
@@ -198,11 +198,11 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       <button
         onClick={onToggle}
         className={`menu-item w-full flex items-center gap-3 p-2 text-xs  rounded transition-all duration-200 ${active
-          ? 'bg-red-50 text-black '
+          ? 'bg-[#1e2b4a]/10 text-[#1e2b4a]'
           : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
           }`}
       >
-        {Icon && <Icon size={18} className={active ? 'text-red ' : ''} />}
+        {Icon && <Icon size={18} className={active ? 'text-[#1e2b4a]' : ''} />}
         <span className="flex-1 text-left">{label}</span>
         <ChevronDown size={14} className={`transition-transform duration-300 ${expanded ? 'rotate-180' : ''} text-black`} />
       </button>
@@ -595,16 +595,17 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
           } lg:translate-x-0 lg:static lg:shadow-none`}
       >
         {/* Logo */}
-        <div className="p-2 border-b border-gray-100 flex items-center justify-between">
+        <div className="px-3 py-2.5 border-b border-gray-100 flex items-center justify-center bg-white">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded  bg-red-600 flex items-center justify-center text-white   ">
-              D
-            </div>
-            <span className="text-base   text-gray-900 tracking-tight">Enterprise CRM</span>
+            <img
+              src="/codigix-logo.png"
+              alt="Codigix"
+              className="h-8 w-auto object-contain"
+            />
           </div>
           <button
             onClick={toggleSidebar}
-            className="lg:hidden p-1 text-[#1F2020] hover:text-gray-600 transition-colors"
+            className="lg:hidden p-1 text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X size={20} />
           </button>

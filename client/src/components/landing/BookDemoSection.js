@@ -21,7 +21,7 @@ const BookDemoSection = () => {
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
         phone: 'N/A', // Not collected in this form
-        subject: 'CRM Demo Request',
+        subject: 'Codigix Demo Request',
         message: `Company Size: ${formData.companySize}\n\nMessage: ${formData.message}`
       };
 
@@ -68,7 +68,7 @@ const BookDemoSection = () => {
               <CalendarDays size={16} /> Free 30-minute consultation
             </div>
             <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 tracking-tight leading-tight">
-              See Codigix CRM in action.
+              See Codigix in action.
             </h2>
             <p className="text-lg text-slate-400 mb-8 font-light leading-relaxed max-w-lg">
               Get a personalized walkthrough of our platform. We'll show you how Codigix can be tailored to solve your specific business challenges.
