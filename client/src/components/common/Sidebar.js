@@ -102,7 +102,8 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
         'notes', 'file-manager', 'social-feed', 'seo-gmb', 'ppc-ads',
         'graphics-video', 'content-calendar', 'blogs-calendar', 'marketing-drive',
         'it-inventory', 'it-ticketing', 'seo-', 'gmb-', 'teams',
-        'documents', 'projects', 'leads', 'bugs', 'test-cases', 'repositories', 'backlog', 'ticket-assignments'
+        'documents', 'projects', 'leads', 'bugs', 'test-cases', 'repositories', 'backlog', 'ticket-assignments',
+        'registration-requests'
       ];
 
       const userNameValue = user?.username || user?.first_name || user?.name || 'user';
@@ -265,6 +266,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       <SubmenuItem label="Packages" page="packages" icon={Package} prefix="/super-admin" />
       <SubmenuItem label="Domain" page="domain" icon={Globe} prefix="/super-admin" />
       <SubmenuItem label="Transactions" page="purchase-transaction" icon={Receipt} prefix="/super-admin" />
+      <SubmenuItem label="Registration Requests" page="registration-requests" icon={UserCheck} prefix="/super-admin" />
     </>
   );
 
@@ -448,6 +450,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">HR Management</div>
       {/* <SubmenuItem label="Employees" page="employees" icon={Users} prefix="/hr" /> */}
       <SubmenuItem label="Attendance" page="attendance" icon={Calendar} prefix="/hr" />
+      <SubmenuItem label="Registration Requests" page="registration-requests" icon={UserCheck} prefix="/hr" />
       {/* <SubmenuItem label="Leave Requests" page="leaves" icon={FileCheck} prefix="/hr" /> */}
 
       <SubmenuItem label="Team Chat" page="chat" icon={MessageCircle} prefix="/hr" />

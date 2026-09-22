@@ -136,6 +136,7 @@ import HRRecruitment from './components/hr/HRRecruitment';
 import HRPerformance from './components/hr/HRPerformance';
 import HRPayroll from './components/hr/HRPayroll';
 import EmployeeMonthlyReport from './components/common/EmployeeMonthlyReport';
+import RegistrationRequestsPage from './components/hr/RegistrationRequestsPage';
 
 // Shared modules across departments
 const SHARED_MODULES = [
@@ -145,7 +146,7 @@ const SHARED_MODULES = [
   'contacts', 'companies', 'campaign', 'proposals', 'contracts', 
   'estimations', 'invoices', 'payments', 'activities', 'chat',
   'video-call', 'audio-call', 'call-history', 'email', 'todo', 
-  'notes', 'file-manager', 'social-feed', 'seo-gmb'
+  'notes', 'file-manager', 'social-feed', 'seo-gmb', 'registration-requests'
 ];
 
 const DEPARTMENTS = ['deals', 'leads', 'projects', 'sales', 'super-admin', 'marketing', 'it', 'seo-gmb', 'hr'];
@@ -269,6 +270,8 @@ const routeMap = {
   '/super-admin/packages': 'super-admin-packages',
   '/super-admin/domain': 'super-admin-domain',
   '/super-admin/purchase-transaction': 'super-admin-purchase-transaction',
+  '/super-admin/registration-requests': 'super-admin-registration-requests',
+  '/registration-requests': 'registration-requests',
 };
 
 const DashboardRouter = () => {
@@ -568,6 +571,8 @@ function AppContent() {
         <Route path="/hr/:designation/:username/recruitment" element={<HRRecruitment />} />
         <Route path="/hr/:designation/:username/performance" element={<HRPerformance />} />
         <Route path="/hr/:designation/:username/payroll" element={<HRPayroll />} />
+        <Route path="/hr/:designation/:username/registration-requests" element={<RegistrationRequestsPage />} />
+        <Route path="/hr/registration-requests" element={<RegistrationRequestsPage />} />
         <Route path="/hr/:designation/:username/tasks" element={<TasksPage department="HR" />} />
         
         {/* Dynamic tasks routes based on department */}
@@ -682,6 +687,8 @@ function AppContent() {
         <Route path="/super-admin/packages" element={<ProtectedRoute requiredRoles="Super Admin"><Packages /></ProtectedRoute>} />
         <Route path="/super-admin/domain" element={<ProtectedRoute requiredRoles="Super Admin"><Domain /></ProtectedRoute>} />
         <Route path="/super-admin/purchase-transaction" element={<ProtectedRoute requiredRoles="Super Admin"><PurchaseTransaction /></ProtectedRoute>} />
+        <Route path="/super-admin/registration-requests" element={<ProtectedRoute requiredRoles={['Super Admin', 'Admin']}><RegistrationRequestsPage /></ProtectedRoute>} />
+        <Route path="/registration-requests" element={<RegistrationRequestsPage />} />
       </Routes>
     </Layout>
   );

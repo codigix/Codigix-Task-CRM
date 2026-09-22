@@ -562,6 +562,31 @@ model delete_requests {
   @@index([reviewed_by], map: "reviewed_by")
 }
 
+model registration_requests {
+  id                                               Int                          @id @default(autoincrement())
+  first_name                                       String                       @db.VarChar(100)
+  last_name                                        String?                      @db.VarChar(100)
+  email                                            String                       @db.VarChar(150)
+  password                                         String                       @db.VarChar(255)
+  phone                                            String?                      @db.VarChar(20)
+  company                                          String?                      @db.VarChar(100)
+  department                                       String?                      @db.VarChar(100)
+  role_type                                        String?                      @db.VarChar(100)
+  role_name                                        String?                      @db.VarChar(100)
+  status                                           registration_requests_status? @default(Pending)
+  reviewed_by                                      Int?
+  review_notes                                     String?                      @db.Text
+  reviewed_at                                      DateTime?                    @db.Timestamp(0)
+  created_at                                       DateTime                     @default(now()) @db.Timestamp(0)
+  updated_at                                       DateTime                     @default(now()) @db.Timestamp(0)
+  users_registration_requests_reviewed_byTousers   users?                       @relation("registration_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "registration_requests_ibfk_1")
+
+  @@index([email], map: "idx_email")
+  @@index([status], map: "idx_status")
+  @@index([created_at], map: "idx_created_at")
+  @@index([reviewed_by], map: "reviewed_by")
+}
+
 model departments {
   id          Int           @id @default(autoincrement())
   name        String        @unique(map: "name") @db.VarChar(100)
@@ -1929,6 +1954,7 @@ model users {
   creative_requests_creative_requests_assigned_toTousers  creative_requests[]    @relation("creative_requests_assigned_toTousers")
   delete_requests_delete_requests_user_idTousers          delete_requests[]      @relation("delete_requests_user_idTousers")
   delete_requests_delete_requests_reviewed_byTousers      delete_requests[]      @relation("delete_requests_reviewed_byTousers")
+  registration_requests_registration_requests_reviewed_byTousers registration_requests[] @relation("registration_requests_reviewed_byTousers")
   deployments_deployments_deployed_byTousers              deployments[]          @relation("deployments_deployed_byTousers")
   deployments_deployments_approved_byTousers              deployments[]          @relation("deployments_approved_byTousers")
   entity_files                                            entity_files[]
@@ -2118,6 +2144,12 @@ enum content_calendar_content_type {
 }
 
 enum delete_requests_status {
+  Pending
+  Approved
+  Rejected
+}
+
+enum registration_requests_status {
   Pending
   Approved
   Rejected

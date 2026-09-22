@@ -274,6 +274,68 @@ authRouter.post('/signup', async (req, res) => {
   }
 });
 
+authRouter.post('/registration-request', async (req, res) => {
+  let connection;
+  try {
+    const { first_name, last_name, email, password, phone, company, department, role_type, role_name } = req.body;
+
+    if (!first_name || !email || !password) {
+      return res.status(400).json({ error: 'First name, email, and password are required' });
+    }
+
+    connection = await pool.getConnection();
+
+    // Check if an active user already exists with this email
+    const [existingUser] = await connection.query(
+      'SELECT id FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (existingUser.length > 0) {
+      return res.status(409).json({ error: 'An account with this email address already exists. Please sign in instead.' });
+    }
+
+    // Check if there is already a pending registration request for this email
+    const [existingRequest] = await connection.query(
+      'SELECT id FROM registration_requests WHERE email = ? AND status = "Pending"',
+      [email]
+    );
+
+    if (existingRequest.length > 0) {
+      return res.status(409).json({ error: 'A registration request with this email is already pending review by HR / Admin.' });
+    }
+
+    const hashedPassword = hashPassword(password);
+
+    await connection.query(
+      `INSERT INTO registration_requests (
+        first_name, last_name, email, password, phone, company, department, role_type, role_name, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
+      [
+        first_name,
+        last_name || '',
+        email,
+        hashedPassword,
+        phone || null,
+        company || null,
+        department || null,
+        role_type || null,
+        role_name || role_type || 'Employee'
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Registration request submitted successfully. It has been sent to HR and Admin for review.',
+    });
+  } catch (error) {
+    console.error('Registration request error:', error.message);
+    res.status(500).json({ error: 'Failed to submit registration request', details: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
 authRouter.post('/update-role', async (req, res) => {
   let connection;
   try {
@@ -319,6 +381,7 @@ app.use('/api/seo-gmb', require('./routes/seo-gmb-routes')(pool));
 app.use('/api/hr/dashboard', require('./routes/hr-dashboard-routes')(pool));
 app.use('/api/hr/attendance', require('./routes/hr-attendance-routes')(pool));
 app.use('/api/hr/performance', require('./routes/hr-performance-routes')(pool));
+app.use('/api/hr/registration-requests', require('./routes/hr-registration-requests-routes')(pool));
 
 // Register Performance Engine (Phase 2)
 require('./routes/performance-engine-routes')(app, pool);
