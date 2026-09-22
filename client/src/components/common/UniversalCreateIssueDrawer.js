@@ -38,6 +38,13 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
 
   useEffect(() => {
     if (isOpen) {
+      setSummary('');
+      setDescription('');
+      setStatus('TO DO');
+      setAssignee('Unassigned');
+      setPriority('Medium');
+      setDueDate('');
+      setStoryPoints('');
       fetchUsers();
     }
   }, [isOpen]);

@@ -432,7 +432,7 @@ const ITIssueDetailsSidebar = ({
                 {currentSubtask ? (
                   <button
                     onClick={onBackToParent}
-                    className="flex items-center gap-1.5 p-1 -ml-1 rounded hover:bg-blue-50 text-blue-600 font-semibold cursor-pointer transition truncate max-w-full"
+                    className="flex items-center gap-1.5 p-1 -ml-1 rounded hover:bg-blue-50 text-blue-600 font-semibold cursor-pointer transition truncate w-fit"
                     title="Click to view parent issue"
                   >
                     <CheckSquare size={13} className="shrink-0 text-blue-500" />
@@ -753,7 +753,7 @@ const ITIssueDetailsSidebar = ({
                     <span className="text-xs text-gray-400">None</span>
                   )}
                   {labels.map(l => (
-                    <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 max-w-full">
+                    <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 w-fit">
                       <span className="truncate">{l}</span>
                       <X
                         size={9}

@@ -13,7 +13,33 @@ const CrmProjectsPage = ({ department }) => {
 
   const pathParts = location.pathname.toLowerCase().split('/').filter(Boolean);
   const currentDesignation = pathParts.length >= 2 ? pathParts[1] : '';
-  const canManageProjects = canViewProjectFinancialsAndManage(user, currentDesignation);
+  const canManageProjects = Boolean(
+    canViewProjectFinancialsAndManage(user, currentDesignation) ||
+    (currentDesignation && (
+      currentDesignation.includes('manager') ||
+      currentDesignation.includes('admin') ||
+      currentDesignation.includes('lead') ||
+      currentDesignation.includes('head') ||
+      currentDesignation.includes('director') ||
+      currentDesignation.includes('management')
+    )) ||
+    (user?.role && (
+      user.role.toLowerCase().includes('manager') ||
+      user.role.toLowerCase().includes('admin') ||
+      user.role.toLowerCase().includes('lead') ||
+      user.role.toLowerCase().includes('head') ||
+      user.role.toLowerCase().includes('director') ||
+      user.role.toLowerCase().includes('management')
+    )) ||
+    (user?.designation && (
+      user.designation.toLowerCase().includes('manager') ||
+      user.designation.toLowerCase().includes('admin') ||
+      user.designation.toLowerCase().includes('lead') ||
+      user.designation.toLowerCase().includes('head') ||
+      user.designation.toLowerCase().includes('director') ||
+      user.designation.toLowerCase().includes('management')
+    ))
+  );
   const isManager = canManageProjects;
 
   const navigateToProject = (id) => {
@@ -58,34 +84,35 @@ const CrmProjectsPage = ({ department }) => {
 
   useEffect(() => {
     loadProjects();
-  }, []);
+  }, [user?.id, isManager]);
 
   useEffect(() => {
-    if (department) {
+    if (department && !isManager) {
       const filtered = allProjects.filter(p =>
-        (department === 'Marketing' && (p.category === 'Marketing' || p.project_type === 'Marketing' || p.workflow_type === 'Marketing' || p.service_type === 'Marketing')) ||
-        (department === 'IT' && (p.category === 'IT' || p.project_type === 'IT' || p.workflow_type === 'IT' || p.service_type === 'IT' || p.category === 'Software'))
+        (department === 'Marketing' && (p.category === 'Marketing' || p.project_type === 'Marketing' || p.workflow_type === 'Marketing' || p.service_type === 'Marketing' || (p.department_name && p.department_name.toLowerCase().includes('marketing')))) ||
+        (department === 'IT' && (p.category === 'IT' || p.project_type === 'IT' || p.workflow_type === 'IT' || p.service_type === 'IT' || p.category === 'Software' || (p.department_name && p.department_name.toLowerCase().includes('it'))))
       );
       setProjects(filtered);
     } else {
       setProjects(allProjects);
     }
-  }, [allProjects, department]);
+  }, [allProjects, department, isManager]);
 
   const loadProjects = async () => {
     try {
       setIsLoading(true);
       setError('');
 
-      // Note: deliberately no `assignedOnly` flag. That flag restricts results to projects the
-      // user created or is explicitly rostered on, which hid the department's own projects from
-      // its non-manager members. The API's non-manager branch already scopes results to
-      // "mine OR my department", which is the visibility we want here.
       const authFilters = {
-        department: user?.department || '',
         user_id: user?.id || '',
-        role: user?.role || ''
+        role: user?.role || currentDesignation || '',
+        limit: 1000
       };
+
+      // Restrict by department only for non-managers
+      if (!isManager && (department || user?.department)) {
+        authFilters.department = department || user?.department;
+      }
 
       const data = await projectAPI.getAll(authFilters);
 
@@ -385,10 +412,57 @@ const CrmProjectsPage = ({ department }) => {
           </div>
         </div>
 
-        {/* Filters Row */}
-
-
-        {/* Views Row */}
+        {/* Filters and Search Row */}
+        <div className="flex flex-wrap items-center justify-between gap-3 py-3 border-b border-gray-100 bg-white px-2">
+          <div className="flex items-center gap-2 flex-1 min-w-[240px] max-w-md">
+            <div className="relative w-full">
+              <Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search projects, client, ID, department..."
+                className="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={filterDepartment}
+              onChange={(e) => setFilterDepartment(e.target.value)}
+              className="text-xs border border-gray-300 rounded px-2.5 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">All Departments</option>
+              <option value="IT">IT</option>
+              <option value="Marketing">Marketing</option>
+              <option value="SEO">SEO & GMB</option>
+            </select>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="text-xs border border-gray-300 rounded px-2.5 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="On Hold">On Hold</option>
+              <option value="Open">Open</option>
+            </select>
+            {(searchTerm || filterDepartment || filterStatus || filterPriority) && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterDepartment('');
+                  setFilterStatus('');
+                  setFilterPriority('');
+                }}
+                className="text-xs text-red-600 hover:underline font-medium ml-1"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
         <div className="px-4 mt-4 border-b border-gray-200 flex items-center gap-6 bg-white">
           <button
             onClick={() => setActiveView('table')}
@@ -464,8 +538,8 @@ const CrmProjectsPage = ({ department }) => {
                       <div className="text-xs text-gray-500">{project.description ? project.description.substring(0, 30) + '...' : project.project_type || 'General'}</div>
                     </td>}
                     {visibleColumns.includes('Department') && <td className="p-3">
-                      <span className="px-2 py-0.5 rounded text-xs text-purple-600 bg-purple-50 border border-purple-100">
-                        {project.department_name || project.workflow_type || 'Department'}
+                      <span className="px-2 py-0.5 rounded text-xs text-purple-600 bg-purple-50 border border-purple-100 font-medium">
+                        {project.department_name || project.department || project.category || project.project_type || project.workflow_type || 'IT'}
                       </span>
                     </td>}
                     {visibleColumns.includes('Team') && <td className="p-3">

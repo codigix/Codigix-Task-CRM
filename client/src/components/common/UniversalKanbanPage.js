@@ -60,6 +60,32 @@ const getInitials = (name) => {
     .join('');
 };
 
+const getIssueDateParts = (dateVal) => {
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return null;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getIssueEffectiveDateStr = (issue) => {
+  if (!issue) return '';
+  if (issue.start_date) {
+    const s = getIssueDateParts(issue.start_date);
+    if (s) return s;
+  }
+  if (issue.created_at || issue.createdAt) {
+    const s = getIssueDateParts(issue.created_at || issue.createdAt);
+    if (s) return s;
+  }
+  if (issue.due_date || issue.dueDate) {
+    const s = getIssueDateParts(issue.due_date || issue.dueDate);
+    if (s) return s;
+  }
+  return '';
+};
+
 const UniversalKanbanPage = ({ department = 'IT' }) => {
   const { user } = useAuth();
   const { designation, username } = useParams();
@@ -146,11 +172,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedPriority, setSelectedPriority] = useState('ALL');
   const [selectedAssignee, setSelectedAssignee] = useState('ALL');
-  const [onlyMyIssues, setOnlyMyIssues] = useState(!isManager);
-
-  useEffect(() => {
-    setOnlyMyIssues(!isManager);
-  }, [isManager]);
+  const [onlyMyIssues, setOnlyMyIssues] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilterDropdown, setActiveFilterDropdown] = useState(null);
 
@@ -409,6 +431,27 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
         if (!newBoard[matchedCol]) newBoard[matchedCol] = [];
       }
       newBoard[matchedCol].push(issue);
+    });
+
+    // Sort cards in each column so current date (today, yesterday, then older) tickets appear on top
+    Object.keys(newBoard).forEach(col => {
+      newBoard[col].sort((a, b) => {
+        const dateA = getIssueEffectiveDateStr(a);
+        const dateB = getIssueEffectiveDateStr(b);
+        if (dateA && dateB && dateA !== dateB) {
+          return dateB.localeCompare(dateA);
+        }
+        if (dateA && !dateB) return -1;
+        if (!dateA && dateB) return 1;
+
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : (Number(a.id) || 0);
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : (Number(b.id) || 0);
+        if (timeA && timeB && timeA !== timeB) {
+          return timeB - timeA;
+        }
+
+        return (Number(b.id) || 0) - (Number(a.id) || 0);
+      });
     });
 
     setBoardData(newBoard);
@@ -803,7 +846,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                                               </div>
 
                                               {/* CARD TITLE */}
-                                              <h4 className="text-xs text-gray-800 font-medium mb-3 line-clamp-2 leading-relaxed">
+                                              <h4 className="text-xs text-gray-800 font-medium mb-3 line-clamp-2 leading-relaxed" title={card.title}>
                                                 {card.title}
                                               </h4>
 

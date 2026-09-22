@@ -51,7 +51,7 @@ const renderFormattedDescription = (text) => {
   if (text.includes('<')) {
     return (
       <div
-        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_li]:my-1 [&_li]:text-gray-800 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-xs [&_h4]: [&_h4]:text-gray-900 [&_h4]:mt-2 [&_h4]:mb-1 [&_strong]: [&_b]: font-sans [&_a]:text-blue-600 [&_a]:no-underline [&_img]:max-w-full [&_img]:rounded [&_img]:cursor-pointer [&_img]:hover:opacity-90 [&_img]:transition-opacity"
+        className="prose prose-xs max-w-none text-xs text-gray-800 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_li]:my-1 [&_li]:text-gray-800 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:text-xs [&_h4]: [&_h4]:text-gray-900 [&_h4]:mt-2 [&_h4]:mb-1 [&_strong]: [&_b]: font-sans [&_a]:text-blue-600 [&_a]:no-underline [&_img]:w-fit [&_img]:rounded [&_img]:cursor-pointer [&_img]:hover:opacity-90 [&_img]:transition-opacity"
         dangerouslySetInnerHTML={{ __html: normalizeDescriptionHtml(text) }}
       />
     );
@@ -382,7 +382,7 @@ const ITIssueDescription = ({
                     attachFilesToDescription(e.dataTransfer.files);
                   }
                 }}
-                className="w-full text-xs p-3 focus:outline-none font-sans leading-relaxed text-gray-800 bg-white min-h-[180px] outline-none prose prose-xs max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-2 [&_h3]:mb-1 [&_strong]: [&_b]: [&_a]:text-blue-600 [&_a]:underline [&_img]:max-w-full [&_img]:rounded [&_img]:cursor-pointer [&_img]:hover:opacity-90"
+                className="w-full text-xs p-3 focus:outline-none font-sans leading-relaxed text-gray-800 bg-white min-h-[180px] outline-none prose prose-xs max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_h3]:text-sm [&_h3]: [&_h3]:text-gray-900 [&_h3]:mt-2 [&_h3]:mb-1 [&_strong]: [&_b]: [&_a]:text-blue-600 [&_a]:underline [&_img]:w-fit [&_img]:rounded [&_img]:cursor-pointer [&_img]:hover:opacity-90"
               />
               {isUploadingFile && (
                 <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 border-t border-gray-200 bg-blue-50/50">
@@ -481,11 +481,10 @@ const ITIssueDescription = ({
               handleFileUpload(e.dataTransfer.files);
             }
           }}
-          className={`rounded border-2 border-dashed transition-all p-3 text-center cursor-pointer ${
-            isDraggingAttachments
+          className={`rounded border-2 border-dashed transition-all p-3 text-center cursor-pointer ${isDraggingAttachments
               ? 'border-blue-500 bg-blue-50/70 shadow-inner'
               : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50/60'
-          }`}
+            }`}
           onClick={() => fileInputRef.current?.click()}
         >
           <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
@@ -633,7 +632,7 @@ const ITIssueDescription = ({
               <img
                 src={selectedImage.url}
                 alt={selectedImage.name}
-                className="max-w-full max-h-[75vh] object-contain rounded shadow border border-gray-200"
+                className="w-fit max-h-[75vh] object-contain rounded shadow border border-gray-200"
               />
             </div>
           </div>

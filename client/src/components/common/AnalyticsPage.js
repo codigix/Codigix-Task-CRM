@@ -236,7 +236,7 @@ const AnalyticsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800p-3 p-2">
-      <div className="max-w-full">
+      <div className="w-fit">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl text-gray-900">Analytics</h1>
           <div className="flex items-center gap-2">

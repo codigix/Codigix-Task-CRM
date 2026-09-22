@@ -9,8 +9,7 @@ import LoginPage from './components/common/LoginPage';
 import SignupPage from './components/common/SignupPage';
 import SSOLogin from './components/common/SSOLogin';
 import Layout from './components/common/Layout';
-import DealsDashboard from './components/sales/DealsDashboard';
-import LeadsDashboard from './components/sales/LeadsDashboard';
+import SalesDashboard from './components/sales/SalesDashboard';
 import ProjectsDashboard from './components/common/ProjectsDashboard';
 import ProjectDetailsPage from './components/common/ProjectDetailsPage';
 import ContactsPage from './components/common/ContactsPage';
@@ -62,7 +61,6 @@ import Subscriptions from './components/super-admin/Subscriptions';
 import Packages from './components/super-admin/Packages';
 import Domain from './components/super-admin/Domain';
 import PurchaseTransaction from './components/super-admin/PurchaseTransaction';
-import SalesDashboard from './components/sales/SalesDashboard';
 import EstimationsPage from './components/common/EstimationsPage';
 import ActivitiesPage from './components/common/ActivitiesPage';
 import FollowupsPage from './components/common/FollowupsPage';
@@ -429,7 +427,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<DashboardRouter />} />
         <Route path="/dashboard" element={<DashboardRouter />} />
-        <Route path="/deals/:designation/:username/dashboard" element={<DealsDashboard />} />
+        <Route path="/deals/:designation/:username/dashboard" element={<SalesDashboard />} />
         <Route path="/deals/:designation/:username/kanban" element={<DealsKanbanBoard onDealClick={handleViewDealDetails} />} />
         <Route path="/deals/:designation/:username/analytics" element={<RevenueForecastPage />} />
         <Route path="/deals/:designation/:username/deal/:id" element={<LeadDetailsPage />} />
@@ -453,7 +451,7 @@ function AppContent() {
         <Route path="/profile-settings" element={<ProfileSettingsPage />} />
         <Route path="/departments" element={<DepartmentsPage />} />
         <Route path="/automation-rules" element={<AutomationRulesPage />} />
-        <Route path="/leads/:designation/:username/dashboard" element={<LeadsDashboard />} />
+        <Route path="/leads/:designation/:username/dashboard" element={<SalesDashboard />} />
         <Route path="/projects/:designation/:username/dashboard" element={<ProjectsDashboard onViewProjectDetails={handleViewProjectDetails} onViewCompanyDetails={handleViewCompanyDetails} />} />
         <Route path="/projects/:designation/:username/details" element={<ProjectDetailsPage projectId={selectedProjectId} onBack={handleBackFromProjectDetails} />} />
         <Route path="/deals/:designation/:username/list" element={<CrmDealsPage />} />

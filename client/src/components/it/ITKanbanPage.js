@@ -113,6 +113,23 @@ const getIssueDateParts = (dateVal) => {
   return `${year}-${month}-${day}`;
 };
 
+const getIssueEffectiveDateStr = (issue) => {
+  if (!issue) return '';
+  if (issue.start_date) {
+    const s = getIssueDateParts(issue.start_date);
+    if (s) return s;
+  }
+  if (issue.created_at || issue.createdAt) {
+    const s = getIssueDateParts(issue.created_at || issue.createdAt);
+    if (s) return s;
+  }
+  if (issue.due_date || issue.dueDate) {
+    const s = getIssueDateParts(issue.due_date || issue.dueDate);
+    if (s) return s;
+  }
+  return '';
+};
+
 const getTodayStr = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -248,11 +265,27 @@ const ITKanbanPage = ({ department }) => {
     ))
   );
 
+  const [usersList, setUsersList] = useState([]);
+  const [allRawIssues, setAllRawIssues] = useState([]);
+  const [projectsList, setProjectsList] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState('ALL');
+  const [selectedType, setSelectedType] = useState('ALL');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [selectedPriority, setSelectedPriority] = useState('ALL');
+  const [selectedAssignees, setSelectedAssignees] = useState([]);
+  const [onlyMyIssues, setOnlyMyIssues] = useState(true);
+  const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL' | 'TODAY' | 'TOMORROW' | 'THIS_WEEK' | 'THIS_MONTH' | 'OVERDUE' | 'EXACT' | 'RANGE' | 'NO_DATE'
+  const [exactDate, setExactDate] = useState('');
+  const [rangeStart, setRangeStart] = useState('');
+  const [rangeEnd, setRangeEnd] = useState('');
+
   const userSearchTerms = React.useMemo(() => {
     const terms = new Set();
     if (username) {
       terms.add(username.toLowerCase());
       username.toLowerCase().split(/[-_\s]+/).forEach(t => { if (t.length > 2) terms.add(t); });
+      const alphaOnly = username.toLowerCase().replace(/[0-9]/g, '');
+      if (alphaOnly && alphaOnly.length > 2) terms.add(alphaOnly);
     }
     if (user) {
       if (user.username) terms.add(user.username.toLowerCase());
@@ -260,8 +293,21 @@ const ITKanbanPage = ({ department }) => {
       if (user.last_name) terms.add(user.last_name.toLowerCase());
       if (user.name) user.name.toLowerCase().split(/\s+/).forEach(t => { if (t.length > 2) terms.add(t); });
     }
+    if (usersList && usersList.length > 0) {
+      const match = usersList.find(u =>
+        (u.username && (u.username.toLowerCase() === username?.toLowerCase() || u.username.toLowerCase() === user?.username?.toLowerCase())) ||
+        (u.email && (u.email.toLowerCase() === username?.toLowerCase() || u.email.toLowerCase() === user?.email?.toLowerCase())) ||
+        (u.id && user?.id && String(u.id) === String(user.id))
+      );
+      if (match) {
+        if (match.name) match.name.toLowerCase().split(/\s+/).forEach(t => { if (t.length > 2) terms.add(t); });
+        if (match.first_name) terms.add(match.first_name.toLowerCase());
+        if (match.last_name) terms.add(match.last_name.toLowerCase());
+        if (match.username) terms.add(match.username.toLowerCase());
+      }
+    }
     return Array.from(terms);
-  }, [username, user]);
+  }, [username, user, usersList]);
 
   // Every spelling that means "this is me", compared exactly by the employee board.
   const myIdentities = React.useMemo(() => {
@@ -273,8 +319,20 @@ const ITKanbanPage = ({ department }) => {
       add(user.name);
       add(`${user.first_name || ''} ${user.last_name || ''}`);
     }
+    if (usersList && usersList.length > 0) {
+      const match = usersList.find(u =>
+        (u.username && (u.username.toLowerCase() === username?.toLowerCase() || u.username.toLowerCase() === user?.username?.toLowerCase())) ||
+        (u.email && (u.email.toLowerCase() === username?.toLowerCase() || u.email.toLowerCase() === user?.email?.toLowerCase())) ||
+        (u.id && user?.id && String(u.id) === String(user.id))
+      );
+      if (match) {
+        if (match.name) add(match.name);
+        if (match.username) add(match.username);
+        add(`${match.first_name || ''} ${match.last_name || ''}`);
+      }
+    }
     return Array.from(ids);
-  }, [username, user]);
+  }, [username, user, usersList]);
 
   const defaultDeptColumns = DEPARTMENT_KANBAN_COLUMNS[currentDept] || DEPARTMENT_KANBAN_COLUMNS['IT'];
   const [boardData, setBoardData] = useState(() => {
@@ -325,20 +383,6 @@ const ITKanbanPage = ({ department }) => {
     setColumnOrder(cols);
   }, [currentDept]);
 
-  const [allRawIssues, setAllRawIssues] = useState([]);
-  const [projectsList, setProjectsList] = useState([]);
-  const [usersList, setUsersList] = useState([]);
-  const [selectedProjectId, setSelectedProjectId] = useState('ALL');
-  const [selectedType, setSelectedType] = useState('ALL');
-  const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [selectedPriority, setSelectedPriority] = useState('ALL');
-  const [selectedAssignees, setSelectedAssignees] = useState([]);
-  const [onlyMyIssues, setOnlyMyIssues] = useState(!isManager);
-  const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL' | 'TODAY' | 'TOMORROW' | 'THIS_WEEK' | 'THIS_MONTH' | 'OVERDUE' | 'EXACT' | 'RANGE' | 'NO_DATE'
-  const [exactDate, setExactDate] = useState('');
-  const [rangeStart, setRangeStart] = useState('');
-  const [rangeEnd, setRangeEnd] = useState('');
-
   const getDateFilterLabel = () => {
     switch (dateFilter) {
       case 'TODAY':
@@ -367,9 +411,6 @@ const ITKanbanPage = ({ department }) => {
     }
   };
 
-  useEffect(() => {
-    setOnlyMyIssues(!isManager);
-  }, [isManager]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilterDropdown, setActiveFilterDropdown] = useState(null);
 
@@ -719,11 +760,33 @@ const ITKanbanPage = ({ department }) => {
         sprint: issue.sprint,
         due_date: issue.due_date,
         start_date: issue.start_date,
+        created_at: issue.created_at,
         description: issue.description,
         subtasks: issue.subtasks,
         linked_issues: issue.linked_issues,
         comments: issue.comments,
         project_id: issue.project_id
+      });
+    });
+
+    // Sort cards in each column so current date (today, yesterday, then older) tickets appear on top
+    Object.keys(newBoard).forEach(col => {
+      newBoard[col].sort((a, b) => {
+        const dateA = getIssueEffectiveDateStr(a);
+        const dateB = getIssueEffectiveDateStr(b);
+        if (dateA && dateB && dateA !== dateB) {
+          return dateB.localeCompare(dateA);
+        }
+        if (dateA && !dateB) return -1;
+        if (!dateA && dateB) return 1;
+
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : (Number(a.id) || 0);
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : (Number(b.id) || 0);
+        if (timeA && timeB && timeA !== timeB) {
+          return timeB - timeA;
+        }
+
+        return (Number(b.id) || 0) - (Number(a.id) || 0);
       });
     });
 
@@ -1237,7 +1300,11 @@ const ITKanbanPage = ({ department }) => {
 
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setIsCreateDrawerOpen(true)}
+                onClick={() => {
+                  setCreateDrawerInitialStatus(null);
+                  setCreateDrawerInitialSummary('');
+                  setIsCreateDrawerOpen(true);
+                }}
                 className="bg-red-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors"
               >
                 <Plus size={14} /> Create
@@ -1356,7 +1423,7 @@ const ITKanbanPage = ({ department }) => {
                     <div className="relative">
                       <button
                         onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'priority' ? null : 'priority')}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedPriority !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700'}`}
+                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedPriority !== 'ALL' ? 'bg-blue-50  font-semibold' : 'bg-white border-gray-300 text-gray-700'}`}
                       >
                         Priority: {selectedPriority !== 'ALL' ? selectedPriority : 'All'} <ChevronDown size={14} />
                       </button>
@@ -1540,7 +1607,7 @@ const ITKanbanPage = ({ department }) => {
                     <button
                       onClick={() => setOnlyMyIssues(!onlyMyIssues)}
                       className={`flex items-center gap-1.5 p-2 rounded text-xs font-semibold border transition-all cursor-pointer ${onlyMyIssues
-                        ? 'bg-red-600 border-blue-600 text-white shadow-sm'
+                        ? 'bg-red-600  text-white shadow-sm'
                         : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
                         }`}
                       title="Show only tasks assigned to me"
@@ -1677,7 +1744,7 @@ const ITKanbanPage = ({ department }) => {
                                   <div
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
-                                    className={`flex-1 min-w-[260px] ${colBg} rounded p-2 flex flex-col`}
+                                    className={`flex-1 min-w-[300px] ${colBg} rounded p-2 flex flex-col`}
                                   >
                                     <div
                                       {...provided.dragHandleProps}
@@ -1724,7 +1791,7 @@ const ITKanbanPage = ({ department }) => {
                                                   <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                                                     <span className={`text-blue-600 text-xs hover:underline font-medium cursor-pointer ${isDoneStatus(card.status) ? 'line-through' : ''}`} onClick={(e) => { e.stopPropagation(); setSelectedIssue(card.key); }}>{card.key}</span>
                                                   </div>
-                                                  <div className="text-xs text-gray-900 font-medium mb-3 leading-snug cursor-grab active:cursor-grabbing">{card.title}</div>
+                                                  <div className="text-sm text-gray-900 font-medium mb-3 leading-snug cursor-grab active:cursor-grabbing line-clamp-2" title={card.title}>{card.title}</div>
 
                                                   {/* JIRA INLINE EXPANDABLE SUBTASKS LIST */}
                                                   {(() => {

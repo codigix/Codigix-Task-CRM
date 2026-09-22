@@ -1373,11 +1373,11 @@ module.exports = function setupEntitiesRoutes(app, pool) {
 
   app.get('/api/projects', async (req, res) => {
     try {
-      const { skip = 0, limit = 50, search, status, userId: queryUserId, assignedOnly, department } = req.query;
+      const { skip = 0, limit = 1000, search, status, userId: queryUserId, user_id: snakeUserId, role: queryRole, assignedOnly, department } = req.query;
       const headerUserId = req.headers['x-user-id'];
       const userRole = req.headers['x-user-role'];
       
-      const userId = queryUserId || headerUserId;
+      const userId = queryUserId || snakeUserId || headerUserId;
       
       let query = `
         SELECT 
@@ -1387,6 +1387,7 @@ module.exports = function setupEntitiesRoutes(app, pool) {
           u.last_name AS manager_last_name,
           u.avatar AS manager_avatar,
           t.name AS team_name,
+          COALESCE(dept.name, p.workflow_type, 'IT') AS department_name,
           (SELECT COUNT(*) FROM general_tasks WHERE project_id = p.id) AS total_tasks,
           (SELECT COUNT(*) FROM general_tasks WHERE project_id = p.id AND status = 'Completed') AS completed_tasks,
           (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', tm.user_id, 'first_name', tu.first_name, 'last_name', tu.last_name, 'avatar', tu.avatar)) 
@@ -1399,38 +1400,54 @@ module.exports = function setupEntitiesRoutes(app, pool) {
         LEFT JOIN companies dc ON d.company_id = dc.id
         LEFT JOIN users u ON p.manager_id = u.id
         LEFT JOIN teams t ON p.team_id = t.id
+        LEFT JOIN departments dept ON p.department_id = dept.id
         WHERE 1=1
       `;
       const params = [];
 
-      if (department) {
-        query += ' AND p.department_id = (SELECT id FROM departments WHERE name LIKE ? LIMIT 1)';
-        params.push(`%${department}%`);
-      }
-
-      // Filter by user if they are not Admin or Manager, or if assignedOnly is explicitly requested
-      const isManager = userRole && (userRole.toLowerCase().includes('admin') || userRole.toLowerCase().includes('manager'));
-      
       let userDept = null;
+      let dbRoleName = null;
+      let dbJobTitle = null;
       if (userId) {
-        const [u] = await db.query('SELECT department FROM users WHERE id = ?', [userId]);
-        if (u.length > 0) userDept = u[0].department;
+        try {
+          const [u] = await db.query('SELECT u.department, u.job_title, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?', [userId]);
+          if (u.length > 0) {
+            userDept = u[0].department;
+            dbRoleName = u[0].role_name;
+            dbJobTitle = u[0].job_title;
+          }
+        } catch (e) {
+          console.error('Error fetching user info for projects query:', e);
+        }
       }
 
-      if (userId) {
+      // Check manager or admin access
+      const isManager = Boolean(
+        (queryRole && (queryRole.toLowerCase().includes('admin') || queryRole.toLowerCase().includes('manager') || queryRole.toLowerCase().includes('lead') || queryRole.toLowerCase().includes('director') || queryRole.toLowerCase().includes('head'))) ||
+        (userRole && (userRole.toLowerCase().includes('admin') || userRole.toLowerCase().includes('manager') || userRole.toLowerCase().includes('lead') || userRole.toLowerCase().includes('director') || userRole.toLowerCase().includes('head'))) ||
+        (dbRoleName && (dbRoleName.toLowerCase().includes('admin') || dbRoleName.toLowerCase().includes('manager') || dbRoleName.toLowerCase().includes('lead') || dbRoleName.toLowerCase().includes('director') || dbRoleName.toLowerCase().includes('head'))) ||
+        (dbJobTitle && (dbJobTitle.toLowerCase().includes('admin') || dbJobTitle.toLowerCase().includes('manager') || dbJobTitle.toLowerCase().includes('lead') || dbJobTitle.toLowerCase().includes('director') || dbJobTitle.toLowerCase().includes('head')))
+      );
+
+      if (department && department !== 'ALL' && !isManager) {
+        query += ' AND (p.department_id = (SELECT id FROM departments WHERE name LIKE ? LIMIT 1) OR p.workflow_type LIKE ?)';
+        params.push(`%${department}%`, `%${department}%`);
+      }
+
+      if (userId && !isManager) {
         if (assignedOnly === 'true') {
           query += ' AND (p.created_by = ? OR p.team_id IN (SELECT team_id FROM team_members WHERE user_id = ?) OR p.id IN (SELECT project_id FROM project_team WHERE user_id = ?))';
           params.push(userId, userId, userId);
-        } else if (!isManager) {
+        } else {
           query += ' AND (p.created_by = ? OR p.team_id IN (SELECT team_id FROM team_members WHERE user_id = ?) OR p.id IN (SELECT project_id FROM project_team WHERE user_id = ?) OR p.department_id = (SELECT id FROM departments WHERE name = ? LIMIT 1))';
           params.push(userId, userId, userId, userDept);
         }
       }
 
       if (search) {
-        query += ' AND (p.name LIKE ? OR p.title LIKE ?)';
+        query += ' AND p.name LIKE ?';
         const searchTerm = `%${search}%`;
-        params.push(searchTerm, searchTerm);
+        params.push(searchTerm);
       }
 
       if (status) {

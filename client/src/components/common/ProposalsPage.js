@@ -406,7 +406,7 @@ const ProposalsPage = ({ onViewDetails }) => {
                   .map(s => s.trim())
                   .filter(Boolean)
                   .map((srv, idx) => (
-                    <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10px] font-medium truncate max-w-full">
+                    <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10px] font-medium truncate w-fit">
                       <span>🎯</span>
                       <span className="truncate">{srv}</span>
                     </span>
@@ -418,7 +418,7 @@ const ProposalsPage = ({ onViewDetails }) => {
                 </span>
               )}
               {proposal.project_scope && (
-                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-medium truncate max-w-full">
+                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-medium truncate w-fit">
                   📁 {proposal.project_scope}
                 </span>
               )}

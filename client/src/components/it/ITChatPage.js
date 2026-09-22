@@ -589,7 +589,7 @@ export default function ITChatPage() {
 
             {/* Quoted Reply Block (WhatsApp Style) */}
             {msg.reply_to_text && !isDeleted && (
-              <div className={`mb-1 p-2 rounded border-l-4 text-xs ${isMine ? 'bg-[#c5eabf] border-[#25d366] text-gray-900 self-end' : 'bg-gray-100 border-purple-600 text-gray-900 self-start'} max-w-full shadow-2xs`}>
+              <div className={`mb-1 p-2 rounded border-l-4 text-xs ${isMine ? 'bg-[#c5eabf] border-[#25d366] text-gray-900 self-end' : 'bg-gray-100 border-purple-600 text-gray-900 self-start'} w-fit shadow-2xs`}>
                 <div className="flex items-center gap-1  text-xs text-[#075e54] mb-0.5">
                   <CornerUpLeft size={10} />
                   <span>{msg.reply_to_sender || 'Replied Message'}</span>

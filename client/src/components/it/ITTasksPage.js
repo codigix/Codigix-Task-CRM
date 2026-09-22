@@ -775,7 +775,7 @@ const ITTasksPage = () => {
                 </div>
 
 
-                <div className="mt-4 border border-gray-200 rounded bg-white overflow-hidden w-full max-w-full">
+                <div className="mt-4 border border-gray-200 rounded bg-white overflow-hidden w-full w-fit">
                   <DataTable
                     columns={tableColumns}
                     data={filteredTasks}

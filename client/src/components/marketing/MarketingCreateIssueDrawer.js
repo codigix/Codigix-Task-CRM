@@ -197,14 +197,33 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
     if (isOpen) {
       setShouldRender(true);
       setIsClosing(false);
-      const timer = setTimeout(() => setAnimateIn(true), 10);
-      if (initialStatus || initialSummary) {
-        setFormData(prev => ({
-          ...prev,
-          status: initialStatus || prev.status,
-          summary: initialSummary || prev.summary
-        }));
+      setAttachedFiles([]);
+      setNewLabel('');
+      setFormData({
+        space: null,
+        workType: WORK_TYPES[0].name,
+        status: initialStatus || 'TO DO',
+        summary: initialSummary || '',
+        description: '',
+        team: null,
+        assignee: null,
+        reporter: null,
+        priority: 'Medium',
+        parent: null,
+        startDate: '',
+        dueDate: '',
+        storyPoints: '',
+        sprint: null,
+        labels: [],
+        linkedType: '',
+        linkedTarget: null,
+        flagged: false,
+        createAnother: false
+      });
+      if (editorRef.current) {
+        editorRef.current.innerHTML = '';
       }
+      const timer = setTimeout(() => setAnimateIn(true), 10);
       return () => clearTimeout(timer);
     } else {
       setAnimateIn(false);
@@ -212,10 +231,37 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
       const timer = setTimeout(() => {
         setShouldRender(false);
         setIsClosing(false);
+        setIsMaximized(false);
+        setFormData({
+          space: null,
+          workType: WORK_TYPES[0].name,
+          status: 'TO DO',
+          summary: '',
+          description: '',
+          team: null,
+          assignee: null,
+          reporter: null,
+          priority: 'Medium',
+          parent: null,
+          startDate: '',
+          dueDate: '',
+          storyPoints: '',
+          sprint: null,
+          labels: [],
+          linkedType: '',
+          linkedTarget: null,
+          flagged: false,
+          createAnother: false
+        });
+        if (editorRef.current) {
+          editorRef.current.innerHTML = '';
+        }
+        setAttachedFiles([]);
+        setNewLabel('');
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, initialStatus, initialSummary]);
 
   useEffect(() => {
     if (isOpen) {
@@ -485,18 +531,18 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
             ...prev,
             summary: '',
             description: '',
-            parent: null,
+            labels: [],
             startDate: '',
             dueDate: '',
             storyPoints: '',
-            linkedType: '',
             linkedTarget: null,
             flagged: false
           }));
           if (editorRef.current) editorRef.current.innerHTML = '';
           setAttachedFiles([]);
+          setNewLabel('');
         } else {
-          onClose();
+          handleClose();
         }
       } else {
         throw new Error('Failed to create ticket');
@@ -508,6 +554,34 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
     }
   };
 
+  const handleClose = () => {
+    setFormData({
+      space: null,
+      workType: WORK_TYPES[0].name,
+      status: 'TO DO',
+      summary: '',
+      description: '',
+      team: null,
+      assignee: null,
+      reporter: null,
+      priority: 'Medium',
+      parent: null,
+      startDate: '',
+      dueDate: '',
+      storyPoints: '',
+      sprint: null,
+      labels: [],
+      linkedType: '',
+      linkedTarget: null,
+      flagged: false,
+      createAnother: false
+    });
+    if (editorRef.current) editorRef.current.innerHTML = '';
+    setAttachedFiles([]);
+    setNewLabel('');
+    onClose();
+  };
+
 
   if (!shouldRender) return null;
 
@@ -517,7 +591,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
       <div
         className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${animateIn && !isClosing ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
           }`}
-        onClick={onClose}
+        onClick={handleClose}
       ></div>
 
       {/* Slide-out Panel / Centered Modal */}
@@ -535,9 +609,9 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-lg">
           <h2 className="text-xl text-gray-800 font-medium tracking-tight">Create Marketing Ticket</h2>
           <div className="flex items-center gap-1 text-gray-500">
-            <button type="button" className="p-1.5 hover:bg-gray-100 rounded-md transition-colors" onClick={onClose} title="Minimize"><Minus size={16} /></button>
+            <button type="button" className="p-1.5 hover:bg-gray-100 rounded-md transition-colors" onClick={handleClose} title="Minimize"><Minus size={16} /></button>
             <button type="button" className="p-1.5 hover:bg-gray-100 rounded-md transition-colors" onClick={() => setIsMaximized(!isMaximized)} title={isMaximized ? "Shrink to side panel" : "Expand to centered modal"}><Maximize2 size={14} /></button>
-            <button type="button" className="p-1.5 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors" onClick={onClose} title="Close"><X size={16} /></button>
+            <button type="button" className="p-1.5 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors" onClick={handleClose} title="Close"><X size={16} /></button>
           </div>
         </div>
 
@@ -1047,7 +1121,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-[14px] font-medium text-gray-700 hover:bg-gray-100 rounded p-2 transition-colors"
             >
               Cancel

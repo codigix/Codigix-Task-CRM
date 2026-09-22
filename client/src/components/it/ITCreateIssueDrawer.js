@@ -227,16 +227,33 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
     if (isOpen) {
       setShouldRender(true);
       setIsClosing(false);
+      setAttachedFiles([]);
+      setNewLabel('');
+      setFormData({
+        space: null,
+        workType: 'Task',
+        status: initialStatus || 'To Do',
+        summary: initialSummary || '',
+        description: '',
+        assignee: null,
+        reporter: null,
+        parent: null,
+        dueDate: '',
+        labels: [],
+        team: null,
+        startDate: '',
+        sprint: null,
+        linkedType: 'blocks',
+        linkedTarget: null,
+        flagged: false,
+        createAnother: false
+      });
+      if (editorRef.current) {
+        editorRef.current.innerHTML = '';
+      }
       const frame = requestAnimationFrame(() => {
         setAnimateIn(true);
       });
-      if (initialStatus || initialSummary) {
-        setFormData(prev => ({
-          ...prev,
-          status: initialStatus || prev.status,
-          summary: initialSummary || prev.summary
-        }));
-      }
       return () => cancelAnimationFrame(frame);
     } else if (shouldRender) {
       setIsClosing(true);
@@ -245,10 +262,34 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
         setShouldRender(false);
         setIsClosing(false);
         setIsMaximized(false);
+        setFormData({
+          space: null,
+          workType: 'Task',
+          status: 'To Do',
+          summary: '',
+          description: '',
+          assignee: null,
+          reporter: null,
+          parent: null,
+          dueDate: '',
+          labels: [],
+          team: null,
+          startDate: '',
+          sprint: null,
+          linkedType: 'blocks',
+          linkedTarget: null,
+          flagged: false,
+          createAnother: false
+        });
+        if (editorRef.current) {
+          editorRef.current.innerHTML = '';
+        }
+        setAttachedFiles([]);
+        setNewLabel('');
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, initialStatus, initialSummary]);
 
   useEffect(() => {
     if (isOpen) {
@@ -651,11 +692,21 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
       if (onIssueCreated) onIssueCreated();
 
       if (!formData.createAnother) {
-        onClose();
+        handleClose();
       } else {
-        setFormData(prev => ({ ...prev, summary: '', description: '', labels: [] }));
+        setFormData(prev => ({
+          ...prev,
+          summary: '',
+          description: '',
+          labels: [],
+          dueDate: '',
+          startDate: '',
+          linkedTarget: null,
+          flagged: false
+        }));
         if (editorRef.current) editorRef.current.innerHTML = "";
         setAttachedFiles([]);
+        setNewLabel('');
       }
     } catch (err) {
       console.error(err);
@@ -663,6 +714,32 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      space: null,
+      workType: 'Task',
+      status: 'To Do',
+      summary: '',
+      description: '',
+      assignee: null,
+      reporter: null,
+      parent: null,
+      dueDate: '',
+      labels: [],
+      team: null,
+      startDate: '',
+      sprint: null,
+      linkedType: 'blocks',
+      linkedTarget: null,
+      flagged: false,
+      createAnother: false
+    });
+    if (editorRef.current) editorRef.current.innerHTML = '';
+    setAttachedFiles([]);
+    setNewLabel('');
+    onClose();
   };
 
   const handleCommand = (command, value = null) => {
@@ -678,7 +755,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
       <div
         className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${animateIn && !isClosing ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
           }`}
-        onClick={onClose}
+        onClick={handleClose}
       ></div>
 
       {/* Slide-out Panel / Centered Modal */}
@@ -696,9 +773,9 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-lg">
           <h2 className="text-xl text-gray-800 font-medium tracking-tight">Create Task</h2>
           <div className="flex items-center gap-1 text-gray-500">
-            <button type="button" className="p-1.5 hover:bg-gray-100 rounded-md transition-colors" onClick={onClose} title="Minimize"><Minus size={16} /></button>
+            <button type="button" className="p-1.5 hover:bg-gray-100 rounded-md transition-colors" onClick={handleClose} title="Minimize"><Minus size={16} /></button>
             <button type="button" className="p-1.5 hover:bg-gray-100 rounded-md transition-colors" onClick={() => setIsMaximized(!isMaximized)} title={isMaximized ? "Shrink to side panel" : "Expand to centered modal"}><Maximize2 size={14} /></button>
-            <button type="button" className="p-1.5 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors" onClick={onClose} title="Close"><X size={16} /></button>
+            <button type="button" className="p-1.5 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors" onClick={handleClose} title="Close"><X size={16} /></button>
           </div>
         </div>
 
@@ -1164,7 +1241,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-[14px] font-medium text-gray-700 hover:bg-gray-100 rounded p-2 transition-colors"
             >
               Cancel

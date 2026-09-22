@@ -348,6 +348,15 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
             }`}>
             {item.issue_key}
           </span>
+          {item.department && (
+            <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+              item.department.toLowerCase() === 'marketing'
+                ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+            }`}>
+              {item.department}
+            </span>
+          )}
           <span className="text-xs text-gray-800 flex-1 truncate group-hover:underline">{item.title}</span>
 
           {/* Due date, or the start date when only that is set. Overdue work is called out,
@@ -465,6 +474,31 @@ const BacklogPage = ({ department }) => {
   const { designation, username } = useParams();
   const canPlanSprints = isManagerDesignation(designation);
 
+  const isManager = Boolean(
+    canPlanSprints ||
+    (designation && (
+      designation.toLowerCase().includes('manager') ||
+      designation.toLowerCase().includes('admin') ||
+      designation.toLowerCase().includes('lead') ||
+      designation.toLowerCase().includes('head') ||
+      designation.toLowerCase().includes('director')
+    )) ||
+    (user?.role && (
+      user.role.toLowerCase().includes('manager') ||
+      user.role.toLowerCase().includes('admin') ||
+      user.role.toLowerCase().includes('lead') ||
+      user.role.toLowerCase().includes('head') ||
+      user.role.toLowerCase().includes('director')
+    )) ||
+    (user?.designation && (
+      user.designation.toLowerCase().includes('manager') ||
+      user.designation.toLowerCase().includes('admin') ||
+      user.designation.toLowerCase().includes('lead') ||
+      user.designation.toLowerCase().includes('head') ||
+      user.designation.toLowerCase().includes('director')
+    ))
+  );
+
   const currentDept = department
     || (user?.department || '').replace(/\s*department\s*$/i, '').trim()
     || 'IT';
@@ -487,10 +521,13 @@ const BacklogPage = ({ department }) => {
   const [importSprintId, setImportSprintId] = useState(null);
   const [projects, setProjects] = useState([]);
   const [selectedKey, setSelectedKey] = useState(null);
+  const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState('ALL');
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept)}&_t=${Date.now()}`, { cache: 'no-store' });
+      const deptParam = isManager ? 'ALL' : currentDept;
+      const roleParam = encodeURIComponent(user?.role || designation || '');
+      const res = await fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(deptParam)}&role=${roleParam}&_t=${Date.now()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to load backlog');
       const data = await res.json();
       setSprints(data.sprints || []);
@@ -500,22 +537,25 @@ const BacklogPage = ({ department }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentDept]);
+  }, [currentDept, isManager, user?.role, designation]);
 
   useEffect(() => { load(); }, [load]);
 
-  // Projects a sprint can belong to, scoped to this department.
+  // Projects a sprint can belong to, scoped to all accessible projects for managers.
   useEffect(() => {
-    fetch(`${API_BASE_URL}/projects?department=${encodeURIComponent(currentDept)}`)
+    const roleParam = encodeURIComponent(user?.role || designation || '');
+    const userParam = user?.id || '';
+    const deptParam = isManager ? '' : `&department=${encodeURIComponent(currentDept)}`;
+    fetch(`${API_BASE_URL}/projects?user_id=${userParam}&role=${roleParam}&limit=1000${deptParam}`)
       .then(res => res.json())
       .then(data => {
         const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
         setProjects(list);
       })
       .catch(err => console.error('Failed to load projects for sprint creation:', err));
-  }, [currentDept]);
+  }, [currentDept, isManager, user?.id, user?.role, designation]);
 
-  // People who can be assigned work on this board — same department scoping the board uses.
+  // People who can be assigned work on this board
   useEffect(() => {
     fetch(`${API_BASE_URL}/users`)
       .then(res => res.json())
@@ -530,15 +570,12 @@ const BacklogPage = ({ department }) => {
     const SYSTEM_ACCOUNTS = ['admin', 'leads', 'deals', 'sales', 'marketing', 'it', 'accounting'];
     const target = currentDept.toLowerCase();
 
-    // Match on the department itself rather than on job titles. Matching titles lets people
-    // leak across boards — "Video Editor" contains "it" and "Wordpress Developer" contains
-    // "developer", so both would show up on the IT board. Titles are only a fallback for
-    // users whose department was never set.
     const normalizeDept = (d) => String(d || '').toLowerCase().replace(/\s*department\s*$/, '').trim();
 
     return usersList
       .filter(u => {
         if (SYSTEM_ACCOUNTS.includes(String(u.username || '').toLowerCase())) return false;
+        if (isManager) return true;
         const dept = normalizeDept(u.department);
         if (dept) return dept === target;
 
@@ -554,7 +591,17 @@ const BacklogPage = ({ department }) => {
       }))
       .filter(u => u.name)
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [usersList, currentDept]);
+  }, [usersList, currentDept, isManager]);
+
+  const displayedSprints = React.useMemo(() => {
+    if (!isManager || selectedDepartmentFilter === 'ALL') return sprints;
+    return sprints.filter(s => (s.department || 'IT').toLowerCase() === selectedDepartmentFilter.toLowerCase());
+  }, [sprints, isManager, selectedDepartmentFilter]);
+
+  const displayedBacklog = React.useMemo(() => {
+    if (!isManager || selectedDepartmentFilter === 'ALL') return backlog;
+    return backlog.filter(b => (b.department || 'IT').toLowerCase() === selectedDepartmentFilter.toLowerCase());
+  }, [backlog, isManager, selectedDepartmentFilter]);
 
   // Clicking a row opens the same details panel the board uses, right here in the backlog.
   const openIssue = (key) => setSelectedKey(key);
@@ -655,6 +702,14 @@ const BacklogPage = ({ department }) => {
   // inline "+ Create" does. New items land unranked, so they sort to the bottom of their
   // section until someone drags them.
   const createWorkItem = async (title, sprintId) => {
+    let targetDept = currentDept;
+    if (sprintId) {
+      const sp = sprints.find(s => Number(s.id) === Number(sprintId));
+      if (sp?.department) targetDept = sp.department;
+    } else if (selectedDepartmentFilter && selectedDepartmentFilter !== 'ALL') {
+      targetDept = selectedDepartmentFilter;
+    }
+
     const res = await fetch(`${API_BASE_URL}/it-kanban/issues`, {
       method: 'POST',
       headers: {
@@ -666,8 +721,8 @@ const BacklogPage = ({ department }) => {
         type: 'Task',
         status: 'TO DO',
         priority: 'Medium',
-        department: currentDept,
-        keyPrefix: DEPARTMENT_KANBAN_CONFIG[currentDept]?.defaultPrefix,
+        department: targetDept,
+        keyPrefix: DEPARTMENT_KANBAN_CONFIG[targetDept]?.defaultPrefix || (targetDept.toLowerCase() === 'marketing' ? 'MKT' : 'IT'),
         reporter: currentUserName || 'Unassigned',
         assignee: 'Unassigned',
         sprint_id: sprintId ?? null
@@ -681,7 +736,10 @@ const BacklogPage = ({ department }) => {
     const res = await fetch(`${API_BASE_URL}/sprints`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...values, department: currentDept })
+      body: JSON.stringify({
+        ...values,
+        department: values.department || (selectedDepartmentFilter !== 'ALL' ? selectedDepartmentFilter : currentDept)
+      })
     });
     if (!res.ok) throw new Error((await res.json()).error || 'Failed to create sprint');
     setIsCreatingSprint(false);
@@ -961,7 +1019,9 @@ const BacklogPage = ({ department }) => {
 
       <CreateSprintModal
         isOpen={isCreatingSprint}
-        defaultName={`${currentDept} Sprint ${sprints.length + 1}`}
+        defaultName={`${selectedDepartmentFilter !== 'ALL' ? selectedDepartmentFilter : currentDept} Sprint ${sprints.length + 1}`}
+        defaultDepartment={selectedDepartmentFilter !== 'ALL' ? selectedDepartmentFilter : currentDept}
+        isManager={isManager}
         projects={projects}
         onCancel={() => setIsCreatingSprint(false)}
         onCreate={createSprint}
@@ -996,6 +1056,40 @@ const BacklogPage = ({ department }) => {
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="p-6">
 
+          {/* Department Filter Toolbar for Managers */}
+          {isManager && (
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-5 pb-3 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">Department:</span>
+                {[
+                  { key: 'ALL', label: 'All Sprints', count: sprints.length },
+                  { key: 'IT', label: 'IT', count: sprints.filter(s => (s.department || 'IT').toLowerCase() === 'it').length },
+                  { key: 'Marketing', label: 'Marketing', count: sprints.filter(s => (s.department || '').toLowerCase() === 'marketing').length }
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setSelectedDepartmentFilter(tab.key)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
+                      selectedDepartmentFilter === tab.key
+                        ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      selectedDepartmentFilter === tab.key ? 'bg-blue-700 text-blue-100' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="text-xs text-gray-500">
+                Showing <span className="font-semibold text-gray-800">{displayedSprints.length}</span> sprint{displayedSprints.length === 1 ? '' : 's'} across {selectedDepartmentFilter === 'ALL' ? 'IT & Marketing' : selectedDepartmentFilter}
+              </div>
+            </div>
+          )}
+
           {/* Backlog section */}
           <div className="mb-4 border border-gray-200 rounded bg-white overflow-hidden">
             <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 border-b border-gray-200">
@@ -1005,7 +1099,7 @@ const BacklogPage = ({ department }) => {
               <Inbox size={14} className="text-gray-500" />
               <span className="font-semibold text-sm text-gray-900">Backlog</span>
               <span className="text-xs text-gray-500">
-                ({backlog.length} work item{backlog.length === 1 ? '' : 's'})
+                ({displayedBacklog.length} work item{displayedBacklog.length === 1 ? '' : 's'})
               </span>
               <button
                 onClick={() => setIsCreatingSprint(true)}
@@ -1024,14 +1118,14 @@ const BacklogPage = ({ department }) => {
                     className={snapshot.isDraggingOver ? 'bg-blue-50/60' : ''}
                   >
                     <InlineCreateRow sprintId={null} onCreate={createWorkItem} />
-                    {backlog.map((item, i) => (
+                    {displayedBacklog.map((item, i) => (
                       <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints}
                         currentSprintId={null} users={assignableUsers}
                         currentUserName={currentUserName} isSelected={selectedKey === item.issue_key}
                         onMove={moveItem} onOpen={openIssue} onUpdate={updateItem}
                         onDelete={(item) => deleteItem(item.issue_key)} onCopy={copyToClipboard} />
                     ))}
-                    {backlog.length === 0 && (
+                    {displayedBacklog.length === 0 && (
                       <div className="px-4 py-8 text-center text-xs text-gray-400">Your backlog is empty.</div>
                     )}
                     {provided.placeholder}
@@ -1042,7 +1136,7 @@ const BacklogPage = ({ department }) => {
           </div>
 
           {/* Sprint sections */}
-          {sprints.map((sprint, idx) => {
+          {displayedSprints.map((sprint, idx) => {
             const isCollapsed = collapsed[`s${sprint.id}`];
             const dates = formatDate(sprint.start_date) && formatDate(sprint.end_date)
               ? `${formatDate(sprint.start_date)} – ${formatDate(sprint.end_date)}` : null;
@@ -1054,6 +1148,16 @@ const BacklogPage = ({ department }) => {
                     {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                   </button>
                   <span className="font-semibold text-sm text-gray-900">{sprint.name}</span>
+
+                  {sprint.department && (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded tracking-wide ${
+                      sprint.department.toLowerCase() === 'marketing'
+                        ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                        : 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                    }`}>
+                      {sprint.department}
+                    </span>
+                  )}
 
                   {sprint.status === 'Active' && (
                     <span className="text-[10px]  px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">ACTIVE</span>
@@ -1077,12 +1181,11 @@ const BacklogPage = ({ department }) => {
                   <span className="text-xs text-gray-500">
                     ({sprint.issues.length} work item{sprint.issues.length === 1 ? '' : 's'})
                   </span>
-                  {/* Which project this sprint's work belongs to. */}
-                  {/* {sprint.project_id != null && (
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                  {projects.find(p => Number(p.id) === Number(sprint.project_id))?.name || `Project #${sprint.project_id}`}
-                </span>
-              )} */}
+                  {(sprint.project_name || sprint.project_id != null) && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                      {sprint.project_name || projects.find(p => Number(p.id) === Number(sprint.project_id))?.name || `Project #${sprint.project_id}`}
+                    </span>
+                  )}
                   {sprint.goal && <span className="text-xs text-gray-400 italic truncate max-w-[220px]">{sprint.goal}</span>}
 
                   <div className="ml-auto flex items-center gap-3">
@@ -1102,7 +1205,7 @@ const BacklogPage = ({ department }) => {
                         Start sprint
                       </button>
                     )}
-                    <SprintMenu sprint={sprint} index={idx} total={sprints.length} />
+                    <SprintMenu sprint={sprint} index={idx} total={displayedSprints.length} />
                   </div>
                 </div>
 

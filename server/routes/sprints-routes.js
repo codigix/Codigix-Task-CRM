@@ -138,16 +138,36 @@ module.exports = function setupSprintsRoutes(app, pool) {
   // ── List sprints for a board, with their work items ───────────────────
   app.get('/api/sprints', async (req, res) => {
     try {
-      const department = deptFilter(req.query.department);
+      const rawDept = req.query.department;
       const includeCompleted = req.query.includeCompleted === 'true';
+      const role = (req.query.role || req.headers['x-user-role'] || '').toLowerCase();
+      const isManager = role.includes('manager') || role.includes('admin') || role.includes('lead') || role.includes('head') || role.includes('director');
 
       let sql = `
-        SELECT DISTINCT s.* FROM sprints s
+        SELECT DISTINCT s.*, 
+               COALESCE(p.name, p.title) AS project_name, 
+               p.title AS project_title,
+               c.company_name AS client_name
+        FROM sprints s
+        LEFT JOIN projects p ON s.project_id = p.id
+        LEFT JOIN companies c ON p.company_id = c.id
+        WHERE 1=1
       `;
-      if (!includeCompleted) sql += " WHERE s.status <> 'Completed'";
+      const params = [];
+
+      if (!includeCompleted) {
+        sql += " AND s.status <> 'Completed'";
+      }
+
+      if (rawDept && rawDept.toUpperCase() !== 'ALL' && !isManager) {
+        const dept = deptFilter(rawDept);
+        sql += " AND (s.department = ? OR s.department IS NULL)";
+        params.push(dept);
+      }
+
       sql += " ORDER BY FIELD(s.status,'Active','Planned','Completed'), s.sort_order ASC, s.id ASC";
 
-      const [sprints] = await db.query(sql);
+      const [sprints] = await db.query(sql, params);
 
       // Attach each sprint's items plus a To Do / In Progress / Done breakdown.
       for (const s of sprints) {

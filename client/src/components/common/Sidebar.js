@@ -237,7 +237,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">Common Workspace</div>
       <SubmenuItem label="Dashboard" page="dashboard" icon={Layout} />
       <SubmenuItem label="Daily Task" page="tasks" icon={ClipboardList} />
-      <SubmenuItem label="Kanban Board" page="kanban" icon={Layers} />
+      <SubmenuItem label="Task Management" page="kanban" icon={Layers} />
       {isManager && <SubmenuItem label="Calendar" page="calendar" icon={Calendar} />}
     </>
   );
@@ -278,6 +278,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">Sales Operations</div>
       <SubmenuItem label="All Leads" page="leads" icon={Users} prefix="/sales" />
       <SubmenuItem label="All Deals" page="deals-list" icon={Briefcase} prefix="/sales" />
+      <SubmenuItem label="Deals Kanban" page="deals-kanban" icon={LayoutDashboard} prefix="/deals" />
       <SubmenuItem label="Contacts" page="contacts" icon={Users2} prefix="/sales" />
       <SubmenuItem label="Customers" page="customers" icon={UserCircle} prefix="/sales" />
 

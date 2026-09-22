@@ -794,8 +794,14 @@ const Drawer = ({ isOpen, onClose, employee }) => {
                     </div>
                   </>
                 ) : (
-                  <div className="text-center p-10 text-gray-500 text-sm">
-                    No historical trend data available.
+                  <div className="flex flex-col items-center justify-center p-12 bg-slate-50/50 rounded-xl border border-dashed border-gray-200 mt-4">
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 mb-4 text-gray-400">
+                      <BarChart3 size={24} />
+                    </div>
+                    <h3 className="text-gray-900 font-semibold mb-1">No Analytics Available</h3>
+                    <p className="text-gray-500 text-sm text-center max-w-sm">
+                      There is no historical performance trend data available for this employee yet. Submit reviews to generate analytics.
+                    </p>
                   </div>
                 )}
               </div>
@@ -808,106 +814,86 @@ const Drawer = ({ isOpen, onClose, employee }) => {
       {/* Review Modal */}
       {isReviewModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsReviewModalOpen(false)}></div>
-          <div className="relative bg-white rounded shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
-            <div className="p-2 border-b border-gray-100 flex justify-between items-center bg-slate-50">
-              <h2 className="text-lg  text-gray-800">Submit Performance Review</h2>
-              <button onClick={() => setIsReviewModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={15} /></button>
-            </div>
-            <form onSubmit={handleReviewSubmit} className="p-4 flex-1 overflow-y-auto">
-
-              <div className="bg-slate-50 p-2 rounded border border-gray-100 mb-6 flex items-center justify-between">
-                <div>
-                  <h3 className="text-gray-800 ">Calculated Overall Score</h3>
-                  <p className="text-xs text-gray-500 mt-1">Average of all performance metrics below</p>
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setIsReviewModalOpen(false)}></div>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col transform transition-all animate-in zoom-in-95 duration-200 border border-gray-100">
+            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                  <Star size={18} />
                 </div>
-                <div className={`p-2 rounded  text-sm border ${overallScore >= 90 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                  overallScore >= 80 ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                    'bg-orange-50 text-orange-600 border-orange-100'
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 tracking-tight">Performance Review</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Submit evaluation scores and feedback</p>
+                </div>
+              </div>
+              <button onClick={() => setIsReviewModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"><X size={18} /></button>
+            </div>
+            <form onSubmit={handleReviewSubmit} className="p-6 flex-1 overflow-y-auto">
+
+              <div className="bg-gradient-to-br from-indigo-50 to-blue-50/30 p-5 rounded-xl border border-indigo-100/50 mb-8 flex items-center justify-between shadow-sm">
+                <div>
+                  <h3 className="text-sm font-bold text-indigo-900 mb-1">Calculated Overall Score</h3>
+                  <p className="text-xs text-indigo-700/70">Average of all performance metrics below</p>
+                </div>
+                <div className={`px-4 py-2 rounded-lg text-lg font-bold border shadow-sm ${overallScore >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                  overallScore >= 80 ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                    'bg-orange-50 text-orange-700 border-orange-200'
                   }`}>
                   {overallScore}%
                 </div>
               </div>
 
-              <div className="mb-6">
-                <h3 className="text-xl text-gray-700  mb-3 border-b border-gray-100 pb-2">Performance Metrics</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Task Completion (%)</label>
-                    <input
-                      type="number"
-                      value={reviewForm.taskCompletion}
-                      onChange={e => setReviewForm({ ...reviewForm, taskCompletion: e.target.value })}
-                      className="w-full border border-gray-200 rounded p-2 text-sm text-gray-800 outline-none focus:border-blue-500"
-                      min="0" max="100" required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Quality of Work (%)</label>
-                    <input
-                      type="number"
-                      value={reviewForm.quality}
-                      onChange={e => setReviewForm({ ...reviewForm, quality: e.target.value })}
-                      className="w-full border border-gray-200 rounded p-2 text-sm text-gray-800 outline-none focus:border-blue-500"
-                      min="0" max="100" required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">On-Time Delivery (%)</label>
-                    <input
-                      type="number"
-                      value={reviewForm.onTime}
-                      onChange={e => setReviewForm({ ...reviewForm, onTime: e.target.value })}
-                      className="w-full border border-gray-200 rounded p-2 text-sm text-gray-800 outline-none focus:border-blue-500"
-                      min="0" max="100" required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Efficiency (%)</label>
-                    <input
-                      type="number"
-                      value={reviewForm.efficiency}
-                      onChange={e => setReviewForm({ ...reviewForm, efficiency: e.target.value })}
-                      className="w-full border border-gray-200 rounded p-2 text-sm text-gray-800 outline-none focus:border-blue-500"
-                      min="0" max="100" required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Review Gate Points (%)</label>
-                    <input
-                      type="number"
-                      value={reviewForm.reviewGatePoints}
-                      onChange={e => setReviewForm({ ...reviewForm, reviewGatePoints: e.target.value })}
-                      className="w-full border border-gray-200 rounded p-2 text-sm text-gray-800 outline-none focus:border-blue-500"
-                      min="0" max="100" required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Points Distribution (%)</label>
-                    <input
-                      type="number"
-                      value={reviewForm.pointsDistribution}
-                      onChange={e => setReviewForm({ ...reviewForm, pointsDistribution: e.target.value })}
-                      className="w-full border border-gray-200 rounded p-2 text-sm text-gray-800 outline-none focus:border-blue-500"
-                      min="0" max="100" required
-                    />
-                  </div>
+              <div className="mb-8">
+                <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <Activity size={16} className="text-blue-500" />
+                  Performance Metrics
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                  {[
+                    { label: 'Task Completion', field: 'taskCompletion' },
+                    { label: 'Quality of Work', field: 'quality' },
+                    { label: 'On-Time Delivery', field: 'onTime' },
+                    { label: 'Efficiency', field: 'efficiency' },
+                    { label: 'Review Gate Points', field: 'reviewGatePoints' },
+                    { label: 'Points Distribution', field: 'pointsDistribution' }
+                  ].map((metric) => (
+                    <div key={metric.field} className="relative group">
+                      <label className="block text-xs font-medium text-gray-600 mb-1.5">{metric.label} (%)</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={reviewForm[metric.field]}
+                          onChange={e => setReviewForm({ ...reviewForm, [metric.field]: e.target.value })}
+                          className="w-full bg-slate-50 border border-gray-200 rounded-lg py-2.5 pl-3 pr-8 text-sm text-gray-800 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all hover:border-gray-300"
+                          min="0" max="100" required
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">%</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm text-gray-700  mb-2">Manager Notes & Feedback</label>
+              <div className="mb-2">
+                <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <FileText size={16} className="text-blue-500" />
+                  Manager Notes & Feedback
+                </label>
                 <textarea
                   value={reviewForm.feedback}
                   onChange={e => setReviewForm({ ...reviewForm, feedback: e.target.value })}
-                  className="w-full border border-gray-200 rounded p-3 text-sm text-gray-800 outline-none focus:border-blue-500 h-28 resize-none"
+                  className="w-full bg-slate-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-800 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 h-32 resize-none transition-all hover:border-gray-300"
                   placeholder="Enter detailed feedback, justification for scores, and areas of improvement..." required
                 ></textarea>
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button type="button" onClick={() => setIsReviewModalOpen(false)} className="p-2  text-gray-600 hover:bg-gray-50 rounded border border-gray-200 transition-colors">Cancel</button>
-                <button type="submit" className="p-2  text-white bg-red-600 hover:bg-blue-700 rounded shadow-sm transition-colors flex items-center gap-2">
-                  <CheckCircle size={15} /> Submit Review
+              
+              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100">
+                <button type="button" onClick={() => setIsReviewModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 shadow-sm transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 transition-colors flex items-center gap-2">
+                  <CheckCircle size={16} /> 
+                  Submit Review
                 </button>
               </div>
             </form>
