@@ -1,6 +1,36 @@
 import React, { useState } from 'react';
 import { Plus, Sparkles, ChevronDown, User, Trash2, X, CheckSquare, Edit3 } from 'lucide-react';
 
+export const parseSubtaskList = (text) => {
+  if (!text || typeof text !== 'string' || !text.trim()) return [];
+
+  const lines = text.split(/\r?\n/);
+  const items = [];
+
+  for (let line of lines) {
+    let cleaned = line.trim();
+    if (!cleaned) continue;
+
+    // Strip common bullet markers: •, -, *, ⁃, ▪, ▫, ‣, ·, –, —, ◦
+    cleaned = cleaned.replace(/^[•\-\*⁃▪▫‣·–—◦]+\s*/, '');
+    // Strip common numbering markers: 1., 1), [1], (1), 1-
+    cleaned = cleaned.replace(/^(\d+[\.\)\-\]]|\(\d+\))\s*/, '');
+    // Strip common checkbox markers: [ ], [x], - [ ]
+    cleaned = cleaned.replace(/^\[[ xX]?\]\s*/, '');
+    cleaned = cleaned.trim();
+
+    if (cleaned.length > 0) {
+      items.push(cleaned);
+    }
+  }
+
+  if (items.length === 0 && text.trim()) {
+    items.push(text.trim());
+  }
+
+  return items;
+};
+
 const ITSubtasksTable = ({
   issue,
   subtasks,
@@ -97,56 +127,79 @@ const ITSubtasksTable = ({
         </div>
       )}
 
-      {/* Unified Single Subtask Creation Box */}
-      {isAddingSubtask && (
-        <div className="p-3 bg-blue-50/40 border border-blue-200 rounded space-y-2.5 my-2 animate-in fade-in duration-150">
-          <div className="flex items-center gap-2">
-            <input
-              id="subtask-inline-input"
-              type="text"
-              autoFocus
-              value={newSubtaskTitle}
-              onChange={(e) => setNewSubtaskTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newSubtaskTitle.trim()) {
-                  handleAddSubtask();
-                }
-              }}
-              placeholder="What needs to be done?"
-              className="flex-1 text-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-gray-900 shadow-xs"
-            />
-          </div>
+      {/* Unified Subtask Creation Box - Supports Single Item or Multi-Line / Bulleted Lists */}
+      {isAddingSubtask && (() => {
+        const parsedItems = parseSubtaskList(newSubtaskTitle);
+        const isMultiline = (newSubtaskTitle || '').includes('\n') || parsedItems.length > 1;
 
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleAddSubtask}
-                disabled={!newSubtaskTitle.trim()}
-                className="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs transition"
-              >
-                Create
-              </button>
-              <button
-                onClick={() => setIsAddingSubtask(false)}
-                className="px-2.5 py-1.5 text-gray-500 hover:text-gray-700 text-xs font-medium cursor-pointer"
-              >
-                Cancel
-              </button>
+        return (
+          <div className="p-3 bg-blue-50/40 border border-blue-200 rounded-lg space-y-2.5 my-2 animate-in fade-in duration-150 shadow-xs">
+            <div className="flex flex-col gap-1.5">
+              <textarea
+                id="subtask-inline-input"
+                autoFocus
+                rows={isMultiline ? Math.min(Math.max(parsedItems.length, 3), 8) : 2}
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (e.ctrlKey || e.metaKey || (!isMultiline && !e.shiftKey)) {
+                      e.preventDefault();
+                      if (newSubtaskTitle.trim()) {
+                        handleAddSubtask();
+                      }
+                    }
+                  }
+                }}
+                placeholder="What needs to be done? Paste any list or bullet points here to create subtasks..."
+                className="w-full text-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-gray-900 shadow-xs resize-y placeholder:text-gray-400 font-sans"
+              />
+              {isMultiline && (
+                <div className="flex items-center justify-between text-[11px] px-1 animate-in fade-in">
+                  <span className="text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                    ✓ {parsedItems.length} subtasks detected from your list
+                  </span>
+                  <span className="text-gray-400 text-[10px]">
+                    Press <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono text-[9px]">Ctrl</kbd>+<kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono text-[9px]">Enter</kbd> or click Create
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* AI Auto-Suggest Button */}
-            <button
-              onClick={handleDetailedSubtaskSuggest}
-              disabled={aiLoading.subtasks}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded text-xs font-medium transition cursor-pointer shadow-xs"
-              title="AI reads description and creates 5-8 technical subtasks"
-            >
-              <Sparkles size={13} className="text-indigo-600 fill-indigo-100" />
-              <span>{aiLoading.subtasks ? 'Generating...' : '✨ AI Auto-Subtasks'}</span>
-            </button>
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleAddSubtask}
+                  disabled={!newSubtaskTitle.trim()}
+                  className="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 disabled:opacity-50 cursor-pointer shadow-xs transition flex items-center gap-1.5"
+                >
+                  <span>{parsedItems.length > 1 ? `Create ${parsedItems.length} Subtasks` : 'Create'}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsAddingSubtask(false);
+                    setNewSubtaskTitle('');
+                  }}
+                  className="px-2.5 py-1.5 text-gray-500 hover:text-gray-700 text-xs font-medium cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {/* AI Auto-Suggest Button */}
+              <button
+                onClick={handleDetailedSubtaskSuggest}
+                disabled={aiLoading.subtasks}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded text-xs font-medium transition cursor-pointer shadow-xs"
+                title="AI reads description and creates 5-8 technical subtasks"
+              >
+                <Sparkles size={13} className="text-indigo-600 fill-indigo-100" />
+                <span>{aiLoading.subtasks ? 'Generating...' : '✨ AI Auto-Subtasks'}</span>
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* JIRA SUBTASKS DATA TABLE - CLEAN TABLE-FIXED FIT */}
       {subtasks.length > 0 && (

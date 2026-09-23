@@ -41,6 +41,7 @@ const userWorkspacePath = (user) => {
   else if (dept.includes('it') || role.includes('it') || role.includes('developer') || role.includes('tester')) prefix = '/it';
   else if (dept.includes('seo') || dept.includes('gmb')) prefix = '/seo-gmb';
   else if (dept.includes('sales') || dept.includes('lead') || dept.includes('deal')) prefix = '/sales';
+  else if (dept.includes('hr') || role.includes('hr') || dept.includes('management')) prefix = '/hr';
   if (!prefix) return null;
 
   const designation = slug(user.role) || 'employee';
@@ -167,6 +168,11 @@ const Header = ({ toggleSidebar }) => {
         const boardKey = parts.length > 2 ? parts.slice(0, 2).join('-') : notif.entityKey;
         return `${base}/kanban?ticketKey=${encodeURIComponent(boardKey)}`;
       }
+    }
+    if (notif.entityType === 'registration_request') {
+      const base = userWorkspacePath(user);
+      if (base) return `${base}/registration-requests`;
+      return notif.link || '/hr/registration-requests';
     }
     // Ignore legacy links that are just a bare department prefix and route nowhere.
     if (notif.link && notif.link.split('/').filter(Boolean).length > 1) return notif.link;

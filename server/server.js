@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const path = require('path');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
@@ -253,9 +254,10 @@ authRouter.post('/signup', async (req, res) => {
       }
     }
 
+    const userUuid = crypto.randomUUID();
     const [result] = await connection.query(
-      'INSERT INTO users (first_name, last_name, email, username, password, phone1, location, role_id, status, department, job_title) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [first_name || 'User', last_name || '', email, username, hashedPassword, phone || '', company || '', role_id, 'Active', department || null, job_title || null]
+      'INSERT INTO users (uuid, first_name, last_name, email, username, password, phone1, location, role_id, status, department, job_title) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [userUuid, first_name || 'User', last_name || '', email, username, hashedPassword, phone || '', company || '', role_id, 'Active', department || null, job_title || null]
     );
 
     const [newUser] = await connection.query(
@@ -306,12 +308,14 @@ authRouter.post('/registration-request', async (req, res) => {
     }
 
     const hashedPassword = hashPassword(password);
+    const requestUuid = crypto.randomUUID();
 
-    await connection.query(
+    const [insertResult] = await connection.query(
       `INSERT INTO registration_requests (
-        first_name, last_name, email, password, phone, company, department, role_type, role_name, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
+        uuid, first_name, last_name, email, password, phone, company, department, role_type, role_name, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
       [
+        requestUuid,
         first_name,
         last_name || '',
         email,
@@ -324,9 +328,28 @@ authRouter.post('/registration-request', async (req, res) => {
       ]
     );
 
+    const requestId = insertResult.insertId;
+    const applicantName = `${first_name} ${last_name || ''}`.trim();
+
+    // Trigger in-app notification to all HR and Admin users
+    const createNotification = req.app?.locals?.createNotification;
+    if (typeof createNotification === 'function') {
+      createNotification({
+        targetAudience: 'hr_and_admin',
+        type: 'registration_request',
+        title: 'New Registration Request',
+        message: `${applicantName} (${email}) has submitted a registration request. Please review and assign role.`,
+        link: '/hr/registration-requests',
+        actorName: applicantName,
+        entityType: 'registration_request',
+        entityKey: String(requestUuid)
+      }).catch(err => console.error('Failed to dispatch registration request notification:', err.message));
+    }
+
     res.status(201).json({
       success: true,
       message: 'Registration request submitted successfully. It has been sent to HR and Admin for review.',
+      requestId: requestUuid
     });
   } catch (error) {
     console.error('Registration request error:', error.message);

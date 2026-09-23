@@ -777,7 +777,7 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
     try {
       const { userId } = req.params;
       connection = await getConnection();
-      await connection.query('UPDATE users SET last_seen = CURRENT_TIMESTAMP, status = "Active" WHERE id = ?', [userId]);
+      await connection.query('UPDATE users SET last_seen = CURRENT_TIMESTAMP, status = "Active" WHERE id = ? OR uuid = ?', [userId, userId]);
       res.json({ success: true, timestamp: new Date() });
     } catch (error) {
       responseError(res, 500, 'Failed to update heartbeat', error);

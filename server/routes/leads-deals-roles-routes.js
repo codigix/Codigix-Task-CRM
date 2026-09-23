@@ -531,10 +531,21 @@ module.exports = function setupLeadsDealsRolesRoutes(app, pool) {
     }
   });
 
+  const resolveUserId = async (idOrUuid) => {
+    if (!idOrUuid) return null;
+    const [u] = await db.query('SELECT id FROM users WHERE id = ? OR uuid = ?', [idOrUuid, idOrUuid]);
+    return u.length > 0 ? u[0].id : null;
+  };
+
   app.post('/api/users/:userId/roles', async (req, res) => {
     try {
       const { role_id, assigned_by } = req.body;
+      const targetUserId = await resolveUserId(req.params.userId);
       
+      if (!targetUserId) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
       if (!role_id) {
         return res.status(400).json({ success: false, error: 'Role ID required' });
       }
@@ -543,14 +554,14 @@ module.exports = function setupLeadsDealsRolesRoutes(app, pool) {
         `INSERT INTO user_roles (user_id, role_id, assigned_by)
          VALUES (?, ?, ?)
          ON DUPLICATE KEY UPDATE assigned_by = ?, assigned_at = NOW()`,
-        [req.params.userId, role_id, assigned_by || null, assigned_by || null]
+        [targetUserId, role_id, assigned_by || null, assigned_by || null]
       );
       
       const [userRole] = await db.query(
         `SELECT ur.*, r.name as role_name FROM user_roles ur
          JOIN roles r ON ur.role_id = r.id
          WHERE ur.user_id = ? AND ur.role_id = ?`,
-        [req.params.userId, role_id]
+        [targetUserId, role_id]
       );
       
       return res.status(201).json({ success: true, data: userRole[0] });
@@ -562,11 +573,16 @@ module.exports = function setupLeadsDealsRolesRoutes(app, pool) {
 
   app.get('/api/users/:userId/roles', async (req, res) => {
     try {
+      const targetUserId = await resolveUserId(req.params.userId);
+      if (!targetUserId) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
       const [roles] = await db.query(
         `SELECT ur.*, r.* FROM user_roles ur
          JOIN roles r ON ur.role_id = r.id
          WHERE ur.user_id = ?`,
-        [req.params.userId]
+        [targetUserId]
       );
       
       return res.json({ success: true, data: roles });
@@ -578,11 +594,16 @@ module.exports = function setupLeadsDealsRolesRoutes(app, pool) {
 
   app.get('/api/users/:userId/permissions', async (req, res) => {
     try {
+      const targetUserId = await resolveUserId(req.params.userId);
+      if (!targetUserId) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
       const [permissions] = await db.query(
         `SELECT DISTINCT rp.* FROM user_roles ur
          JOIN role_permissions rp ON ur.role_id = rp.role_id
          WHERE ur.user_id = ?`,
-        [req.params.userId]
+        [targetUserId]
       );
       
       return res.json({ success: true, data: permissions });
@@ -594,9 +615,14 @@ module.exports = function setupLeadsDealsRolesRoutes(app, pool) {
 
   app.delete('/api/users/:userId/roles/:roleId', async (req, res) => {
     try {
+      const targetUserId = await resolveUserId(req.params.userId);
+      if (!targetUserId) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
       await db.query(
         'DELETE FROM user_roles WHERE user_id = ? AND role_id = ?',
-        [req.params.userId, req.params.roleId]
+        [targetUserId, req.params.roleId]
       );
       
       return res.json({ success: true, message: 'Role removed from user' });

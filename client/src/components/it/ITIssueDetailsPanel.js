@@ -11,7 +11,7 @@ import { uploadDescriptionFile, formatFileSize } from '../../utils/descriptionFi
 
 import ITIssueHeaderBar from './issue-details/ITIssueHeaderBar';
 import ITIssueDescription from './issue-details/ITIssueDescription';
-import ITSubtasksTable from './issue-details/ITSubtasksTable';
+import ITSubtasksTable, { parseSubtaskList } from './issue-details/ITSubtasksTable';
 import ITIssueLinkedItems from './issue-details/ITIssueLinkedItems';
 import ITIssueActivityTabs from './issue-details/ITIssueActivityTabs';
 import ITIssueDetailsSidebar from './issue-details/ITIssueDetailsSidebar';
@@ -485,18 +485,35 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
 
   const handleAddSubtask = () => {
     if (!newSubtaskTitle.trim()) return;
-    const newSubtasks = [...subtasks, {
-      id: Date.now(),
-      title: newSubtaskTitle.trim(),
+    const items = parseSubtaskList(newSubtaskTitle);
+    if (items.length === 0) return;
+
+    const baseId = Date.now();
+    const newEntries = items.map((itemTitle, idx) => ({
+      id: baseId + idx,
+      title: itemTitle,
       completed: false,
       status: 'To Do',
       priority: 'Medium',
       assignee: 'Unassigned'
-    }];
+    }));
+
+    const newSubtasks = [...subtasks, ...newEntries];
     setSubtasks(newSubtasks);
     setNewSubtaskTitle('');
     setIsAddingSubtask(false);
     handleUpdate({ subtasks: newSubtasks });
+
+    if (items.length > 1) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `Created ${items.length} subtasks from list`,
+        showConfirmButton: false,
+        timer: 2000
+      });
+    }
   };
 
   const handleDetailedSubtaskSuggest = async () => {

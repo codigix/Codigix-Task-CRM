@@ -406,7 +406,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
       }
     }
 
-    if (onlyMyIssues) {
+    if (onlyMyIssues && selectedAssignee === 'ALL') {
       filtered = filtered.filter(issue => {
         const assigneeStr = (issue.assignee || '').toLowerCase();
         const reporterStr = (issue.reporter || '').toLowerCase();
@@ -728,7 +728,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                       All Assignees
                     </div>
                     <div
-                      onClick={() => { setSelectedAssignee('UNASSIGNED'); setActiveFilterDropdown(null); }}
+                      onClick={() => { setSelectedAssignee('UNASSIGNED'); setActiveFilterDropdown(null); setOnlyMyIssues(false); }}
                       className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedAssignee === 'UNASSIGNED' ? ' text-blue-600' : 'text-gray-700'}`}
                     >
                       Unassigned
@@ -738,7 +738,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                       return (
                         <div
                           key={u.id}
-                          onClick={() => { setSelectedAssignee(name); setActiveFilterDropdown(null); }}
+                          onClick={() => { setSelectedAssignee(name); setActiveFilterDropdown(null); setOnlyMyIssues(false); }}
                           className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer truncate ${selectedAssignee === name ? ' text-blue-600' : 'text-gray-700'}`}
                         >
                           {name}
@@ -751,7 +751,13 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
 
               {/* ONLY MY ISSUES TOGGLE */}
               <button
-                onClick={() => setOnlyMyIssues(!onlyMyIssues)}
+                onClick={() => {
+                  const nextVal = !onlyMyIssues;
+                  setOnlyMyIssues(nextVal);
+                  if (nextVal) {
+                    setSelectedAssignee('ALL');
+                  }
+                }}
                 className={`px-3 py-1.5 rounded border text-xs font-medium transition ${onlyMyIssues ? 'bg-red-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
               >
                 Only My Issues

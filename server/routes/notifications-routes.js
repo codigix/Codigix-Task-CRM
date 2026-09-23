@@ -56,7 +56,7 @@ module.exports = function setupNotificationsRoutes(app, pool) {
   // ── Recipient resolution ──────────────────────────────────────────────
   // Accepts user ids, user names/emails, a department, or a role — and returns
   // a de-duplicated list of user ids to write rows for.
-  const resolveRecipients = async ({ userId, userIds, userName, department, role, excludeUserId }) => {
+  const resolveRecipients = async ({ userId, userIds, userName, department, role, roles, targetAudience, excludeUserId }) => {
     const ids = new Set();
 
     const add = (v) => {
@@ -86,6 +86,29 @@ module.exports = function setupNotificationsRoutes(app, pool) {
       const [rows] = await db.query(
         'SELECT u.id FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE r.name = ? OR u.job_title = ?',
         [role, role]
+      );
+      rows.forEach(r => add(r.id));
+    }
+
+    if (Array.isArray(roles) && roles.length > 0) {
+      const [rows] = await db.query(
+        'SELECT u.id FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE r.name IN (?) OR u.job_title IN (?)',
+        [roles, roles]
+      );
+      rows.forEach(r => add(r.id));
+    }
+
+    if (targetAudience === 'hr' || targetAudience === 'hr_and_admin') {
+      const [rows] = await db.query(
+        `SELECT DISTINCT u.id FROM users u 
+         LEFT JOIN roles r ON u.role_id = r.id 
+         WHERE u.status = 'Active' AND (
+           r.name LIKE '%HR%' 
+           OR r.name LIKE '%Admin%'
+           OR u.job_title LIKE '%HR%' 
+           OR u.department LIKE '%HR%'
+           OR (u.department = 'Management' AND (r.name LIKE '%HR%' OR u.job_title LIKE '%HR%' OR r.name LIKE '%Admin%'))
+         )`
       );
       rows.forEach(r => add(r.id));
     }

@@ -25,6 +25,29 @@ import { useAuth } from '../../hooks/useAuth';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
+const DEPARTMENTS = [
+  'Management',
+  'Sales Department',
+  'IT Department',
+  'Marketing Department',
+];
+
+const DESIGNATIONS = {
+  'Management': ['Super Admin', 'HR Management'],
+  'Sales Department': ['Manager', 'Sales Executive', 'Employee'],
+  'IT Department': ['Manager', 'Developer', 'Tester', 'DevOps Engineer'],
+  'Marketing Department': ['Graphics Designer', 'Video Editor', 'Social Media Marketing', 'SEO & GMB', 'Manager', 'PPC Manager', 'Wordpress Developer'],
+};
+
+const getRoleName = (department, roleType) => {
+  if (!roleType) return 'Employee';
+  if (department === 'IT Department' && roleType === 'Manager') return 'IT Manager';
+  if (department === 'Sales Department' && roleType === 'Manager') return 'Sales Manager';
+  if (department === 'Marketing Department' && roleType === 'Manager') return 'Marketing Manager';
+  if (department === 'Management' && roleType === 'Super Admin') return 'Super Admin';
+  return roleType;
+};
+
 const StatusBadge = ({ status }) => {
   if (status === 'Approved') {
     return (
@@ -63,6 +86,9 @@ const RegistrationRequestsPage = () => {
   const [toastMessage, setToastMessage] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectPrompt, setShowRejectPrompt] = useState(false);
+  const [assignedDepartment, setAssignedDepartment] = useState('');
+  const [assignedRoleType, setAssignedRoleType] = useState('');
+  const [assignmentError, setAssignmentError] = useState('');
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -104,9 +130,13 @@ const RegistrationRequestsPage = () => {
     }, 4500);
   };
 
-  const handleOpenModal = (req) => {
+  const handleOpenModal = (req, mode = 'view') => {
     setSelectedRequest(req);
-    setShowRejectPrompt(false);
+    // Keep department and role type empty until explicitly assigned
+    setAssignedDepartment(req.department || '');
+    setAssignedRoleType(req.role_type || '');
+    setAssignmentError('');
+    setShowRejectPrompt(mode === 'reject');
     setRejectReason('');
     setIsModalOpen(true);
   };
@@ -116,9 +146,23 @@ const RegistrationRequestsPage = () => {
     setSelectedRequest(null);
     setShowRejectPrompt(false);
     setRejectReason('');
+    setAssignmentError('');
+    setAssignedDepartment('');
+    setAssignedRoleType('');
   };
 
   const handleApprove = async (requestId) => {
+    if (!assignedDepartment) {
+      setAssignmentError('Please select a department for this user');
+      return;
+    }
+    if (!assignedRoleType) {
+      setAssignmentError('Please select a designation/role for this user');
+      return;
+    }
+
+    const derivedRoleName = getRoleName(assignedDepartment, assignedRoleType);
+
     setActionLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/hr/registration-requests/${requestId}/approve`, {
@@ -126,6 +170,9 @@ const RegistrationRequestsPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reviewed_by: currentUser?.id || null,
+          department: assignedDepartment,
+          role_type: assignedRoleType,
+          role_name: derivedRoleName,
         }),
       });
 
@@ -134,7 +181,7 @@ const RegistrationRequestsPage = () => {
         throw new Error(data.error || 'Failed to approve request');
       }
 
-      showToast('success', 'User accepted and registered successfully into the CRM!');
+      showToast('success', `User accepted and registered into ${assignedDepartment} as ${derivedRoleName}!`);
       setIsModalOpen(false);
       fetchRequests();
     } catch (err) {
@@ -367,7 +414,7 @@ const RegistrationRequestsPage = () => {
               <tr className="border-b border-gray-100 bg-gray-50/50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
                 <th className="py-3.5 px-4">Applicant</th>
                 <th className="py-3.5 px-4">Contact Info</th>
-                <th className="py-3.5 px-4">Requested Department</th>
+                <th className="py-3.5 px-4">Department</th>
                 <th className="py-3.5 px-4">Designation / Role</th>
                 <th className="py-3.5 px-4">Requested Date</th>
                 <th className="py-3.5 px-4">Status</th>
@@ -421,7 +468,6 @@ const RegistrationRequestsPage = () => {
                             <div className="font-semibold text-gray-900 group-hover:text-red-600 transition-colors">
                               {fullName}
                             </div>
-                            <div className="text-[11px] text-gray-400">ID #{req.id}</div>
                           </div>
                         </div>
                       </td>
@@ -444,20 +490,30 @@ const RegistrationRequestsPage = () => {
 
                       {/* Department */}
                       <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-gray-100 text-gray-700 text-xs font-medium">
-                          <Layers size={12} className="text-gray-500" />
-                          {req.department || 'Not Assigned'}
-                        </span>
+                        {req.department ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-gray-100 text-gray-700 text-xs font-medium">
+                            <Layers size={12} className="text-gray-500" />
+                            {req.department}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs font-medium">-</span>
+                        )}
                       </td>
 
                       {/* Role / Designation */}
                       <td className="py-3.5 px-4">
-                        <div className="font-medium text-gray-900 flex items-center gap-1">
-                          <Briefcase size={13} className="text-gray-400" />
-                          <span>{req.role_type || req.role_name || 'Employee'}</span>
-                        </div>
-                        {req.role_name && req.role_name !== req.role_type && (
-                          <div className="text-[11px] text-gray-400">System: {req.role_name}</div>
+                        {req.role_type ? (
+                          <div>
+                            <div className="font-medium text-gray-900 flex items-center gap-1">
+                              <Briefcase size={13} className="text-gray-400" />
+                              <span>{req.role_type}</span>
+                            </div>
+                            {req.role_name && req.role_name !== req.role_type && (
+                              <div className="text-[11px] text-gray-400">System: {req.role_name}</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs font-medium">-</span>
                         )}
                       </td>
 
@@ -480,40 +536,42 @@ const RegistrationRequestsPage = () => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => handleOpenModal(req)}
-                            className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                            title="View all filled form details"
-                          >
-                            <Eye size={16} />
-                          </button>
-
-                          {req.status === 'Pending' && (
+                          {req.status === 'Pending' ? (
                             <>
                               <button
-                                onClick={() => handleApprove(req.id)}
-                                disabled={actionLoading}
-                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-medium transition-colors flex items-center gap-1 shadow-xs disabled:opacity-50"
-                                title="Accept and Register this user"
+                                onClick={() => handleOpenModal(req, 'accept')}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs"
+                                title="Open modal to assign department, role and accept this user"
                               >
                                 <Check size={13} />
                                 <span>Accept</span>
                               </button>
 
                               <button
-                                onClick={() => {
-                                  setSelectedRequest(req);
-                                  setShowRejectPrompt(true);
-                                  setIsModalOpen(true);
-                                }}
-                                disabled={actionLoading}
-                                className="px-2.5 py-1 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded text-xs font-medium transition-colors flex items-center gap-1 disabled:opacity-50"
-                                title="Reject this request"
+                                onClick={() => handleOpenModal(req, 'reject')}
+                                className="px-2.5 py-1.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                                title="Open modal to reject this request"
                               >
                                 <X size={13} />
                                 <span>Reject</span>
                               </button>
+
+                              <button
+                                onClick={() => handleOpenModal(req, 'view')}
+                                className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                                title="View candidate registration details"
+                              >
+                                <Eye size={16} />
+                              </button>
                             </>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenModal(req, 'view')}
+                              className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                              title="View all details"
+                            >
+                              <Eye size={16} />
+                            </button>
                           )}
                         </div>
                       </td>
@@ -541,7 +599,7 @@ const RegistrationRequestsPage = () => {
                     {selectedRequest.first_name} {selectedRequest.last_name}
                   </h3>
                   <p className="text-xs text-gray-500">
-                    Registration Request #{selectedRequest.id}
+                    Registration Request
                   </p>
                 </div>
               </div>
@@ -618,29 +676,6 @@ const RegistrationRequestsPage = () => {
                   </div>
 
                   <div>
-                    <span className="text-xs text-gray-500 block">Requested Department</span>
-                    <span className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                      <Layers size={14} className="text-gray-400" />
-                      {selectedRequest.department || 'Not selected'}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-xs text-gray-500 block">Requested Role / Designation</span>
-                    <span className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                      <Briefcase size={14} className="text-gray-400" />
-                      {selectedRequest.role_type || selectedRequest.role_name || 'Employee'}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-xs text-gray-500 block">System Role Assigned on Approval</span>
-                    <span className="text-sm font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded inline-block">
-                      {selectedRequest.role_name || selectedRequest.role_type || 'Employee'}
-                    </span>
-                  </div>
-
-                  <div>
                     <span className="text-xs text-gray-500 block">Submission Date</span>
                     <span className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
                       <Calendar size={14} className="text-gray-400" />
@@ -655,6 +690,102 @@ const RegistrationRequestsPage = () => {
                     </span>
                   </div>
                 </div>
+
+                {/* Department & Role Assignment by HR / Admin */}
+                {selectedRequest.status === 'Pending' ? (
+                  <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-amber-200/60">
+                      <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
+                        <Briefcase size={15} className="text-amber-700" />
+                        <span>Assign Department & Designation</span>
+                      </div>
+                      <span className="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+                        HR / Admin Decision
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-800 mb-1.5">
+                          Department <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={assignedDepartment}
+                          onChange={(e) => {
+                            const newDept = e.target.value;
+                            setAssignedDepartment(newDept);
+                            setAssignedRoleType('');
+                            setAssignmentError('');
+                          }}
+                          className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        >
+                          <option value="">-- Select Department --</option>
+                          {DEPARTMENTS.map((dept) => (
+                            <option key={dept} value={dept}>
+                              {dept}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-800 mb-1.5">
+                          Role Type / Designation <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={assignedRoleType}
+                          onChange={(e) => {
+                            setAssignedRoleType(e.target.value);
+                            setAssignmentError('');
+                          }}
+                          disabled={!assignedDepartment}
+                          className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        >
+                          <option value="">
+                            {assignedDepartment ? '-- Select Role / Designation --' : '-- Choose Department First --'}
+                          </option>
+                          {(DESIGNATIONS[assignedDepartment] || []).map((desig) => (
+                            <option key={desig} value={desig}>
+                              {desig}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-white/90 p-2.5 rounded-lg border border-amber-200/80 text-xs">
+                      <span className="text-gray-600">System Role that will be granted:</span>
+                      <span className={`font-bold px-2.5 py-0.5 rounded text-xs border ${
+                        assignedRoleType
+                          ? 'text-indigo-700 bg-indigo-50 border-indigo-200'
+                          : 'text-gray-400 bg-gray-50 border-gray-200'
+                      }`}>
+                        {assignedRoleType ? getRoleName(assignedDepartment, assignedRoleType) : 'Pending Selection'}
+                      </span>
+                    </div>
+
+                    {assignmentError && (
+                      <div className="p-2.5 bg-red-100 border border-red-200 text-red-700 rounded-lg text-xs flex items-center gap-1.5">
+                        <AlertCircle size={15} />
+                        <span>{assignmentError}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-2 text-xs">
+                    <div className="font-bold text-gray-700 uppercase tracking-wider">Assigned Department & Role</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-900 font-medium">
+                      <div>
+                        <span className="text-gray-400 block text-[11px]">Department:</span>
+                        <span className="text-gray-900 font-semibold">{selectedRequest.department || 'Not Assigned'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block text-[11px]">Designation / System Role:</span>
+                        <span className="text-gray-900 font-semibold">{selectedRequest.role_name || selectedRequest.role_type || 'Not Assigned'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Reviewer Audit Trail */}

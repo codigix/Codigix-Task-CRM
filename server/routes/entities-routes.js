@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { generateProjectTasks } = require('../middleware/helpers');
 
 module.exports = function setupEntitiesRoutes(app, pool) {
@@ -400,15 +401,14 @@ module.exports = function setupEntitiesRoutes(app, pool) {
   app.delete('/api/users/:id', async (req, res) => {
     try {
       const { id } = req.params;
-      // Connection handled by db.query
 
-      // Check if user exists
-      const [user] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
+      // Check if user exists by id or uuid
+      const [user] = await db.query('SELECT * FROM users WHERE id = ? OR uuid = ?', [id, id]);
       if (user.length === 0) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      await db.query('DELETE FROM users WHERE id = ?', [id]);
+      await db.query('DELETE FROM users WHERE id = ?', [user[0].id]);
 
       return res.json({ success: true, message: 'User deleted successfully' });
     } catch (err) {
@@ -425,12 +425,13 @@ module.exports = function setupEntitiesRoutes(app, pool) {
         status, password 
       } = req.body;
 
-      // Fetch existing user to merge fields and avoid null constraint errors
-      const [existingUsers] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
+      // Fetch existing user to merge fields and avoid null constraint errors (supports id or uuid)
+      const [existingUsers] = await db.query('SELECT * FROM users WHERE id = ? OR uuid = ?', [id, id]);
       if (!existingUsers || existingUsers.length === 0) {
         return res.status(404).json({ error: 'User not found' });
       }
       const existing = existingUsers[0];
+      const targetId = existing.id;
 
       const updateFields = [
         'first_name = ?', 'last_name = ?', 'username = ?', 'email = ?', 
@@ -461,7 +462,7 @@ module.exports = function setupEntitiesRoutes(app, pool) {
         params.push(password);
       }
 
-      params.push(id);
+      params.push(targetId);
 
       await db.query(
         `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
@@ -470,9 +471,8 @@ module.exports = function setupEntitiesRoutes(app, pool) {
 
       const [updatedUser] = await db.query(
         'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?', 
-        [id]
+        [targetId]
       );
-      
       
       if (updatedUser.length === 0) {
         return res.status(404).json({ error: 'User not found after update' });
@@ -519,14 +519,15 @@ module.exports = function setupEntitiesRoutes(app, pool) {
         }
       }
 
+      const userUuid = crypto.randomUUID();
       const [result] = await db.query(
         `INSERT INTO users (
-          first_name, last_name, username, email, password, phone1, 
+          uuid, first_name, last_name, username, email, password, phone1, 
           phone1_country, phone2, phone2_country, location, avatar, 
           role_id, department, email_opt_out, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          first_name, last_name || null, username, email, password, 
+          userUuid, first_name, last_name || null, username, email, password, 
           phone1 || null, phone1_country || 'US', 
           phone2 || null, phone2_country || 'US', 
           location || null, avatar || null, finalRoleId, department || null,

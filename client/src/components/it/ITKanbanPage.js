@@ -726,12 +726,13 @@ const ITKanbanPage = ({ department }) => {
 
     // Managers see all tasks (both assigned and unassigned), and can narrow with the "Only My Tasks" toggle.
     // Employees / non-managers only see tasks that are assigned to someone (unassigned tasks are hidden).
+    const shouldFilterOnlyMy = onlyMyIssues && selectedAssignees.length === 0;
     if (!isManager) {
       filtered = filtered.filter(issue => isTaskAssigned(issue));
-      if (onlyMyIssues) {
+      if (shouldFilterOnlyMy) {
         filtered = filtered.filter(issue => isAssignedToMe(issue));
       }
-    } else if (onlyMyIssues) {
+    } else if (shouldFilterOnlyMy) {
       filtered = filtered.filter(issue => isAssignedToMe(issue));
     }
     if (searchQuery.trim()) {
@@ -1361,6 +1362,7 @@ const ITKanbanPage = ({ department }) => {
                                 ));
                               } else {
                                 setSelectedAssignees(prev => [...prev, fullName]);
+                                setOnlyMyIssues(false);
                               }
                             }}
                             title={`Filter issues by ${fullName}`}
@@ -1598,14 +1600,26 @@ const ITKanbanPage = ({ department }) => {
                           }).filter(Boolean)
                         ]}
                         value={selectedAssignees}
-                        onChange={(val) => setSelectedAssignees(Array.isArray(val) ? val : (val && val !== 'ALL' ? [val] : []))}
+                        onChange={(val) => {
+                          const nextAssignees = Array.isArray(val) ? val : (val && val !== 'ALL' ? [val] : []);
+                          setSelectedAssignees(nextAssignees);
+                          if (nextAssignees.length > 0) {
+                            setOnlyMyIssues(false);
+                          }
+                        }}
                         placeholder="All"
                       />
                     </div>
 
                     {/* Only My Tasks Quick Filter Pill — Visible to All */}
                     <button
-                      onClick={() => setOnlyMyIssues(!onlyMyIssues)}
+                      onClick={() => {
+                        const nextVal = !onlyMyIssues;
+                        setOnlyMyIssues(nextVal);
+                        if (nextVal) {
+                          setSelectedAssignees([]);
+                        }
+                      }}
                       className={`flex items-center gap-1.5 p-2 rounded text-xs font-semibold border transition-all cursor-pointer ${onlyMyIssues
                         ? 'bg-red-600  text-white shadow-sm'
                         : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'

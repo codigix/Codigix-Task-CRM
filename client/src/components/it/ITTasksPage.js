@@ -195,12 +195,13 @@ const ITTasksPage = () => {
       return a !== '' && a !== 'unassigned' && a !== 'automatic' && a !== 'none' && a !== 'null' && a !== 'undefined';
     };
 
+    const shouldFilterOnlyMy = onlyMyIssues && selectedAssignees.length === 0;
     if (!isManager) {
       result = result.filter(issue => isTaskAssigned(issue));
-      if (onlyMyIssues) {
+      if (shouldFilterOnlyMy) {
         result = result.filter(issue => isUserTask(issue));
       }
-    } else if (onlyMyIssues) {
+    } else if (shouldFilterOnlyMy) {
       result = result.filter(issue => isUserTask(issue));
     }
     if (searchQuery.trim()) {
@@ -507,6 +508,7 @@ const ITTasksPage = () => {
                                 ));
                               } else {
                                 setSelectedAssignees(prev => [...prev, fullName]);
+                                setOnlyMyIssues(false);
                               }
                             }}
                             title={`Filter tasks by ${fullName}`}
@@ -608,6 +610,7 @@ const ITTasksPage = () => {
                                   setSelectedAssignees(prev => prev.filter(a => a !== 'UNASSIGNED'));
                                 } else {
                                   setSelectedAssignees(prev => [...prev, 'UNASSIGNED']);
+                                  setOnlyMyIssues(false);
                                 }
                               }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedAssignees.includes('UNASSIGNED') ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                                 Unassigned
@@ -622,6 +625,7 @@ const ITTasksPage = () => {
                                       setSelectedAssignees(prev => prev.filter(a => a !== uName));
                                     } else {
                                       setSelectedAssignees(prev => [...prev, uName]);
+                                      setOnlyMyIssues(false);
                                     }
                                   }} className={`p-2 hover:bg-gray-50 cursor-pointer ${isSelected ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                                     {uName}
@@ -633,7 +637,13 @@ const ITTasksPage = () => {
                         </div>
 
                         <button
-                          onClick={() => setOnlyMyIssues(!onlyMyIssues)}
+                          onClick={() => {
+                            const nextVal = !onlyMyIssues;
+                            setOnlyMyIssues(nextVal);
+                            if (nextVal) {
+                              setSelectedAssignees([]);
+                            }
+                          }}
                           className={`px-3 py-1.5 rounded text-xs font-semibold border transition cursor-pointer ${onlyMyIssues ? 'bg-red-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
                         >
                           Only My Issues

@@ -261,7 +261,7 @@ module.exports = function setupRBACRoutes(app, pool) {
       const { userId } = req.params;
       const { roleId } = req.body;
 
-      await connection.query('UPDATE users SET role_id = ? WHERE id = ?', [roleId, userId]);
+      await connection.query('UPDATE users SET role_id = ? WHERE id = ? OR uuid = ?', [roleId, userId, userId]);
 
       connection.release();
 
@@ -288,7 +288,7 @@ module.exports = function setupRBACRoutes(app, pool) {
       const { userId } = req.params;
       const { module_name, action } = req.body;
 
-      const [user] = await connection.query('SELECT role_id FROM users WHERE id = ?', [userId]);
+      const [user] = await connection.query('SELECT role_id FROM users WHERE id = ? OR uuid = ?', [userId, userId]);
 
       if (user.length === 0) {
         connection.release();
