@@ -101,7 +101,7 @@ const STATUS_COLORS = {
   'DONE': 'bg-green-100 text-green-800 hover:bg-green-200 font-semibold'
 };
 
-const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssueCreated, department }) => {
+const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssueCreated, department, initialSubtaskKey }) => {
   const { user } = useAuth();
   const loggedUser = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username : 'Current User';
 
@@ -111,7 +111,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const [currentStatus, setCurrentStatus] = useState('TO DO');
   const [priority, setPriority] = useState('Medium');
   const [assignee, setAssignee] = useState({ name: 'Unassigned', initial: 'U', color: 'bg-gray-200 text-gray-500' });
-  const [reporter, setReporter] = useState({ name: loggedUser, initial: getInitials(loggedUser), color: 'bg-blue-100 text-blue-700' });
+  const [reporter, setReporter] = useState({ name: 'Unassigned', initial: 'U', color: 'bg-gray-200 text-gray-500' });
   const [team, setTeam] = useState('IT Team');
   const [dueDate, setDueDate] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -262,9 +262,15 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showSubtaskAiModal, showReviewGate, isExpanded, onClose]);
 
+  const prevIssueKeyRef = useRef(null);
+  const prevInitialSubtaskKeyRef = useRef(initialSubtaskKey);
+
   useEffect(() => {
     if (!issue) return;
-    setCurrentSubtask(null);
+    const currentKey = issue.issue_key || issue.key;
+    const isNewParentIssue = prevIssueKeyRef.current !== currentKey;
+    prevIssueKeyRef.current = currentKey;
+
     setTitle(issue.title || '');
     setType(issue.type || 'Task');
     setCurrentStatus(issue.status || 'TO DO');
@@ -295,8 +301,13 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       color: isUnass ? 'bg-gray-200 text-gray-500' : 'bg-red-600 text-white'
     });
 
-    const rep = issue.reporter || loggedUser;
-    setReporter({ name: rep, initial: getInitials(rep), color: 'bg-blue-100 text-blue-700' });
+    const rep = issue.reporter;
+    const isRepUnass = !rep || rep.toLowerCase() === 'unassigned' || rep.toLowerCase() === 'none';
+    setReporter({
+      name: isRepUnass ? 'Unassigned' : rep,
+      initial: isRepUnass ? 'U' : getInitials(rep),
+      color: isRepUnass ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'
+    });
 
     let rawSt = issue.subtasks;
     if (typeof rawSt === 'string') {
@@ -322,6 +333,54 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       };
     });
     setSubtasks(sanitizedList);
+
+    if (isNewParentIssue) {
+      if (initialSubtaskKey && sanitizedList.length > 0) {
+        const match = sanitizedList.find(st =>
+          String(st.id) === String(initialSubtaskKey) ||
+          String(st.subtaskKey) === String(initialSubtaskKey) ||
+          `${issue.issue_key || issue.key}-${st.id}` === String(initialSubtaskKey)
+        );
+        if (match) {
+          const subtaskKey = match.subtaskKey || `${issue.issue_key || issue.key}-${match.id}`;
+          setCurrentSubtask({ ...match, subtaskKey });
+        } else {
+          setCurrentSubtask(null);
+        }
+      } else {
+        setCurrentSubtask(null);
+      }
+    } else {
+      // Same parent issue updated (e.g. saving subtask description, status, or assignee).
+      // Keep the user on the currently viewed subtask!
+      setCurrentSubtask(prev => {
+        if (!prev) {
+          if (initialSubtaskKey && sanitizedList.length > 0) {
+            const match = sanitizedList.find(st =>
+              String(st.id) === String(initialSubtaskKey) ||
+              String(st.subtaskKey) === String(initialSubtaskKey) ||
+              `${issue.issue_key || issue.key}-${st.id}` === String(initialSubtaskKey)
+            );
+            if (match) {
+              const subtaskKey = match.subtaskKey || `${issue.issue_key || issue.key}-${match.id}`;
+              return { ...match, subtaskKey };
+            }
+          }
+          return null;
+        }
+
+        const match = sanitizedList.find(st =>
+          String(st.id) === String(prev.id) ||
+          String(st.subtaskKey) === String(prev.subtaskKey || prev.key)
+        );
+        if (match) {
+          const subtaskKey = match.subtaskKey || prev.subtaskKey || `${issue.issue_key || issue.key}-${match.id}`;
+          return { ...prev, ...match, subtaskKey };
+        }
+        return null;
+      });
+    }
+
     setTeam(issue.team || 'IT Team');
 
     // These were never populated from the issue, so dates and sprint always looked empty
@@ -339,7 +398,25 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       try { rawComments = JSON.parse(rawComments); } catch (e) { rawComments = []; }
     }
     setComments(Array.isArray(rawComments) ? rawComments : []);
-  }, [issue]);
+  }, [issue, initialSubtaskKey]);
+
+  // Synchronize currentSubtask only if initialSubtaskKey prop explicitly changes from outside
+  useEffect(() => {
+    if (prevInitialSubtaskKeyRef.current !== initialSubtaskKey) {
+      prevInitialSubtaskKeyRef.current = initialSubtaskKey;
+      if (initialSubtaskKey && subtasks && subtasks.length > 0) {
+        const match = subtasks.find(st =>
+          String(st.id) === String(initialSubtaskKey) ||
+          String(st.subtaskKey) === String(initialSubtaskKey) ||
+          `${issue?.issue_key || issue?.key}-${st.id}` === String(initialSubtaskKey)
+        );
+        if (match) {
+          const subtaskKey = match.subtaskKey || `${issue?.issue_key || issue?.key}-${match.id}`;
+          setCurrentSubtask({ ...match, subtaskKey });
+        }
+      }
+    }
+  }, [initialSubtaskKey, subtasks, issue]);
 
   // Work types come from the issue's own department, so a Marketing ticket never offers
   // IT types and the other way round.
@@ -350,6 +427,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const showDevTools = false;
 
   const issueKey = issue?.issue_key || issue?.key;
+  const activeSubtaskId = currentSubtask ? String(currentSubtask.id || currentSubtask.subtaskKey || '') : null;
 
   // Switching between the issue and one of its subtasks must not carry the previous
   // item's draft text across, so clear the in-progress edit state on every switch.
@@ -375,13 +453,17 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       .catch(err => console.error('Failed to load work logs:', err));
   }, [issueKey]);
 
-  // Load stored attachments for this issue so they persist across page refreshes
+  // Load stored attachments for this issue/subtask so they persist across page refreshes
   const loadAttachments = React.useCallback(() => {
     if (!issueKey) {
       setAttachments([]);
       return;
     }
-    fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/attachments?_t=${Date.now()}`, { cache: 'no-store' })
+    const url = activeSubtaskId
+      ? `${API_BASE_URL}/it-kanban/issues/${issueKey}/attachments?subtask_id=${encodeURIComponent(activeSubtaskId)}&_t=${Date.now()}`
+      : `${API_BASE_URL}/it-kanban/issues/${issueKey}/attachments?_t=${Date.now()}`;
+
+    fetch(url, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -400,13 +482,16 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
         console.error('Failed to load attachments:', err);
         setAttachments([]);
       });
-  }, [issueKey]);
+  }, [issueKey, activeSubtaskId]);
 
   useEffect(() => {
     loadHistory();
     loadWorklogs();
+  }, [loadHistory, loadWorklogs]);
+
+  useEffect(() => {
     loadAttachments();
-  }, [loadHistory, loadWorklogs, loadAttachments]);
+  }, [loadAttachments]);
 
   // Prioritize team members at the top of assignee list when a team is chosen, but keep all users selectable
   useEffect(() => {
@@ -646,7 +731,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
                 file_path: saved.filePath || saved.url,
                 file_size: formatFileSize(saved.sizeBytes),
                 file_type: mime,
-                issue_id: issue?.id || null
+                issue_id: issue?.id || null,
+                subtask_id: activeSubtaskId
               })
             });
 
@@ -674,7 +760,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       setUploadingAttachment(false);
       if (e?.target && 'value' in e.target) e.target.value = '';
     }
-  }, [issue?.project_id, issue?.id, issueKey]);
+  }, [issue?.project_id, issue?.id, issueKey, activeSubtaskId]);
 
   // Global paste handler on panel: allows pasting screenshots directly into attachments when not in an editor
   useEffect(() => {
@@ -1080,8 +1166,31 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
                 handleUpdate({ assignee: assName });
               }
             }}
-            reporter={reporter}
-            setReporter={setReporter}
+            reporter={currentSubtask ? {
+              name: (!currentSubtask.reporter || currentSubtask.reporter.toLowerCase() === 'unassigned' || currentSubtask.reporter.toLowerCase() === 'none') ? 'Unassigned' : currentSubtask.reporter,
+              initial: (!currentSubtask.reporter || currentSubtask.reporter.toLowerCase() === 'unassigned' || currentSubtask.reporter.toLowerCase() === 'none') ? 'U' : getInitials(currentSubtask.reporter),
+              color: (!currentSubtask.reporter || currentSubtask.reporter.toLowerCase() === 'unassigned' || currentSubtask.reporter.toLowerCase() === 'none') ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'
+            } : reporter}
+            setReporter={(newRep) => {
+              const repName = typeof newRep === 'string' ? newRep : (newRep?.name || 'Unassigned');
+              if (currentSubtask) {
+                setCurrentSubtask(prev => ({ ...prev, reporter: repName }));
+                const updatedSubtasks = subtasks.map(item =>
+                  item.id === currentSubtask.id
+                    ? { ...item, reporter: repName }
+                    : item
+                );
+                setSubtasks(updatedSubtasks);
+                handleUpdate({ subtasks: updatedSubtasks });
+              } else {
+                setReporter(typeof newRep === 'object' && newRep !== null ? newRep : {
+                  name: repName,
+                  initial: repName === 'Unassigned' ? 'U' : getInitials(repName),
+                  color: repName === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'
+                });
+                handleUpdate({ reporter: repName });
+              }
+            }}
             team={team}
             setTeam={setTeam}
             dueDate={dueDate}

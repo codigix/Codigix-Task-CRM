@@ -56,7 +56,35 @@ const ITManagerDashboard = () => {
 
         // All Kanban issues belong to IT
         const itTasks = tasksRes || [];
-        setTasks(itTasks);
+        const flattenedTasks = [];
+        itTasks.forEach(issue => {
+          flattenedTasks.push(issue);
+          let rawSt = issue.subtasks;
+          if (typeof rawSt === 'string') {
+            try { rawSt = JSON.parse(rawSt); } catch (e) { rawSt = []; }
+          }
+          if (Array.isArray(rawSt)) {
+            rawSt.forEach((st, idx) => {
+              const subtaskKey = st.subtaskKey || `${issue.issue_key || issue.key}-${idx + 1}`;
+              flattenedTasks.push({
+                ...issue,
+                id: `subtask-${st.id || idx}`,
+                key: subtaskKey,
+                issue_key: subtaskKey,
+                title: st.title || 'Untitled Subtask',
+                type: 'Sub-task',
+                assignee: st.assignee || 'Unassigned',
+                status: st.completed ? 'DONE' : (st.status || 'TO DO'),
+                priority: st.priority || issue.priority || 'Medium',
+                due_date: st.due_date || issue.due_date,
+                isSubtask: true,
+                subtaskId: st.id,
+                parentKey: issue.issue_key || issue.key
+              });
+            });
+          }
+        });
+        setTasks(flattenedTasks);
 
         // Fetch Performance Metrics
         try {

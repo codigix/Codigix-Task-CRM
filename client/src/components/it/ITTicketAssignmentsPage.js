@@ -65,14 +65,15 @@ const ITTicketAssignmentsPage = () => {
         setUsersList(rawUsers);
 
         // Map Kanban issues
-        const mappedKanban = rawKanban.map(issue => {
+        const mappedKanban = [];
+        rawKanban.forEach(issue => {
           const key = issue.issue_key || `IT-${issue.id}`;
           const isMarketing = (issue.department && issue.department.toLowerCase().includes('market')) || (key.startsWith('MKT-'));
           const dept = isMarketing ? 'Marketing' : (issue.department || 'IT');
           const creator = issue.reporter && issue.reporter !== 'Unassigned' ? issue.reporter : 'System';
           const assignee = issue.assignee && issue.assignee !== 'Unassigned' ? issue.assignee : '';
 
-          return {
+          mappedKanban.push({
             id: issue.id || key,
             key: key,
             issue_key: key,
@@ -90,7 +91,39 @@ const ITTicketAssignmentsPage = () => {
             due_date: issue.due_date,
             start_date: issue.start_date,
             source: 'kanban_issue'
-          };
+          });
+
+          let rawSt = issue.subtasks;
+          if (typeof rawSt === 'string') {
+            try { rawSt = JSON.parse(rawSt); } catch (e) { rawSt = []; }
+          }
+          if (Array.isArray(rawSt)) {
+            rawSt.forEach((st, idx) => {
+              const subtaskKey = st.subtaskKey || `${key}-${idx + 1}`;
+              const stAssignee = st.assignee && st.assignee !== 'Unassigned' ? st.assignee : '';
+              mappedKanban.push({
+                id: `subtask-${st.id || idx}`,
+                key: subtaskKey,
+                issue_key: subtaskKey,
+                title: st.title || 'Untitled Subtask',
+                description: st.description || `Subtask of ${key}: ${issue.title || ''}`,
+                created_by_name: creator,
+                assigned_to_name: stAssignee,
+                priority: st.priority || issue.priority || 'Medium',
+                status: st.completed ? 'DONE' : (st.status || 'TO DO').toUpperCase(),
+                department: dept,
+                project_id: issue.project_id || issue.parent_id,
+                project_name: issue.parent_project_name || issue.project_name || (rawProjects.find(p => p.id === (issue.project_id || issue.parent_id))?.name),
+                sprint_name: issue.sprint_name,
+                created_at: issue.created_at,
+                due_date: st.due_date || issue.due_date,
+                start_date: st.start_date || issue.start_date,
+                source: 'kanban_issue',
+                isSubtask: true,
+                parentKey: key
+              });
+            });
+          }
         });
 
         // Map General tasks

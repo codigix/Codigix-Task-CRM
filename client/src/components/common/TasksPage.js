@@ -48,6 +48,7 @@ const TasksPage = ({ department }) => {
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [selectedSubtaskKey, setSelectedSubtaskKey] = useState(null);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
   const [openFilterDropdown, setOpenFilterDropdown] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,8 +95,44 @@ const TasksPage = ({ department }) => {
 
   const norm = (s) => String(s || '').toUpperCase().trim();
 
+  const allTasksAndSubtasks = React.useMemo(() => {
+    const list = [];
+    tasks.forEach(issue => {
+      list.push(issue);
+      let rawSt = issue.subtasks;
+      if (typeof rawSt === 'string') {
+        try { rawSt = JSON.parse(rawSt); } catch (e) { rawSt = []; }
+      }
+      if (Array.isArray(rawSt)) {
+        rawSt.forEach((st, idx) => {
+          const subtaskKey = st.subtaskKey || `${issue.issue_key || issue.key}-${idx + 1}`;
+          list.push({
+            ...issue,
+            id: `subtask-${st.id || idx}`,
+            key: subtaskKey,
+            issue_key: subtaskKey,
+            title: st.title || 'Untitled Subtask',
+            summary: st.title || 'Untitled Subtask',
+            type: 'Sub-task',
+            assignee: st.assignee || 'Unassigned',
+            status: st.completed ? 'DONE' : (st.status || 'TO DO'),
+            priority: st.priority || issue.priority || 'Medium',
+            due_date: st.due_date || issue.due_date,
+            start_date: st.start_date || issue.start_date,
+            isSubtask: true,
+            subtaskId: st.id,
+            parentKey: issue.issue_key || issue.key,
+            parentTitle: issue.title,
+            parentIssue: issue
+          });
+        });
+      }
+    });
+    return list;
+  }, [tasks]);
+
   const filteredTasks = React.useMemo(() => {
-    return tasks.filter(t => {
+    return allTasksAndSubtasks.filter(t => {
       if (selectedProjectId !== 'ALL' && Number(t.project_id) !== Number(selectedProjectId)) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -104,7 +141,7 @@ const TasksPage = ({ department }) => {
       }
       return true;
     });
-  }, [tasks, selectedProjectId, searchQuery]);
+  }, [allTasksAndSubtasks, selectedProjectId, searchQuery]);
 
   // Counts computed from the real list rather than the hardcoded 128/24/36/... figures.
   const metrics = React.useMemo(() => {
@@ -160,21 +197,45 @@ const TasksPage = ({ department }) => {
     }
   };
 
-  const confirmDeleteTask = (e, key) => {
+  const confirmDeleteTask = (e, row) => {
     e.stopPropagation();
-    Swal.fire({
-      title: 'Delete Task?',
-      text: `Are you sure you want to delete ${key}?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Delete'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        deleteIssue(key);
-      }
-    });
+    const rowKey = row.issue_key || row.key;
+    if (row.isSubtask) {
+      Swal.fire({
+        title: 'Delete Subtask?',
+        text: `Are you sure you want to delete subtask "${row.title}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Delete'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const parent = tasks.find(t => (t.issue_key === row.parentKey || t.key === row.parentKey));
+          if (parent) {
+            let curSt = parent.subtasks;
+            if (typeof curSt === 'string') { try { curSt = JSON.parse(curSt); } catch(e) { curSt = []; } }
+            const updated = (Array.isArray(curSt) ? curSt : []).filter(s => String(s.id) !== String(row.subtaskId));
+            updateIssue(row.parentKey, { subtasks: updated });
+            showSuccessToast(`Subtask ${rowKey} deleted successfully`);
+          }
+        }
+      });
+    } else {
+      Swal.fire({
+        title: 'Delete Task?',
+        text: `Are you sure you want to delete ${rowKey}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Delete'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          deleteIssue(rowKey);
+        }
+      });
+    }
   };
 
   // Close dropdowns on outside click
@@ -365,7 +426,19 @@ const TasksPage = ({ department }) => {
                         if (!Array.isArray(labels)) labels = [];
                         const due = row.due_date ? new Date(row.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
                         return (
-                          <tr key={rowKey || i} className={`hover:bg-blue-50 cursor-pointer ${selectedIssue === rowKey ? 'bg-blue-50' : ''}`} onClick={() => setSelectedIssue(rowKey)}>
+                          <tr
+                            key={rowKey || i}
+                            className={`hover:bg-blue-50 cursor-pointer ${selectedIssue === (row.isSubtask ? row.parentKey : rowKey) && (!row.isSubtask || String(selectedSubtaskKey) === String(row.subtaskId)) ? 'bg-blue-50' : ''}`}
+                            onClick={() => {
+                              if (row.isSubtask) {
+                                setSelectedIssue(row.parentKey);
+                                setSelectedSubtaskKey(row.subtaskId || rowKey);
+                              } else {
+                                setSelectedIssue(rowKey);
+                                setSelectedSubtaskKey(null);
+                              }
+                            }}
+                          >
                             <td className="p-3 text-center text-gray-400 text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                             {/* Jira strikes through the key of a finished work item. */}
                             <td className={`p-3 text-blue-600 font-medium hover:underline ${isDoneStatus(row.status) ? 'line-through' : ''}`}>{rowKey}</td>
@@ -411,9 +484,9 @@ const TasksPage = ({ department }) => {
                             <td className="p-3 text-gray-500 text-xs">{due}</td>
                             <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
                               <button
-                                onClick={(e) => confirmDeleteTask(e, rowKey)}
+                                onClick={(e) => confirmDeleteTask(e, row)}
                                 className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"
-                                title="Delete task"
+                                title={row.isSubtask ? "Delete subtask" : "Delete task"}
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -469,8 +542,12 @@ const TasksPage = ({ department }) => {
               issue={tasks.find(r => (r.issue_key || r.key) === selectedIssue)}
               updateIssue={updateIssue}
               deleteIssue={deleteIssue}
-              onClose={() => setSelectedIssue(null)}
+              onClose={() => {
+                setSelectedIssue(null);
+                setSelectedSubtaskKey(null);
+              }}
               onIssueCreated={fetchTasks}
+              initialSubtaskKey={selectedSubtaskKey}
             />
 
           </div>

@@ -1,5 +1,261 @@
-import React, { useState } from 'react';
-import { Plus, Sparkles, ChevronDown, User, Trash2, X, CheckSquare, Edit3 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Plus, Sparkles, ChevronDown, User, Trash2, X, CheckSquare, Edit3, Search, Check } from 'lucide-react';
+
+const AVATAR_COLORS = [
+  'bg-red-600 text-white',
+  'bg-blue-600 text-white',
+  'bg-purple-600 text-white',
+  'bg-emerald-600 text-white',
+  'bg-orange-500 text-white',
+  'bg-pink-600 text-white',
+  'bg-teal-600 text-white',
+  'bg-indigo-600 text-white'
+];
+
+const getSubtaskAvatarColor = (name) => {
+  if (!name || name === 'Unassigned') return 'bg-gray-200 text-gray-500';
+  const n = String(name);
+  let hash = 0;
+  for (let i = 0; i < n.length; i++) hash = (hash + n.charCodeAt(i)) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[hash];
+};
+
+const getSafeInitials = (name, fallbackInitialsFn) => {
+  if (!name || name === 'Unassigned') return 'U';
+  if (typeof fallbackInitialsFn === 'function') {
+    const res = fallbackInitialsFn(name);
+    if (res) return res;
+  }
+  const parts = String(name).trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return String(name).slice(0, 2).toUpperCase();
+};
+
+export const SubtaskAssigneePicker = ({
+  assignee,
+  usersList = [],
+  getInitials,
+  onChange,
+  fullWidth = false
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [anchorRect, setAnchorRect] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const triggerRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  const currentName = (!assignee || assignee === 'Unassigned') ? 'Unassigned' : assignee;
+  const isUnassigned = currentName === 'Unassigned';
+
+  const handleOpen = (e) => {
+    e.stopPropagation();
+    if (triggerRef.current) {
+      setAnchorRect(triggerRef.current.getBoundingClientRect());
+    }
+    setIsOpen(prev => !prev);
+    setSearchQuery('');
+  };
+
+  const handlePick = (name) => {
+    setIsOpen(false);
+    setSearchQuery('');
+    if (name !== currentName) {
+      onChange(name);
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && dropdownRef.current.contains(event.target)) {
+        return;
+      }
+      if (triggerRef.current && triggerRef.current.contains(event.target)) {
+        return;
+      }
+      setIsOpen(false);
+    };
+
+    const handleScrollOrResize = () => setIsOpen(false);
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('touchstart', handleClickOutside, true);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const q = searchQuery.trim().toLowerCase();
+  const filteredUsers = usersList.filter(u => {
+    const uName = (u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || '').toLowerCase();
+    const uEmail = (u.email || '').toLowerCase();
+    return !q || uName.includes(q) || uEmail.includes(q);
+  });
+
+  let menuTop = 0;
+  let menuLeft = 0;
+  const menuWidth = 240;
+  const estimatedHeight = 250;
+
+  if (anchorRect) {
+    const spaceBelow = window.innerHeight - anchorRect.bottom;
+    menuTop = spaceBelow < estimatedHeight
+      ? Math.max(8, anchorRect.top - estimatedHeight)
+      : anchorRect.bottom + 4;
+    menuLeft = Math.max(8, Math.min(anchorRect.left, window.innerWidth - menuWidth - 8));
+  }
+
+  return (
+    <>
+      {fullWidth ? (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={handleOpen}
+          className="w-full flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 transition cursor-pointer text-xs font-medium text-gray-700 shadow-2xs"
+          title={`Assignee: ${currentName}. Click to change.`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            {isUnassigned ? (
+              <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0">
+                <User size={11} className="text-gray-500" />
+              </div>
+            ) : (
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-semibold shrink-0 ${getSubtaskAvatarColor(currentName)}`}>
+                {getSafeInitials(currentName, getInitials)}
+              </div>
+            )}
+            <span className="truncate text-left text-xs">{currentName}</span>
+          </div>
+          <ChevronDown size={12} className={`text-gray-400 shrink-0 transition-transform ${isOpen ? 'rotate-180 text-blue-500' : ''}`} />
+        </button>
+      ) : (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={handleOpen}
+          className={`inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded hover:bg-blue-50/60 transition cursor-pointer max-w-[140px] text-xs font-medium text-gray-700 group/btn border border-transparent hover:border-blue-200 ${isOpen ? 'bg-blue-50 ring-1 ring-blue-300 border-blue-300' : ''}`}
+          title={`Assignee: ${currentName}. Click to change.`}
+        >
+          {isUnassigned ? (
+            <div className="w-4 h-4 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0">
+              <User size={10} className="text-gray-500" />
+            </div>
+          ) : (
+            <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-semibold shrink-0 ${getSubtaskAvatarColor(currentName)}`}>
+              {getSafeInitials(currentName, getInitials)}
+            </div>
+          )}
+          <span className="truncate text-left text-xs max-w-[85px]">{currentName}</span>
+          <ChevronDown size={10} className={`text-gray-400 shrink-0 transition-transform ${isOpen ? 'rotate-180 text-blue-500' : 'group-hover/btn:text-gray-600'}`} />
+        </button>
+      )}
+
+      {isOpen && anchorRect && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-[9998]"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+            }}
+          />
+          <div
+            ref={dropdownRef}
+            onClick={(e) => e.stopPropagation()}
+            className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] overflow-hidden text-xs font-sans animate-in fade-in zoom-in-95 duration-100"
+            style={{
+              top: `${menuTop}px`,
+              left: `${menuLeft}px`,
+              width: `${menuWidth}px`
+            }}
+          >
+            <div className="p-2 border-b border-gray-100 bg-gray-50/75 flex items-center gap-2">
+              <Search size={13} className="text-gray-400 shrink-0" />
+              <input
+                type="text"
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search assignee..."
+                className="w-full bg-transparent text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="text-gray-400 hover:text-gray-600 cursor-pointer p-0.5"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            <div className="max-h-56 overflow-y-auto py-1 custom-scrollbar">
+              {(!q || 'unassigned'.includes(q)) && (
+                <div
+                  onClick={() => handlePick('Unassigned')}
+                  className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isUnassigned ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                >
+                  <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
+                    <User size={12} className="text-gray-500" />
+                  </div>
+                  <span className="flex-1 truncate">Unassigned</span>
+                  {isUnassigned && <Check size={14} className="text-blue-600 shrink-0" />}
+                </div>
+              )}
+
+              {filteredUsers.map((u) => {
+                const uName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username;
+                const isSelected = !isUnassigned && currentName.toLowerCase() === uName.toLowerCase();
+                return (
+                  <div
+                    key={u.id || uName}
+                    onClick={() => handlePick(uName)}
+                    className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                  >
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-semibold shrink-0 ${getSubtaskAvatarColor(uName)}`}>
+                      {getSafeInitials(uName, getInitials)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate font-medium">{uName}</div>
+                      {u.email && <div className="text-[10px] text-gray-400 truncate leading-tight">{u.email}</div>}
+                    </div>
+                    {isSelected && <Check size={14} className="text-blue-600 shrink-0" />}
+                  </div>
+                );
+              })}
+
+              {filteredUsers.length === 0 && (!q || !'unassigned'.includes(q)) && (
+                <div className="px-3 py-3 text-center text-xs text-gray-400">No users found</div>
+              )}
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+    </>
+  );
+};
 
 export const parseSubtaskList = (text) => {
   if (!text || typeof text !== 'string' || !text.trim()) return [];
@@ -282,38 +538,14 @@ const ITSubtasksTable = ({
                       </div>
                     </td>
 
-                    {/* ASSIGNEE COLUMN: Native Interactive Select Dropdown */}
+                    {/* ASSIGNEE COLUMN: Searchable Select Dropdown */}
                     <td className="py-2 px-1 align-middle text-center">
-                      <div className="flex items-center justify-center gap-1 min-w-0">
-                        {stAssignee === 'Unassigned' ? (
-                          <div className="w-4 h-4 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0">
-                            <User size={10} className="text-gray-500" />
-                          </div>
-                        ) : (
-                          <div className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[8px]  shrink-0">
-                            {getInitials(stAssignee)}
-                          </div>
-                        )}
-                        <div className="relative flex items-center min-w-0">
-                          <select
-                            value={stAssignee}
-                            onChange={(e) => handleAssigneeChange(st.id, e.target.value)}
-                            className="text-xs font-medium text-gray-700 bg-transparent border-none focus:outline-none cursor-pointer truncate max-w-[85px] appearance-none pr-3"
-                            title="Change subtask assignee"
-                          >
-                            <option value="Unassigned">Unassigned</option>
-                            {usersList.map(u => {
-                              const uName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                              return (
-                                <option key={u.id || uName} value={uName}>
-                                  {uName}
-                                </option>
-                              );
-                            })}
-                          </select>
-                          <ChevronDown size={9} className="text-gray-400 shrink-0 pointer-events-none absolute right-0 top-1" />
-                        </div>
-                      </div>
+                      <SubtaskAssigneePicker
+                        assignee={stAssignee}
+                        usersList={usersList}
+                        getInitials={getInitials}
+                        onChange={(newAssignee) => handleAssigneeChange(st.id, newAssignee)}
+                      />
                     </td>
 
                     {/* STATUS COLUMN: Interactive Status Dropdown */}
@@ -455,17 +687,13 @@ const ITSubtasksTable = ({
                 {/* Assignee */}
                 <div>
                   <span className="text-[10px] font-semibold text-gray-500 block mb-1">Assignee</span>
-                  <select
-                    value={selectedSubtaskForView.assignee || 'Unassigned'}
-                    onChange={(e) => handleAssigneeChange(selectedSubtaskForView.id, e.target.value)}
-                    className="w-full text-xs font-semibold px-2 py-1 rounded border border-gray-300 bg-white"
-                  >
-                    <option value="Unassigned">Unassigned</option>
-                    {usersList.map(u => {
-                      const uName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                      return <option key={u.id || uName} value={uName}>{uName}</option>;
-                    })}
-                  </select>
+                  <SubtaskAssigneePicker
+                    assignee={selectedSubtaskForView.assignee || 'Unassigned'}
+                    usersList={usersList}
+                    getInitials={getInitials}
+                    onChange={(newAssignee) => handleAssigneeChange(selectedSubtaskForView.id, newAssignee)}
+                    fullWidth
+                  />
                 </div>
               </div>
 

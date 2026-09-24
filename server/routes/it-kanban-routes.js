@@ -1140,6 +1140,44 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         });
       }
 
+      // Send assignment notifications and emails for any subtasks assigned on creation
+      if (subtasks && Array.isArray(subtasks)) {
+        subtasks.forEach(async (st, idx) => {
+          if (!st.assignee || st.assignee === 'Unassigned') return;
+          const subtaskKey = st.subtaskKey || `${newKey}-${idx + 1}`;
+          const subtaskTitle = st.title || title;
+
+          notifyAssignment({
+            req,
+            assigneeName: st.assignee,
+            issueKey: subtaskKey,
+            issueTitle: subtaskTitle,
+            department: dept,
+            isSubtask: true,
+            fallbackActor: reporter
+          });
+
+          try {
+            const email = await getAssigneeEmail(st.assignee, dept);
+            if (email) {
+              sendAssignmentEmail(
+                email,
+                st.assignee,
+                subtaskKey,
+                subtaskTitle,
+                'Sub-task',
+                st.description || `Subtask of ${newKey}: ${title}`,
+                st.status || 'TO DO',
+                st.priority || 'Medium',
+                dept
+              );
+            }
+          } catch (err) {
+            console.error('Failed to trigger email notify on subtask creation:', err.message);
+          }
+        });
+      }
+
       const [[createdRow]] = await db.query(`
         SELECT i.*,
                p.name AS parent_project_name,
@@ -1198,31 +1236,46 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       const { key } = req.params;
-      const [attachments] = await db.query(
-        'SELECT * FROM it_kanban_attachments WHERE issue_key = ? OR issue_id = ? ORDER BY uploaded_at DESC',
-        [key, parseInt(key) || 0]
-      );
+      const { subtask_id } = req.query;
+
+      let query;
+      let params;
+
+      if (subtask_id && subtask_id !== 'null' && subtask_id !== 'undefined') {
+        // Fetch attachments specifically for this subtask
+        query = 'SELECT * FROM it_kanban_attachments WHERE (issue_key = ? OR issue_id = ?) AND subtask_id = ? ORDER BY uploaded_at DESC';
+        params = [key, parseInt(key) || 0, String(subtask_id)];
+      } else {
+        // Fetch attachments specifically for the parent task (where subtask_id is null or empty)
+        query = 'SELECT * FROM it_kanban_attachments WHERE (issue_key = ? OR issue_id = ?) AND (subtask_id IS NULL OR subtask_id = "") ORDER BY uploaded_at DESC';
+        params = [key, parseInt(key) || 0];
+      }
+
+      const [attachments] = await db.query(query, params);
       res.json(attachments);
     } catch (error) {
       responseError(res, 500, 'Failed to fetch attachments', error);
     }
   });
 
-  // POST add attachment to issue
+  // POST add attachment to issue (parent or subtask)
   app.post('/api/it-kanban/issues/:key/attachments', async (req, res) => {
     try {
       const { key } = req.params;
-      const { file_name, file_path, file_size, file_type, issue_id } = req.body;
+      const { file_name, file_path, file_size, file_type, issue_id, subtask_id } = req.body;
       let resolvedIssueId = issue_id || null;
       if (!resolvedIssueId) {
         const [issues] = await db.query('SELECT id FROM it_kanban_issues WHERE issue_key = ? LIMIT 1', [key]);
         if (issues && issues.length > 0) resolvedIssueId = issues[0].id;
       }
+      const resolvedSubtaskId = subtask_id && subtask_id !== 'null' && subtask_id !== 'undefined' ? String(subtask_id) : null;
+
       const [result] = await db.query(
-        'INSERT INTO it_kanban_attachments (issue_key, issue_id, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO it_kanban_attachments (issue_key, issue_id, subtask_id, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
           key,
           resolvedIssueId,
+          resolvedSubtaskId,
           String(file_name || 'attachment').substring(0, 255),
           String(file_path || '').substring(0, 500),
           String(file_size || '0 KB').substring(0, 50),
@@ -1233,6 +1286,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         id: result.insertId,
         issue_key: key,
         issue_id: resolvedIssueId,
+        subtask_id: resolvedSubtaskId,
         file_name,
         file_path,
         file_size,
@@ -1514,19 +1568,43 @@ app.get('/api/it-kanban/labels', async (req, res) => {
           const after = parse(updates.subtasks);
           const previousBySt = new Map(before.map(s => [String(s.id), s.assignee || 'Unassigned']));
 
-          after.forEach((st, idx) => {
+          after.forEach(async (st, idx) => {
             const newAssignee = st.assignee;
             if (!newAssignee || newAssignee === 'Unassigned') return;
             if (previousBySt.get(String(st.id)) === newAssignee) return; // unchanged
+            const subtaskKey = st.subtaskKey || `${key}-${idx + 1}`;
+            const subtaskTitle = st.title || stored?.title;
+
+            // In-app notification for the newly assigned person
             notifyAssignment({
               req,
               assigneeName: newAssignee,
-              issueKey: `${key}-${idx + 1}`,
-              issueTitle: st.title || stored?.title,
+              issueKey: subtaskKey,
+              issueTitle: subtaskTitle,
               department: stored?.department,
               isSubtask: true,
               fallbackActor: stored?.reporter
             });
+
+            // Email notification just like normal task
+            try {
+              const email = await getAssigneeEmail(newAssignee, stored?.department);
+              if (email) {
+                sendAssignmentEmail(
+                  email,
+                  newAssignee,
+                  subtaskKey,
+                  subtaskTitle,
+                  'Sub-task',
+                  st.description || `Subtask of ${key}: ${stored?.title || ''}`,
+                  st.status || 'TO DO',
+                  st.priority || 'Medium',
+                  stored?.department
+                );
+              }
+            } catch (err) {
+              console.error('Failed to trigger email notify on subtask assignment:', err.message);
+            }
           });
         } catch (e) {
           console.error('Failed to check subtask assignment changes:', e.message);

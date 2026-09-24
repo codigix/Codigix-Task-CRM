@@ -323,16 +323,8 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
             };
             setFormData(prev => ({
               ...prev,
-              reporter: prev.reporter || currentReporter,
               assignee: prev.assignee || currentReporter
             }));
-          } else if (userList.length > 0) {
-            const searchName = username || 'ashwini';
-            const currentUser = userList.find(u =>
-              (u.first_name && u.first_name.toLowerCase() === searchName.toLowerCase()) ||
-              (u.name && u.name.toLowerCase().includes(searchName.toLowerCase()))
-            ) || userList[0];
-            setFormData(prev => ({ ...prev, reporter: prev.reporter || currentUser }));
           }
         })
         .catch(err => console.error('Error fetching users:', err));
@@ -588,8 +580,8 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
 
         // Create Kanban issue
         const reporterVal = formData.reporter
-          ? (formData.reporter.name || `${formData.reporter.first_name || ''} ${formData.reporter.last_name || ''}`.trim() || currentUserName)
-          : currentUserName;
+          ? (formData.reporter.name || `${formData.reporter.first_name || ''} ${formData.reporter.last_name || ''}`.trim() || 'Unassigned')
+          : 'Unassigned';
 
         const teamVal = formData.team
           ? (typeof formData.team === 'string' ? formData.team : (formData.team.name || 'None'))

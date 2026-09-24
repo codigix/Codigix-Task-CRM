@@ -29,7 +29,9 @@ const TYPE_ICONS = {
   Task: <CheckSquare size={14} className="text-blue-500 fill-blue-100" />,
   Story: <BookmarkIcon size={14} className="text-green-500 fill-green-100" />,
   Bug: <AlertCircle size={14} className="text-red-500 fill-red-100" />,
-  Test: <TestTubeIcon size={14} className="text-purple-500 fill-purple-100" />
+  Test: <TestTubeIcon size={14} className="text-purple-500 fill-purple-100" />,
+  'Sub-task': <CheckSquare size={14} className="text-sky-500" />,
+  Subtask: <CheckSquare size={14} className="text-sky-500" />
 };
 
 // SVG substitutes for lucide icons that might be missing or not perfectly matched
@@ -77,6 +79,7 @@ const ITTasksPage = () => {
   );
 
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [selectedSubtaskKey, setSelectedSubtaskKey] = useState(null);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
   const [openFilterDropdown, setOpenFilterDropdown] = useState(null);
 
@@ -156,8 +159,44 @@ const ITTasksPage = () => {
     return Array.from(terms);
   }, [username, user]);
 
+  const allTasksAndSubtasks = React.useMemo(() => {
+    const list = [];
+    tasks.forEach(issue => {
+      list.push(issue);
+      let rawSt = issue.subtasks;
+      if (typeof rawSt === 'string') {
+        try { rawSt = JSON.parse(rawSt); } catch (e) { rawSt = []; }
+      }
+      if (Array.isArray(rawSt)) {
+        rawSt.forEach((st, idx) => {
+          const subtaskKey = st.subtaskKey || `${issue.issue_key || issue.key}-${idx + 1}`;
+          list.push({
+            ...issue,
+            id: `subtask-${st.id || idx}`,
+            key: subtaskKey,
+            issue_key: subtaskKey,
+            title: st.title || 'Untitled Subtask',
+            summary: st.title || 'Untitled Subtask',
+            type: 'Sub-task',
+            assignee: st.assignee || 'Unassigned',
+            status: st.completed ? 'DONE' : (st.status || 'TO DO'),
+            priority: st.priority || issue.priority || 'Medium',
+            due_date: st.due_date || issue.due_date,
+            start_date: st.start_date || issue.start_date,
+            isSubtask: true,
+            subtaskId: st.id,
+            parentKey: issue.issue_key || issue.key,
+            parentTitle: issue.title,
+            parentIssue: issue
+          });
+        });
+      }
+    });
+    return list;
+  }, [tasks]);
+
   const filteredTasks = React.useMemo(() => {
-    let result = tasks;
+    let result = allTasksAndSubtasks;
 
     if (selectedProjectId !== 'ALL') {
       result = result.filter(issue => Number(issue.project_id) === Number(selectedProjectId));
@@ -214,7 +253,7 @@ const ITTasksPage = () => {
       );
     }
     return result;
-  }, [tasks, selectedProjectId, selectedType, selectedStatus, selectedPriority, selectedAssignees, onlyMyIssues, isManager, userSearchTerms, searchQuery]);
+  }, [allTasksAndSubtasks, selectedProjectId, selectedType, selectedStatus, selectedPriority, selectedAssignees, onlyMyIssues, isManager, userSearchTerms, searchQuery]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
@@ -229,6 +268,21 @@ const ITTasksPage = () => {
         const exists = tasks.some(t => t.issue_key === ticketKey || t.key === ticketKey);
         if (exists) {
           setSelectedIssue(ticketKey);
+          setSelectedSubtaskKey(null);
+        } else {
+          // Check if it's a subtask key
+          for (const parent of tasks) {
+            let curSt = parent.subtasks;
+            if (typeof curSt === 'string') { try { curSt = JSON.parse(curSt); } catch(e) { curSt = []; } }
+            if (Array.isArray(curSt)) {
+              const matched = curSt.find(st => st.subtaskKey === ticketKey || `${parent.issue_key || parent.key}-${st.id}` === ticketKey);
+              if (matched) {
+                setSelectedIssue(parent.issue_key || parent.key);
+                setSelectedSubtaskKey(matched.id || ticketKey);
+                break;
+              }
+            }
+          }
         }
       }
     }
@@ -398,6 +452,9 @@ const ITTasksPage = () => {
           break;
         case 'subTasks':
           renderFn = (val, row) => {
+            if (row.isSubtask) {
+              return <span className="text-gray-400 text-xs italic">Sub-task of {row.parentKey}</span>;
+            }
             const subtaskCount = row.subtasks ? (Array.isArray(row.subtasks) ? row.subtasks.length : JSON.parse(row.subtasks).length) : 0;
             return <span className="text-gray-600">{subtaskCount} Subtasks</span>;
           };
@@ -420,22 +477,47 @@ const ITTasksPage = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  Swal.fire({
-                    title: 'Delete Task?',
-                    text: `Are you sure you want to delete ${row.issue_key || row.key}?`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#ef4444',
-                    cancelButtonColor: '#6b7280',
-                    confirmButtonText: 'Delete'
-                  }).then((result) => {
-                    if (result.isConfirmed) {
-                      deleteIssue(row.issue_key || row.key);
-                    }
-                  });
+                  if (row.isSubtask) {
+                    Swal.fire({
+                      title: 'Delete Subtask?',
+                      text: `Are you sure you want to delete subtask "${row.title}"?`,
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonColor: '#ef4444',
+                      cancelButtonColor: '#6b7280',
+                      confirmButtonText: 'Delete'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        const parent = tasks.find(t => (t.issue_key === row.parentKey || t.key === row.parentKey));
+                        if (parent) {
+                          let curSt = parent.subtasks;
+                          if (typeof curSt === 'string') {
+                            try { curSt = JSON.parse(curSt); } catch (err) { curSt = []; }
+                          }
+                          const updated = (Array.isArray(curSt) ? curSt : []).filter(s => String(s.id) !== String(row.subtaskId));
+                          updateIssue(row.parentKey, { subtasks: updated });
+                          showSuccessToast(`Subtask ${row.issue_key || row.key} deleted successfully`);
+                        }
+                      }
+                    });
+                  } else {
+                    Swal.fire({
+                      title: 'Delete Task?',
+                      text: `Are you sure you want to delete ${row.issue_key || row.key}?`,
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonColor: '#ef4444',
+                      cancelButtonColor: '#6b7280',
+                      confirmButtonText: 'Delete'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        deleteIssue(row.issue_key || row.key);
+                      }
+                    });
+                  }
                 }}
                 className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"
-                title="Delete task"
+                title={row.isSubtask ? "Delete Subtask" : "Delete Task"}
               >
                 <Trash2 size={14} />
               </button>
@@ -791,7 +873,15 @@ const ITTasksPage = () => {
                     data={filteredTasks}
                     visibleColumns={Array.from(selectedColumns)}
                     hideSearch={true}
-                    onRowClick={(row) => setSelectedIssue(row.issue_key || row.key)}
+                    onRowClick={(row) => {
+                      if (row.isSubtask) {
+                        setSelectedIssue(row.parentKey);
+                        setSelectedSubtaskKey(row.subtaskId || row.key);
+                      } else {
+                        setSelectedIssue(row.issue_key || row.key);
+                        setSelectedSubtaskKey(null);
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -802,8 +892,12 @@ const ITTasksPage = () => {
               issue={tasks.find(r => (r.issue_key || r.key) === selectedIssue)}
               updateIssue={updateIssue}
               deleteIssue={deleteIssue}
-              onClose={() => setSelectedIssue(null)}
+              onClose={() => {
+                setSelectedIssue(null);
+                setSelectedSubtaskKey(null);
+              }}
               onIssueCreated={fetchTasks}
+              initialSubtaskKey={selectedSubtaskKey}
             />
 
           </div>

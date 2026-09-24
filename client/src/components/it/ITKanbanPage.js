@@ -522,8 +522,26 @@ const ITKanbanPage = ({ department }) => {
     setAssigneeSearchQuery('');
   };
 
-  const handleUpdateCardAssignee = async (issueKey, newAssignee) => {
+  const handleUpdateCardAssignee = async (issueKey, newAssignee, card = null) => {
     const normAssignee = (!newAssignee || newAssignee === 'Unassigned' || newAssignee === 'Automatic') ? 'Unassigned' : newAssignee;
+
+    if (card && card.isSubtask) {
+      setOpenCardAssigneeDropdown(null);
+      const parent = allRawIssues.find(i => (i.issue_key === card.parentKey || i.key === card.parentKey));
+      if (parent) {
+        let curSt = parent.subtasks;
+        if (typeof curSt === 'string') {
+          try { curSt = JSON.parse(curSt); } catch (e) { curSt = []; }
+        }
+        const updated = (Array.isArray(curSt) ? curSt : []).map(s =>
+          String(s.id) === String(card.subtaskId) ? { ...s, assignee: normAssignee } : s
+        );
+        updateIssue(card.parentKey, { subtasks: updated });
+        showSuccessToast(normAssignee === 'Unassigned' ? 'Subtask unassigned' : `Assigned subtask to ${normAssignee}`);
+      }
+      return;
+    }
+
     // 1. Optimistically update both allRawIssues and boardData immediately
     setAllRawIssues(prev => prev.map(t => (t.issue_key === issueKey || t.key === issueKey) ? { ...t, assignee: normAssignee } : t));
     setBoardData(prev => {
@@ -770,6 +788,137 @@ const ITKanbanPage = ({ department }) => {
       });
     });
 
+    // Also populate subtasks as individual cards on the Kanban board, belonging to their parent task
+    const todayStr = getTodayStr();
+    const tomorrowStr = getTomorrowStr();
+    const { start: weekStart, end: weekEnd } = getThisWeekRange();
+    const { start: monthStart, end: monthEnd } = getThisMonthRange();
+
+    allRawIssues.forEach(issue => {
+      // Check sprint membership if active sprints exist
+      if (activeSprints.length > 0) {
+        const runningIds = new Set(activeSprints.map(s => Number(s.id)));
+        const inActiveSprint = !issue.sprint_id || runningIds.has(Number(issue.sprint_id)) || issue.sprint_status === 'Active';
+        if (!inActiveSprint) return;
+      }
+      if (selectedProjectId !== 'ALL' && Number(issue.project_id) !== Number(selectedProjectId)) {
+        return;
+      }
+      if (selectedType !== 'ALL' && selectedType !== 'Task') {
+        return;
+      }
+
+      let rawSt = issue.subtasks;
+      if (typeof rawSt === 'string') {
+        try { rawSt = JSON.parse(rawSt); } catch (e) { rawSt = []; }
+      }
+      if (!Array.isArray(rawSt) || rawSt.length === 0) return;
+
+      rawSt.forEach((st, idx) => {
+        const stStatus = (st.completed ? 'DONE' : (st.status || 'TO DO')).toUpperCase();
+        if (selectedStatus !== 'ALL' && stStatus !== selectedStatus.toUpperCase()) {
+          return;
+        }
+        if (selectedPriority !== 'ALL' && (st.priority || 'Medium') !== selectedPriority) {
+          return;
+        }
+
+        const stAssignee = st.assignee || 'Unassigned';
+        if (selectedAssignees.length > 0) {
+          const isUnass = !stAssignee || stAssignee === 'Unassigned' || stAssignee === 'Automatic';
+          if (!selectedAssignees.includes('UNASSIGNED') && isUnass) return;
+          const matches = (selectedAssignees.includes('UNASSIGNED') && isUnass) ||
+            selectedAssignees.some(a => a !== 'UNASSIGNED' && stAssignee.toLowerCase().includes(a.toLowerCase()));
+          if (!matches) return;
+        }
+
+        const isStAssignedToMe = (stAss) => {
+          const norm = normalizePerson(stAss);
+          if (norm && myIdentities.includes(norm)) return true;
+          const stStr = (stAss || '').toLowerCase();
+          return userSearchTerms.some(term => stStr.includes(term));
+        };
+
+        const isStAssigned = (stAss) => {
+          if (!stAss) return false;
+          const a = String(stAss).trim().toLowerCase();
+          return a !== '' && a !== 'unassigned' && a !== 'automatic' && a !== 'none' && a !== 'null' && a !== 'undefined';
+        };
+
+        const shouldFilterOnlyMy = onlyMyIssues && selectedAssignees.length === 0;
+        if (!isManager) {
+          if (!isStAssigned(stAssignee)) return;
+          if (shouldFilterOnlyMy && !isStAssignedToMe(stAssignee)) return;
+        } else if (shouldFilterOnlyMy && !isStAssignedToMe(stAssignee)) {
+          return;
+        }
+
+        const stKey = st.subtaskKey || `${issue.issue_key || issue.key}-${idx + 1}`;
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const matches =
+            (st.title && st.title.toLowerCase().includes(q)) ||
+            stKey.toLowerCase().includes(q) ||
+            (stAssignee && stAssignee.toLowerCase().includes(q)) ||
+            (issue.issue_key && issue.issue_key.toLowerCase().includes(q)) ||
+            (issue.title && issue.title.toLowerCase().includes(q));
+          if (!matches) return;
+        }
+
+        const stStart = st.start_date || issue.start_date;
+        const stDue = st.due_date || issue.due_date;
+        if (dateFilter !== 'ALL') {
+          const startStr = getIssueDateParts(stStart);
+          const dueStr = getIssueDateParts(stDue);
+          const hasAnyDate = Boolean(startStr || dueStr);
+
+          if (dateFilter === 'NO_DATE' && hasAnyDate) return;
+          if (dateFilter === 'OVERDUE') {
+            if (isDoneStatus(stStatus)) return;
+            if (!stDue || !isPastDate(stDue)) return;
+          }
+          if (dateFilter !== 'NO_DATE' && dateFilter !== 'OVERDUE') {
+            if (!hasAnyDate) return;
+            const minDate = startStr && dueStr ? (startStr <= dueStr ? startStr : dueStr) : (startStr || dueStr);
+            const maxDate = startStr && dueStr ? (startStr <= dueStr ? dueStr : startStr) : (dueStr || startStr);
+            if (dateFilter === 'TODAY' && !(minDate <= todayStr && todayStr <= maxDate)) return;
+            if (dateFilter === 'TOMORROW' && !(minDate <= tomorrowStr && tomorrowStr <= maxDate)) return;
+            if (dateFilter === 'THIS_WEEK' && !(minDate <= weekEnd && maxDate >= weekStart)) return;
+            if (dateFilter === 'THIS_MONTH' && !(minDate <= monthEnd && maxDate >= monthStart)) return;
+            if (dateFilter === 'EXACT' && exactDate && !(minDate <= exactDate && exactDate <= maxDate)) return;
+            if (dateFilter === 'RANGE' && (rangeStart || rangeEnd)) {
+              const rStart = rangeStart || '1970-01-01';
+              const rEnd = rangeEnd || '2999-12-31';
+              if (!(minDate <= rEnd && maxDate >= rStart)) return;
+            }
+          }
+        }
+
+        const targetCol = newBoard[stStatus] ? stStatus : (newBoard['TO DO'] ? 'TO DO' : (columnOrder[0] || 'TO DO'));
+        newBoard[targetCol].push({
+          ...issue,
+          id: `subtask-${st.id || idx}`,
+          key: stKey,
+          issue_key: stKey,
+          subtaskId: st.id,
+          isSubtask: true,
+          parentKey: issue.issue_key || issue.key,
+          parentTitle: issue.title,
+          title: st.title,
+          type: 'Task',
+          priority: st.priority || 'Medium',
+          status: stStatus,
+          assignee: stAssignee,
+          reporter: issue.reporter,
+          subtasks: [],
+          description: st.description || '',
+          created_at: st.created_at || issue.created_at,
+          due_date: stDue,
+          start_date: stStart
+        });
+      });
+    });
+
     // Sort cards in each column so current date (today, yesterday, then older) tickets appear on top
     Object.keys(newBoard).forEach(col => {
       newBoard[col].sort((a, b) => {
@@ -819,6 +968,7 @@ const ITKanbanPage = ({ department }) => {
     localStorage.setItem(`${currentDept}_kanbanColumnOrder`, JSON.stringify(columnOrder));
   }, [columnOrder, currentDept]);
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [selectedSubtaskKey, setSelectedSubtaskKey] = useState(null);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
   const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false);
 
@@ -893,7 +1043,7 @@ const ITKanbanPage = ({ department }) => {
     if (!newIssueTitle.trim()) return;
 
     const currentUserName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : (username || 'Unassigned');
-    const reporterVal = currentUserName;
+    const reporterVal = 'Unassigned';
 
     let assigneeVal = newIssueAssignee;
     if (!assigneeVal || assigneeVal === 'Automatic') {
@@ -1013,15 +1163,20 @@ const ITKanbanPage = ({ department }) => {
 
   let selectedIssueData = null;
   if (selectedIssue) {
-    const rawMatch = allRawIssues.find(i => i.issue_key === selectedIssue || i.key === selectedIssue);
+    const rawMatch = allRawIssues.find(i => !i.isSubtask && (i.issue_key === selectedIssue || i.key === selectedIssue));
     let cardMatch = null;
     Object.values(boardData).forEach(col => {
-      const found = col.find(c => c.key === selectedIssue || c.issue_key === selectedIssue);
+      const found = col.find(c => !c.isSubtask && (c.key === selectedIssue || c.issue_key === selectedIssue));
       if (found) cardMatch = found;
     });
 
     if (rawMatch || cardMatch) {
-      selectedIssueData = { ...(rawMatch || {}), ...(cardMatch || {}) };
+      const merged = { ...(rawMatch || {}), ...(cardMatch || {}) };
+      // Always guarantee that the main issue's full subtasks array is preserved
+      if (rawMatch && Array.isArray(rawMatch.subtasks) && rawMatch.subtasks.length > 0) {
+        merged.subtasks = rawMatch.subtasks;
+      }
+      selectedIssueData = merged;
     }
   }
 
@@ -1033,9 +1188,9 @@ const ITKanbanPage = ({ department }) => {
       let foundCol = null;
       let foundIdx = -1;
 
-      // Find issue
+      // Find issue (must not be a subtask card)
       for (const col of Object.keys(next)) {
-        const idx = next[col].findIndex(c => c.key === key || c.issue_key === key);
+        const idx = next[col].findIndex(c => !c.isSubtask && (c.key === key || c.issue_key === key));
         if (idx !== -1) {
           foundCol = col;
           foundIdx = idx;
@@ -1160,6 +1315,42 @@ const ITKanbanPage = ({ department }) => {
       if (!removed) return;
 
       const newStatus = destination.droppableId;
+
+      if (removed.isSubtask) {
+        removed.status = newStatus;
+        destCol.splice(destination.index, 0, removed);
+        setBoardData({
+          ...boardData,
+          [source.droppableId]: sourceCol,
+          [destination.droppableId]: destCol
+        });
+
+        // Update the parent's subtasks array in allRawIssues and DB
+        const parent = allRawIssues.find(i => (i.issue_key === removed.parentKey || i.key === removed.parentKey));
+        let parentSubtasks = [];
+        if (parent?.subtasks) {
+          if (typeof parent.subtasks === 'string') {
+            try { parentSubtasks = JSON.parse(parent.subtasks); } catch (e) { parentSubtasks = []; }
+          } else if (Array.isArray(parent.subtasks)) {
+            parentSubtasks = [...parent.subtasks];
+          }
+        }
+
+        const isDone = newStatus.toUpperCase() === 'DONE';
+        const updatedSubtasks = parentSubtasks.map(st => {
+          if (String(st.id) === String(removed.subtaskId)) {
+            return {
+              ...st,
+              status: newStatus,
+              completed: isDone
+            };
+          }
+          return st;
+        });
+
+        updateIssue(removed.parentKey, { subtasks: updatedSubtasks });
+        return;
+      }
 
       if (newStatus === 'IN PROGRESS') {
         setPendingDragResult(result);
@@ -1782,119 +1973,68 @@ const ITKanbanPage = ({ department }) => {
                                                   ref={provided.innerRef}
                                                   {...provided.draggableProps}
                                                   {...provided.dragHandleProps}
-                                                  onClick={() => setSelectedIssue(card.key)}
+                                                  onClick={() => {
+                                                    if (card.isSubtask) {
+                                                      setSelectedIssue(card.parentKey);
+                                                      setSelectedSubtaskKey(card.subtaskId || card.key);
+                                                    } else {
+                                                      setSelectedIssue(card.key);
+                                                      setSelectedSubtaskKey(null);
+                                                    }
+                                                  }}
                                                   style={{
                                                     ...provided.draggableProps.style,
                                                   }}
-                                                  className={`relative group bg-white border rounded p-3  hover:shadow-md transition-all duration-200 ${selectedIssue === card.key ? 'ring-2 ring-blue-500 border-transparent' : 'border-gray-200'} ${snapshot.isDragging ? 'shadow-lg rotate-2' : ''}`}
+                                                  className={`relative group bg-white border rounded p-3 hover:shadow-md transition-all duration-200 ${(selectedIssue === card.key || (card.isSubtask && selectedIssue === card.parentKey && String(selectedSubtaskKey) === String(card.subtaskId))) ? 'ring-2 ring-blue-500 border-transparent' : 'border-gray-200'} ${snapshot.isDragging ? 'shadow-lg rotate-2' : ''}`}
                                                 >
                                                   {/* Delete Trash Button */}
                                                   <button
                                                     onClick={(e) => {
                                                       e.stopPropagation();
-                                                      if (window.confirm(`Are you sure you want to delete ticket ${card.key}?`)) {
-                                                        deleteIssue(card.key);
+                                                      if (card.isSubtask) {
+                                                        if (window.confirm(`Are you sure you want to delete subtask "${card.title}"?`)) {
+                                                          const parent = allRawIssues.find(i => (i.issue_key === card.parentKey || i.key === card.parentKey));
+                                                          if (parent) {
+                                                            let curSt = parent.subtasks;
+                                                            if (typeof curSt === 'string') {
+                                                              try { curSt = JSON.parse(curSt); } catch (err) { curSt = []; }
+                                                            }
+                                                            const updated = (Array.isArray(curSt) ? curSt : []).filter(s => String(s.id) !== String(card.subtaskId));
+                                                            updateIssue(card.parentKey, { subtasks: updated });
+                                                          }
+                                                        }
+                                                      } else {
+                                                        if (window.confirm(`Are you sure you want to delete ticket ${card.key}?`)) {
+                                                          deleteIssue(card.key);
+                                                        }
                                                       }
                                                     }}
                                                     className="absolute top-2.5 right-2.5 p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 cursor-pointer"
-                                                    title="Delete Ticket"
+                                                    title={card.isSubtask ? "Delete Subtask" : "Delete Ticket"}
                                                   >
                                                     <Trash2 size={13} />
                                                   </button>
+
                                                   {/* Jira strikes through the key of a finished work item. */}
                                                   <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                                                    <span className={`text-blue-600 text-xs hover:underline font-medium cursor-pointer ${isDoneStatus(card.status) ? 'line-through' : ''}`} onClick={(e) => { e.stopPropagation(); setSelectedIssue(card.key); }}>{card.key}</span>
+                                                    <span
+                                                      className={`text-blue-600 text-xs hover:underline font-medium cursor-pointer ${isDoneStatus(card.status) ? 'line-through' : ''}`}
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (card.isSubtask) {
+                                                          setSelectedIssue(card.parentKey);
+                                                          setSelectedSubtaskKey(card.subtaskId || card.key);
+                                                        } else {
+                                                          setSelectedIssue(card.key);
+                                                          setSelectedSubtaskKey(null);
+                                                        }
+                                                      }}
+                                                    >
+                                                      {card.key}
+                                                    </span>
                                                   </div>
                                                   <div className="text-sm text-gray-900 font-medium mb-3 leading-snug cursor-grab active:cursor-grabbing line-clamp-2" title={card.title}>{card.title}</div>
 
-                                                  {/* JIRA INLINE EXPANDABLE SUBTASKS LIST */}
-                                                  {(() => {
-                                                    let rawSt = card.subtasks;
-                                                    if (typeof rawSt === 'string') {
-                                                      try { rawSt = JSON.parse(rawSt); } catch (e) { rawSt = []; }
-                                                    }
-                                                    if (!Array.isArray(rawSt)) rawSt = [];
-                                                    const totalSt = rawSt.length;
-
-                                                    // JIRA RULE: Only visible when that particular ticket actually HAS subtasks (> 0)
-                                                    if (totalSt === 0) return null;
-
-                                                    const completedSt = rawSt.filter(s => s.completed || s.status === 'DONE').length;
-                                                    const isExpanded = expandedSubtaskCardKeys.includes(card.key);
-
-                                                    return (
-                                                      <div className="mb-3">
-                                                        {/* Subtasks Accordion Pill Header (Jira Style) */}
-                                                        <button
-                                                          onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setExpandedSubtaskCardKeys(prev =>
-                                                              prev.includes(card.key) ? prev.filter(k => k !== card.key) : [...prev, card.key]
-                                                            );
-                                                          }}
-                                                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-700 cursor-pointer transition-all hover:border-gray-300 w-full justify-between select-none"
-                                                          title="Click to toggle subtasks list"
-                                                        >
-                                                          <div className="flex items-center gap-1.5 min-w-0">
-                                                            {/* Branch / Subtask Icon */}
-                                                            <svg className="w-3.5 h-3.5 text-gray-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                              <line x1="6" y1="3" x2="6" y2="15"></line>
-                                                              <circle cx="18" cy="6" r="3"></circle>
-                                                              <circle cx="6" cy="18" r="3"></circle>
-                                                              <path d="M18 9a9 9 0 0 1-9 9"></path>
-                                                            </svg>
-                                                            <span className="font-semibold text-gray-800">Subtasks {completedSt}/{totalSt}</span>
-                                                          </div>
-                                                          <ChevronDown size={13} className={`text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                                                        </button>
-
-                                                        {/* Expanded Subtasks List under Card (Jira Card View) */}
-                                                        {isExpanded && (
-                                                          <div className="mt-1.5 space-y-1.5 pl-1 pr-1 py-1 bg-gray-50/80 rounded border border-gray-200/80 animate-in fade-in duration-150">
-                                                            {rawSt.map((st, idx) => {
-                                                              const subtaskKey = `${card.key}-${st.id || idx + 1}`;
-                                                              const isDone = st.completed || st.status === 'DONE';
-                                                              const statusLabel = isDone ? 'Done' : (st.status || 'To Do');
-
-                                                              return (
-                                                                <div
-                                                                  key={st.id || idx}
-                                                                  onClick={(e) => e.stopPropagation()}
-                                                                  className="flex items-center justify-between p-2 bg-white rounded border border-gray-200 hover:border-blue-300 shadow-2xs text-xs font-sans group transition-all"
-                                                                >
-                                                                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                                    <input
-                                                                      type="checkbox"
-                                                                      checked={isDone}
-                                                                      onChange={() => handleToggleCardSubtask(card.key, st.id)}
-                                                                      className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
-                                                                    />
-                                                                    <div className="min-w-0 flex-1">
-                                                                      <div className="flex items-center gap-1.5">
-                                                                        <span className="text-[10px] text-blue-600 font-semibold">{subtaskKey}</span>
-                                                                        <span className={`text-xs font-medium truncate ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                                                                          {st.title}
-                                                                        </span>
-                                                                      </div>
-                                                                    </div>
-                                                                  </div>
-
-                                                                  <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                                                                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold tracking-tight ${isDone
-                                                                      ? 'bg-emerald-100 text-emerald-700'
-                                                                      : 'bg-gray-100 text-gray-600'
-                                                                      }`}>
-                                                                      {statusLabel}
-                                                                    </span>
-                                                                  </div>
-                                                                </div>
-                                                              );
-                                                            })}
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                    );
-                                                  })()}
 
                                                   <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
@@ -1973,7 +2113,7 @@ const ITKanbanPage = ({ department }) => {
                                                                     <span className="truncate">Current: <strong className="text-gray-800 font-semibold">{card.assignee}</strong></span>
                                                                     <button
                                                                       type="button"
-                                                                      onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned')}
+                                                                      onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned', card)}
                                                                       className="text-red-600 hover:text-red-700 hover:underline font-semibold ml-2 shrink-0 cursor-pointer"
                                                                     >
                                                                       Clear / Unassign
@@ -1986,7 +2126,7 @@ const ITKanbanPage = ({ department }) => {
                                                                 {/* Unassigned Option */}
                                                                 {(!assigneeSearchQuery.trim() || 'unassigned'.includes(assigneeSearchQuery.toLowerCase().trim())) && (
                                                                   <div
-                                                                    onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned')}
+                                                                    onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned', card)}
                                                                     className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee === 'Unassigned' || !card.assignee ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
                                                                       }`}
                                                                   >
@@ -2002,7 +2142,7 @@ const ITKanbanPage = ({ department }) => {
                                                                 <div
                                                                   onClick={() => {
                                                                     const myName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : 'Unassigned';
-                                                                    handleUpdateCardAssignee(card.key, myName);
+                                                                    handleUpdateCardAssignee(card.key, myName, card);
                                                                   }}
                                                                   className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 text-gray-700 font-medium border-b border-gray-100 transition-colors"
                                                                 >
@@ -2017,7 +2157,7 @@ const ITKanbanPage = ({ department }) => {
                                                                   <div
                                                                     onClick={() => {
                                                                       const myName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
-                                                                      handleUpdateCardAssignee(card.key, myName);
+                                                                      handleUpdateCardAssignee(card.key, myName, card);
                                                                     }}
                                                                     className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee && (card.assignee.toLowerCase().includes((user.first_name || '').toLowerCase()) || card.assignee.toLowerCase() === user.username.toLowerCase())
                                                                       ? 'bg-[#deebff] font-semibold text-blue-900'
@@ -2061,7 +2201,7 @@ const ITKanbanPage = ({ department }) => {
                                                                     return (
                                                                       <div
                                                                         key={u.id || u.username}
-                                                                        onClick={() => handleUpdateCardAssignee(card.key, fullName)}
+                                                                        onClick={() => handleUpdateCardAssignee(card.key, fullName, card)}
                                                                         className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${isCurrentAssignee ? 'bg-[#deebff] text-blue-900 font-semibold' : 'text-gray-700'
                                                                           }`}
                                                                       >
@@ -2582,9 +2722,13 @@ const ITKanbanPage = ({ department }) => {
               issue={selectedIssueData}
               updateIssue={updateIssue}
               deleteIssue={deleteIssue}
-              onClose={() => setSelectedIssue(null)}
+              onClose={() => {
+                setSelectedIssue(null);
+                setSelectedSubtaskKey(null);
+              }}
               onIssueCreated={fetchKanbanData}
               department={currentDept}
+              initialSubtaskKey={selectedSubtaskKey}
             />
 
             <CompleteSprintModal
