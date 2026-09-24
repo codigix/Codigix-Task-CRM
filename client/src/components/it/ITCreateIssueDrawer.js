@@ -349,7 +349,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
           let matchedSprint = null;
           if (chosenProj && chosenProj.id) {
             const owning = sprintList.filter(sp => Number(sp.project_id) === Number(chosenProj.id));
-            matchedSprint = owning.find(sp => sp.status === 'Active') || owning[0] || null;
+            matchedSprint = owning.find(sp => sp.status === 'Active') || null;
           }
           if (!matchedSprint) {
             matchedSprint = sprintData?.activeSprint || sprintList.find(sp => sp.status === 'Active') || null;

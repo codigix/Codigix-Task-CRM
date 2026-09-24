@@ -1038,7 +1038,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       const {
         title, type, priority, status, assignee, reporter, team, team_id, project_id,
         description, department, keyPrefix,
-        due_date, start_date, sprint, sprint_id, labels, story_points, flagged, parent_id, linked_issues
+        due_date, start_date, sprint, sprint_id, labels, story_points, flagged, parent_id, linked_issues,
+        subtasks
       } = req.body;
 
       // Normalise the optional planning fields the create drawers send.
@@ -1114,7 +1115,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         story_points || null,
         flagged ? 1 : 0,
         parent_id || null,
-        JSON.stringify([]),
+        JSON.stringify(Array.isArray(subtasks) ? subtasks : []),
         linkedJson,
         JSON.stringify([])
       ]);

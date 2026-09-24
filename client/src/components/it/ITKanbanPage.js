@@ -580,7 +580,7 @@ const ITKanbanPage = ({ department }) => {
   const fetchKanbanData = () => {
     const bust = Date.now();
     // Which sprints are running determines what the board is allowed to show.
-    fetch(`${API_BASE_URL}/sprints?_t=${bust}`, { cache: 'no-store' })
+    fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept || 'IT')}&_t=${bust}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         const running = data.activeSprints || (data.activeSprint ? [data.activeSprint] : []);
@@ -646,8 +646,11 @@ const ITKanbanPage = ({ department }) => {
     let filtered = [...allRawIssues];
 
     // Board shows tasks in running sprints as well as individual standalone tasks (created without a sprint)
-    if (activeSprints.length > 0) {
-      const runningIds = new Set(activeSprints.map(s => Number(s.id)));
+    const deptActiveSprints = activeSprints.filter(s =>
+      !s.department || s.department.toLowerCase() === (currentDept || 'IT').toLowerCase()
+    );
+    if (deptActiveSprints.length > 0) {
+      const runningIds = new Set(deptActiveSprints.map(s => Number(s.id)));
       filtered = filtered.filter(issue =>
         !issue.sprint_id ||
         runningIds.has(Number(issue.sprint_id)) ||
