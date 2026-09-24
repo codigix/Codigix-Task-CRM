@@ -619,7 +619,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
           // The sprint owns the project, so the server may override project_id with the
           // sprint's own project — that keeps sprint and project from contradicting.
           sprint_id: formData.sprint?.id || null,
-          sprint: formData.sprint?.name || null,
+          sprint: (formData.sprint && typeof formData.sprint === 'object' ? formData.sprint.name : formData.sprint) || null,
           department: currentDept,
           keyPrefix: currentDept === 'Marketing' ? 'MKT' : 'WR'
         };

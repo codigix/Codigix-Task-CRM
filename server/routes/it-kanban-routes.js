@@ -43,6 +43,12 @@ module.exports = function setupItKanbanRoutes(app, pool) {
   (async () => {
     try {
       await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN title TEXT NOT NULL');
+      await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN sprint VARCHAR(255) DEFAULT NULL');
+      await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN assignee VARCHAR(255) DEFAULT "Unassigned"');
+      await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN reporter VARCHAR(255) DEFAULT "Unassigned"');
+      await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN type VARCHAR(100) DEFAULT "Task"');
+      await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN priority VARCHAR(100) DEFAULT "Medium"');
+      await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN status VARCHAR(100) DEFAULT "TO DO"');
     } catch (_) { }
   })();
 
@@ -1090,6 +1096,22 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       });
       const newKey = await nextIssueKey(db, prefix);
 
+      // Safely resolve sprint name to prevent DB truncation errors
+      let cleanSprint = null;
+      if (typeof sprint === 'string') {
+        cleanSprint = sprint.trim();
+      } else if (sprint && typeof sprint === 'object' && sprint.name) {
+        cleanSprint = String(sprint.name).trim();
+      } else if (sprint_id) {
+        try {
+          const [[spRow]] = await db.query('SELECT name FROM sprints WHERE id = ?', [sprint_id]);
+          if (spRow && spRow.name) cleanSprint = spRow.name;
+        } catch (_) {}
+      }
+      if (cleanSprint && cleanSprint.length > 255) {
+        cleanSprint = cleanSprint.substring(0, 255);
+      }
+
       const [result] = await db.query(`
         INSERT INTO it_kanban_issues (issue_key, title, type, priority, status, assignee, reporter, team, team_id, project_id, description, department, due_date, start_date, sprint, sprint_id, labels, story_points, flagged, parent_id, subtasks, linked_issues, comments, progress, original_estimate, remaining_estimate, time_spent, components, environment, vulnerability)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '0h', '0h', '0h', '', '', '')
@@ -1108,7 +1130,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         dept,
         toDate(due_date),
         toDate(start_date),
-        sprint || null,
+        cleanSprint || null,
         // Lets the Backlog create work straight into a sprint section; NULL means backlog.
         sprint_id == null || sprint_id === '' ? null : Number(sprint_id),
         labelsJson,
@@ -1429,6 +1451,16 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         const d = new Date(updates.timer_start_time);
         if (!isNaN(d.getTime())) {
           updates.timer_start_time = d;
+        }
+      }
+
+      if (updates.sprint !== undefined) {
+        if (typeof updates.sprint === 'string') {
+          updates.sprint = updates.sprint.trim().substring(0, 255);
+        } else if (updates.sprint && typeof updates.sprint === 'object' && updates.sprint.name) {
+          updates.sprint = String(updates.sprint.name).trim().substring(0, 255);
+        } else if (updates.sprint === null) {
+          updates.sprint = null;
         }
       }
 
