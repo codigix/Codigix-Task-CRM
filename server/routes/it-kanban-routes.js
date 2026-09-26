@@ -50,6 +50,36 @@ module.exports = function setupItKanbanRoutes(app, pool) {
       await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN priority VARCHAR(100) DEFAULT "Medium"');
       await db.query('ALTER TABLE it_kanban_issues MODIFY COLUMN status VARCHAR(100) DEFAULT "TO DO"');
     } catch (_) { }
+
+    // Ensure it_kanban_attachments exists and has subtask_id column
+    try {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS it_kanban_attachments (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          issue_key VARCHAR(50) NOT NULL,
+          issue_id INT NULL,
+          subtask_id VARCHAR(100) NULL DEFAULT NULL,
+          file_name VARCHAR(255) NOT NULL,
+          file_path TEXT NOT NULL,
+          file_size VARCHAR(50) DEFAULT '0 KB',
+          file_type VARCHAR(100) DEFAULT 'document',
+          uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_issue_key (issue_key),
+          INDEX idx_issue_id (issue_id),
+          INDEX idx_subtask_id (subtask_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      const [attCols] = await db.query("SHOW COLUMNS FROM it_kanban_attachments LIKE 'subtask_id'");
+      if (!attCols || attCols.length === 0) {
+        await db.query("ALTER TABLE it_kanban_attachments ADD COLUMN subtask_id VARCHAR(100) NULL DEFAULT NULL AFTER issue_key");
+        try {
+          await db.query("CREATE INDEX idx_it_kanban_attachments_subtask ON it_kanban_attachments(issue_key, subtask_id)");
+        } catch (_) {}
+      }
+    } catch (e) {
+      console.error('Error auto-migrating it_kanban_attachments:', e.message);
+    }
   })();
 
   /**
@@ -1274,8 +1304,18 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         params = [key, parseInt(key) || 0];
       }
 
-      const [attachments] = await db.query(query, params);
-      res.json(attachments);
+      let attachments;
+      try {
+        [attachments] = await db.query(query, params);
+      } catch (getErr) {
+        if (getErr.code === 'ER_BAD_FIELD_ERROR' || String(getErr.message).includes('subtask_id')) {
+          const fallbackQuery = 'SELECT * FROM it_kanban_attachments WHERE issue_key = ? OR issue_id = ? ORDER BY uploaded_at DESC';
+          [attachments] = await db.query(fallbackQuery, [key, parseInt(key) || 0]);
+        } else {
+          throw getErr;
+        }
+      }
+      res.json(attachments || []);
     } catch (error) {
       responseError(res, 500, 'Failed to fetch attachments', error);
     }
@@ -1293,18 +1333,56 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       }
       const resolvedSubtaskId = subtask_id && subtask_id !== 'null' && subtask_id !== 'undefined' ? String(subtask_id) : null;
 
-      const [result] = await db.query(
-        'INSERT INTO it_kanban_attachments (issue_key, issue_id, subtask_id, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [
-          key,
-          resolvedIssueId,
-          resolvedSubtaskId,
-          String(file_name || 'attachment').substring(0, 255),
-          String(file_path || '').substring(0, 500),
-          String(file_size || '0 KB').substring(0, 50),
-          String(file_type || 'document').substring(0, 100)
-        ]
-      );
+      let result;
+      try {
+        [result] = await db.query(
+          'INSERT INTO it_kanban_attachments (issue_key, issue_id, subtask_id, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [
+            key,
+            resolvedIssueId,
+            resolvedSubtaskId,
+            String(file_name || 'attachment').substring(0, 255),
+            String(file_path || '').substring(0, 500),
+            String(file_size || '0 KB').substring(0, 50),
+            String(file_type || 'document').substring(0, 100)
+          ]
+        );
+      } catch (insertErr) {
+        // If subtask_id column is missing on DB, add it on the fly and retry, or fallback
+        if (insertErr.code === 'ER_BAD_FIELD_ERROR' || String(insertErr.message).includes('subtask_id')) {
+          try {
+            await db.query("ALTER TABLE it_kanban_attachments ADD COLUMN subtask_id VARCHAR(100) NULL DEFAULT NULL AFTER issue_key");
+            [result] = await db.query(
+              'INSERT INTO it_kanban_attachments (issue_key, issue_id, subtask_id, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+              [
+                key,
+                resolvedIssueId,
+                resolvedSubtaskId,
+                String(file_name || 'attachment').substring(0, 255),
+                String(file_path || '').substring(0, 500),
+                String(file_size || '0 KB').substring(0, 50),
+                String(file_type || 'document').substring(0, 100)
+              ]
+            );
+          } catch (retryErr) {
+            // Fallback: insert without subtask_id column
+            [result] = await db.query(
+              'INSERT INTO it_kanban_attachments (issue_key, issue_id, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?, ?)',
+              [
+                key,
+                resolvedIssueId,
+                String(file_name || 'attachment').substring(0, 255),
+                String(file_path || '').substring(0, 500),
+                String(file_size || '0 KB').substring(0, 50),
+                String(file_type || 'document').substring(0, 100)
+              ]
+            );
+          }
+        } else {
+          throw insertErr;
+        }
+      }
+
       res.status(201).json({
         id: result.insertId,
         issue_key: key,
