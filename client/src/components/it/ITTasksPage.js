@@ -144,20 +144,37 @@ const ITTasksPage = () => {
     }
   };
 
-  const userSearchTerms = React.useMemo(() => {
-    const terms = new Set();
-    if (username) {
-      terms.add(username.toLowerCase());
-      username.toLowerCase().split(/[-_\s]+/).forEach(t => { if (t.length > 2) terms.add(t); });
-    }
+  const normalizePerson = (value) => String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+  const myIdentities = React.useMemo(() => {
+    const ids = new Set();
+    const add = (v) => { const n = normalizePerson(v); if (n) ids.add(n); };
+    if (username) add(username);
     if (user) {
-      if (user.username) terms.add(user.username.toLowerCase());
-      if (user.first_name) terms.add(user.first_name.toLowerCase());
-      if (user.last_name) terms.add(user.last_name.toLowerCase());
-      if (user.name) user.name.toLowerCase().split(/\s+/).forEach(t => { if (t.length > 2) terms.add(t); });
+      if (user.username) add(user.username);
+      if (user.name) add(user.name);
+      const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+      if (fullName) add(fullName);
+      if (user.first_name) add(user.first_name);
+      if (user.email) add(user.email);
     }
-    return Array.from(terms);
+    return Array.from(ids).filter(Boolean);
   }, [username, user]);
+
+  const isPersonMatch = (personString) => {
+    if (!personString) return false;
+    const pNorm = normalizePerson(personString);
+    if (!pNorm || pNorm === 'unassigned' || pNorm === 'automatic' || pNorm === 'none') return false;
+
+    if (myIdentities.includes(pNorm)) return true;
+
+    for (const term of myIdentities) {
+      if (term.includes(' ') || term === username?.toLowerCase() || (user?.email && term === user.email.toLowerCase())) {
+        if (pNorm.includes(term)) return true;
+      }
+    }
+    return false;
+  };
 
   const allTasksAndSubtasks = React.useMemo(() => {
     const list = [];
@@ -217,18 +234,18 @@ const ITTasksPage = () => {
 
         return selectedAssignees.some(a => {
           if (a === 'UNASSIGNED') return false;
-          const aLower = a.toLowerCase();
-          const matchAssignee = issue.assignee && issue.assignee.toLowerCase().includes(aLower);
-          const matchReporter = issue.reporter && issue.reporter.toLowerCase().includes(aLower);
+          const aLower = normalizePerson(a);
+          const assLower = normalizePerson(issue.assignee);
+          const repLower = normalizePerson(issue.reporter);
+          const matchAssignee = assLower === aLower || (aLower.includes(' ') && assLower.includes(aLower));
+          const matchReporter = repLower === aLower || (aLower.includes(' ') && repLower.includes(aLower));
           return matchAssignee || matchReporter;
         });
       });
     }
 
     const isUserTask = (issue) => {
-      const assigneeStr = (issue.assignee || '').toLowerCase();
-      const reporterStr = (issue.reporter || '').toLowerCase();
-      return userSearchTerms.some(term => assigneeStr.includes(term) || reporterStr.includes(term));
+      return isPersonMatch(issue.assignee) || isPersonMatch(issue.reporter);
     };
 
     const isTaskAssigned = (issue) => {
@@ -256,7 +273,7 @@ const ITTasksPage = () => {
       );
     }
     return result;
-  }, [allTasksAndSubtasks, selectedProjectId, selectedType, selectedStatus, selectedPriority, selectedAssignees, onlyMyIssues, isManager, userSearchTerms, searchQuery]);
+  }, [allTasksAndSubtasks, selectedProjectId, selectedType, selectedStatus, selectedPriority, selectedAssignees, onlyMyIssues, isManager, myIdentities, searchQuery]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;

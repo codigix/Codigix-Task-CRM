@@ -191,7 +191,7 @@ const isDoneStatus = (s) => ['DONE', 'COMPLETED', 'CLOSED'].includes(String(s ||
 
 // People are stored as display names ("karan gusinge"). Normalising both sides lets the
 // employee board compare identities exactly instead of by substring.
-const normalizePerson = (value) => String(value || '').toLowerCase().replace(/s+/g, ' ').trim();
+const normalizePerson = (value) => String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 const getInitials = (name) => {
   if (!name || name === 'Unassigned') return 'U';
@@ -318,6 +318,8 @@ const ITKanbanPage = ({ department }) => {
       add(user.username);
       add(user.name);
       add(`${user.first_name || ''} ${user.last_name || ''}`);
+      if (user.first_name) add(user.first_name);
+      if (user.email) add(user.email);
     }
     if (usersList && usersList.length > 0) {
       const match = usersList.find(u =>
@@ -329,9 +331,11 @@ const ITKanbanPage = ({ department }) => {
         if (match.name) add(match.name);
         if (match.username) add(match.username);
         add(`${match.first_name || ''} ${match.last_name || ''}`);
+        if (match.first_name) add(match.first_name);
+        if (match.email) add(match.email);
       }
     }
-    return Array.from(ids);
+    return Array.from(ids).filter(Boolean);
   }, [username, user, usersList]);
 
   const defaultDeptColumns = DEPARTMENT_KANBAN_COLUMNS[currentDept] || DEPARTMENT_KANBAN_COLUMNS['IT'];
@@ -728,25 +732,37 @@ const ITKanbanPage = ({ department }) => {
 
         return selectedAssignees.some(a => {
           if (a === 'UNASSIGNED') return false;
-          const aLower = a.toLowerCase();
-          const matchAssignee = issue.assignee && issue.assignee.toLowerCase().includes(aLower);
-          const matchReporter = issue.reporter && issue.reporter.toLowerCase().includes(aLower);
+          const aLower = normalizePerson(a);
+          const assLower = normalizePerson(issue.assignee);
+          const repLower = normalizePerson(issue.reporter);
+          const matchAssignee = assLower === aLower || (aLower.includes(' ') && assLower.includes(aLower));
+          const matchReporter = repLower === aLower || (aLower.includes(' ') && repLower.includes(aLower));
           return matchAssignee || matchReporter;
         });
       });
     }
-    const isAssignedToMe = (issue) => {
-      const assigneeNorm = normalizePerson(issue.assignee);
-      if (assigneeNorm && myIdentities.includes(assigneeNorm)) return true;
-      const assigneeStr = (issue.assignee || '').toLowerCase();
-      if (userSearchTerms.some(term => assigneeStr.includes(term))) return true;
 
-      const reporterNorm = normalizePerson(issue.reporter);
-      if (reporterNorm && myIdentities.includes(reporterNorm)) return true;
-      const reporterStr = (issue.reporter || '').toLowerCase();
-      if (userSearchTerms.some(term => reporterStr.includes(term))) return true;
+    const isPersonMatch = (personString) => {
+      if (!personString) return false;
+      const pNorm = normalizePerson(personString);
+      if (!pNorm || pNorm === 'unassigned' || pNorm === 'automatic' || pNorm === 'none') return false;
+
+      // 1. Exact match against myIdentities
+      if (myIdentities.includes(pNorm)) return true;
+
+      // 2. Multi-word or full-term substring match (e.g. "Purvesh Patil (Tester)" contains "purvesh patil")
+      // NEVER match an isolated surname like "patil", which collides with other colleagues!
+      for (const term of myIdentities) {
+        if (term.includes(' ') || term === username?.toLowerCase() || (user?.email && term === user.email.toLowerCase())) {
+          if (pNorm.includes(term)) return true;
+        }
+      }
 
       return false;
+    };
+
+    const isAssignedToMe = (issue) => {
+      return isPersonMatch(issue.assignee) || isPersonMatch(issue.reporter);
     };
 
     const isTaskAssigned = (issue) => {
@@ -844,26 +860,18 @@ const ITKanbanPage = ({ department }) => {
           const matches = (selectedAssignees.includes('UNASSIGNED') && isUnass) ||
             selectedAssignees.some(a => {
               if (a === 'UNASSIGNED') return false;
-              const aLower = a.toLowerCase();
-              const matchAss = stAssignee.toLowerCase().includes(aLower);
-              const matchRep = issue.reporter && issue.reporter.toLowerCase().includes(aLower);
+              const aLower = normalizePerson(a);
+              const assLower = normalizePerson(stAssignee);
+              const repLower = normalizePerson(issue.reporter);
+              const matchAss = assLower === aLower || (aLower.includes(' ') && assLower.includes(aLower));
+              const matchRep = repLower === aLower || (aLower.includes(' ') && repLower.includes(aLower));
               return matchAss || matchRep;
             });
           if (!matches) return;
         }
 
         const isStAssignedToMe = (stAss) => {
-          const norm = normalizePerson(stAss);
-          if (norm && myIdentities.includes(norm)) return true;
-          const stStr = (stAss || '').toLowerCase();
-          if (userSearchTerms.some(term => stStr.includes(term))) return true;
-
-          const repNorm = normalizePerson(issue.reporter);
-          if (repNorm && myIdentities.includes(repNorm)) return true;
-          const repStr = (issue.reporter || '').toLowerCase();
-          if (userSearchTerms.some(term => repStr.includes(term))) return true;
-
-          return false;
+          return isPersonMatch(stAss) || isPersonMatch(issue.reporter);
         };
 
         const isStAssigned = (stAss) => {
