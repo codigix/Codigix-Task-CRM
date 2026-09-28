@@ -728,7 +728,10 @@ const ITKanbanPage = ({ department }) => {
 
         return selectedAssignees.some(a => {
           if (a === 'UNASSIGNED') return false;
-          return issue.assignee && issue.assignee.toLowerCase().includes(a.toLowerCase());
+          const aLower = a.toLowerCase();
+          const matchAssignee = issue.assignee && issue.assignee.toLowerCase().includes(aLower);
+          const matchReporter = issue.reporter && issue.reporter.toLowerCase().includes(aLower);
+          return matchAssignee || matchReporter;
         });
       });
     }
@@ -736,7 +739,14 @@ const ITKanbanPage = ({ department }) => {
       const assigneeNorm = normalizePerson(issue.assignee);
       if (assigneeNorm && myIdentities.includes(assigneeNorm)) return true;
       const assigneeStr = (issue.assignee || '').toLowerCase();
-      return userSearchTerms.some(term => assigneeStr.includes(term));
+      if (userSearchTerms.some(term => assigneeStr.includes(term))) return true;
+
+      const reporterNorm = normalizePerson(issue.reporter);
+      if (reporterNorm && myIdentities.includes(reporterNorm)) return true;
+      const reporterStr = (issue.reporter || '').toLowerCase();
+      if (userSearchTerms.some(term => reporterStr.includes(term))) return true;
+
+      return false;
     };
 
     const isTaskAssigned = (issue) => {
@@ -746,10 +756,10 @@ const ITKanbanPage = ({ department }) => {
     };
 
     // Managers see all tasks (both assigned and unassigned), and can narrow with the "Only My Tasks" toggle.
-    // Employees / non-managers only see tasks that are assigned to someone (unassigned tasks are hidden).
+    // Employees / non-managers only see tasks that are assigned to someone or reported by them (unassigned tasks are hidden).
     const shouldFilterOnlyMy = onlyMyIssues && selectedAssignees.length === 0;
     if (!isManager) {
-      filtered = filtered.filter(issue => isTaskAssigned(issue));
+      filtered = filtered.filter(issue => isTaskAssigned(issue) || isAssignedToMe(issue));
       if (shouldFilterOnlyMy) {
         filtered = filtered.filter(issue => isAssignedToMe(issue));
       }
@@ -761,7 +771,8 @@ const ITKanbanPage = ({ department }) => {
       filtered = filtered.filter(issue =>
         (issue.title && issue.title.toLowerCase().includes(q)) ||
         (issue.issue_key && issue.issue_key.toLowerCase().includes(q)) ||
-        (issue.assignee && issue.assignee.toLowerCase().includes(q))
+        (issue.assignee && issue.assignee.toLowerCase().includes(q)) ||
+        (issue.reporter && issue.reporter.toLowerCase().includes(q))
       );
     }
 
@@ -831,7 +842,13 @@ const ITKanbanPage = ({ department }) => {
           const isUnass = !stAssignee || stAssignee === 'Unassigned' || stAssignee === 'Automatic';
           if (!selectedAssignees.includes('UNASSIGNED') && isUnass) return;
           const matches = (selectedAssignees.includes('UNASSIGNED') && isUnass) ||
-            selectedAssignees.some(a => a !== 'UNASSIGNED' && stAssignee.toLowerCase().includes(a.toLowerCase()));
+            selectedAssignees.some(a => {
+              if (a === 'UNASSIGNED') return false;
+              const aLower = a.toLowerCase();
+              const matchAss = stAssignee.toLowerCase().includes(aLower);
+              const matchRep = issue.reporter && issue.reporter.toLowerCase().includes(aLower);
+              return matchAss || matchRep;
+            });
           if (!matches) return;
         }
 
@@ -839,7 +856,14 @@ const ITKanbanPage = ({ department }) => {
           const norm = normalizePerson(stAss);
           if (norm && myIdentities.includes(norm)) return true;
           const stStr = (stAss || '').toLowerCase();
-          return userSearchTerms.some(term => stStr.includes(term));
+          if (userSearchTerms.some(term => stStr.includes(term))) return true;
+
+          const repNorm = normalizePerson(issue.reporter);
+          if (repNorm && myIdentities.includes(repNorm)) return true;
+          const repStr = (issue.reporter || '').toLowerCase();
+          if (userSearchTerms.some(term => repStr.includes(term))) return true;
+
+          return false;
         };
 
         const isStAssigned = (stAss) => {
@@ -850,7 +874,7 @@ const ITKanbanPage = ({ department }) => {
 
         const shouldFilterOnlyMy = onlyMyIssues && selectedAssignees.length === 0;
         if (!isManager) {
-          if (!isStAssigned(stAssignee)) return;
+          if (!isStAssigned(stAssignee) && !isStAssignedToMe(stAssignee)) return;
           if (shouldFilterOnlyMy && !isStAssignedToMe(stAssignee)) return;
         } else if (shouldFilterOnlyMy && !isStAssignedToMe(stAssignee)) {
           return;
@@ -863,6 +887,7 @@ const ITKanbanPage = ({ department }) => {
             (st.title && st.title.toLowerCase().includes(q)) ||
             stKey.toLowerCase().includes(q) ||
             (stAssignee && stAssignee.toLowerCase().includes(q)) ||
+            (issue.reporter && issue.reporter.toLowerCase().includes(q)) ||
             (issue.issue_key && issue.issue_key.toLowerCase().includes(q)) ||
             (issue.title && issue.title.toLowerCase().includes(q));
           if (!matches) return;

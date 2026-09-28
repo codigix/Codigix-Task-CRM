@@ -217,7 +217,10 @@ const ITTasksPage = () => {
 
         return selectedAssignees.some(a => {
           if (a === 'UNASSIGNED') return false;
-          return issue.assignee && issue.assignee.toLowerCase().includes(a.toLowerCase());
+          const aLower = a.toLowerCase();
+          const matchAssignee = issue.assignee && issue.assignee.toLowerCase().includes(aLower);
+          const matchReporter = issue.reporter && issue.reporter.toLowerCase().includes(aLower);
+          return matchAssignee || matchReporter;
         });
       });
     }
@@ -236,7 +239,7 @@ const ITTasksPage = () => {
 
     const shouldFilterOnlyMy = onlyMyIssues && selectedAssignees.length === 0;
     if (!isManager) {
-      result = result.filter(issue => isTaskAssigned(issue));
+      result = result.filter(issue => isTaskAssigned(issue) || isUserTask(issue));
       if (shouldFilterOnlyMy) {
         result = result.filter(issue => isUserTask(issue));
       }
