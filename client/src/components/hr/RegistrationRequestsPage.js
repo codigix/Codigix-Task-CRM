@@ -22,8 +22,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../config/environment';
 
 const DEPARTMENTS = [
   'Management',
@@ -93,15 +92,18 @@ const RegistrationRequestsPage = () => {
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const url = new URL(`${API_BASE_URL}/hr/registration-requests`);
+      const params = new URLSearchParams();
       if (selectedStatus && selectedStatus !== 'all') {
-        url.searchParams.append('status', selectedStatus);
+        params.append('status', selectedStatus);
       }
       if (searchQuery.trim()) {
-        url.searchParams.append('query', searchQuery.trim());
+        params.append('query', searchQuery.trim());
       }
 
-      const response = await fetch(url.toString());
+      const queryString = params.toString();
+      const requestUrl = `${API_BASE_URL}/hr/registration-requests${queryString ? `?${queryString}` : ''}`;
+
+      const response = await fetch(requestUrl);
       if (!response.ok) {
         throw new Error('Failed to load registration requests');
       }
