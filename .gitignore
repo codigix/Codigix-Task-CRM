@@ -57,6 +57,8 @@ temp/
 # Database
 *.sqlite
 *.db
+backup_*.sql
+*.sql.bak
 
 # Testing
 coverage/

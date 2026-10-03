@@ -271,26 +271,50 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
+  const logout = useCallback(() => {
+    setUser(null);
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('user');
+  }, []);
+
+  const validateUser = useCallback(async () => {
+    if (!user || !user.id) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/${user.id}`);
+      if (res.status === 404) {
+        // User has been deleted from the database
+        console.warn('Current user account no longer exists in database. Forcing logout...');
+        setUser(null);
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return;
+      }
+
+      if (res.ok) {
+        const dbUser = await res.json();
+        if (dbUser && dbUser.role_name && (dbUser.role_name !== user.role || dbUser.role_name !== user.role_name)) {
+          const updated = {
+            ...user,
+            ...dbUser,
+            role: dbUser.role_name,
+            role_name: dbUser.role_name
+          };
+          setUser(updated);
+          localStorage.setItem('currentUser', JSON.stringify(updated));
+        }
+      }
+    } catch (err) {
+      console.error('Error validating user account:', err);
+    }
+  }, [user]);
+
+  // Verify user validity only once when user enters the CRM (initial app load)
   useEffect(() => {
     if (user && user.id) {
-      fetch(`${API_BASE_URL}/users`)
-        .then(res => res.json())
-        .then(data => {
-          const userList = Array.isArray(data?.value) ? data.value : (Array.isArray(data) ? data : []);
-          const dbUser = userList.find(u => Number(u.id) === Number(user.id));
-          if (dbUser && dbUser.role_name && (dbUser.role_name !== user.role || dbUser.role_name !== user.role_name)) {
-            const updated = {
-              ...user,
-              ...dbUser,
-              role: dbUser.role_name,
-              role_name: dbUser.role_name
-            };
-            setUser(updated);
-            localStorage.setItem('currentUser', JSON.stringify(updated));
-          }
-        })
-        .catch(err => console.error('Error syncing user role:', err));
+      validateUser();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const login = useCallback((userData) => {
@@ -298,10 +322,6 @@ export const AuthProvider = ({ children }) => {
       userData.role = userData.role_name;
     }
     setUser(userData);
-  }, []);
-
-  const logout = useCallback(() => {
-    setUser(null);
   }, []);
 
   const hasPermission = useCallback((module, action) => {

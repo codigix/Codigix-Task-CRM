@@ -398,6 +398,23 @@ module.exports = function setupEntitiesRoutes(app, pool) {
     }
   });
 
+  app.get('/api/users/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [users] = await db.query(
+        'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ? OR u.uuid = ?',
+        [id, id]
+      );
+      if (!users || users.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      const { password, ...userWithoutPassword } = users[0];
+      return res.json(userWithoutPassword);
+    } catch (err) {
+      responseError(res, 500, 'Failed to fetch user', err);
+    }
+  });
+
   app.delete('/api/users/:id', async (req, res) => {
     try {
       const { id } = req.params;
