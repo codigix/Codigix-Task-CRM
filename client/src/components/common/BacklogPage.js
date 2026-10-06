@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   ChevronDown, ChevronRight, Plus, MoreHorizontal, Calendar,
-  CheckSquare, ArrowUp, ArrowDown, Inbox, Search, Check, Lock, Trash2
+  CheckSquare, ArrowUp, ArrowDown, Inbox, Search, Check, Lock, Trash2, RefreshCw
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
@@ -13,6 +13,7 @@ import BoardTabs from './BoardTabs';
 import StartSprintModal from './StartSprintModal';
 import CreateSprintModal from './CreateSprintModal';
 import CompleteSprintModal from './CompleteSprintModal';
+import RenewSprintModal from './RenewSprintModal';
 import ImportCalendarModal from './ImportCalendarModal';
 import ITIssueDetailsPanel from '../it/ITIssueDetailsPanel';
 import Swal from 'sweetalert2';
@@ -515,6 +516,7 @@ const BacklogPage = ({ department }) => {
   const [sprintToStart, setSprintToStart] = useState(null);
   const [sprintToEdit, setSprintToEdit] = useState(null);
   const [sprintToComplete, setSprintToComplete] = useState(null);
+  const [sprintToRenew, setSprintToRenew] = useState(null);
   const [isCreatingSprint, setIsCreatingSprint] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   // Which sprint the import lands in; null means the Backlog.
@@ -527,7 +529,7 @@ const BacklogPage = ({ department }) => {
     try {
       const deptParam = isManager ? 'ALL' : currentDept;
       const roleParam = encodeURIComponent(user?.role || designation || '');
-      const res = await fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(deptParam)}&role=${roleParam}&_t=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/sprints?includeCompleted=true&department=${encodeURIComponent(deptParam)}&role=${roleParam}&_t=${Date.now()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to load backlog');
       const data = await res.json();
       setSprints(data.sprints || []);
@@ -804,6 +806,20 @@ const BacklogPage = ({ department }) => {
     );
   };
 
+  const handleRenewSprint = async (sprint, values) => {
+    const res = await fetch(`${API_BASE_URL}/sprints/${sprint.id}/renew`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to renew sprint');
+
+    setSprintToRenew(null);
+    load();
+    showSuccessToast(`Sprint "${data.sprint?.name || sprint.name}" renewed successfully · ${data.itemCount || 0} work item(s) active on board.`);
+  };
+
   const deleteSprint = async (sprint) => {
     Swal.fire({
       title: 'Delete sprint?',
@@ -932,6 +948,7 @@ const BacklogPage = ({ department }) => {
       { label: 'Move sprint down', hidden: index === total - 1, run: () => reorderSprint(sprint, 'down') },
       { label: 'Move sprint to top', hidden: index === 0, run: () => reorderSprint(sprint, 'top') },
       { label: 'Move sprint to bottom', hidden: index === total - 1, run: () => reorderSprint(sprint, 'bottom') },
+      { label: 'Renew sprint', hidden: sprint.status !== 'Completed', run: () => setSprintToRenew(sprint) },
       { label: 'Edit sprint', run: () => setSprintToEdit(sprint) },
       // Imports straight into this sprint rather than the backlog.
       { label: 'Import calendar', run: () => { setImportSprintId(sprint.id); setIsImporting(true); } },
@@ -1053,6 +1070,13 @@ const BacklogPage = ({ department }) => {
         onComplete={handleCompleteSprint}
       />
 
+      <RenewSprintModal
+        isOpen={!!sprintToRenew}
+        sprint={sprintToRenew}
+        onCancel={() => setSprintToRenew(null)}
+        onRenew={handleRenewSprint}
+      />
+
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="p-6">
 
@@ -1160,7 +1184,10 @@ const BacklogPage = ({ department }) => {
                   )}
 
                   {sprint.status === 'Active' && (
-                    <span className="text-[10px]  px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">ACTIVE</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">ACTIVE</span>
+                  )}
+                  {sprint.status === 'Completed' && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">COMPLETED</span>
                   )}
                   {dates ? (
                     <button
@@ -1197,6 +1224,14 @@ const BacklogPage = ({ department }) => {
                       >
                         Complete sprint
                       </button>
+                    ) : sprint.status === 'Completed' ? (
+                      <button
+                        onClick={() => setSprintToRenew(sprint)}
+                        className="px-3 py-1 text-xs font-medium rounded bg-purple-600 text-white hover:bg-purple-700 transition flex items-center gap-1.5 shadow-sm"
+                      >
+                        <RefreshCw size={12} />
+                        Renew sprint
+                      </button>
                     ) : (
                       <button
                         onClick={() => setSprintToStart(sprint)}
@@ -1227,8 +1262,9 @@ const BacklogPage = ({ department }) => {
                         ))}
                         {sprint.issues.length === 0 && (
                           <div className="px-4 py-6 text-center text-xs text-gray-400">
-                            Plan this sprint by dragging work items in from the backlog below,
-                            or create them here.
+                            {sprint.status === 'Completed'
+                              ? 'All work items in this sprint were completed! Click "Renew sprint" to start a new iteration with new dates.'
+                              : 'Plan this sprint by dragging work items in from the backlog below, or create them here.'}
                           </div>
                         )}
                         {provided.placeholder}

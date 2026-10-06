@@ -23,7 +23,7 @@ const CompleteSprintModal = ({ isOpen, sprints, initialSprintId, onCancel, onCom
     if (!isOpen) return;
     const fallback = active[0]?.id;
     setSprintId(String(initialSprintId || fallback || ''));
-    setMoveTo('new');
+    setMoveTo('stay');
     setError('');
   }, [isOpen, initialSprintId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -57,7 +57,7 @@ const CompleteSprintModal = ({ isOpen, sprints, initialSprintId, onCancel, onCom
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded shadow-2xl w-full max-w-[600px] max-h-[90vh] overflow-y-auto">
-        {/* Jira's celebratory banner */}
+        {/* Celebratory banner */}
         <div className="h-[150px] bg-gradient-to-b from-cyan-400 to-cyan-300 flex items-end justify-center relative">
           <div className="absolute -bottom-1 w-20 h-20 rounded-full bg-white/0 flex items-center justify-center">
             <Trophy size={56} className="text-amber-400 drop-shadow" fill="currentColor" />
@@ -92,32 +92,37 @@ const CompleteSprintModal = ({ isOpen, sprints, initialSprintId, onCancel, onCom
 
               <ul className="mt-3 space-y-2 text-[13px] text-gray-600 list-disc pl-5">
                 <li>
-                  Completed work items includes everything in the last column on the board, <strong>Done</strong>.
+                  Completed work items in <strong>Done</strong> will be archived from this sprint card.
                 </li>
                 <li>
-                  Open work items includes everything from any other column on the board. Move these to a
-                  new sprint or the backlog.
+                  Open work items can remain in this sprint container so you can <strong>Renew the Sprint</strong> with new dates, or be moved elsewhere.
                 </li>
               </ul>
 
               {openCount > 0 && (
                 <div className="mt-5">
                   <label className="block text-[13px] font-semibold text-gray-700 mb-1">
-                    Move open work items to
+                    Open work items action
                   </label>
                   <select
                     value={moveTo}
                     onChange={(e) => setMoveTo(e.target.value)}
                     className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer"
                   >
-                    <option value="new">New sprint</option>
-                    <option value="backlog">Backlog</option>
+                    <option value="stay">Keep in this sprint (for renewal)</option>
+                    <option value="backlog">Move to Backlog</option>
+                    <option value="new">Move to New sprint</option>
                     {otherSprints.map(s => (
                       <option key={s.id} value={s.id}>
                         {s.name}{s.status === 'Active' ? ' (active)' : ''}
                       </option>
                     ))}
                   </select>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    {moveTo === 'stay'
+                      ? 'The sprint will stay in Backlog marked as Completed. You can click "Renew sprint" to assign new dates.'
+                      : 'Open work items will be moved out of this sprint.'}
+                  </p>
                 </div>
               )}
             </>

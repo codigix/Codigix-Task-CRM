@@ -234,7 +234,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
             LIMIT 1
           )
         )
-        WHERE i.sprint_id IS NULL
+        WHERE i.sprint_id IS NULL AND UPPER(TRIM(COALESCE(i.status, ''))) NOT IN ('DONE', 'COMPLETED', 'CLOSED')
         ORDER BY i.rank_order IS NOT NULL, i.rank_order ASC, i.id DESC
       `);
 
@@ -461,12 +461,12 @@ module.exports = function setupSprintsRoutes(app, pool) {
   });
 
   // ── Complete a sprint ─────────────────────────────────────────────────
-  // Finished work stays put; unfinished work goes to the backlog, a chosen sprint, or a
-  // brand new one — the three destinations Jira's Complete Sprint dialog offers.
+  // Finished work is completed/archived; unfinished work either stays in this sprint for renewal
+  // (the default) or goes to the backlog, a chosen sprint, or a brand new one.
   app.post('/api/sprints/:id/complete', async (req, res) => {
     try {
       const { id } = req.params;
-      const { moveTo } = req.body; // 'backlog' (default) | 'new' | a sprint id
+      const { moveTo = 'stay' } = req.body; // 'stay' (default, keeps open work for renewal) | 'backlog' | 'new' | sprint_id
 
       const [[sprint]] = await db.query('SELECT * FROM sprints WHERE id = ?', [id]);
       if (!sprint) return res.status(404).json({ error: 'Sprint not found' });
@@ -477,8 +477,16 @@ module.exports = function setupSprintsRoutes(app, pool) {
       const unfinished = items.filter(i => !isDone(i.status));
 
       let target = null;
-      if (moveTo === 'new') {
-        // Jira spins up the next sprint to receive the leftover work.
+      if (moveTo === 'stay' || !moveTo) {
+        // Keep unfinished work in this sprint so it can be renewed.
+        // Detach completed items so they don't linger in the active card when renewed.
+        if (completed.length > 0) {
+          await db.query(
+            `UPDATE it_kanban_issues SET sprint_id = NULL WHERE id IN (${completed.map(() => '?').join(',')})`,
+            completed.map(i => i.id)
+          );
+        }
+      } else if (moveTo === 'new') {
         const [[row]] = await db.query('SELECT COUNT(*) AS n FROM sprints WHERE department = ?', [sprint.department]);
         const [created] = await db.query(
           `INSERT INTO sprints (name, department, status, sort_order) VALUES (?, ?, 'Planned', ?)`,
@@ -486,23 +494,38 @@ module.exports = function setupSprintsRoutes(app, pool) {
         );
         const [[fresh]] = await db.query('SELECT id, name FROM sprints WHERE id = ?', [created.insertId]);
         target = fresh;
-      } else if (moveTo && moveTo !== 'backlog') {
+
+        if (unfinished.length > 0) {
+          await db.query(
+            `UPDATE it_kanban_issues SET sprint_id = ? WHERE id IN (${unfinished.map(() => '?').join(',')})`,
+            [target.id, ...unfinished.map(i => i.id)]
+          );
+          const keys = unfinished.map(i => i.issue_key);
+          await inheritSprintProject(db, target.id, keys);
+        }
+      } else if (moveTo === 'backlog') {
+        if (unfinished.length > 0) {
+          await db.query(
+            `UPDATE it_kanban_issues SET sprint_id = NULL WHERE id IN (${unfinished.map(() => '?').join(',')})`,
+            unfinished.map(i => i.id)
+          );
+          const keys = unfinished.map(i => i.issue_key);
+          await clearProjectForBacklog(db, keys);
+        }
+      } else {
         const [[dest]] = await db.query('SELECT id, name, status FROM sprints WHERE id = ?', [moveTo]);
         if (!dest) return res.status(400).json({ error: 'Destination sprint not found' });
         if (dest.status === 'Completed') return res.status(400).json({ error: 'Cannot move work into a completed sprint' });
         target = dest;
-      }
 
-      if (unfinished.length > 0) {
-        await db.query(
-          `UPDATE it_kanban_issues SET sprint_id = ? WHERE id IN (${unfinished.map(() => '?').join(',')})`,
-          [target ? target.id : null, ...unfinished.map(i => i.id)]
-        );
-
-        // Rolled into another sprint: adopt its project. Rolled to the Backlog: lose it.
-        const keys = unfinished.map(i => i.issue_key);
-        if (target) await inheritSprintProject(db, target.id, keys);
-        else await clearProjectForBacklog(db, keys);
+        if (unfinished.length > 0) {
+          await db.query(
+            `UPDATE it_kanban_issues SET sprint_id = ? WHERE id IN (${unfinished.map(() => '?').join(',')})`,
+            [target.id, ...unfinished.map(i => i.id)]
+          );
+          const keys = unfinished.map(i => i.issue_key);
+          await inheritSprintProject(db, target.id, keys);
+        }
       }
 
       await db.query(
@@ -514,10 +537,54 @@ module.exports = function setupSprintsRoutes(app, pool) {
         success: true,
         completedCount: completed.length,
         movedCount: unfinished.length,
-        movedTo: target ? target.name : 'Backlog'
+        movedTo: (moveTo === 'stay' || !moveTo) ? sprint.name : (target ? target.name : 'Backlog')
       });
     } catch (error) {
       responseError(res, 500, 'Failed to complete sprint', error);
+    }
+  });
+
+  // ── Renew a completed sprint with new dates ─────────────────────────────
+  app.post('/api/sprints/:id/renew', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { start_date, end_date, name, goal } = req.body;
+
+      const [[sprint]] = await db.query('SELECT * FROM sprints WHERE id = ?', [id]);
+      if (!sprint) return res.status(404).json({ error: 'Sprint not found' });
+
+      // Clean up any previously completed tasks from this sprint so only unfinished tasks run
+      await db.query(
+        "UPDATE it_kanban_issues SET sprint_id = NULL WHERE sprint_id = ? AND UPPER(TRIM(COALESCE(status, ''))) IN ('DONE', 'COMPLETED', 'CLOSED')",
+        [id]
+      );
+
+      // Clean date values
+      const newStartDate = start_date ? String(start_date).slice(0, 10) : new Date().toISOString().slice(0, 10);
+      const newEndDate = end_date ? String(end_date).slice(0, 10) : null;
+
+      await db.query(
+        `UPDATE sprints 
+         SET status = 'Active', 
+             start_date = ?, 
+             end_date = ?, 
+             completed_at = NULL,
+             name = COALESCE(?, name),
+             goal = COALESCE(?, goal)
+         WHERE id = ?`,
+        [newStartDate, newEndDate, name || null, goal !== undefined ? goal : null, id]
+      );
+
+      const [[updated]] = await db.query('SELECT * FROM sprints WHERE id = ?', [id]);
+      const [remainingItems] = await db.query('SELECT id, issue_key, status FROM it_kanban_issues WHERE sprint_id = ?', [id]);
+
+      res.json({
+        success: true,
+        sprint: updated,
+        itemCount: remainingItems.length
+      });
+    } catch (error) {
+      responseError(res, 500, 'Failed to renew sprint', error);
     }
   });
 

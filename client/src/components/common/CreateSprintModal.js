@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Search, ChevronDown, Check, FolderKanban } from 'lucide-react';
 
 /**
  * Creates a sprint and, optionally, ties it to a project.
@@ -16,6 +16,11 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const [projectSearch, setProjectSearch] = useState('');
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+  const projectDropdownRef = useRef(null);
+  const searchInputRef = useRef(null);
+
   useEffect(() => {
     if (!isOpen) return;
     setDepartment(defaultDepartment || 'IT');
@@ -23,7 +28,36 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
     setProjectId('');
     setGoal('');
     setError('');
+    setProjectSearch('');
+    setIsProjectDropdownOpen(false);
   }, [isOpen, defaultName, defaultDepartment]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (projectDropdownRef.current && !projectDropdownRef.current.contains(e.target)) {
+        setIsProjectDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsProjectDropdownOpen(false);
+      }
+    };
+    if (isProjectDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isProjectDropdownOpen]);
+
+  useEffect(() => {
+    if (isProjectDropdownOpen && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [isProjectDropdownOpen]);
 
   if (!isOpen) return null;
 
@@ -34,7 +68,37 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
     return pDept.includes(targetDept) || (targetDept === 'it' && (pDept.includes('it') || pDept.includes('software')));
   });
 
+  const availableProjects = filteredProjects.length > 0 ? filteredProjects : projects;
+
+  const searchedProjects = availableProjects.filter(p => {
+    if (!projectSearch.trim()) return true;
+    const q = projectSearch.toLowerCase().trim();
+    const nameMatch = (p.name || p.title || '').toLowerCase().includes(q);
+    const companyMatch = (p.company_name || p.client_name || '').toLowerCase().includes(q);
+    const deptMatch = (p.department_name || p.workflow_type || p.department || '').toLowerCase().includes(q);
+    return nameMatch || companyMatch || deptMatch;
+  });
+
   const selected = projects.find(p => String(p.id) === String(projectId));
+
+  const handleDepartmentChange = (newDept) => {
+    setDepartment(newDept);
+    if (name.includes('Sprint')) {
+      if (newDept === 'IT') {
+        setName(name.replace(/^Marketing\s+Sprint/i, 'IT Sprint'));
+      } else {
+        setName(name.replace(/^IT\s+Sprint/i, 'Marketing Sprint'));
+      }
+    }
+    if (selected) {
+      const pDept = (selected.department_name || selected.workflow_type || selected.department || '').toLowerCase();
+      const targetDept = newDept.toLowerCase();
+      const matches = pDept.includes(targetDept) || (targetDept === 'it' && (pDept.includes('it') || pDept.includes('software')));
+      if (!matches) {
+        setProjectId('');
+      }
+    }
+  };
 
   const handleCreate = async () => {
     if (!name.trim()) return setError('Sprint name is required.');
@@ -81,12 +145,7 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
                     name="sprint_dept"
                     value="IT"
                     checked={department === 'IT'}
-                    onChange={(e) => {
-                      setDepartment(e.target.value);
-                      if (name.includes('Sprint')) {
-                        setName(name.replace(/^Marketing\s+Sprint/i, 'IT Sprint'));
-                      }
-                    }}
+                    onChange={() => handleDepartmentChange('IT')}
                     className="text-blue-600 focus:ring-blue-500"
                   />
                   <span>IT</span>
@@ -97,12 +156,7 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
                     name="sprint_dept"
                     value="Marketing"
                     checked={department === 'Marketing'}
-                    onChange={(e) => {
-                      setDepartment(e.target.value);
-                      if (name.includes('Sprint')) {
-                        setName(name.replace(/^IT\s+Sprint/i, 'Marketing Sprint'));
-                      }
-                    }}
+                    onChange={() => handleDepartmentChange('Marketing')}
                     className="text-blue-600 focus:ring-blue-500"
                   />
                   <span>Marketing</span>
@@ -123,20 +177,181 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
             />
           </div>
 
-          <div>
+          <div className="relative" ref={projectDropdownRef}>
             <label className="block text-[13px] font-semibold text-gray-700 mb-1">Project</label>
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] bg-white outline-none focus:border-blue-500 cursor-pointer"
+            
+            {/* Trigger Button */}
+            <div
+              tabIndex={0}
+              role="button"
+              aria-haspopup="listbox"
+              aria-expanded={isProjectDropdownOpen}
+              onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setIsProjectDropdownOpen(!isProjectDropdownOpen);
+                }
+              }}
+              className={`w-full border rounded px-3 py-2 text-[14px] bg-white flex items-center justify-between cursor-pointer transition select-none ${
+                isProjectDropdownOpen
+                  ? 'border-blue-500 ring-1 ring-blue-500'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
             >
-              <option value="">No project</option>
-              {(filteredProjects.length > 0 ? filteredProjects : projects).map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.name || p.title}{p.company_name || p.client_name ? ` (${p.company_name || p.client_name})` : ''} [{p.department_name || p.workflow_type || 'IT'}]
-                </option>
-              ))}
-            </select>
+              <div className="flex items-center gap-2 min-w-0 mr-2">
+                {selected ? (
+                  <>
+                    <FolderKanban size={15} className="text-blue-600 shrink-0" />
+                    <span className="font-medium text-gray-900 truncate">
+                      {selected.name || selected.title}
+                    </span>
+                    {(selected.company_name || selected.client_name) && (
+                      <span className="text-xs text-gray-500 truncate">
+                        ({selected.company_name || selected.client_name})
+                      </span>
+                    )}
+                    <span className="ml-1 text-[11px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 shrink-0">
+                      [{selected.department_name || selected.workflow_type || (department || 'IT')}]
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-gray-700">No project</span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0">
+                {projectId !== '' && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    title="Clear project"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setProjectId('');
+                    }}
+                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition cursor-pointer"
+                  >
+                    <X size={14} />
+                  </span>
+                )}
+                <ChevronDown
+                  size={16}
+                  className={`text-gray-400 transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`}
+                />
+              </div>
+            </div>
+
+            {/* Dropdown Menu */}
+            {isProjectDropdownOpen && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden">
+                {/* Search Header */}
+                <div className="p-2 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+                  <Search size={15} className="text-gray-400 shrink-0 ml-1" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={projectSearch}
+                    onChange={(e) => setProjectSearch(e.target.value)}
+                    placeholder="Search project by name or department..."
+                    className="w-full bg-transparent text-[13px] text-gray-800 placeholder-gray-400 outline-none"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  {projectSearch && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProjectSearch('');
+                        searchInputRef.current?.focus();
+                      }}
+                      className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Dropdown Options */}
+                <div className="max-h-60 overflow-y-auto divide-y divide-gray-50">
+                  {/* "No project" item */}
+                  {(!projectSearch || 'no project'.includes(projectSearch.toLowerCase())) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProjectId('');
+                        setIsProjectDropdownOpen(false);
+                        setProjectSearch('');
+                      }}
+                      className={`w-full text-left px-3 py-2.5 text-[13px] flex items-center justify-between transition ${
+                        projectId === '' ? 'bg-blue-50/70 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="italic">No project</span>
+                        <span className="text-[11px] text-gray-400">(keeps original item projects)</span>
+                      </div>
+                      {projectId === '' && <Check size={15} className="text-blue-600 shrink-0" />}
+                    </button>
+                  )}
+
+                  {/* Filtered projects */}
+                  {searchedProjects.length > 0 ? (
+                    searchedProjects.map((p) => {
+                      const isSelected = String(p.id) === String(projectId);
+                      const dept = p.department_name || p.workflow_type || (department || 'IT');
+                      const isMarketing = dept.toLowerCase().includes('marketing');
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setProjectId(p.id);
+                            setIsProjectDropdownOpen(false);
+                            setProjectSearch('');
+                          }}
+                          className={`w-full text-left px-3 py-2 text-[13px] flex items-center justify-between transition ${
+                            isSelected
+                              ? 'bg-blue-50/70 text-blue-700 font-medium'
+                              : 'text-gray-800 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex flex-col min-w-0 pr-2">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span className="truncate">{p.name || p.title}</span>
+                              {(p.company_name || p.client_name) && (
+                                <span className="text-[11px] text-gray-500 font-normal truncate">
+                                  ({p.company_name || p.client_name})
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-0.5">
+                              <span
+                                className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                                  isMarketing
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}
+                              >
+                                {dept}
+                              </span>
+                            </div>
+                          </div>
+                          {isSelected && <Check size={15} className="text-blue-600 shrink-0 ml-2" />}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    projectSearch && (
+                      <div className="px-4 py-6 text-center text-xs text-gray-400">
+                        No projects found matching "{projectSearch}"
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
             <p className="text-xs text-gray-500 mt-1">
               {selected
                 ? `Work added to this sprint will be assigned to “${selected.name || selected.title}”.`

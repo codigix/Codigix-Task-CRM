@@ -583,8 +583,10 @@ const ITKanbanPage = ({ department }) => {
 
   const fetchKanbanData = () => {
     const bust = Date.now();
+    const deptParam = 'ALL';
+    const roleParam = encodeURIComponent(user?.role || designation || '');
     // Which sprints are running determines what the board is allowed to show.
-    fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept || 'IT')}&_t=${bust}`, { cache: 'no-store' })
+    fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(deptParam)}&role=${roleParam}&_t=${bust}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         const running = data.activeSprints || (data.activeSprint ? [data.activeSprint] : []);
@@ -621,20 +623,13 @@ const ITKanbanPage = ({ department }) => {
         setUsersList(list);
       })
       .catch(err => console.error('Error fetching users for kanban filter:', err));
-  }, [currentDept]);
+  }, [currentDept, isManager, user?.role, designation]);
 
   const itUsersList = React.useMemo(() => {
     const SYSTEM_DUMMY_USERNAMES = ['admin', 'leads', 'deals', 'sales', 'marketing', 'it', 'accounting'];
     return usersList.filter(u => {
       const un = (u.username || '').toLowerCase();
       if (SYSTEM_DUMMY_USERNAMES.includes(un)) return false;
-      // Removed department-based validation so everyone can assign task to everyone
-      /* const dept = (u.department || '').toLowerCase();
-      const role = (u.role_name || u.role || '').toLowerCase();
-      if (currentDept === 'Marketing') {
-        return dept.includes('marketing') || dept.includes('seo') || role.includes('marketing') || role.includes('designer') || role.includes('video') || role.includes('seo') || role.includes('ppc');
-      }
-      return dept.includes('it') || role.includes('it') || role.includes('developer') || role.includes('tester') || role.includes('devops'); */
       return true;
     });
   }, [usersList, currentDept]);
@@ -649,16 +644,16 @@ const ITKanbanPage = ({ department }) => {
     // Full transparency: show all tasks without department partition
     let filtered = [...allRawIssues];
 
-    // Board shows tasks in running sprints as well as individual standalone tasks (created without a sprint)
-    const deptActiveSprints = activeSprints.filter(s =>
-      !s.department || s.department.toLowerCase() === (currentDept || 'IT').toLowerCase()
-    );
+    // Board shows ONLY tasks in running sprint(s); backlog tasks remain in Backlog view
+    const deptActiveSprints = activeSprints;
+
     if (deptActiveSprints.length > 0) {
       const runningIds = new Set(deptActiveSprints.map(s => Number(s.id)));
       filtered = filtered.filter(issue =>
-        !issue.sprint_id ||
-        runningIds.has(Number(issue.sprint_id)) ||
-        issue.sprint_status === 'Active'
+        Boolean(issue.sprint_id) && (
+          runningIds.has(Number(issue.sprint_id)) ||
+          issue.sprint_status === 'Active'
+        )
       );
     }
 
@@ -772,10 +767,10 @@ const ITKanbanPage = ({ department }) => {
     };
 
     // Managers see all tasks (both assigned and unassigned), and can narrow with the "Only My Tasks" toggle.
-    // Employees / non-managers only see tasks that are assigned to someone or reported by them (unassigned tasks are hidden).
+    // Unassigned tasks are ONLY visible to the manager. Employees / non-managers only see assigned tasks.
     const shouldFilterOnlyMy = onlyMyIssues && selectedAssignees.length === 0;
     if (!isManager) {
-      filtered = filtered.filter(issue => isTaskAssigned(issue) || isAssignedToMe(issue));
+      filtered = filtered.filter(issue => isTaskAssigned(issue));
       if (shouldFilterOnlyMy) {
         filtered = filtered.filter(issue => isAssignedToMe(issue));
       }
@@ -825,10 +820,13 @@ const ITKanbanPage = ({ department }) => {
     const { start: monthStart, end: monthEnd } = getThisMonthRange();
 
     allRawIssues.forEach(issue => {
-      // Check sprint membership if active sprints exist
-      if (activeSprints.length > 0) {
-        const runningIds = new Set(activeSprints.map(s => Number(s.id)));
-        const inActiveSprint = !issue.sprint_id || runningIds.has(Number(issue.sprint_id)) || issue.sprint_status === 'Active';
+      // Check sprint membership if active sprints exist - only subtasks belonging to active sprint tasks
+      if (deptActiveSprints.length > 0) {
+        const runningIds = new Set(deptActiveSprints.map(s => Number(s.id)));
+        const inActiveSprint = Boolean(issue.sprint_id) && (
+          runningIds.has(Number(issue.sprint_id)) ||
+          issue.sprint_status === 'Active'
+        );
         if (!inActiveSprint) return;
       }
       if (selectedProjectId !== 'ALL' && Number(issue.project_id) !== Number(selectedProjectId)) {
@@ -882,7 +880,7 @@ const ITKanbanPage = ({ department }) => {
 
         const shouldFilterOnlyMy = onlyMyIssues && selectedAssignees.length === 0;
         if (!isManager) {
-          if (!isStAssigned(stAssignee) && !isStAssignedToMe(stAssignee)) return;
+          if (!isStAssigned(stAssignee)) return; // Unassigned subtasks are strictly visible to managers only
           if (shouldFilterOnlyMy && !isStAssignedToMe(stAssignee)) return;
         } else if (shouldFilterOnlyMy && !isStAssignedToMe(stAssignee)) {
           return;
