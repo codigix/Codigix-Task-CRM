@@ -167,6 +167,11 @@ module.exports = function setupImportRoutes(app, pool) {
    * Task: <Title>
    * Description: <Description>
    * If not structured with Task:, falls back to the full text as title.
+  /**
+   * Parses the cell string for structured content:
+   * Task: <Title>
+   * Description: <Description>
+   * If not structured with Task:, falls back to the full text as title.
    * If Task: is present but empty, returns null so the empty template cell is ignored.
    */
   const parseCellContent = (text) => {
@@ -202,6 +207,7 @@ module.exports = function setupImportRoutes(app, pool) {
       const department = String(req.query.department || req.body.department || 'IT')
         .replace(/\s*department\s*$/i, '').trim();
       const sprintId = req.query.sprintId || req.body.sprintId || null;
+      const requestedSheet = String(req.query.sheetName || req.body.sheetName || '').trim();
 
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(req.file.buffer);
@@ -209,44 +215,129 @@ module.exports = function setupImportRoutes(app, pool) {
         return res.status(400).json({ error: 'The file has no worksheets' });
       }
 
-      // Find the best worksheet: either one that contains a 'Date' header in row 1,
-      // or the first sheet that isn't a README / Guide / Instructions tab.
-      let sheet = null;
-      for (const s of workbook.worksheets) {
-        const hRow = s.getRow(1);
-        let foundDate = false;
-        hRow.eachCell(cell => {
-          const t = String(cellText(cell) || '').trim().toLowerCase();
-          if (t === 'date' || t === 'dates') foundDate = true;
-        });
-        if (foundDate) {
-          sheet = s;
-          break;
+      // Look up target sprint's project name first so we can auto-match the worksheet
+      let targetProjectName = '';
+      let targetProjectId = null;
+      let targetSprintName = '';
+      if (sprintId) {
+        const [[s]] = await db.query(
+          `SELECT s.*, p.id AS proj_id, p.name AS proj_name, p.title AS proj_title
+           FROM sprints s
+           LEFT JOIN projects p ON s.project_id = p.id
+           WHERE s.id = ?`,
+          [sprintId]
+        );
+        if (s) {
+          targetProjectId = s.proj_id || s.project_id || null;
+          targetProjectName = s.proj_name || s.proj_title || s.name || '';
+          targetSprintName = s.name || '';
         }
       }
-      if (!sheet) {
-        sheet = workbook.worksheets.find(s => !/readme|instructions|guide/i.test(s.name)) || workbook.worksheets[0];
+
+      const availableSheets = workbook.worksheets.map(s => s.name);
+      let sheet = null;
+      let matchedWithSprint = false;
+
+      const normalizeStr = (str) => String(str || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+
+      // 1. If user explicitly requested a sheet (e.g. from the dropdown)
+      if (requestedSheet) {
+        sheet = workbook.worksheets.find(s => s.name.trim().toLowerCase() === requestedSheet.toLowerCase())
+             || workbook.worksheets.find(s => normalizeStr(s.name) === normalizeStr(requestedSheet));
       }
 
-      // Find date column and day column if present
-      const headerRow = sheet.getRow(1);
-      let dateCol = 1;
+      // 2. If sprint is specified, auto-match sheet name with sprint or project name
+      if (!sheet && (targetSprintName || targetProjectName)) {
+        const targets = [targetSprintName, targetProjectName].filter(Boolean);
+        const normTargets = targets.map(normalizeStr);
+
+        // Exact normalized match
+        sheet = workbook.worksheets.find(s => {
+          const ns = normalizeStr(s.name);
+          return normTargets.some(nt => nt && ns === nt);
+        });
+
+        // Contains match (ignoring summary/workflow/readme tabs)
+        if (!sheet) {
+          sheet = workbook.worksheets.find(s => {
+            const ns = normalizeStr(s.name);
+            if (!ns || /summary|workflow|sources|readme|instructions|guide/i.test(s.name)) return false;
+            return normTargets.some(nt => nt && (ns.includes(nt) || nt.includes(ns)));
+          });
+        }
+
+        if (sheet) {
+          matchedWithSprint = true;
+        }
+      }
+
+      // 3. Fallback: find first sheet with Date column (skipping summary/workflow tabs)
+      if (!sheet) {
+        for (const s of workbook.worksheets) {
+          if (/summary|workflow|sources|readme|instructions|guide/i.test(s.name)) continue;
+          let foundDate = false;
+          for (let r = 1; r <= Math.min(3, s.rowCount); r++) {
+            s.getRow(r).eachCell(cell => {
+              const t = String(cellText(cell) || '').trim().toLowerCase();
+              if (t === 'date' || t === 'dates') foundDate = true;
+            });
+            if (foundDate) break;
+          }
+          if (foundDate) {
+            sheet = s;
+            break;
+          }
+        }
+      }
+
+      // 4. Ultimate fallback: first sheet
+      if (!sheet) {
+        sheet = workbook.worksheets.find(s => !/summary|workflow|sources|readme|instructions|guide/i.test(s.name))
+             || workbook.worksheets[0];
+      }
+
+      // Find date column and day column (checking row 1 and row 2 for headers)
+      let headerRow = sheet.getRow(1);
+      let headerRowNum = 1;
+      let dateCol = null;
       let dayCol = null;
 
-      headerRow.eachCell((cell, colNumber) => {
-        const text = String(cellText(cell) || '').trim().toLowerCase();
-        if (text === 'date' || text === 'dates') {
-          dateCol = colNumber;
-        } else if (isDayHeader(text)) {
-          dayCol = colNumber;
+      const checkRow = (r) => {
+        let dc = null;
+        let dac = null;
+        r.eachCell((cell, colNumber) => {
+          const text = String(cellText(cell) || '').trim().toLowerCase();
+          if (text === 'date' || text === 'dates') dc = colNumber;
+          else if (isDayHeader(text)) dac = colNumber;
+        });
+        return { dc, dac };
+      };
+
+      const res1 = checkRow(sheet.getRow(1));
+      if (res1.dc) {
+        dateCol = res1.dc;
+        dayCol = res1.dac;
+        headerRowNum = 1;
+        headerRow = sheet.getRow(1);
+      } else if (sheet.rowCount >= 2) {
+        const res2 = checkRow(sheet.getRow(2));
+        if (res2.dc) {
+          dateCol = res2.dc;
+          dayCol = res2.dac;
+          headerRowNum = 2;
+          headerRow = sheet.getRow(2);
         }
-      });
+      }
+
+      if (!dateCol) dateCol = 1;
 
       // If dayCol wasn't found by header name, check if column 2 cells are mostly weekday names
       if (!dayCol && dateCol === 1) {
         let weekdayCount = 0;
         let checkedRows = 0;
-        for (let r = 2; r <= Math.min(10, sheet.rowCount); r++) {
+        for (let r = headerRowNum + 1; r <= Math.min(headerRowNum + 10, sheet.rowCount); r++) {
           const val = cellText(sheet.getRow(r).getCell(2));
           if (val) {
             checkedRows++;
@@ -255,23 +346,6 @@ module.exports = function setupImportRoutes(app, pool) {
         }
         if (checkedRows > 0 && weekdayCount >= checkedRows * 0.7) {
           dayCol = 2;
-        }
-      }
-
-      // Look up target sprint's project name
-      let targetProjectName = '';
-      let targetProjectId = null;
-      if (sprintId) {
-        const [[s]] = await db.query(
-          `SELECT s.*, p.id AS proj_id, p.name AS proj_name
-           FROM sprints s
-           LEFT JOIN projects p ON s.project_id = p.id
-           WHERE s.id = ?`,
-          [sprintId]
-        );
-        if (s) {
-          targetProjectId = s.proj_id || s.project_id || null;
-          targetProjectName = s.proj_name || s.name || '';
         }
       }
 
@@ -291,7 +365,7 @@ module.exports = function setupImportRoutes(app, pool) {
         // Check if this column has header or data in subsequent rows
         let hasData = Boolean(headerStr);
         if (!hasData) {
-          for (let r = 2; r <= Math.min(15, sheet.rowCount); r++) {
+          for (let r = headerRowNum + 1; r <= Math.min(headerRowNum + 15, sheet.rowCount); r++) {
             const v = cellText(sheet.getRow(r).getCell(c));
             if (v && !isWeekdayWord(v) && !(v instanceof Date)) {
               hasData = true;
@@ -308,7 +382,7 @@ module.exports = function setupImportRoutes(app, pool) {
 
       if (columns.length === 0) {
         return res.status(400).json({
-          error: 'No service or task columns found. Row 1 should name service columns (e.g. SEO, GMB, Video).'
+          error: `No task/service columns found in sheet "${sheet.name}". Please ensure columns like SEO, GMB, Blogs exist.`
         });
       }
 
@@ -345,7 +419,7 @@ module.exports = function setupImportRoutes(app, pool) {
       let skippedNoDate = 0;
 
       sheet.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return;
+        if (rowNumber <= headerRowNum) return;
 
         const rawDate = cellText(row.getCell(dateCol));
         const rawDay = dayCol ? cellText(row.getCell(dayCol)) : '';
@@ -426,6 +500,8 @@ module.exports = function setupImportRoutes(app, pool) {
 
       res.json({
         sheetName: sheet.name,
+        availableSheets,
+        matchedWithSprint: Boolean(matchedWithSprint),
         projectName: targetProjectName,
         projectId: targetProjectId,
         columns: columnMap,

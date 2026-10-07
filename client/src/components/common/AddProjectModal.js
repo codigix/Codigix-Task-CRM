@@ -206,13 +206,13 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, initialData, department })
     e.preventDefault();
 
     const selectedCompany = companies.find(c => c.company_name === formData.client);
-    const company_id = selectedCompany ? selectedCompany.id : null;
+    const company_id = selectedCompany ? selectedCompany.id : (initialData?.company_id || null);
 
     const selectedManager = users.find(u => {
       const name = u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : u.username;
       return name === formData.teamLeader;
     });
-    const manager_id = selectedManager ? selectedManager.id : null;
+    const manager_id = selectedManager ? selectedManager.id : (initialData?.manager_id || null);
 
     const finalName = formData.name === 'custom_add_project' ? customProjectName.trim() : formData.name.trim();
 
@@ -292,38 +292,52 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, initialData, department })
         <form id="add-project-form" onSubmit={handleSubmit} className="p-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
           {/* Name */}
           <div className="md:col-span-2">
-            <label className="block text-xs    mb-2  text-gray-600">
+            <label className="block text-xs mb-2 text-gray-600 font-medium">
               Name <span className="text-red-500">*</span>
             </label>
-            <select
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              disabled={isFetching}
-              className="w-full  p-2  border border-gray-300 rounded text-xs bg-white focus:ring-0 focus:border-gray-400 disabled:opacity-50"
-            >
-              <option value="">{isFetching ? 'Loading projects...' : 'Select Project'}</option>
-              {confirmedProjects.map(project => (
-                <option key={project.id} value={project.name}>
-                  {project.name} ({project.company_name})
-                </option>
-              ))}
-              {formData.name && formData.name !== 'custom_add_project' && !confirmedProjects.find(p => p.name === formData.name) && (
-                <option value={formData.name}>{formData.name}</option>
-              )}
-              {!isFetching && confirmedProjects.length === 0 && (
-                <option disabled>No confirmed {department || 'IT'} projects found</option>
-              )}
-              <option value="custom_add_project">+ Add Project</option>
-            </select>
-            {formData.name === 'custom_add_project' && (
+            {initialData ? (
               <input
                 type="text"
-                placeholder="Enter custom project name"
-                value={customProjectName}
-                onChange={(e) => setCustomProjectName(e.target.value)}
-                className="w-full mt-2 p-2 border border-gray-300 rounded text-xs bg-white focus:ring-0 focus:border-gray-400 transition"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Enter project name"
+                required
+                className="w-full p-2 border border-gray-300 rounded text-xs bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition"
               />
+            ) : (
+              <>
+                <select
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  disabled={isFetching}
+                  className="w-full p-2 border border-gray-300 rounded text-xs bg-white focus:ring-0 focus:border-gray-400 disabled:opacity-50"
+                >
+                  <option value="">{isFetching ? 'Loading projects...' : 'Select Project'}</option>
+                  {confirmedProjects.map(project => (
+                    <option key={project.id} value={project.name}>
+                      {project.name} ({project.company_name})
+                    </option>
+                  ))}
+                  {formData.name && formData.name !== 'custom_add_project' && !confirmedProjects.find(p => p.name === formData.name) && (
+                    <option value={formData.name}>{formData.name}</option>
+                  )}
+                  {!isFetching && confirmedProjects.length === 0 && (
+                    <option disabled>No confirmed {department || 'IT'} projects found</option>
+                  )}
+                  <option value="custom_add_project">+ Add Project</option>
+                </select>
+                {formData.name === 'custom_add_project' && (
+                  <input
+                    type="text"
+                    placeholder="Enter custom project name"
+                    value={customProjectName}
+                    onChange={(e) => setCustomProjectName(e.target.value)}
+                    className="w-full mt-2 p-2 border border-gray-300 rounded text-xs bg-white focus:ring-0 focus:border-gray-400 transition"
+                  />
+                )}
+              </>
             )}
           </div>
 

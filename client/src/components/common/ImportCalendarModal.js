@@ -21,12 +21,16 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
   const [dateField, setDateField] = useState('both');
   const [sprintId, setSprintId] = useState('');
   const [customProjectName, setCustomProjectName] = useState('');
+  const [availableSheets, setAvailableSheets] = useState([]);
+  const [selectedSheet, setSelectedSheet] = useState('');
+  const [isAutoMatched, setIsAutoMatched] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState('');
 
   const reset = () => {
     setFile(null); setPreview(null); setExcluded(new Set());
     setError(''); setIsBusy(false); setSprintId(''); setCustomProjectName(''); setDateField('both');
+    setAvailableSheets([]); setSelectedSheet(''); setIsAutoMatched(false);
   };
 
   // Opened from a sprint's menu? Then that sprint is the destination, not the Backlog.
@@ -44,7 +48,7 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
     return p ? `${p} - ${raw}` : raw;
   };
 
-  const runPreview = async (chosenFile, useDayFirst) => {
+  const runPreview = async (chosenFile, useDayFirst, sheetOverride) => {
     const f = chosenFile || file;
     if (!f) return;
     setIsBusy(true);
@@ -52,14 +56,19 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
     try {
       const body = new FormData();
       body.append('file', f);
+      const targetSheet = sheetOverride !== undefined ? sheetOverride : selectedSheet;
+      const sheetParam = targetSheet ? `&sheetName=${encodeURIComponent(targetSheet)}` : '';
       const res = await fetch(
-        `${API_BASE_URL}/it-kanban/import/preview?department=${encodeURIComponent(department)}&dayFirst=${useDayFirst}&sprintId=${encodeURIComponent(sprintId || '')}`,
+        `${API_BASE_URL}/it-kanban/import/preview?department=${encodeURIComponent(department)}&dayFirst=${useDayFirst}&sprintId=${encodeURIComponent(sprintId || '')}${sheetParam}`,
         { method: 'POST', body }
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not read the spreadsheet');
 
       setPreview(data);
+      setAvailableSheets(data.availableSheets || []);
+      setSelectedSheet(data.sheetName || '');
+      setIsAutoMatched(Boolean(data.matchedWithSprint));
       setCustomProjectName(data.projectName || '');
       // Rows already imported start unticked, so a re-upload doesn't duplicate the calendar.
       setExcluded(new Set(data.rows.filter(r => r.duplicate).map(rowId)));
@@ -71,11 +80,18 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
     }
   };
 
+  const handleSheetChange = (newSheet) => {
+    setSelectedSheet(newSheet);
+    setIsAutoMatched(false);
+    runPreview(file, dayFirst, newSheet);
+  };
+
   const handleFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setFile(f);
-    runPreview(f, dayFirst);
+    setSelectedSheet('');
+    runPreview(f, dayFirst, '');
   };
 
   const toggleRow = (r) => {
@@ -166,15 +182,44 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
               <div className="flex items-center gap-2 text-[13px] text-gray-700 mb-3">
                 <FileSpreadsheet size={15} className="text-emerald-600" />
                 <strong>{file?.name}</strong>
-                <span className="text-gray-400">·</span>
-                <span>sheet “{preview.sheetName}”</span>
                 <button
-                  onClick={() => { setPreview(null); setFile(null); }}
+                  onClick={() => { setPreview(null); setFile(null); setSelectedSheet(''); setAvailableSheets([]); }}
                   className="ml-auto text-[12px] text-blue-600 hover:underline"
                 >
                   Choose a different file
                 </button>
               </div>
+
+              {/* Sheet Selector Dropdown */}
+              {availableSheets.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-3 bg-blue-50/70 p-2.5 rounded border border-blue-200">
+                  <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+                    <label className="text-[12px] font-semibold text-blue-950 whitespace-nowrap">
+                      Client Worksheet:
+                    </label>
+                    <select
+                      value={selectedSheet}
+                      onChange={(e) => handleSheetChange(e.target.value)}
+                      disabled={isBusy}
+                      className="text-[12px] px-2.5 py-1.5 rounded border border-blue-300 bg-white text-blue-950 font-medium focus:outline-none focus:border-blue-500 shadow-sm cursor-pointer"
+                    >
+                      {availableSheets.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    {isAutoMatched && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full whitespace-nowrap">
+                        ✓ Matched with Sprint
+                      </span>
+                    )}
+                  </div>
+                  {isBusy && (
+                    <span className="text-[11px] text-blue-600 animate-pulse font-medium">
+                      Reading worksheet…
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Project name prefix input */}
               <div className="flex items-center gap-2 mb-3 bg-slate-50 p-2.5 rounded border border-gray-200">

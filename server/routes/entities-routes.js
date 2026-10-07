@@ -1733,6 +1733,13 @@ module.exports = function setupEntitiesRoutes(app, pool) {
         ]
       );
 
+      // Keep associated sprints in sync with the updated project name
+      if (name || title) {
+        try {
+          await db.query('UPDATE sprints SET name = ? WHERE project_id = ?', [name || title, id]);
+        } catch (_) {}
+      }
+
       const [project] = await db.query('SELECT * FROM projects WHERE id = ?', [id]);
       return res.json(project[0]);
     } catch (err) {

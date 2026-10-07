@@ -937,7 +937,12 @@ const BacklogPage = ({ department }) => {
     }
   };
 
-  const toggle = (key) => setCollapsed(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggle = (key, defaultCollapsed = false) => {
+    setCollapsed(prev => {
+      const current = prev[key] === undefined ? defaultCollapsed : Boolean(prev[key]);
+      return { ...prev, [key]: !current };
+    });
+  };
 
   // Jira's per-sprint "..." menu.
   const SprintMenu = ({ sprint, index, total }) => {
@@ -1161,14 +1166,21 @@ const BacklogPage = ({ department }) => {
 
           {/* Sprint sections */}
           {displayedSprints.map((sprint, idx) => {
-            const isCollapsed = collapsed[`s${sprint.id}`];
+            const isCollapsed = collapsed[`s${sprint.id}`] === undefined ? true : Boolean(collapsed[`s${sprint.id}`]);
             const dates = formatDate(sprint.start_date) && formatDate(sprint.end_date)
               ? `${formatDate(sprint.start_date)} – ${formatDate(sprint.end_date)}` : null;
 
             return (
-              <div key={sprint.id} className="mb-4 border border-gray-200 rounded bg-white overflow-hidden">
-                <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 border-b border-gray-200">
-                  <button onClick={() => toggle(`s${sprint.id}`)} className="text-gray-500 hover:text-gray-800">
+              <div key={sprint.id} className="mb-4 border border-gray-200 rounded bg-white overflow-hidden shadow-sm">
+                <div 
+                  onClick={() => toggle(`s${sprint.id}`, true)}
+                  className={`flex items-center gap-3 px-3 py-2.5 bg-gray-50 cursor-pointer select-none hover:bg-gray-100/70 transition-colors ${!isCollapsed ? 'border-b border-gray-200' : ''}`}
+                >
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); toggle(`s${sprint.id}`, true); }} 
+                    className="text-gray-500 hover:text-gray-800"
+                    title={isCollapsed ? 'Click to open sprint' : 'Click to close sprint'}
+                  >
                     {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                   </button>
                   <span className="font-semibold text-sm text-gray-900">{sprint.name}</span>
@@ -1191,7 +1203,7 @@ const BacklogPage = ({ department }) => {
                   )}
                   {dates ? (
                     <button
-                      onClick={() => setSprintToEdit(sprint)}
+                      onClick={(e) => { e.stopPropagation(); setSprintToEdit(sprint); }}
                       className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 hover:underline"
                       title="Edit sprint dates"
                     >
@@ -1199,7 +1211,7 @@ const BacklogPage = ({ department }) => {
                     </button>
                   ) : (
                     <button
-                      onClick={() => setSprintToEdit(sprint)}
+                      onClick={(e) => { e.stopPropagation(); setSprintToEdit(sprint); }}
                       className="flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium"
                     >
                       <Calendar size={11} /> Add dates
@@ -1215,7 +1227,7 @@ const BacklogPage = ({ department }) => {
                   )}
                   {sprint.goal && <span className="text-xs text-gray-400 italic truncate max-w-[220px]">{sprint.goal}</span>}
 
-                  <div className="ml-auto flex items-center gap-3">
+                  <div className="ml-auto flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                     <CountBadges counts={sprint.counts} />
                     {sprint.status === 'Active' ? (
                       <button

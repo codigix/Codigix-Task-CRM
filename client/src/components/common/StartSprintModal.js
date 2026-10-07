@@ -50,8 +50,8 @@ const StartSprintModal = ({ isOpen, sprint, itemCount, onCancel, onStart, mode =
     setGoal(sprint.goal || '');
     setError('');
 
-    // Editing keeps the sprint's saved dates; starting proposes today + 2 weeks.
-    if (isEdit && (sprint.start_date || sprint.end_date)) {
+    // If the sprint already has saved start_date or end_date, always preserve and use them!
+    if (sprint.start_date || sprint.end_date) {
       const s = sprint.start_date ? toDateInput(new Date(sprint.start_date)) : toDateInput(start);
       const e = sprint.end_date ? toDateInput(new Date(sprint.end_date)) : addDays(s, 14);
       setDuration('Custom');
@@ -63,7 +63,7 @@ const StartSprintModal = ({ isOpen, sprint, itemCount, onCancel, onStart, mode =
       setEndDate(addDays(toDateInput(start), 14));
     }
     setStartTime(toTimeInput(start));
-  }, [isOpen, sprint, isEdit]);
+  }, [isOpen, sprint]);
 
   // Duration drives the end date, exactly as Jira does.
   useEffect(() => {
