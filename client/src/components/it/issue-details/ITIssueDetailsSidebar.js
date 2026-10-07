@@ -105,11 +105,49 @@ const ITIssueDetailsSidebar = ({
     }
   };
 
+  const subtaskCount = (() => {
+    let list = issue?.subtasks;
+    if (typeof list === 'string') {
+      try { list = JSON.parse(list); } catch (e) { list = []; }
+    }
+    return Array.isArray(list) ? list.length : 0;
+  })();
+
+  // Recalculate points when the type, priority or number of subtasks changes while the
+  // ticket is open — but not merely because it was opened, which used to overwrite any
+  // value someone had set by hand every time the panel was viewed.
+  const pointsBasisRef = React.useRef(null);
   React.useEffect(() => {
     if (!issue || !issue.id || !issue.type) return;
+    const basis = `${issue.id}|${issue.type}|${issue.priority}|${subtaskCount}`;
+    const prev = pointsBasisRef.current;
+    pointsBasisRef.current = basis;
+    if (prev === null || !prev.startsWith(`${issue.id}|`) || prev === basis) return;
     handleAutoCalculatePoints();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [issue?.type, issue?.priority, (typeof issue.subtasks === 'string' ? JSON.parse(issue.subtasks) : (issue.subtasks || [])).length]);
+  }, [issue?.id, issue?.type, issue?.priority, subtaskCount]);
+
+  // Typed fields save once, on blur or Enter, rather than on every keystroke.
+  const [estimateDraft, setEstimateDraft] = useState(issue?.original_estimate || '');
+  const [pointsDraft, setPointsDraft] = useState(String(effortPoints || 0));
+  React.useEffect(() => { setEstimateDraft(issue?.original_estimate || ''); }, [issue?.id, issue?.original_estimate]);
+  React.useEffect(() => { setPointsDraft(String(effortPoints || 0)); }, [issue?.id, effortPoints]);
+
+  const commitEstimate = () => {
+    const v = estimateDraft.trim();
+    if (v === (issue?.original_estimate || '')) return;
+    handleUpdate({ original_estimate: v });
+  };
+  const commitPoints = () => {
+    const n = Math.max(0, Math.round(Number(pointsDraft) || 0));
+    setPointsDraft(String(n));
+    if (n === Number(effortPoints || 0)) return;
+    if (setEffortPoints) setEffortPoints(n);
+    handleUpdate({ effort_points: n });
+  };
+  const commitOnEnter = (commit) => (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); e.currentTarget.blur(); }
+  };
 
   // Everything on this board except this item and the items already parented to it —
   // either would make a loop.
@@ -206,7 +244,7 @@ const ITIssueDetailsSidebar = ({
         <div className="interactive-dropdown relative">
           <button
             onClick={() => toggleDropdown('status-select')}
-            className={`flex items-center gap-1.5 p-2 rounded text-xs transition cursor-pointer font-semibold ${STATUS_COLORS[currentStatus] || STATUS_COLORS['TO DO']
+            className={`flex items-center gap-1.5 p-2 rounded text-xs transition cursor-pointer  ${STATUS_COLORS[currentStatus] || STATUS_COLORS['TO DO']
               }`}
           >
             {currentStatus} <ChevronDown size={12} className="opacity-70" />
@@ -243,7 +281,7 @@ const ITIssueDetailsSidebar = ({
           <button
             disabled={Object.values(aiLoading).some(Boolean)}
             onClick={() => toggleDropdown('side-ai-actions')}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-300 rounded hover:bg-gray-50 transition text-xs font-semibold text-gray-700 disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-300 rounded hover:bg-gray-50 transition text-xs  text-gray-700 disabled:opacity-50 cursor-pointer"
           >
             {Object.values(aiLoading).some(Boolean) ? (
               <div className="w-3.5 h-3.5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
@@ -283,7 +321,7 @@ const ITIssueDetailsSidebar = ({
         >
           <div className="flex items-center gap-1.5">
             {collapsedSections.details ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-            <span className="text-xs font-semibold text-gray-700 tracking-wide">Details</span>
+            <span className="text-xs  text-gray-700 tracking-wide">Details</span>
           </div>
           <Settings size={14} className="text-gray-400 hover:text-gray-600" />
         </div>
@@ -379,7 +417,7 @@ const ITIssueDetailsSidebar = ({
                             setAssigneeSearch('');
                             handleUpdate({ assignee: 'Unassigned' });
                           }}
-                          className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${(!assignee?.name || assignee?.name === 'Unassigned') ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                          className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${(!assignee?.name || assignee?.name === 'Unassigned') ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                         >
                           <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
                             <User size={12} className="text-gray-500" />
@@ -405,7 +443,7 @@ const ITIssueDetailsSidebar = ({
                               setAssigneeSearch('');
                               handleUpdate({ assignee: uName });
                             }}
-                            className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                            className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                           >
                             <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
                               {uInitial}
@@ -432,7 +470,7 @@ const ITIssueDetailsSidebar = ({
                 {currentSubtask ? (
                   <button
                     onClick={onBackToParent}
-                    className="flex items-center gap-1.5 p-1 -ml-1 rounded hover:bg-blue-50 text-blue-600 font-semibold cursor-pointer transition truncate w-fit"
+                    className="flex items-center gap-1.5 p-1 -ml-1 rounded hover:bg-blue-50 text-blue-600  cursor-pointer transition truncate w-fit"
                     title="Click to view parent issue"
                   >
                     <CheckSquare size={13} className="shrink-0 text-blue-500" />
@@ -515,7 +553,7 @@ const ITIssueDetailsSidebar = ({
                             setReporterSearch('');
                             handleUpdate({ reporter: 'Unassigned' });
                           }}
-                          className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${(!reporter?.name || reporter?.name === 'Unassigned') ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                          className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${(!reporter?.name || reporter?.name === 'Unassigned') ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                         >
                           <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
                             <User size={12} className="text-gray-500" />
@@ -543,7 +581,7 @@ const ITIssueDetailsSidebar = ({
                               setReporterSearch('');
                               handleUpdate({ reporter: uName });
                             }}
-                            className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                            className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                           >
                             <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
                               {uInitial}
@@ -610,7 +648,7 @@ const ITIssueDetailsSidebar = ({
               <div className="flex-1 min-w-0">
                 <input
                   type="date"
-                  value={dueDate}
+                  value={dueDate || ''}
                   min={startDate || undefined}
                   onChange={(e) => {
                     setDueDate(e.target.value);
@@ -644,10 +682,10 @@ const ITIssueDetailsSidebar = ({
                 <input
                   type="text"
                   placeholder="e.g. 2h 30m"
-                  value={issue?.original_estimate || ''}
-                  onChange={(e) => {
-                    handleUpdate({ original_estimate: e.target.value });
-                  }}
+                  value={estimateDraft}
+                  onChange={(e) => setEstimateDraft(e.target.value)}
+                  onBlur={commitEstimate}
+                  onKeyDown={commitOnEnter(commitEstimate)}
                   className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium w-full"
                 />
               </div>
@@ -686,12 +724,10 @@ const ITIssueDetailsSidebar = ({
                 <input
                   type="number"
                   min="0"
-                  value={effortPoints || 0}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    if (setEffortPoints) setEffortPoints(val);
-                    handleUpdate({ effort_points: val });
-                  }}
+                  value={pointsDraft}
+                  onChange={(e) => setPointsDraft(e.target.value)}
+                  onBlur={commitPoints}
+                  onKeyDown={commitOnEnter(commitPoints)}
                   className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full max-w-[80px]"
                 />
                 <span className="text-xs text-gray-400">pts</span>
@@ -721,7 +757,7 @@ const ITIssueDetailsSidebar = ({
             <div className="flex items-center min-h-[32px] gap-2">
               <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Perf Review</span>
               <div className="flex-1 min-w-0">
-                <div className={`text-xs px-2 py-1 rounded inline-flex items-center font-semibold ${contributionReviewStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
+                <div className={`text-xs px-2 py-1 rounded inline-flex items-center  ${contributionReviewStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
                   contributionReviewStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
                     'bg-yellow-100 text-yellow-700'
                   }`}>
@@ -798,7 +834,7 @@ const ITIssueDetailsSidebar = ({
 
             {/* Effort points */}
             <div className="flex items-center min-h-[32px] gap-2">
-              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Effort points</span>
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs" title="Agile estimate (Fibonacci). Separate from the performance Effort Points above.">Story points</span>
               <div className="flex-1 min-w-0">
                 <select
                   value={issue?.story_points ?? ''}
@@ -816,7 +852,7 @@ const ITIssueDetailsSidebar = ({
               <div className="flex items-center min-h-[32px] gap-2">
                 <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Flagged</span>
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">Impediment</span>
+                  <span className="text-[10px]  text-red-600 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">Impediment</span>
                 </div>
               </div>
             )}
@@ -889,7 +925,7 @@ const ITIssueDetailsSidebar = ({
             >
               <div className="flex items-center gap-1.5">
                 {collapsedSections.development ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                <span className="text-xs font-semibold text-gray-700 tracking-wide">Development</span>
+                <span className="text-xs  text-gray-700 tracking-wide">Development</span>
               </div>
               <button
                 onClick={(e) => {
@@ -911,14 +947,14 @@ const ITIssueDetailsSidebar = ({
                     <span className="flex items-center gap-1 text-xs  text-gray-700">
                       <GitBranch size={13} className="text-purple-600" /> {issueKey} Branch
                     </span>
-                    <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">Active</span>
+                    <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded ">Active</span>
                   </div>
                   <div className="text-xs font-mono text-gray-600 bg-white p-1 rounded border border-gray-200 truncate" title={branchName}>
                     {branchName}
                   </div>
                   <button
                     onClick={handleCopyBranch}
-                    className="flex items-center gap-1 text-xs text-purple-700 font-semibold hover:underline cursor-pointer"
+                    className="flex items-center gap-1 text-xs text-purple-700  hover:underline cursor-pointer"
                   >
                     <Copy size={11} /> {copiedBranch ? 'Copied to clipboard!' : 'Copy git checkout command'}
                   </button>
@@ -929,21 +965,21 @@ const ITIssueDetailsSidebar = ({
                   <span className="flex items-center gap-1 font-medium">
                     <GitPullRequest size={13} className="text-blue-600" /> Pull Request #101
                   </span>
-                  <span className="text-blue-600 font-semibold">OPEN 🟢</span>
+                  <span className="text-blue-600 ">OPEN 🟢</span>
                 </div>
 
                 {/* Quick Actions */}
                 <div className="pt-2 border-t border-gray-100 space-y-2">
                   <button
                     onClick={() => setShowDevModal(true)}
-                    className="flex items-center gap-2 text-blue-600 hover:underline font-semibold p-1 -ml-1 rounded transition w-full text-left cursor-pointer"
+                    className="flex items-center gap-2 text-blue-600 hover:underline  p-1 -ml-1 rounded transition w-full text-left cursor-pointer"
                   >
                     <Github size={13} className="text-gray-700" />
                     <span>Connect development tools</span>
                   </button>
                   <button
                     onClick={handleOpenInVsCode}
-                    className="flex items-center gap-2 text-blue-600 hover:underline font-semibold p-1 -ml-1 rounded transition w-full text-left cursor-pointer"
+                    className="flex items-center gap-2 text-blue-600 hover:underline  p-1 -ml-1 rounded transition w-full text-left cursor-pointer"
                   >
                     <Terminal size={13} className="text-blue-600" />
                     <span>Open in VS Code IDE</span>
@@ -961,7 +997,7 @@ const ITIssueDetailsSidebar = ({
             >
               <div className="flex items-center gap-1.5">
                 {collapsedSections.automation ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                <span className="text-xs font-semibold text-gray-700 tracking-wide">Automation</span>
+                <span className="text-xs  text-gray-700 tracking-wide">Automation</span>
               </div>
               <button
                 onClick={(e) => {
@@ -994,7 +1030,7 @@ const ITIssueDetailsSidebar = ({
                   {automationLogs.map(log => (
                     <div key={log.id} className="p-2 bg-gray-50 border border-gray-200 rounded flex items-start justify-between">
                       <div className="space-y-0.5 min-w-0 pr-2">
-                        <div className="flex items-center gap-1 font-semibold text-gray-800 truncate text-xs">
+                        <div className="flex items-center gap-1  text-gray-800 truncate text-xs">
                           <Zap size={11} className="text-amber-500 shrink-0" />
                           <span className="truncate">{log.rule}</span>
                         </div>
@@ -1012,7 +1048,7 @@ const ITIssueDetailsSidebar = ({
 
                 <button
                   onClick={() => setShowAutomationModal(true)}
-                  className="w-full text-center text-xs text-blue-600 hover:underline font-semibold pt-1 block cursor-pointer"
+                  className="w-full text-center text-xs text-blue-600 hover:underline  pt-1 block cursor-pointer"
                 >
                   View all 4 active rules →
                 </button>
@@ -1025,7 +1061,7 @@ const ITIssueDetailsSidebar = ({
       {/* DEV TOOLS MODAL */}
       {showDevModal && (
         <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+          <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
             <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Github size={18} className="text-gray-800" />
@@ -1037,7 +1073,7 @@ const ITIssueDetailsSidebar = ({
             </div>
             <div className="p-4 space-y-4 text-xs font-sans">
               <div className="space-y-1">
-                <label className="font-semibold text-gray-700 block">Git Repository URL</label>
+                <label className=" text-gray-700 block">Git Repository URL</label>
                 <input
                   type="text"
                   value={repoUrl}
@@ -1047,7 +1083,7 @@ const ITIssueDetailsSidebar = ({
               </div>
 
               <div className="p-3 bg-purple-50 border border-purple-200 rounded space-y-2">
-                <div className="flex items-center justify-between font-semibold text-purple-900">
+                <div className="flex items-center justify-between  text-purple-900">
                   <span className="flex items-center gap-1.5"><GitBranch size={14} /> Git Checkout Command</span>
                   <button onClick={handleCopyBranch} className="text-xs text-purple-700 hover:underline flex items-center gap-1 cursor-pointer ">
                     <Copy size={12} /> {copiedBranch ? 'Copied!' : 'Copy'}
@@ -1059,7 +1095,7 @@ const ITIssueDetailsSidebar = ({
               </div>
 
               <div className="space-y-2 pt-2 border-t border-gray-100">
-                <span className="font-semibold text-gray-700 block">Connected Services</span>
+                <span className=" text-gray-700 block">Connected Services</span>
                 <div className="flex items-center justify-between p-2 border border-gray-200 rounded bg-gray-50">
                   <span className="font-medium text-gray-800">GitHub Enterprise Sync</span>
                   <span className="text-green-600  flex items-center gap-1"><CheckCircle size={13} /> Connected</span>
@@ -1072,7 +1108,7 @@ const ITIssueDetailsSidebar = ({
             </div>
 
             <div className="p-3 border-t bg-gray-50 flex justify-end gap-2 text-xs">
-              <button onClick={() => setShowDevModal(false)} className="px-3.5 py-1.5 bg-red-600 text-white rounded font-semibold hover:bg-blue-700 cursor-pointer">
+              <button onClick={() => setShowDevModal(false)} className="px-3.5 py-1.5 bg-red-600 text-white rounded  hover:bg-blue-700 cursor-pointer">
                 Done
               </button>
             </div>
@@ -1083,7 +1119,7 @@ const ITIssueDetailsSidebar = ({
       {/* AUTOMATION RULES MODAL */}
       {showAutomationModal && (
         <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+          <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
             <div className="p-4 border-b bg-amber-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Zap size={18} className="text-amber-600 fill-amber-100" />
@@ -1129,7 +1165,7 @@ const ITIssueDetailsSidebar = ({
             </div>
 
             <div className="p-3 border-t bg-gray-50 flex justify-end gap-2 text-xs">
-              <button onClick={() => setShowAutomationModal(false)} className="px-3.5 py-1.5 bg-red-600 text-white rounded font-semibold hover:bg-blue-700 cursor-pointer">
+              <button onClick={() => setShowAutomationModal(false)} className="px-3.5 py-1.5 bg-red-600 text-white rounded  hover:bg-blue-700 cursor-pointer">
                 Close
               </button>
             </div>

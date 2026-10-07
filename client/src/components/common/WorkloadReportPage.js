@@ -234,7 +234,7 @@ const WorkloadReportPage = ({ department }) => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <ClipboardList size={18} className="text-gray-500" />
-              <h1 className="text-xl font-semibold text-gray-900">Workload</h1>
+              <h1 className="text-xl  text-gray-900">Workload</h1>
             </div>
             <p className="text-[13px] text-gray-500">
               {isManager
@@ -283,7 +283,7 @@ const WorkloadReportPage = ({ department }) => {
                       <th key={c} className="text-center font-medium px-3 py-2.5">{label(c)}</th>
                     ))}
                     {hasOther && <th className="text-center font-medium px-3 py-2.5">Other</th>}
-                    <th className="text-center font-semibold p-2.5">Total</th>
+                    <th className="text-center  p-2.5">Total</th>
                     {/* A manager can pull one person's figures out on their own. */}
                     {isManager && <th className="text-center font-medium p-2.5">Action</th>}
                   </tr>
@@ -306,7 +306,7 @@ const WorkloadReportPage = ({ department }) => {
                           {r.other}
                         </td>
                       )}
-                      <td className="text-center p-2.5 font-semibold text-gray-900">{r.total}</td>
+                      <td className="text-center p-2.5  text-gray-900">{r.total}</td>
                       {isManager && (
                         <td className="text-center p-2.5">
                           {/* Unassigned isn't a person, so there's nothing to report on. */}
@@ -329,11 +329,11 @@ const WorkloadReportPage = ({ department }) => {
                 {rows.length > 1 && (
                   <tfoot className="bg-gray-50 border-t border-gray-200">
                     <tr>
-                      <td className="p-2.5 font-semibold text-gray-700">All</td>
+                      <td className="p-2.5  text-gray-700">All</td>
                       {COLUMNS.map(c => (
-                        <td key={c} className="text-center px-3 py-2.5 font-semibold text-gray-700">{totals[c]}</td>
+                        <td key={c} className="text-center px-3 py-2.5  text-gray-700">{totals[c]}</td>
                       ))}
-                      {hasOther && <td className="text-center px-3 py-2.5 font-semibold text-gray-700">{totals.other}</td>}
+                      {hasOther && <td className="text-center px-3 py-2.5  text-gray-700">{totals.other}</td>}
                       <td className="text-center p-2.5  text-gray-900">{totals.total}</td>
                       {isManager && <td className="p-2.5" />}
                     </tr>

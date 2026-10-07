@@ -28,12 +28,12 @@ const SeoGmbLocationIntelligencePage = () => {
 
   // Helper for KPI Cards
   const KPICard = ({ title, value, change, changeLabel, icon: Icon, colorClass }) => (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center h-full relative overflow-hidden group">
+    <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col justify-center h-full relative overflow-hidden group">
       <div className="flex items-center gap-3 mb-2">
         <div className={`p-2 rounded bg-opacity-10 ${colorClass.replace('text', 'bg')}`}>
           <Icon size={18} className={colorClass} />
         </div>
-        <span className="text-gray-900 text-xs font-semibold">{title}</span>
+        <span className="text-gray-900 text-xs ">{title}</span>
       </div>
       <div>
         <div className="flex items-end gap-2">
@@ -45,7 +45,7 @@ const SeoGmbLocationIntelligencePage = () => {
           </span>
         )}
         {!change && changeLabel && (
-          <span className="text-[9px] font-semibold text-gray-500 block mt-1.5">{changeLabel}</span>
+          <span className="text-[9px]  text-gray-500 block mt-1.5">{changeLabel}</span>
         )}
       </div>
     </div>
@@ -84,9 +84,9 @@ const SeoGmbLocationIntelligencePage = () => {
         {/* Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Performance by Country (from previous design, adapted) */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col">
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-semibold text-gray-900">Performance by Country</h3>
+              <h3 className=" text-gray-900">Performance by Country</h3>
             </div>
             <div className="flex-1 flex items-center justify-between gap-6">
               <div className="w-[45%] h-[200px] bg-indigo-50/50 rounded flex items-center justify-center relative border border-indigo-100/50">
@@ -96,10 +96,10 @@ const SeoGmbLocationIntelligencePage = () => {
                 <table className="w-full text-left text-xs whitespace-nowrap">
                   <thead>
                     <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
-                      <th className="pb-2 font-semibold">Country</th>
-                      <th className="pb-2 font-semibold text-center">Visibility</th>
-                      <th className="pb-2 font-semibold text-center">Traffic</th>
-                      <th className="pb-2 font-semibold text-center">Change</th>
+                      <th className="pb-2 ">Country</th>
+                      <th className="pb-2  text-center">Visibility</th>
+                      <th className="pb-2  text-center">Traffic</th>
+                      <th className="pb-2  text-center">Change</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -113,7 +113,7 @@ const SeoGmbLocationIntelligencePage = () => {
                         <td className="py-2.5 font-medium">{row.c}</td>
                         <td className="py-2.5 text-center text-gray-500">{row.v}</td>
                         <td className="py-2.5 text-center">{row.t.toLocaleString()}</td>
-                        <td className="py-2.5 text-center text-green-500 font-semibold">↑ {row.ch.replace('+ ', '')}</td>
+                        <td className="py-2.5 text-center text-green-500 ">↑ {row.ch.replace('+ ', '')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -124,8 +124,8 @@ const SeoGmbLocationIntelligencePage = () => {
 
           {/* Visibility Score Trend & Traffic Distribution */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col">
-              <h3 className="font-semibold text-gray-900 mb-4 text-xs">Visibility Score Trend</h3>
+            <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col">
+              <h3 className=" text-gray-900 mb-4 text-xs">Visibility Score Trend</h3>
               <div className="flex-1 min-h-[150px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={trendData}>
@@ -141,8 +141,8 @@ const SeoGmbLocationIntelligencePage = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col">
-              <h3 className="font-semibold text-gray-900 mb-4 text-xs">Traffic Distribution</h3>
+            <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col">
+              <h3 className=" text-gray-900 mb-4 text-xs">Traffic Distribution</h3>
               <div className="flex-1 flex items-center justify-center relative min-h-[150px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -177,16 +177,16 @@ const SeoGmbLocationIntelligencePage = () => {
 
         {/* Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4 text-sm">Rankings by Location</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 mb-4 text-sm">Rankings by Location</h3>
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
-                  <th className="pb-2 font-semibold">Location</th>
-                  <th className="pb-2 font-semibold text-center">Visibility</th>
-                  <th className="pb-2 font-semibold text-center">Top 3</th>
-                  <th className="pb-2 font-semibold text-center">Top 10</th>
-                  <th className="pb-2 font-semibold text-center">Avg Pos</th>
+                  <th className="pb-2 ">Location</th>
+                  <th className="pb-2  text-center">Visibility</th>
+                  <th className="pb-2  text-center">Top 3</th>
+                  <th className="pb-2  text-center">Top 10</th>
+                  <th className="pb-2  text-center">Avg Pos</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -200,24 +200,24 @@ const SeoGmbLocationIntelligencePage = () => {
                   <tr key={i} className="text-gray-700">
                     <td className="py-2.5 font-medium">{row.l}</td>
                     <td className="py-2.5 text-center text-gray-500">{row.v}</td>
-                    <td className="py-2.5 text-center text-green-600 font-semibold">{row.t3}</td>
-                    <td className="py-2.5 text-center text-blue-600 font-semibold">{row.t10}</td>
+                    <td className="py-2.5 text-center text-green-600 ">{row.t3}</td>
+                    <td className="py-2.5 text-center text-blue-600 ">{row.t10}</td>
                     <td className="py-2.5 text-center ">{row.p}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-4 hover:underline text-center w-full">View All Locations &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-4 hover:underline text-center w-full">View All Locations &rarr;</button>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4 text-sm">Top Ranking Keywords</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 mb-4 text-sm">Top Ranking Keywords</h3>
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
-                  <th className="pb-2 font-semibold">Keyword</th>
-                  <th className="pb-2 font-semibold">Location</th>
-                  <th className="pb-2 font-semibold text-center">Position</th>
+                  <th className="pb-2 ">Keyword</th>
+                  <th className="pb-2 ">Location</th>
+                  <th className="pb-2  text-center">Position</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -236,7 +236,7 @@ const SeoGmbLocationIntelligencePage = () => {
                 ))}
               </tbody>
             </table>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-4 hover:underline text-center w-full">View All Keywords &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-4 hover:underline text-center w-full">View All Keywords &rarr;</button>
           </div>
         </div>
       </div>
@@ -247,11 +247,11 @@ const SeoGmbLocationIntelligencePage = () => {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4 text-sm">Market Share by Visibility</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 mb-4 text-sm">Market Share by Visibility</h3>
             <div className="space-y-3">
               {[
-                { name: 'Your Business', val: 24.6, color: 'bg-indigo-600' },
+                { name: 'Your Business', val: 24.6, color: 'bg-red-600' },
                 { name: 'Competitor A', val: 21.3, color: 'bg-blue-500' },
                 { name: 'Competitor B', val: 18.2, color: 'bg-green-500' },
                 { name: 'Competitor C', val: 15.7, color: 'bg-yellow-500' },
@@ -262,22 +262,22 @@ const SeoGmbLocationIntelligencePage = () => {
                   <div className="flex-1 h-2 bg-gray-100 rounded-full mx-3 overflow-hidden">
                     <div className={`h-full ${c.color}`} style={{ width: `${c.val}%` }}></div>
                   </div>
-                  <span className="w-10 text-right font-semibold text-gray-900">{c.val}%</span>
+                  <span className="w-10 text-right  text-gray-900">{c.val}%</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4 text-sm">Competitor Visibility Comparison</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 mb-4 text-sm">Competitor Visibility Comparison</h3>
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
-                  <th className="pb-2 font-semibold">Competitor</th>
-                  <th className="pb-2 font-semibold text-center">Mumbai</th>
-                  <th className="pb-2 font-semibold text-center">Bengaluru</th>
-                  <th className="pb-2 font-semibold text-center">Pune</th>
-                  <th className="pb-2 font-semibold text-center">Hyderabad</th>
+                  <th className="pb-2 ">Competitor</th>
+                  <th className="pb-2  text-center">Mumbai</th>
+                  <th className="pb-2  text-center">Bengaluru</th>
+                  <th className="pb-2  text-center">Pune</th>
+                  <th className="pb-2  text-center">Hyderabad</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -323,8 +323,8 @@ const SeoGmbLocationIntelligencePage = () => {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col">
-            <h3 className="font-semibold text-gray-900 mb-4 text-sm">Search Intent Distribution</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col">
+            <h3 className=" text-gray-900 mb-4 text-sm">Search Intent Distribution</h3>
             <div className="flex-1 flex items-center justify-between">
               <div className="relative w-[150px] h-[150px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -343,7 +343,7 @@ const SeoGmbLocationIntelligencePage = () => {
                 {intentData.map((item, i) => (
                   <div key={i} className="flex items-center justify-between text-xs font-medium">
                     <div className="flex items-center gap-1.5 text-gray-700">
-                      <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }}></div>
+                      <div className="w-2.5 h-2.5 rounded" style={{ backgroundColor: item.color }}></div>
                       {item.name}
                     </div>
                     <span className="text-gray-900 ">{item.value}%</span>
@@ -353,16 +353,16 @@ const SeoGmbLocationIntelligencePage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col">
-            <h3 className="font-semibold text-gray-900 mb-4 text-sm">Top Search Intents by Location</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col">
+            <h3 className=" text-gray-900 mb-4 text-sm">Top Search Intents by Location</h3>
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
-                  <th className="pb-2 font-semibold">Location</th>
-                  <th className="pb-2 font-semibold text-center">Informational</th>
-                  <th className="pb-2 font-semibold text-center">Navigational</th>
-                  <th className="pb-2 font-semibold text-center">Commercial</th>
-                  <th className="pb-2 font-semibold text-center">Transactional</th>
+                  <th className="pb-2 ">Location</th>
+                  <th className="pb-2  text-center">Informational</th>
+                  <th className="pb-2  text-center">Navigational</th>
+                  <th className="pb-2  text-center">Commercial</th>
+                  <th className="pb-2  text-center">Transactional</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -387,14 +387,14 @@ const SeoGmbLocationIntelligencePage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4 text-sm">Top Queries by Intent</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 mb-4 text-sm">Top Queries by Intent</h3>
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
-                  <th className="pb-2 font-semibold">Query</th>
-                  <th className="pb-2 font-semibold text-center">Intent</th>
-                  <th className="pb-2 font-semibold text-center">Search Volume</th>
+                  <th className="pb-2 ">Query</th>
+                  <th className="pb-2  text-center">Intent</th>
+                  <th className="pb-2  text-center">Search Volume</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -417,8 +417,8 @@ const SeoGmbLocationIntelligencePage = () => {
             </table>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col">
-            <h3 className="font-semibold text-gray-900 mb-4 text-sm">Intent Trend</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col">
+            <h3 className=" text-gray-900 mb-4 text-sm">Intent Trend</h3>
             <div className="flex-1 min-h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={intentTrendData}>
@@ -451,23 +451,23 @@ const SeoGmbLocationIntelligencePage = () => {
           <KPICard title="Total Conversions" value="2,184" icon={ShoppingCart} colorClass="text-orange-500" />
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900 text-sm">Location Performance</h3>
-            <button className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition flex items-center gap-1">
+            <h3 className=" text-gray-900 text-sm">Location Performance</h3>
+            <button className="px-3 py-1.5 bg-red-600 text-white text-xs  rounded hover:bg-red-700 transition flex items-center gap-1">
               <Plus size={14} /> Add Location
             </button>
           </div>
           <table className="w-full text-left text-xs whitespace-nowrap">
             <thead>
               <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
-                <th className="pb-2 font-semibold">Location</th>
-                <th className="pb-2 font-semibold text-center">Visibility Score</th>
-                <th className="pb-2 font-semibold text-center">Local Traffic</th>
-                <th className="pb-2 font-semibold text-center">Conversions</th>
-                <th className="pb-2 font-semibold text-center">Revenue</th>
-                <th className="pb-2 font-semibold text-center">Status</th>
-                <th className="pb-2 font-semibold text-right">Action</th>
+                <th className="pb-2 ">Location</th>
+                <th className="pb-2  text-center">Visibility Score</th>
+                <th className="pb-2  text-center">Local Traffic</th>
+                <th className="pb-2  text-center">Conversions</th>
+                <th className="pb-2  text-center">Revenue</th>
+                <th className="pb-2  text-center">Status</th>
+                <th className="pb-2  text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -505,9 +505,9 @@ const SeoGmbLocationIntelligencePage = () => {
       <div className="space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[600px]">
           {/* Sidebar */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col gap-6 col-span-1">
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col gap-6 col-span-1">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Select Metric</label>
+              <label className="block text-xs  text-gray-700 mb-1">Select Metric</label>
               <select className="w-full bg-white border border-gray-200 text-gray-700 text-xs rounded px-2 py-1.5 outline-none">
                 <option>Visibility Score</option>
                 <option>Traffic</option>
@@ -515,7 +515,7 @@ const SeoGmbLocationIntelligencePage = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Select Layer</label>
+              <label className="block text-xs  text-gray-700 mb-1">Select Layer</label>
               <select className="w-full bg-white border border-gray-200 text-gray-700 text-xs rounded px-2 py-1.5 outline-none">
                 <option>Competitor Analysis</option>
                 <option>Heatmap Density</option>
@@ -523,14 +523,14 @@ const SeoGmbLocationIntelligencePage = () => {
             </div>
 
             <div className="mt-auto space-y-3">
-              <div className="flex items-center gap-2 text-xs font-medium text-gray-600"><div className="w-3 h-3 bg-green-500 rounded-sm"></div> High (80-100)</div>
-              <div className="flex items-center gap-2 text-xs font-medium text-gray-600"><div className="w-3 h-3 bg-yellow-500 rounded-sm"></div> Medium (50-80)</div>
-              <div className="flex items-center gap-2 text-xs font-medium text-gray-600"><div className="w-3 h-3 bg-red-500 rounded-sm"></div> Low (0-50)</div>
+              <div className="flex items-center gap-2 text-xs font-medium text-gray-600"><div className="w-3 h-3 bg-green-500 rounded"></div> High (80-100)</div>
+              <div className="flex items-center gap-2 text-xs font-medium text-gray-600"><div className="w-3 h-3 bg-yellow-500 rounded"></div> Medium (50-80)</div>
+              <div className="flex items-center gap-2 text-xs font-medium text-gray-600"><div className="w-3 h-3 bg-red-500 rounded"></div> Low (0-50)</div>
             </div>
           </div>
 
           {/* Main Map Area */}
-          <div className="bg-green-50/30 rounded-xl border border-green-100/50 shadow-sm col-span-2 relative flex items-center justify-center overflow-hidden">
+          <div className="bg-green-50/30 rounded border border-green-100/50 shadow-sm col-span-2 relative flex items-center justify-center overflow-hidden">
             {/* Map Placeholder */}
             <Map size={120} className="text-green-200 opacity-40" />
             <div className="absolute bottom-4 right-4 flex flex-col bg-white border border-gray-200 rounded shadow-sm">
@@ -544,9 +544,9 @@ const SeoGmbLocationIntelligencePage = () => {
           </div>
 
           {/* Right Info Panel */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 flex flex-col gap-6">
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm col-span-1 flex flex-col gap-6">
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm mb-3">Top Performing Areas</h3>
+              <h3 className=" text-gray-900 text-sm mb-3">Top Performing Areas</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs border-b border-gray-50 pb-2">
                   <span className="text-gray-700">1. South Mumbai</span>
@@ -564,7 +564,7 @@ const SeoGmbLocationIntelligencePage = () => {
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm mb-3">Low Performing Areas</h3>
+              <h3 className=" text-gray-900 text-sm mb-3">Low Performing Areas</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs border-b border-gray-50 pb-2">
                   <span className="text-gray-700">1. North Zone, Delhi</span>
@@ -589,8 +589,8 @@ const SeoGmbLocationIntelligencePage = () => {
   const renderReportsTab = () => {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1">
-          <h3 className="font-semibold text-gray-900 text-sm mb-4">Report Types</h3>
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm col-span-1">
+          <h3 className=" text-gray-900 text-sm mb-4">Report Types</h3>
           <div className="space-y-2">
             {[
               { n: 'Location Performance Report', d: 'Complete location analysis report', active: true },
@@ -603,27 +603,27 @@ const SeoGmbLocationIntelligencePage = () => {
               <div key={i} className={`p-3 rounded border cursor-pointer transition flex items-start gap-3 ${r.active ? 'border-indigo-600 bg-indigo-50/50' : 'border-transparent hover:border-gray-200'}`}>
                 <FileText size={16} className={r.active ? 'text-indigo-600' : 'text-gray-400'} />
                 <div>
-                  <h4 className={`text-xs font-semibold ${r.active ? 'text-indigo-900' : 'text-gray-700'}`}>{r.n}</h4>
+                  <h4 className={`text-xs  ${r.active ? 'text-indigo-900' : 'text-gray-700'}`}>{r.n}</h4>
                   <p className="text-[9px] text-gray-500 mt-0.5">{r.d}</p>
                 </div>
               </div>
             ))}
           </div>
-          <button className="w-full mt-6 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition">
+          <button className="w-full mt-6 py-2 bg-red-600 text-white text-xs  rounded hover:bg-red-700 transition">
             Generate Custom Report
           </button>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-3">
-          <h3 className="font-semibold text-gray-900 text-sm mb-4">Recent Reports</h3>
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm col-span-3">
+          <h3 className=" text-gray-900 text-sm mb-4">Recent Reports</h3>
           <table className="w-full text-left text-xs whitespace-nowrap">
             <thead>
               <tr className="text-gray-500 border-b border-gray-100 text-[9px] uppercase tracking-wider">
-                <th className="pb-3 font-semibold">Report Name</th>
-                <th className="pb-3 font-semibold">Date</th>
-                <th className="pb-3 font-semibold">Type</th>
-                <th className="pb-3 font-semibold text-center">Status</th>
-                <th className="pb-3 font-semibold text-right">Action</th>
+                <th className="pb-3 ">Report Name</th>
+                <th className="pb-3 ">Date</th>
+                <th className="pb-3 ">Type</th>
+                <th className="pb-3  text-center">Status</th>
+                <th className="pb-3  text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -657,8 +657,8 @@ const SeoGmbLocationIntelligencePage = () => {
   const renderSettingsTab = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm space-y-5">
-          <h3 className="font-semibold text-gray-900 text-sm border-b border-gray-100 pb-2">Location Settings</h3>
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm space-y-5">
+          <h3 className=" text-gray-900 text-sm border-b border-gray-100 pb-2">Location Settings</h3>
 
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-700">Enable Location Tracking</span>
@@ -690,13 +690,13 @@ const SeoGmbLocationIntelligencePage = () => {
             </select>
           </div>
 
-          <button className="w-full py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition">
+          <button className="w-full py-2 bg-red-600 text-white text-xs  rounded hover:bg-red-700 transition">
             Save Settings
           </button>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm space-y-5">
-          <h3 className="font-semibold text-gray-900 text-sm border-b border-gray-100 pb-2">Tracking & Notifications</h3>
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm space-y-5">
+          <h3 className=" text-gray-900 text-sm border-b border-gray-100 pb-2">Tracking & Notifications</h3>
 
           <div className="space-y-3">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -723,8 +723,8 @@ const SeoGmbLocationIntelligencePage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm space-y-4">
-          <h3 className="font-semibold text-gray-900 text-sm border-b border-gray-100 pb-2">Connected Integrations</h3>
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm space-y-4">
+          <h3 className=" text-gray-900 text-sm border-b border-gray-100 pb-2">Connected Integrations</h3>
 
           {[
             { n: 'Google Search Console', s: 'Connected' },
@@ -776,7 +776,7 @@ const SeoGmbLocationIntelligencePage = () => {
           <button className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">
             <RefreshCw size={14} />
           </button>
-          <button className="p-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+          <button className="p-2 bg-red-600 text-white text-xs  rounded hover:bg-red-700 transition shadow-sm flex items-center gap-2">
             <Download size={14} /> Export Report
           </button>
         </div>

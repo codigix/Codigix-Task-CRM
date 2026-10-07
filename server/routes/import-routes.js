@@ -204,9 +204,14 @@ module.exports = function setupImportRoutes(app, pool) {
       if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
       const dayFirst = String(req.query.dayFirst || req.body.dayFirst || 'false') === 'true';
-      const department = String(req.query.department || req.body.department || 'IT')
+      let department = String(req.query.department || req.body.department || 'IT')
         .replace(/\s*department\s*$/i, '').trim();
       const sprintId = req.query.sprintId || req.body.sprintId || null;
+      // Rows land on the target sprint's board (see commit), so check duplicates there.
+      if (sprintId) {
+        const [[sp]] = await pool.query('SELECT department FROM sprints WHERE id = ?', [sprintId]);
+        if (sp && sp.department) department = sp.department;
+      }
       const requestedSheet = String(req.query.sheetName || req.body.sheetName || '').trim();
 
       const workbook = new ExcelJS.Workbook();
@@ -535,13 +540,15 @@ module.exports = function setupImportRoutes(app, pool) {
         return res.status(400).json({ error: 'dateField must be due_date, start_date, or both' });
       }
 
-      const dept = String(department || 'IT').replace(/\s*department\s*$/i, '').trim();
+      let dept = String(department || 'IT').replace(/\s*department\s*$/i, '').trim();
 
-      // A sprint owns its project, so work imported into one takes that project.
+      // A sprint owns its project and belongs to one board, so work imported into it takes
+      // that project and that board's department, not the page the import was started from.
       let sprintProjectId = null;
       if (sprintId) {
-        const [[s]] = await conn.query('SELECT project_id FROM sprints WHERE id = ?', [sprintId]);
+        const [[s]] = await conn.query('SELECT project_id, department FROM sprints WHERE id = ?', [sprintId]);
         if (s && s.project_id != null) sprintProjectId = s.project_id;
+        if (s && s.department) dept = s.department;
       }
 
       // Resolve key prefix

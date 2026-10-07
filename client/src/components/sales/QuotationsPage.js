@@ -951,7 +951,7 @@ const QuotationsPage = () => {
                 <div className="flex items-center gap-3">
                   <h3 className="text-lg font-[500] text-gray-900">Estimation Details</h3>
                   <span
-                    className="px-3 py-1 text-xs font-[500] rounded-md inline-block "
+                    className="px-3 py-1 text-xs font-[500] rounded inline-block "
                     style={{ backgroundColor: getStatusColor(quotation.status) + '20', color: getStatusColor(quotation.status) }}
                   >
                     {quotation.status}
@@ -1600,7 +1600,7 @@ const QuotationsPage = () => {
                       <label key={opt} className="flex items-center gap-3 cursor-pointer group py-0.5">
                         <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${activeFilters[section.id]?.includes(opt) ? 'bg-red-600 border-red-600' : 'border-gray-200 group-hover:border-red-400'}`}>
                           {activeFilters[section.id]?.includes(opt) && (
-                            <div className="w-2 h-2 bg-white rounded-sm transform rotate-45 border-b-2 border-r-2 border-red-600" />
+                            <div className="w-2 h-2 bg-white rounded transform rotate-45 border-b-2 border-r-2 border-red-600" />
                           )}
                         </div>
                         <input type="checkbox" className="hidden" checked={activeFilters[section.id]?.includes(opt)} onChange={() => toggleFilter(section.id, opt)} />
@@ -1639,9 +1639,9 @@ const QuotationsPage = () => {
             >
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-0.5 opacity-20 group-hover:opacity-40 transition-opacity">
-                  <div className="w-3.5 h-0.5 bg-gray-900 rounded-full" />
-                  <div className="w-3.5 h-0.5 bg-gray-900 rounded-full" />
-                  <div className="w-3.5 h-0.5 bg-gray-900 rounded-full" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
                 </div>
                 <span className={`text-xs  transition-colors ${visibleColumns[col] ? 'text-gray-900 ' : 'text-gray-500'}`}>{col}</span>
               </div>

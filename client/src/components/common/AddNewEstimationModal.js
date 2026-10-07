@@ -4,10 +4,13 @@ import { dealsAPI, companiesAPI, leadsAPI, contactsAPI, projectAPI, usersAPI, es
 import { generateQuotationPDF, generateQuotationPDFBase64 } from '../../utils/generateQuotationPDF';
 import CreateEstimationModal from './CreateEstimationModal';
 
-const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGeneratePDF, mode, isEstimation = false }) => {
-  if (mode === 'estimation' || isEstimation) {
-    return <CreateEstimationModal isOpen={isOpen} onClose={onClose} onSubmit={onSubmit} initialData={initialData} />;
-  }
+// Chooses the modal up front so the quotation modal's hooks always run in the same order
+// (calling them after a conditional return broke the production build).
+const AddNewEstimationModal = (props) => (props.mode === 'estimation' || props.isEstimation)
+  ? <CreateEstimationModal isOpen={props.isOpen} onClose={props.onClose} onSubmit={props.onSubmit} initialData={props.initialData} />
+  : <QuotationModal {...props} />;
+
+const QuotationModal = ({ isOpen, onClose, onSubmit, initialData, onGeneratePDF, mode, isEstimation = false }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingData, setLoadingData] = useState(false);
@@ -1594,7 +1597,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
       {/* Send Quotation Email Preview Modal */}
       {isEmailPreviewOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-          <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white w-full max-w-2xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             {/* Modal Header */}
             <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1602,7 +1605,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                   <Mail size={18} />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">Send Quotation Email Preview</h3>
+                  <h3 className="text-base  text-white">Send Quotation Email Preview</h3>
                   <p className="text-xs text-slate-400">Review all quotation details before sending to client</p>
                 </div>
               </div>
@@ -1620,7 +1623,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
               {/* Email Meta Card */}
               <div className="bg-gray-50 border border-gray-200 rounded p-3 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-600 w-20">To Email:</span>
+                  <span className=" text-gray-600 w-20">To Email:</span>
                   <input
                     type="email"
                     value={emailToRecipient}
@@ -1630,7 +1633,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-600 w-20">Subject:</span>
+                  <span className=" text-gray-600 w-20">Subject:</span>
                   <span className="font-medium text-gray-900 truncate">
                     Quotation #{formData.quotationNumber} for {formData.client || formData.contactPerson} - Codigix Infotech
                   </span>
@@ -1640,13 +1643,13 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
               {/* Client & Quotation Info */}
               <div className="grid grid-cols-2 gap-3 bg-blue-50/50 border border-blue-100 rounded p-3">
                 <div>
-                  <p className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">Client Information</p>
+                  <p className="text-[11px] text-blue-600  uppercase tracking-wider">Client Information</p>
                   <p className=" text-gray-900 text-sm mt-0.5">{formData.contactPerson || formData.client || 'Valued Client'}</p>
                   <p className="text-gray-600">{formData.client}</p>
                   <p className="text-gray-500">{formData.client_phone || formData.businessType}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">Quotation Information</p>
+                  <p className="text-[11px] text-blue-600  uppercase tracking-wider">Quotation Information</p>
                   <p className=" text-gray-900 text-sm mt-0.5">#{formData.quotationNumber}</p>
                   <p className="text-gray-600">Date: {formData.quotationDate}</p>
                   <p className="text-gray-500">Valid Until: {formData.validUntil || 'N/A'}</p>
@@ -1658,10 +1661,10 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-gray-100 border-b border-gray-200">
                     <tr>
-                      <th className="p-2 font-semibold text-gray-700">Item / Service</th>
-                      <th className="p-2 font-semibold text-gray-700 text-center">Qty</th>
-                      <th className="p-2 font-semibold text-gray-700 text-right">Rate</th>
-                      <th className="p-2 font-semibold text-gray-700 text-right">Subtotal</th>
+                      <th className="p-2  text-gray-700">Item / Service</th>
+                      <th className="p-2  text-gray-700 text-center">Qty</th>
+                      <th className="p-2  text-gray-700 text-right">Rate</th>
+                      <th className="p-2  text-gray-700 text-right">Subtotal</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -1670,7 +1673,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                         <td className="p-2 font-medium text-gray-900">{item.productName || 'Software Service'}</td>
                         <td className="p-2 text-center text-gray-600">{item.quantity}</td>
                         <td className="p-2 text-right text-gray-600">₹{Number(item.rate).toLocaleString()}</td>
-                        <td className="p-2 text-right font-semibold text-gray-900">₹{Number(item.quantity * item.rate).toLocaleString()}</td>
+                        <td className="p-2 text-right  text-gray-900">₹{Number(item.quantity * item.rate).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1684,8 +1687,8 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                   <span>Attachment: <strong>Quotation-{formData.quotationNumber}.pdf</strong></span>
                 </div>
                 <div className="text-right space-y-0.5">
-                  <p className="text-gray-600">Subtotal: <span className="font-semibold text-gray-900">₹{Number(subtotal).toLocaleString()}</span></p>
-                  {tax > 0 && <p className="text-gray-600">Tax ({formData.taxPercentage}%): <span className="font-semibold text-gray-900">₹{Number(tax).toLocaleString()}</span></p>}
+                  <p className="text-gray-600">Subtotal: <span className=" text-gray-900">₹{Number(subtotal).toLocaleString()}</span></p>
+                  {tax > 0 && <p className="text-gray-600">Tax ({formData.taxPercentage}%): <span className=" text-gray-900">₹{Number(tax).toLocaleString()}</span></p>}
                   <p className="text-sm  text-gray-900">Total Amount: <span className="text-blue-600">₹{Number(total).toLocaleString()}</span></p>
                 </div>
               </div>
@@ -1697,7 +1700,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
               <button
                 type="button"
                 onClick={() => setIsEmailPreviewOpen(false)}
-                className="p-2 bg-white border border-gray-300 text-gray-700 rounded text-xs font-semibold hover:bg-gray-100 transition-colors"
+                className="p-2 bg-white border border-gray-300 text-gray-700 rounded text-xs  hover:bg-gray-100 transition-colors"
               >
                 Cancel
               </button>
@@ -1723,7 +1726,7 @@ const AddNewEstimationModal = ({ isOpen, onClose, onSubmit, initialData, onGener
                   setFormData(updatedFormData);
                   await handleSubmit(e, 'Sent', true, updatedFormData);
                 }}
-                className="px-5 py-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-md flex items-center gap-2 transition-all"
+                className="px-5 py-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs  shadow-md flex items-center gap-2 transition-all"
               >
                 <Mail size={14} />
                 Confirm & Send Email

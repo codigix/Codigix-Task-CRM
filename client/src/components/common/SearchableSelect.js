@@ -103,7 +103,7 @@ const SearchableSelect = ({
             </div>
           )}
           <span className={`truncate ${!displayLabel ? 'text-gray-400' : ''}`}>
-            {prefix && <span className="font-semibold mr-1">{prefix}</span>}
+            {prefix && <span className=" mr-1">{prefix}</span>}
             {displayLabel || placeholder}
           </span>
         </div>
@@ -156,7 +156,7 @@ const SearchableSelect = ({
                       }
                     }}
                     className={`w-full flex items-center justify-between p-2 text-xs rounded transition-colors text-left ${isSelected
-                      ? 'bg-blue-50 text-blue-700 font-semibold'
+                      ? 'bg-blue-50 text-blue-700 '
                       : 'text-gray-700 hover:bg-gray-100'
                       }`}
                   >

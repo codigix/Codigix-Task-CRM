@@ -1152,12 +1152,12 @@ const LeadDetailsPage = () => {
                   <List size={14} className="mt-0.5" />
                   <span className="flex flex-wrap gap-1">
                     {lead.it_services && lead.it_services !== 'None' && (
-                      <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-sm text-xs border border-blue-100">
+                      <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs border border-blue-100">
                         {lead.it_services === 'Other' ? lead.it_services_other : lead.it_services}
                       </span>
                     )}
                     {Array.isArray(marketingServices) && marketingServices.map((s, i) => (
-                      <span key={i} className="px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded-sm text-xs border border-purple-100">
+                      <span key={i} className="px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded text-xs border border-purple-100">
                         {s}
                       </span>
                     ))}
@@ -1592,7 +1592,7 @@ const LeadDetailsPage = () => {
                         {/* Parent Node */}
                         <div className="flex items-center gap-4 mb-4 relative">
                           <div className="relative z-10 shrink-0">
-                            <div className={`w-10 h-10 rounded flex items-center justify-center  ${group.type === 'Company' ? 'bg-indigo-600 text-white' :
+                            <div className={`w-10 h-10 rounded flex items-center justify-center  ${group.type === 'Company' ? 'bg-red-600 text-white' :
                               group.type === 'Lead' ? 'bg-blue-500 text-white' :
                                 group.type === 'Deal' ? 'bg-orange-500 text-white' :
                                   group.type === 'Quotation' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'

@@ -4,7 +4,7 @@ const fs = require('fs');
 const { google } = require('googleapis');
 const OpenAI = require('openai');
 const nodemailer = require('nodemailer');
-const { UPLOAD_DIR } = require('../config/upload');
+const { UPLOAD_DIR, uploadFileFilter, UPLOAD_LIMITS } = require('../config/upload');
 
 module.exports = function setupFollowupsRoutes(app, pool) {
   const openai = new OpenAI({
@@ -25,13 +25,21 @@ module.exports = function setupFollowupsRoutes(app, pool) {
     }
   });
 
-  const upload = multer({ storage: storage });
+  const upload = multer({ storage: storage, fileFilter: uploadFileFilter, limits: UPLOAD_LIMITS });
 
   // Add 'Client Joined' to status ENUM if not exists
   pool.query(`
     ALTER TABLE followups 
     MODIFY COLUMN status ENUM('Scheduled', 'Completed', 'Pending', 'Overdue', 'Cancelled', 'Client Joined') DEFAULT 'Scheduled'
   `).catch(err => console.log('Followup status already updated or failed:', err.message));
+
+  // Internal meetings and direct video calls aren't about a lead or deal: allow
+  // related_type 'Internal' with no related record. Additive; existing rows are unchanged.
+  pool.query(`
+    ALTER TABLE followups
+    MODIFY COLUMN related_type ENUM('Lead', 'Deal', 'Customer', 'Invoice', 'Internal') NOT NULL,
+    MODIFY COLUMN related_id INT NULL
+  `).catch(err => console.log('Followup related_type update skipped:', err.message));
 
   async function getConnection() {
     return pool.getConnection();
@@ -708,6 +716,11 @@ module.exports = function setupFollowupsRoutes(app, pool) {
           console.warn(`⚠️ Invalid assigned_to value: ${assigned_to}. Setting to NULL.`);
           sanitizedAssignedTo = null;
         }
+      }
+      // A meeting or call nobody was assigned to belongs to whoever created it, so it
+      // counts in their performance report instead of no one's.
+      if (sanitizedAssignedTo == null && req.user?.id) {
+        sanitizedAssignedTo = Number(req.user.id);
       }
 
       const insertData = {
@@ -1467,23 +1480,8 @@ module.exports = function setupFollowupsRoutes(app, pool) {
     }
   });
 
-  app.post('/api/create-meeting', async (req, res) => {
-    const { provider } = req.body;
-    const letters = 'abcdefghijklmnopqrstuvwxyz';
-    const part = (l) => Array.from({ length: l }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
-    const code = `${part(3)}-${part(4)}-${part(3)}`;
-
-    let meetingLink = '';
-    if (provider === 'google_meet') {
-      meetingLink = `https://meet.google.com/${code}`;
-    } else if (provider === 'zoom') {
-      meetingLink = `https://zoom.us/j/${Math.floor(1000000000 + Math.random() * 9000000000)}`;
-    } else {
-      meetingLink = `https://meet.jit.si/crm-meeting-${code}`;
-    }
-
-    res.json({ meetingLink });
-  });
+  // /api/create-meeting moved to calendar-routes.js: it now returns a real, joinable room
+  // instead of invented Google Meet / Zoom codes.
 
   app.get('/api/followups/analytics/effectiveness', async (req, res) => {
     try {

@@ -566,7 +566,7 @@ export default function ITChatPage() {
         {msg.date && (
           <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-gray-100" />
-            <span className={`text-xs px-3 py-1 rounded-full ${msg.date === 'New Messages' ? 'bg-red-50 text-red-500 font-semibold' : 'bg-gray-100 text-gray-500'}`}>{msg.date}</span>
+            <span className={`text-xs px-3 py-1 rounded-full ${msg.date === 'New Messages' ? 'bg-red-50 text-red-500 ' : 'bg-gray-100 text-gray-500'}`}>{msg.date}</span>
             <div className="flex-1 h-px bg-gray-100" />
           </div>
         )}
@@ -582,7 +582,7 @@ export default function ITChatPage() {
           <div className={`max-w-[70%] ${isMine ? 'items-end' : 'items-start'} flex flex-col relative`}>
             {!isMine && selectedChat?.chat_type === 'group' && (
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[12px] font-semibold text-[#25d366]">{senderName}</span>
+                <span className="text-[12px]  text-[#25d366]">{senderName}</span>
                 <span className="text-[10px] text-gray-400 font-medium">{formatMessageTime(msg.timestamp || msg.created_at)}</span>
               </div>
             )}
@@ -600,7 +600,7 @@ export default function ITChatPage() {
 
             {/* Message Body / Inline Edit Mode */}
             {editingMessageId === msg.id ? (
-              <div className="flex gap-2 items-center bg-white p-2 border border-blue-400 rounded-xl shadow-md w-full">
+              <div className="flex gap-2 items-center bg-white p-2 border border-blue-400 rounded shadow-md w-full">
                 <input
                   type="text"
                   value={editingText}
@@ -608,7 +608,7 @@ export default function ITChatPage() {
                   onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit(msg.id)}
                   className="flex-1 text-xs outline-none px-2 py-1 bg-gray-50 border border-gray-200 rounded"
                 />
-                <button onClick={() => handleSaveEdit(msg.id)} className="px-2.5 py-1 bg-red-600 text-white rounded text-xs font-semibold hover:bg-blue-700 cursor-pointer">
+                <button onClick={() => handleSaveEdit(msg.id)} className="px-2.5 py-1 bg-red-600 text-white rounded text-xs  hover:bg-blue-700 cursor-pointer">
                   Save
                 </button>
                 <button onClick={() => setEditingMessageId(null)} className="px-2 py-1 text-gray-500 hover:bg-gray-100 rounded text-xs cursor-pointer">
@@ -649,7 +649,7 @@ export default function ITChatPage() {
             )}
 
             {file && !isDeleted && (
-              <div className="mt-1 flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-200 bg-white shadow-2xs">
+              <div className="mt-1 flex items-center gap-2.5 p-2.5 rounded border border-gray-200 bg-white shadow-2xs">
                 {FILE_ICONS[file.icon] || <FileText size={22} className="text-gray-400" />}
                 <div>
                   <p className="text-[12px] text-gray-800 font-medium">{file.name}</p>
@@ -724,7 +724,7 @@ export default function ITChatPage() {
 
               {/* WhatsApp Context Menu Dropdown */}
               {activeContextMenuId === msg.id && (
-                <div className={`absolute top-full mt-1 ${isMine ? 'right-0' : 'left-0'} z-50 bg-white border border-gray-200 rounded-xl shadow-xl py-1.5 w-44 text-xs font-medium text-gray-700 divide-y divide-gray-100 animate-fadeIn`}>
+                <div className={`absolute top-full mt-1 ${isMine ? 'right-0' : 'left-0'} z-50 bg-white border border-gray-200 rounded shadow-xl py-1.5 w-44 text-xs font-medium text-gray-700 divide-y divide-gray-100 animate-fadeIn`}>
                   <div className="py-1">
                     <button
                       onClick={() => {
@@ -807,7 +807,7 @@ export default function ITChatPage() {
                   navigate('/it/it manager/ashwinikhedekar1025/dashboard');
                 }
               }}
-              className="p-1.5 hover:bg-gray-100 rounded text-gray-700 hover:text-red-600 transition flex items-center gap-1 cursor-pointer font-semibold text-xs bg-gray-50 border border-gray-200 shadow-xs"
+              className="p-1.5 hover:bg-gray-100 rounded text-gray-700 hover:text-red-600 transition flex items-center gap-1 cursor-pointer  text-xs bg-gray-50 border border-gray-200 shadow-xs"
               title="Back to Dashboard"
             >
               <ArrowLeft size={14} />
@@ -842,7 +842,7 @@ export default function ITChatPage() {
 
               {/* WhatsApp Top Header Dropdown Menu */}
               {showTopHeaderMenu && (
-                <div className="absolute right-0 top-full mt-1.5 z-50 bg-white border border-gray-200 rounded-xl shadow-2xl py-1.5 w-48 text-xs font-medium text-gray-700 divide-y divide-gray-100 animate-fadeIn">
+                <div className="absolute right-0 top-full mt-1.5 z-50 bg-white border border-gray-200 rounded shadow-2xl py-1.5 w-48 text-xs font-medium text-gray-700 divide-y divide-gray-100 animate-fadeIn">
                   <div className="py-1">
                     <button
                       onClick={() => {
@@ -850,7 +850,7 @@ export default function ITChatPage() {
                         setSelectedUserIds([]);
                         setIsCreateTeamOpen(true);
                       }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer text-gray-800 font-semibold"
+                      className="w-full text-left px-3.5 py-2 hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer text-gray-800 "
                     >
                       <Users size={15} className="text-blue-600" />
                       <span>New group</span>
@@ -928,7 +928,7 @@ export default function ITChatPage() {
           {pinned.length > 0 && (
             <>
               <div className="flex items-center justify-between p-2 mb-1">
-                <span className="text-xs text-amber-500 tracking-wider flex items-center gap-1 font-semibold"><Pin size={10} /> Pinned</span>
+                <span className="text-xs text-amber-500 tracking-wider flex items-center gap-1 "><Pin size={10} /> Pinned</span>
                 <button className="text-gray-400 hover:text-gray-600"><svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6" /></svg></button>
               </div>
               {pinned.map(chat => <ChatItem key={chat.id} chat={chat} selected={selectedChat?.id === chat.id} onSelect={handleSelectChat} groupInitials={groupInitials} />)}
@@ -937,7 +937,7 @@ export default function ITChatPage() {
           {recent.length > 0 && (
             <>
               <div className="flex items-center justify-between p-2 mb-1 mt-2">
-                <span className="text-xs text-gray-400 tracking-wider font-semibold">Recent</span>
+                <span className="text-xs text-gray-400 tracking-wider ">Recent</span>
                 <button className="text-gray-400 hover:text-gray-600"><svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6" /></svg></button>
               </div>
               {recent.map(chat => <ChatItem key={chat.id} chat={chat} selected={selectedChat?.id === chat.id} onSelect={handleSelectChat} groupInitials={groupInitials} />)}
@@ -946,7 +946,7 @@ export default function ITChatPage() {
           {directoryUsers.length > 0 && (
             <>
               <div className="flex items-center justify-between p-2 mb-1 mt-2 border-t border-gray-100 pt-2">
-                <span className="text-xs text-blue-500 tracking-wider flex items-center gap-1 font-semibold"><Users size={10} /> Company Directory</span>
+                <span className="text-xs text-blue-500 tracking-wider flex items-center gap-1 "><Users size={10} /> Company Directory</span>
               </div>
               {directoryUsers.map(chat => <ChatItem key={chat.id} chat={chat} selected={selectedChat?.id === chat.id} onSelect={handleSelectChat} groupInitials={groupInitials} />)}
             </>
@@ -990,7 +990,7 @@ export default function ITChatPage() {
                     const statusObj = getUserOnlineStatus(selectedChat);
                     if (!statusObj) return null;
                     return (
-                      <p className={`text-xs font-semibold flex items-center gap-1.5 ${statusObj.isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
+                      <p className={`text-xs  flex items-center gap-1.5 ${statusObj.isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
                         {statusObj.isOnline && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>}
                         <span>{statusObj.text}</span>
                       </p>
@@ -1047,7 +1047,7 @@ export default function ITChatPage() {
 
           {activeTab === 'Files' && (
             <div className="p-4 space-y-2">
-              <h4 className="text-xs font-semibold text-gray-700 mb-2">Shared Files</h4>
+              <h4 className="text-xs  text-gray-700 mb-2">Shared Files</h4>
               {messages.filter(m => m.file || m.file_name).map((m, i) => (
                 <div key={i} className="p-3 bg-white border border-gray-200 rounded flex justify-between items-center text-xs">
                   <div className="flex items-center gap-2">
@@ -1077,7 +1077,7 @@ export default function ITChatPage() {
                 />
                 <button
                   onClick={handleAddTask}
-                  className="px-3 py-2 bg-red-600 text-white rounded text-xs font-semibold hover:bg-blue-700 cursor-pointer"
+                  className="px-3 py-2 bg-red-600 text-white rounded text-xs  hover:bg-blue-700 cursor-pointer"
                 >
                   Add Task
                 </button>
@@ -1165,7 +1165,7 @@ export default function ITChatPage() {
             </div>
           )}
 
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-blue-400 focus-within:bg-white transition-all">
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded px-3 py-2 focus-within:ring-2 focus-within:ring-blue-400 focus-within:bg-white transition-all">
             <input
               id="chat-input"
               type="text"
@@ -1206,7 +1206,7 @@ export default function ITChatPage() {
                 const statusObj = getUserOnlineStatus(selectedChat);
                 if (!statusObj) return null;
                 return (
-                  <p className={`text-xs font-semibold flex items-center justify-center gap-1 ${statusObj.isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
+                  <p className={`text-xs  flex items-center justify-center gap-1 ${statusObj.isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
                     {statusObj.isOnline && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                     <span>{statusObj.text}</span>
                   </p>
@@ -1220,7 +1220,7 @@ export default function ITChatPage() {
                   setSelectedUserIds([]);
                   setIsAddMemberOpen(true);
                 }}
-                className="w-full mt-2 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                className="w-full mt-2 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded text-xs  transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <UserPlus size={14} />
                 <span>Add Members</span>
@@ -1229,7 +1229,7 @@ export default function ITChatPage() {
           </div>
 
           <div className="p-3 bg-gray-50 border border-gray-100 rounded space-y-1">
-            <span className="text-gray-500 font-semibold text-[10px] uppercase tracking-wider block">About</span>
+            <span className="text-gray-500  text-[10px] uppercase tracking-wider block">About</span>
             <p className="text-gray-700 leading-relaxed text-xs">No description available</p>
           </div>
         </div>
@@ -1256,7 +1256,7 @@ export default function ITChatPage() {
 
             <div className="p-5 space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Group Name *</label>
+                <label className="block text-xs  text-gray-700 mb-1">Group Name *</label>
                 <input
                   type="text"
                   placeholder="e.g. Frontend Development Team"
@@ -1267,7 +1267,7 @@ export default function ITChatPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Group Description</label>
+                <label className="block text-xs  text-gray-700 mb-1">Group Description</label>
                 <textarea
                   placeholder="What is this channel about?"
                   rows={2}
@@ -1278,7 +1278,7 @@ export default function ITChatPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex justify-between items-center">
+                <label className="block text-xs  text-gray-700 mb-1.5 flex justify-between items-center">
                   <span>Select Team Members</span>
                   <span className="text-blue-600 font-normal">{selectedUserIds.length} selected</span>
                 </label>
@@ -1291,7 +1291,7 @@ export default function ITChatPage() {
                         <div className="flex items-center gap-2.5">
                           <Avatar name={uName} src={u.avatar} size={28} />
                           <div>
-                            <span className="font-semibold text-gray-800 block text-xs">{uName}</span>
+                            <span className=" text-gray-800 block text-xs">{uName}</span>
                             <span className="text-[10px] text-gray-400 block">{u.email || u.status}</span>
                           </div>
                         </div>
@@ -1316,7 +1316,7 @@ export default function ITChatPage() {
               <button onClick={() => setIsCreateTeamOpen(false)} className="p-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-100 text-xs font-medium cursor-pointer">
                 Cancel
               </button>
-              <button onClick={handleCreateTeam} className="p-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-xs cursor-pointer">
+              <button onClick={handleCreateTeam} className="p-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs  shadow-xs cursor-pointer">
                 Create Group
               </button>
             </div>
@@ -1345,7 +1345,7 @@ export default function ITChatPage() {
 
             <div className="p-5 space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex justify-between items-center">
+                <label className="block text-xs  text-gray-700 mb-1.5 flex justify-between items-center">
                   <span>Select Users to Add</span>
                   <span className="text-emerald-600 font-normal">{selectedUserIds.length} selected</span>
                 </label>
@@ -1360,7 +1360,7 @@ export default function ITChatPage() {
                           <div className="flex items-center gap-2.5">
                             <Avatar name={uName} src={u.avatar} size={28} />
                             <div>
-                              <span className="font-semibold text-gray-800 block text-xs">{uName}</span>
+                              <span className=" text-gray-800 block text-xs">{uName}</span>
                               <span className="text-[10px] text-gray-400 block">{u.email || u.status}</span>
                             </div>
                           </div>
@@ -1385,7 +1385,7 @@ export default function ITChatPage() {
               <button onClick={() => setIsAddMemberOpen(false)} className="p-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-100 text-xs font-medium cursor-pointer">
                 Cancel
               </button>
-              <button onClick={handleAddMembers} className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow-xs cursor-pointer">
+              <button onClick={handleAddMembers} className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs  shadow-xs cursor-pointer">
                 Add Selected Members
               </button>
             </div>
@@ -1414,7 +1414,7 @@ function ChatItem({ chat, selected, onSelect, groupInitials }) {
     <button
       onClick={() => onSelect(chat)}
       className={`w-full flex items-center gap-3 px-2 py-2.5 rounded transition-all mb-0.5 text-left cursor-pointer
-        ${selected ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'}`}
+        ${selected ? 'bg-gray-100 ' : 'hover:bg-gray-50'}`}
     >
       <div className="relative shrink-0">
         {chat.chat_type === 'group'
@@ -1425,7 +1425,7 @@ function ChatItem({ chat, selected, onSelect, groupInitials }) {
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center mb-0.5">
           <div className="flex items-center gap-1 min-w-0">
-            <h4 className="text-xs font-semibold text-gray-900 truncate pr-1">{chat.name}</h4>
+            <h4 className="text-xs  text-gray-900 truncate pr-1">{chat.name}</h4>
             {chat.department && (
               <span className="text-[9px] bg-blue-50 text-blue-600 px-1 py-0.2 rounded font-normal shrink-0">{chat.department}</span>
             )}

@@ -27,7 +27,7 @@ const SeoGmbAiContentGenerationPage = () => {
             <ChevronRightIcon />
             <span className="text-gray-500 text-sm">AI Content Generation</span>
             <ChevronRightIcon />
-            <span className="text-gray-900 text-sm font-semibold">New Content</span>
+            <span className="text-gray-900 text-sm ">New Content</span>
           </div>
         </div>
 
@@ -44,7 +44,7 @@ const SeoGmbAiContentGenerationPage = () => {
           <button className="p-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition">
             Save as Draft
           </button>
-          <button className="p-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition shadow-sm">
+          <button className="p-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition shadow-sm">
             Publish / Export ▾
           </button>
         </div>
@@ -53,9 +53,9 @@ const SeoGmbAiContentGenerationPage = () => {
       <div className="p-4 mx-auto grid grid-cols-1 xl:grid-cols-12 gap-4 max-w-[1900px]">
         {/* LEFT COLUMN: Content Brief */}
         <div className="xl:col-span-3 space-y-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4 cursor-pointer">
-              <h3 className="font-semibold text-gray-900">Content Brief</h3>
+              <h3 className=" text-gray-900">Content Brief</h3>
               <ChevronDown size={18} className="text-gray-400" />
             </div>
 
@@ -149,15 +149,15 @@ const SeoGmbAiContentGenerationPage = () => {
                 ></textarea>
               </div>
 
-              <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded flex items-center justify-center gap-2 transition shadow-[0_0_15px_rgba(79,70,229,0.3)]">
+              <button className="w-full bg-red-600 hover:bg-red-700 text-white  py-2.5 rounded flex items-center justify-center gap-2 transition shadow-[0_0_15px_rgba(79,70,229,0.3)]">
                 <Zap size={16} className="fill-white" /> Generate Content
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Content Ideas <span className="text-gray-500 font-normal text-sm">(AI Suggestions)</span></h3>
+              <h3 className=" text-gray-900">Content Ideas <span className="text-gray-500 font-normal text-sm">(AI Suggestions)</span></h3>
               <RefreshCw size={14} className="text-indigo-600 cursor-pointer" />
             </div>
             <div className="space-y-2">
@@ -173,12 +173,12 @@ const SeoGmbAiContentGenerationPage = () => {
 
         {/* MIDDLE COLUMN: Text Editor */}
         <div className="xl:col-span-6 space-y-4 flex flex-col h-full">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col flex-1">
+          <div className="bg-white rounded border border-gray-100 shadow-sm flex flex-col flex-1">
 
             {/* Editor Header */}
             <div className="border-b border-gray-100 px-5 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-gray-900">Generated Content</h3>
+                <h3 className=" text-gray-900">Generated Content</h3>
                 <span className="bg-green-50 text-green-600 border border-green-200 text-[10px]  px-2 py-0.5 rounded-full uppercase tracking-wider">AI Generated</span>
               </div>
               <div className="flex items-center gap-4 text-gray-500 text-sm">
@@ -264,7 +264,7 @@ const SeoGmbAiContentGenerationPage = () => {
                 <span>Words: 1,832</span>
                 <span>Readability: <span className="text-green-600">Good</span></span>
               </div>
-              <button className="flex items-center gap-2 text-indigo-600 text-sm font-semibold hover:bg-indigo-50 px-3 py-1.5 rounded transition border border-indigo-100 bg-white shadow-sm">
+              <button className="flex items-center gap-2 text-indigo-600 text-sm  hover:bg-indigo-50 px-3 py-1.5 rounded transition border border-indigo-100 bg-white shadow-sm">
                 <RefreshCw size={14} /> Regenerate
               </button>
             </div>
@@ -274,14 +274,14 @@ const SeoGmbAiContentGenerationPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* AI Assistant */}
-            <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm h-64 flex flex-col">
-              <h3 className="font-semibold text-gray-900 mb-4">AI Content Assistant</h3>
+            <div className="bg-white rounded border border-gray-100 p-5 shadow-sm h-64 flex flex-col">
+              <h3 className=" text-gray-900 mb-4">AI Content Assistant</h3>
               <div className="flex gap-4 border-b border-gray-100 mb-4">
                 {['Suggestions', 'Improve Content', 'Expand Content', 'Shorten Content', 'Make it Simple'].map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveAssistantTab(tab)}
-                    className={`text-xs font-semibold pb-2 border-b-2 transition-colors whitespace-nowrap ${activeAssistantTab === tab ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+                    className={`text-xs  pb-2 border-b-2 transition-colors whitespace-nowrap ${activeAssistantTab === tab ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
                   >
                     {tab}
                   </button>
@@ -299,39 +299,39 @@ const SeoGmbAiContentGenerationPage = () => {
                       <Star size={14} className="text-indigo-600 mt-0.5 flex-shrink-0 fill-indigo-100" />
                       <span className="text-sm text-gray-700">{item.text}</span>
                     </div>
-                    <button className="text-xs font-semibold text-indigo-600 hover:underline flex-shrink-0">Apply</button>
+                    <button className="text-xs  text-indigo-600 hover:underline flex-shrink-0">Apply</button>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Content History */}
-            <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm h-64 flex flex-col">
-              <h3 className="font-semibold text-gray-900 mb-4">Content History</h3>
+            <div className="bg-white rounded border border-gray-100 p-5 shadow-sm h-64 flex flex-col">
+              <h3 className=" text-gray-900 mb-4">Content History</h3>
               <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                 <div className="flex items-start justify-between border-b border-gray-50 pb-3">
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-1">Benefits of Cloud ERP for Manufacturing</h4>
+                    <h4 className="text-sm  text-gray-900 mb-1">Benefits of Cloud ERP for Manufacturing</h4>
                     <p className="text-[10px] text-gray-500">May 30, 2026 - 10:30 AM</p>
                   </div>
                   <span className="bg-green-50 text-green-600 border border-green-200 text-[9px]  px-2 py-0.5 rounded-full">Published</span>
                 </div>
                 <div className="flex items-start justify-between border-b border-gray-50 pb-3">
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-1">Top ERP Features for Manufacturing</h4>
+                    <h4 className="text-sm  text-gray-900 mb-1">Top ERP Features for Manufacturing</h4>
                     <p className="text-[10px] text-gray-500">May 28, 2026 - 04:15 PM</p>
                   </div>
                   <span className="bg-gray-50 text-gray-600 border border-gray-200 text-[9px]  px-2 py-0.5 rounded-full">Draft</span>
                 </div>
                 <div className="flex items-start justify-between border-b border-gray-50 pb-3">
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-1">Manufacturing ERP Implementation Guide</h4>
+                    <h4 className="text-sm  text-gray-900 mb-1">Manufacturing ERP Implementation Guide</h4>
                     <p className="text-[10px] text-gray-500">May 26, 2026 - 11:20 AM</p>
                   </div>
                   <span className="bg-gray-50 text-gray-600 border border-gray-200 text-[9px]  px-2 py-0.5 rounded-full">Draft</span>
                 </div>
               </div>
-              <button className="text-indigo-600 text-xs font-semibold mt-2 hover:underline w-full text-left">View All History &rarr;</button>
+              <button className="text-indigo-600 text-xs  mt-2 hover:underline w-full text-left">View All History &rarr;</button>
             </div>
           </div>
         </div>
@@ -340,8 +340,8 @@ const SeoGmbAiContentGenerationPage = () => {
         <div className="xl:col-span-3 space-y-4">
 
           {/* Content Score */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">Content Score (AI Optimization)</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 mb-4">Content Score (AI Optimization)</h3>
             <div className="flex items-center justify-between">
 
               <div className="relative w-28 h-28 flex flex-col items-center justify-center">
@@ -352,44 +352,44 @@ const SeoGmbAiContentGenerationPage = () => {
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                   <span className="text-3xl  text-gray-900 leading-none tracking-tighter">88<span className="text-sm font-medium text-gray-400">/100</span></span>
                 </div>
-                <div className="absolute -bottom-2 text-[10px] font-semibold text-green-600">Excellent</div>
+                <div className="absolute -bottom-2 text-[10px]  text-green-600">Excellent</div>
               </div>
 
               <div className="flex-1 ml-6 space-y-3">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-600">SEO Score</span>
-                  <span className="font-semibold text-green-600">85<span className="text-gray-400 font-normal">/100</span></span>
+                  <span className=" text-green-600">85<span className="text-gray-400 font-normal">/100</span></span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-600 font-medium">GEO Score</span>
-                  <span className="font-semibold text-green-600">90<span className="text-gray-400 font-normal">/100</span></span>
+                  <span className=" text-green-600">90<span className="text-gray-400 font-normal">/100</span></span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-600">Readability</span>
-                  <span className="font-semibold text-green-600">87<span className="text-gray-400 font-normal">/100</span></span>
+                  <span className=" text-green-600">87<span className="text-gray-400 font-normal">/100</span></span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-600">Engagement</span>
-                  <span className="font-semibold text-green-600">86<span className="text-gray-400 font-normal">/100</span></span>
+                  <span className=" text-green-600">86<span className="text-gray-400 font-normal">/100</span></span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-600">Originality</span>
-                  <span className="font-semibold text-green-600">91<span className="text-gray-400 font-normal">/100</span></span>
+                  <span className=" text-green-600">91<span className="text-gray-400 font-normal">/100</span></span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* SEO / GEO Analysis */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">SEO / GEO Analysis</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 mb-4">SEO / GEO Analysis</h3>
 
             <div className="flex gap-2 border-b border-gray-100 mb-4">
               {['SEO', 'GEO', 'Readability', 'Tone'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveAnalysisTab(tab)}
-                  className={`text-xs font-semibold pb-2 border-b-2 transition-colors flex-1 text-center ${activeAnalysisTab === tab ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+                  className={`text-xs  pb-2 border-b-2 transition-colors flex-1 text-center ${activeAnalysisTab === tab ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
                 >
                   {tab}
                 </button>
@@ -399,99 +399,99 @@ const SeoGmbAiContentGenerationPage = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-green-500 fill-green-100" /> <span className="text-gray-700 font-medium">Entities Detected</span></div>
-                <div className="flex items-center gap-3"><span className="font-semibold">12</span> <span className="text-indigo-600 cursor-pointer hover:underline">View</span></div>
+                <div className="flex items-center gap-3"><span className="">12</span> <span className="text-indigo-600 cursor-pointer hover:underline">View</span></div>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-green-500 fill-green-100" /> <span className="text-gray-700 font-medium">AI Search Friendly</span></div>
-                <span className="font-semibold text-green-600">Yes</span>
+                <span className=" text-green-600">Yes</span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-green-500 fill-green-100" /> <span className="text-gray-700 font-medium">FAQ Opportunities</span></div>
-                <div className="flex items-center gap-3"><span className="font-semibold">5</span> <span className="text-indigo-600 cursor-pointer hover:underline">View</span></div>
+                <div className="flex items-center gap-3"><span className="">5</span> <span className="text-indigo-600 cursor-pointer hover:underline">View</span></div>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-green-500 fill-green-100" /> <span className="text-gray-700 font-medium">Schema Suggested</span></div>
-                <div className="flex items-center gap-3"><span className="font-semibold">6</span> <span className="text-indigo-600 cursor-pointer hover:underline">View</span></div>
+                <div className="flex items-center gap-3"><span className="">6</span> <span className="text-indigo-600 cursor-pointer hover:underline">View</span></div>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-green-500 fill-green-100" /> <span className="text-gray-700 font-medium">Citation Worthiness</span></div>
-                <span className="font-semibold text-green-600">High</span>
+                <span className=" text-green-600">High</span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-green-500 fill-green-100" /> <span className="text-gray-700 font-medium">Topical Authority</span></div>
-                <span className="font-semibold text-green-600">Strong</span>
+                <span className=" text-green-600">Strong</span>
               </div>
             </div>
           </div>
 
           {/* Recommended Entities */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-3">Recommended Entities</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 mb-3">Recommended Entities</h3>
             <div className="flex flex-wrap gap-2 mb-3">
               {['Cloud ERP', 'Manufacturing', 'Automation', 'Production Planning', 'Supply Chain', 'Real-time Data', 'Cost Reduction', 'Scalability', 'Data Security', 'Business Efficiency'].map((entity, i) => (
-                <span key={i} className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-medium border border-indigo-100">
+                <span key={i} className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded text-[10px] font-medium border border-indigo-100">
                   {entity}
                 </span>
               ))}
             </div>
-            <button className="text-indigo-600 text-xs font-semibold hover:underline text-left">View All Entities &rarr;</button>
+            <button className="text-indigo-600 text-xs  hover:underline text-left">View All Entities &rarr;</button>
           </div>
 
           {/* Suggested Schema */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-3">Suggested Schema</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 mb-3">Suggested Schema</h3>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-gray-700"><FileText size={12} className="text-gray-400" /> Article Schema</div>
-                <button className="text-indigo-600 font-semibold hover:underline">Add</button>
+                <button className="text-indigo-600  hover:underline">Add</button>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-gray-700"><Search size={12} className="text-gray-400" /> FAQ Schema</div>
-                <button className="text-indigo-600 font-semibold hover:underline">Add</button>
+                <button className="text-indigo-600  hover:underline">Add</button>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-gray-700"><FileText size={12} className="text-gray-400" /> FAQ Schema (S)</div>
-                <button className="text-indigo-600 font-semibold hover:underline">Add</button>
+                <button className="text-indigo-600  hover:underline">Add</button>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-gray-700"><Globe size={12} className="text-gray-400" /> Organization Schema</div>
-                <button className="text-indigo-600 font-semibold hover:underline">Add</button>
+                <button className="text-indigo-600  hover:underline">Add</button>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-gray-700"><LayoutTemplate size={12} className="text-gray-400" /> HowTo Schema</div>
-                <button className="text-indigo-600 font-semibold hover:underline">Add</button>
+                <button className="text-indigo-600  hover:underline">Add</button>
               </div>
             </div>
-            <button className="text-indigo-600 text-xs font-semibold hover:underline text-left">View All &rarr;</button>
+            <button className="text-indigo-600 text-xs  hover:underline text-left">View All &rarr;</button>
           </div>
 
           {/* Content Actions */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">Content Actions</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 mb-4">Content Actions</h3>
             <div className="grid grid-cols-4 gap-2">
               <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer transition gap-2 text-center group">
                 <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition">
                   <Search size={14} className="text-indigo-600" />
                 </div>
-                <span className="text-[9px] font-semibold text-gray-700 leading-tight">Generate FAQ</span>
+                <span className="text-[9px]  text-gray-700 leading-tight">Generate FAQ</span>
               </div>
               <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition gap-2 text-center group">
                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
                   <Globe size={14} className="text-blue-600" />
                 </div>
-                <span className="text-[9px] font-semibold text-gray-700 leading-tight">Generate Meta</span>
+                <span className="text-[9px]  text-gray-700 leading-tight">Generate Meta</span>
               </div>
               <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-pink-300 hover:bg-pink-50 cursor-pointer transition gap-2 text-center group">
                 <div className="w-8 h-8 rounded-full bg-pink-50 flex items-center justify-center group-hover:bg-pink-100 transition">
                   <FileText size={14} className="text-pink-600" />
                 </div>
-                <span className="text-[9px] font-semibold text-gray-700 leading-tight">Generate Summary</span>
+                <span className="text-[9px]  text-gray-700 leading-tight">Generate Summary</span>
               </div>
               <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-green-300 hover:bg-green-50 cursor-pointer transition gap-2 text-center group">
                 <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition">
                   <Shield size={14} className="text-green-600" />
                 </div>
-                <span className="text-[9px] font-semibold text-gray-700 leading-tight">Check Plagiarism</span>
+                <span className="text-[9px]  text-gray-700 leading-tight">Check Plagiarism</span>
               </div>
             </div>
           </div>

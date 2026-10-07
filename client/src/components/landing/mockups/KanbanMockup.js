@@ -41,10 +41,10 @@ const KanbanMockup = () => {
             <img className="w-6 h-6 rounded-full border-2 border-white relative z-10" src="https://i.pravatar.cc/100?img=12" alt="User" />
             <div className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px]  text-slate-500 z-0">+4</div>
           </div>
-          <button className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors">
+          <button className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded flex items-center gap-1.5 transition-colors">
             <Plus size={14} /> Add Task
           </button>
-          <button className="text-slate-400 hover:text-slate-600 p-1.5 border border-slate-200 rounded-md">
+          <button className="text-slate-400 hover:text-slate-600 p-1.5 border border-slate-200 rounded">
             <MoreHorizontal size={14} />
           </button>
         </div>
@@ -54,7 +54,7 @@ const KanbanMockup = () => {
       <div className="flex-1 overflow-x-auto overflow-y-hidden p-5 bg-slate-50">
         <div className="flex gap-5 h-full w-max">
           {columns.map((col, i) => (
-            <div key={i} className={`w-[260px] flex flex-col ${col.bg} rounded-xl p-3 max-h-full`}>
+            <div key={i} className={`w-[260px] flex flex-col ${col.bg} rounded p-3 max-h-full`}>
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xs  text-slate-700">{col.title}</h3>
@@ -76,7 +76,7 @@ const KanbanMockup = () => {
                       ) : (
                         <div className="w-3.5 h-3.5 rounded border-2 border-slate-300 flex-shrink-0 mt-0.5 group-hover:border-red-400 transition-colors"></div>
                       )}
-                      <h4 className={`text-xs font-semibold leading-snug ${task.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
+                      <h4 className={`text-xs  leading-snug ${task.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
                         {task.title}
                       </h4>
                     </div>

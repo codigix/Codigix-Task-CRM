@@ -57,7 +57,7 @@ const MarketingDashboard = () => {
         </div>
       </div>
       <div className="flex items-center gap-2 mt-auto">
-        <span className={`text-xs font-semibold ${parseFloat(change) >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center`}>
+        <span className={`text-xs  ${parseFloat(change) >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center`}>
           {parseFloat(change) >= 0 ? <TrendingUp size={12} className="mr-1" /> : <TrendingUp size={12} className="mr-1 rotate-180" />}
           {change}
         </span>
@@ -110,7 +110,7 @@ const MarketingDashboard = () => {
 
         {/* Lead Growth */}
         <div className="bg-white p-5 rounded border border-gray-100 shadow-sm">
-          <SectionHeader title="Lead Growth Overview" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs font-semibold px-3 py-1 rounded-full outline-none"><option>This Week</option></select>} />
+          <SectionHeader title="Lead Growth Overview" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded-full outline-none"><option>This Week</option></select>} />
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={LEAD_GROWTH_DATA}>
@@ -153,7 +153,7 @@ const MarketingDashboard = () => {
                 </div>
                 <div className="flex gap-4">
                   <span className="text-gray-400">{src.pct}%</span>
-                  <span className="font-semibold text-gray-900">({src.value})</span>
+                  <span className=" text-gray-900">({src.value})</span>
                 </div>
               </div>
             ))}
@@ -162,7 +162,7 @@ const MarketingDashboard = () => {
 
         {/* Top Campaigns */}
         <div className="bg-white p-5 rounded border border-gray-100 shadow-sm">
-          <SectionHeader title="Top Campaigns" rightElement={<button className="text-indigo-600 text-sm font-semibold hover:underline">View All &gt;</button>} />
+          <SectionHeader title="Top Campaigns" rightElement={<button className="text-indigo-600 text-sm  hover:underline">View All &gt;</button>} />
           <div className="space-y-4 mt-2">
             {TOP_CAMPAIGNS.slice(0, 4).map((c, i) => (
               <div key={i} className="flex justify-between items-center pb-4 border-b border-gray-50 last:border-0 last:pb-0">
@@ -185,7 +185,7 @@ const MarketingDashboard = () => {
 
         {/* Recent Leads */}
         <div className="bg-white p-5 rounded border border-gray-100 shadow-sm flex flex-col justify-between">
-          <SectionHeader title="Recent Leads" rightElement={<button className="text-indigo-600 text-sm font-semibold hover:underline">View All &gt;</button>} />
+          <SectionHeader title="Recent Leads" rightElement={<button className="text-indigo-600 text-sm  hover:underline">View All &gt;</button>} />
           <div className="space-y-4 mb-6">
             {RECENT_LEADS.slice(0, 2).map((l, i) => (
               <div key={i} className="flex items-center justify-between">
@@ -239,7 +239,7 @@ const MarketingDashboard = () => {
 
         {/* Engagement Overview */}
         <div className="bg-white p-5 rounded border border-gray-100 shadow-sm">
-          <SectionHeader title="Engagement Overview" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs font-semibold px-3 py-1 rounded-full outline-none"><option>This Week</option></select>} />
+          <SectionHeader title="Engagement Overview" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded-full outline-none"><option>This Week</option></select>} />
           <div className="space-y-4">
             {ENGAGEMENT.map((e, i) => {
               const icons = [Mail, MousePointer, Eye, FileText, Download];
@@ -255,7 +255,7 @@ const MarketingDashboard = () => {
                       <p className="text-sm  text-gray-900">{e.value}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-green-500 font-semibold flex items-center"><ArrowUpRight size={12} className="mr-1" /> +0%</span>
+                  <span className="text-xs text-green-500  flex items-center"><ArrowUpRight size={12} className="mr-1" /> +0%</span>
                 </div>
               );
             })}
@@ -265,7 +265,7 @@ const MarketingDashboard = () => {
         {/* Activities & Tasks */}
         <div className="flex flex-col gap-6">
           <div className="bg-white p-5 rounded border border-gray-100 shadow-sm flex-1">
-            <SectionHeader title="Activities" rightElement={<button className="text-indigo-600 text-xs font-semibold hover:underline">View Calendar &gt;</button>} />
+            <SectionHeader title="Activities" rightElement={<button className="text-indigo-600 text-xs  hover:underline">View Calendar &gt;</button>} />
             <div className="space-y-4 mt-2">
               {ACTIVITIES_DATA.slice(0, 2).map((a, i) => (
                 <div key={i} className="flex gap-3">
@@ -281,12 +281,12 @@ const MarketingDashboard = () => {
             </div>
           </div>
           <div className="bg-white p-5 rounded border border-gray-100 shadow-sm flex-1">
-            <SectionHeader title="Tasks" rightElement={<button className="text-indigo-600 text-xs font-semibold hover:underline">View All &gt;</button>} />
+            <SectionHeader title="Tasks" rightElement={<button className="text-indigo-600 text-xs  hover:underline">View All &gt;</button>} />
             <div className="space-y-3 mt-1">
               {TASKS_DATA.map((t, i) => (
                 <div key={i} className="flex items-center justify-between group cursor-pointer" onClick={() => toggleTask(i)}>
                   <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded flex items-center justify-center border ${checkedTasks[i] ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 group-hover:border-indigo-400'}`}>
+                    <div className={`w-4 h-4 rounded flex items-center justify-center border ${checkedTasks[i] ? 'bg-red-600 border-indigo-600' : 'border-gray-300 group-hover:border-indigo-400'}`}>
                       {checkedTasks[i] && <CheckSquare size={12} className="text-white" />}
                     </div>
                     <span className={`text-sm ${checkedTasks[i] ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{t.label}</span>
@@ -305,7 +305,7 @@ const MarketingDashboard = () => {
 
         {/* Trend Bar Chart */}
         <div className="bg-white p-5 rounded border border-gray-100 shadow-sm col-span-2">
-          <SectionHeader title="Marketing Performance Trend" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs font-semibold px-3 py-1 rounded-full outline-none"><option>Monthly</option></select>} />
+          <SectionHeader title="Marketing Performance Trend" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded-full outline-none"><option>Monthly</option></select>} />
           <div className="h-[250px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={PERFORMANCE_TREND}>
@@ -326,7 +326,7 @@ const MarketingDashboard = () => {
         {/* Channel & Campaign */}
         <div className="flex flex-col gap-6">
           <div className="bg-white p-5 rounded border border-gray-100 shadow-sm flex-1">
-            <SectionHeader title="Channel Performance" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs font-semibold px-3 py-1 rounded-full outline-none"><option>This Month</option></select>} />
+            <SectionHeader title="Channel Performance" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded-full outline-none"><option>This Month</option></select>} />
             <div className="space-y-4 mt-2">
               {CHANNEL_PERF.slice(0, 2).map((c, i) => (
                 <div key={i}>
@@ -351,7 +351,7 @@ const MarketingDashboard = () => {
                 <p className="text-[10px] opacity-80 uppercase tracking-widest">Active</p>
               </div>
             </div>
-            <p className="text-sm font-semibold relative z-10">Active Campaigns</p>
+            <p className="text-sm  relative z-10">Active Campaigns</p>
             <p className="text-xs opacity-80 relative z-10 mb-4">14 / 18 Running</p>
             <button className="w-full py-2 bg-white/20 hover:bg-white/30 transition-colors rounded text-sm  relative z-10">View All Campaigns</button>
           </div>

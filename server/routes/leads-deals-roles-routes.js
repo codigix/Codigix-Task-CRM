@@ -272,128 +272,133 @@ module.exports = function setupLeadsDealsRolesRoutes(app, pool) {
     }
   });
 
-  app.post('/api/leads/:id/convert', async (req, res) => {
+  /**
+   * Converts a lead into a deal. Used by Lead Details ("Qualified"), the Deals pipeline
+   * (dragging a lead into a stage) and Follow-ups ("Quotation Accepted & Converted to Deal").
+   *
+   * - Converting twice returns the existing deal instead of creating a duplicate.
+   * - Name and value default to the lead's own; a value of 0 is allowed.
+   * - The deal's company is the one chosen, else the lead's company (matched by name or
+   *   created from it). It is never borrowed from an unrelated client.
+   */
+  const convertLeadToDeal = async (req, res) => {
+    const leadId = req.params.id;
+    const body = req.body || {};
+    let conn;
     try {
-      const { converted_company_id, converted_contact_id, converted_deal_id } = req.body;
-      
-      await db.query(
-        `UPDATE leads SET lead_status = 'Converted to Deal', converted_company_id = ?, converted_contact_id = ?, converted_deal_id = ?, updated_at = NOW()
-         WHERE id = ?`,
-        [converted_company_id || null, converted_contact_id || null, converted_deal_id || null, req.params.id]
-      );
-      
-      const [lead] = await db.query('SELECT * FROM leads WHERE id = ?', [req.params.id]);
-      
-      return res.json({ success: true, data: lead[0] });
-    } catch (err) {
-      console.error('Error converting lead:', err);
-      return res.status(500).json({ success: false, error: err.message });
-    }
-  });
+      conn = await pool.getConnection();
+      await conn.beginTransaction();
 
-  app.post('/api/leads/:id/convert-to-deal', async (req, res) => {
-    try {
-      const { deal_name, deal_value, currency, company_id, description } = req.body;
-      const leadId = req.params.id;
-      
-      if (!deal_name || !deal_value) {
-        return res.status(400).json({ error: 'Deal name and value are required' });
+      const [[lead]] = await conn.query('SELECT * FROM leads WHERE id = ? FOR UPDATE', [leadId]);
+      if (!lead) {
+        await conn.rollback();
+        return res.status(404).json({ success: false, error: 'Lead not found' });
       }
-      
-      const [lead] = await db.query('SELECT * FROM leads WHERE id = ?', [leadId]);
-      
-      if (lead.length === 0) {
-        return res.status(404).json({ error: 'Lead not found' });
+
+      if (lead.converted_deal_id) {
+        const [[existing]] = await conn.query('SELECT * FROM deals WHERE id = ?', [lead.converted_deal_id]);
+        if (existing) {
+          await conn.rollback();
+          return res.status(200).json({
+            success: true,
+            alreadyConverted: true,
+            message: `Lead "${lead.lead_name}" was already converted`,
+            deal: existing,
+            leadId
+          });
+        }
       }
-      
-      const leadData = lead[0];
-      
-      let finalCompanyId = company_id || leadData.company_id;
-      
-      if (!finalCompanyId) {
-        const [companies] = await db.query(
-          `SELECT id FROM companies LIMIT 1`
-        );
-        
-        if (companies.length > 0) {
-          finalCompanyId = companies[0].id;
+
+      const dealName = String(body.deal_name || lead.project_name || lead.lead_name || '').trim();
+      if (!dealName) {
+        await conn.rollback();
+        return res.status(400).json({ success: false, error: 'Deal name is required' });
+      }
+      const rawValue = body.deal_value !== undefined && body.deal_value !== '' ? body.deal_value : lead.value;
+      const dealValue = Number(rawValue) || 0;
+      if (dealValue < 0) {
+        await conn.rollback();
+        return res.status(400).json({ success: false, error: 'Deal value cannot be negative' });
+      }
+
+      // Company: explicit choice → lead's linked company → lead's company name (reuse an
+      // existing company of that name, else create it) → none.
+      let companyId = body.company_id || lead.company_id || lead.converted_company_id || null;
+      if (!companyId && lead.company && String(lead.company).trim()) {
+        const name = String(lead.company).trim();
+        const [[match]] = await conn.query('SELECT id FROM companies WHERE company_name = ? LIMIT 1', [name]);
+        if (match) {
+          companyId = match.id;
         } else {
-          const [companyResult] = await db.query(
-            `INSERT INTO companies (company_name, status) VALUES (?, ?)`,
-            [`${leadData.lead_name || 'Unknown'} Company`, 'Active']
+          const [ins] = await conn.query(
+            'INSERT INTO companies (company_name, email, phone, industry, status, source, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
+            [name, lead.email || null, lead.phone || null, lead.industry || null, 'Active', lead.lead_source || 'Lead conversion']
           );
-          finalCompanyId = companyResult.insertId;
+          companyId = ins.insertId;
         }
       }
-      
-      let stageId = null;
-      
-      try {
-        const [defaultPipeline] = await db.query(
-          `SELECT id FROM pipelines WHERE status = 'Active' ORDER BY id LIMIT 1`
-        );
-        
-        if (defaultPipeline.length > 0) {
-          const [defaultStage] = await db.query(
-            `SELECT id FROM pipeline_stages WHERE pipeline_id = ? ORDER BY sequence ASC LIMIT 1`,
-            [defaultPipeline[0].id]
-          );
-          
-          if (defaultStage.length > 0) {
-            stageId = defaultStage[0].id;
-          }
-        }
-      } catch (pipelineErr) {
-        console.warn('Pipeline/stage tables not found, proceeding without pipeline assignment');
-      }
-      
-      // One client = one deal. Every service the client bought (SEO, GMB, Social Media, ...)
-      // rides along on that deal instead of being dropped or split into separate deals.
-      const resolved = await resolveDealForLead(db, { ...leadData, lead_name: deal_name || leadData.lead_name });
 
-      const [dealResult] = await db.query(
+      // First stage of the pipeline unless the caller dropped it on a specific stage.
+      const [[firstStage]] = await conn.query(
+        "SELECT id, name, probability FROM pipeline_stages WHERE COALESCE(status, 'Active') = 'Active' ORDER BY position ASC, id ASC LIMIT 1"
+      );
+      const stageName = body.deal_stage || firstStage?.name || 'New';
+
+      // One client = one deal. Every service the client bought rides along on that deal.
+      const resolved = await resolveDealForLead(conn, { ...lead, lead_name: dealName });
+
+      const [dealResult] = await conn.query(
         `INSERT INTO deals (
           deal_name, description, deal_value, currency, status,
-          company_id, service_category_id, services, pipeline, deal_stage, probability,
-          department_id, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+          company_id, service_category_id, services, pipeline, deal_stage, pipeline_stage_id,
+          probability, department_id, source, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, 'Open', ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
         [
-          deal_name || resolved.dealName,
-          description || null,
-          deal_value,
-          currency || 'USD',
-          'Open',
-          finalCompanyId,
+          dealName,
+          body.description || lead.notes || null,
+          dealValue,
+          body.currency || lead.currency || 'INR',
+          companyId,
           resolved.serviceCategoryId,
           resolved.serviceNames.length > 0 ? JSON.stringify(resolved.serviceNames) : null,
-          'New',
-          stageId || 'New',
-          10,
-          resolved.departmentId
+          body.pipeline || stageName,
+          stageName,
+          body.deal_stage ? null : (firstStage?.id || null),
+          firstStage?.probability ?? 10,
+          resolved.departmentId,
+          lead.lead_source || null
         ]
       );
-
       const dealId = dealResult.insertId;
 
-      await db.query(
-        `UPDATE leads SET lead_status = ?, converted_deal_id = ?, updated_at = NOW()
-         WHERE id = ?`,
-        ['Qualified', dealId, leadId]
+      await conn.query(
+        `UPDATE leads SET lead_status = 'Qualified', converted_deal_id = ?,
+                converted_company_id = COALESCE(converted_company_id, ?), updated_at = NOW()
+          WHERE id = ?`,
+        [dealId, companyId, leadId]
       );
 
-      const [newDeal] = await db.query('SELECT * FROM deals WHERE id = ?', [dealId]);
-
+      await conn.commit();
+      const [[newDeal]] = await conn.query('SELECT * FROM deals WHERE id = ?', [dealId]);
       return res.status(201).json({
         success: true,
-        message: `Lead "${leadData.lead_name}" successfully converted to deal`,
-        deal: newDeal[0],
-        leadId: leadId
+        message: `Lead "${lead.lead_name}" successfully converted to deal`,
+        deal: newDeal,
+        leadId
       });
     } catch (err) {
+      if (conn) await conn.rollback().catch(() => { });
       console.error('Error converting lead to deal:', err);
-      return res.status(500).json({ success: false, error: err.message });
+      return res.status(500).json({ success: false, error: 'Failed to convert lead to deal' });
+    } finally {
+      if (conn) conn.release();
     }
-  });
+  };
+
+  app.post('/api/leads/:id/convert-to-deal', convertLeadToDeal);
+  // Older name. It used to only mark the lead converted without creating a deal; it now
+  // performs the same full conversion.
+  app.post('/api/leads/:id/convert', convertLeadToDeal);
 
   app.get('/api/deals/:dealId/contacts', async (req, res) => {
     try {

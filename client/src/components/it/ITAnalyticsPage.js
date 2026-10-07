@@ -146,19 +146,19 @@ const ITAnalyticsPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-md cursor-pointer  hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded cursor-pointer  hover:bg-gray-50 transition-colors">
             <span className="text-sm font-medium text-gray-700">All Projects</span>
             <ChevronDown size={14} className="text-gray-400 ml-2" />
           </div>
-          <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-md cursor-pointer  hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded cursor-pointer  hover:bg-gray-50 transition-colors">
             <Calendar size={14} className="text-gray-500" />
             <span className="text-sm font-medium text-gray-700">01 Jul 2026 - 15 Jul 2026</span>
             <ChevronDown size={14} className="text-gray-400 ml-2" />
           </div>
-          <button className="p-2 bg-white border border-gray-200 text-gray-700 rounded-md text-sm font-medium flex items-center gap-2  hover:bg-gray-50 transition-colors">
+          <button className="p-2 bg-white border border-gray-200 text-gray-700 rounded text-sm font-medium flex items-center gap-2  hover:bg-gray-50 transition-colors">
             <Filter size={14} className="text-gray-500" /> Filters
           </button>
-          <button onClick={handleExportPDF} className="p-2 bg-indigo-600 text-white rounded-md text-sm font-medium flex items-center gap-2  hover:bg-indigo-700 transition-colors">
+          <button onClick={handleExportPDF} className="p-2 bg-red-600 text-white rounded text-sm font-medium flex items-center gap-2  hover:bg-red-700 transition-colors">
             Export Report <ChevronDown size={14} />
           </button>
         </div>

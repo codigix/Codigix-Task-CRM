@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   Search, Bell, HelpCircle, Settings, ChevronDown, ChevronRight,
   Share2, Download, MoreHorizontal, LayoutList, Plus, AlertCircle, ArrowUp, ArrowDown, CheckSquare,
   Trash2, User, Check, Megaphone, Palette, Video, FileText, Globe, Users, IterationCw, Calendar,
-  Folder, Maximize2, X
+  Folder, Maximize2, X, ChevronsUp
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ITCreateIssueDrawer from './ITCreateIssueDrawer';
@@ -18,6 +19,7 @@ import SearchableSelect from '../common/SearchableSelect';
 import TimeTrackingModal from '../common/TimeTrackingModal';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE } from '../../utils/access';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -29,7 +31,12 @@ function TestTubeIcon(props) {
   return <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" {...props}><rect x="9" y="3" width="6" height="3" rx="1" /><path d="M10 6v11a2 2 0 004 0V6" /></svg>;
 }
 
+// Card popovers render on <body>: a card inside the draggable/scrolling column would
+// otherwise clip a position:fixed menu or offset it from where it was opened.
+const BodyPortal = ({ children }) => createPortal(children, document.body);
+
 const PRIORITY_ICONS = {
+  Critical: <ChevronsUp size={14} className="text-red-600" />,
   High: <ArrowUp size={14} className="text-red-500" />,
   Medium: <ArrowUp size={14} className="text-orange-500" />,
   Low: <ArrowDown size={14} className="text-blue-500" />
@@ -48,6 +55,46 @@ const TYPE_ICONS = {
   Content: <FileText size={14} className="text-green-600" />,
   Search: <Globe size={14} className="text-indigo-500" />,
   Social: <Users size={14} className="text-pink-500" />
+};
+
+// Work-type chips shown on a card (e.g. "GMB Graphics", "Content Writing").
+// 'content-calendar' only marks where the task came from, so it is not shown.
+const HIDDEN_CARD_LABELS = new Set(['content-calendar']);
+// chip: the badge itself; accent: the card's left edge, keyed off its first label.
+const LABEL_STYLES = {
+  'GMB': { chip: 'bg-blue-50 text-blue-700 ring-blue-200', accent: 'border-l-blue-500' },
+  'GMB Graphics': { chip: 'bg-purple-50 text-purple-700 ring-purple-200', accent: 'border-l-purple-500' },
+  'Content Writing': { chip: 'bg-green-50 text-green-700 ring-green-200', accent: 'border-l-green-500' },
+  'Blogs': { chip: 'bg-amber-50 text-amber-700 ring-amber-200', accent: 'border-l-amber-500' },
+  'Blogs Graphics': { chip: 'bg-pink-50 text-pink-700 ring-pink-200', accent: 'border-l-pink-500' },
+  'SEO': { chip: 'bg-indigo-50 text-indigo-700 ring-indigo-200', accent: 'border-l-indigo-500' }
+};
+const DEFAULT_LABEL_STYLE = { chip: 'bg-gray-100 text-gray-700 ring-gray-200', accent: 'border-l-gray-300' };
+const getLabelStyle = (label) => LABEL_STYLES[label] || DEFAULT_LABEL_STYLE;
+
+// Content-calendar titles read "<Client> - <Task>"; show the client as a subtitle
+// rather than repeating it at the start of every card's title.
+const splitCardTitle = (card) => {
+  const title = card.title || '';
+  let raw = card.labels;
+  if (typeof raw === 'string') {
+    try { raw = JSON.parse(raw); } catch (e) { raw = []; }
+  }
+  const fromCalendar = Array.isArray(raw) && raw.some(l => String(l).toLowerCase() === 'content-calendar');
+  const idx = title.indexOf(' - ');
+  if (!fromCalendar || idx <= 0 || idx > 60) return { client: null, text: title };
+  return { client: title.slice(0, idx).trim(), text: title.slice(idx + 3).trim() };
+};
+
+const getCardLabels = (card) => {
+  let labels = card.labels;
+  if (typeof labels === 'string') {
+    try { labels = JSON.parse(labels); } catch (e) { labels = []; }
+  }
+  if (!Array.isArray(labels)) return [];
+  return labels
+    .map(l => String(l || '').trim())
+    .filter(l => l && !HIDDEN_CARD_LABELS.has(l.toLowerCase()));
 };
 
 // Small icon used inside the inline "create issue" type picker (12px variant).
@@ -237,6 +284,9 @@ const ITKanbanPage = ({ department }) => {
   // Marketing board shows Campaign/Design/Video/Content instead of IT's Story/Bug/Test.
   const deptConfig = DEPARTMENT_KANBAN_CONFIG[currentDept] || DEPARTMENT_KANBAN_CONFIG['IT'];
   const deptIssueTypes = deptConfig.issueTypes.map(t => t.name);
+
+  // Everyone can edit tickets; only managers can delete them.
+  const canDelete = canDeleteTickets(user);
 
   const isManager = Boolean(
     (designation && (
@@ -430,6 +480,8 @@ const ITKanbanPage = ({ department }) => {
   const [openCardAssigneeDropdown, setOpenCardAssigneeDropdown] = useState(null);
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
   const [cardAssigneePos, setCardAssigneePos] = useState({ top: 0, left: 0 });
+  const [openCardPriorityDropdown, setOpenCardPriorityDropdown] = useState(null);
+  const [cardPriorityPos, setCardPriorityPos] = useState({ top: 0, left: 0 });
 
   const [openSubtasksPopover, setOpenSubtasksPopover] = useState(null);
   const [subtaskPos, setSubtaskPos] = useState({ top: 0, left: 0 });
@@ -502,6 +554,48 @@ const ITKanbanPage = ({ department }) => {
       }
       return issue;
     }));
+  };
+
+  const handleOpenCardPriority = (e, cardKey) => {
+    e.stopPropagation();
+    if (openCardPriorityDropdown === cardKey) {
+      setOpenCardPriorityDropdown(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popupWidth = 160;
+    const popupHeight = 130;
+    let leftPos = rect.left;
+    if (leftPos + popupWidth > window.innerWidth) {
+      leftPos = Math.max(10, window.innerWidth - popupWidth - 10);
+    }
+    let topPos = rect.bottom + 6;
+    if (topPos + popupHeight > window.innerHeight) {
+      topPos = Math.max(10, rect.top - popupHeight - 6);
+    }
+    setCardPriorityPos({ top: topPos, left: leftPos });
+    setOpenCardAssigneeDropdown(null);
+    setOpenCardPriorityDropdown(cardKey);
+  };
+
+  const handleUpdateCardPriority = (card, priority) => {
+    setOpenCardPriorityDropdown(null);
+    if (card.priority === priority) return;
+
+    // A subtask card's priority lives in its parent's subtasks list, not in its own row.
+    if (card.isSubtask) {
+      const parent = allRawIssues.find(i => (i.issue_key === card.parentKey || i.key === card.parentKey));
+      if (!parent) return;
+      let curSt = parent.subtasks;
+      if (typeof curSt === 'string') {
+        try { curSt = JSON.parse(curSt); } catch (err) { curSt = []; }
+      }
+      const updated = (Array.isArray(curSt) ? curSt : []).map(s => String(s.id) === String(card.subtaskId) ? { ...s, priority } : s);
+      updateIssue(card.parentKey, { subtasks: updated });
+      return;
+    }
+
+    updateIssue(card.key, { priority });
   };
 
   const handleOpenCardAssignee = (e, cardKey) => {
@@ -953,13 +1047,16 @@ const ITKanbanPage = ({ department }) => {
       });
     });
 
-    // Sort cards in each column so current date (today, yesterday, then older) tickets appear on top
+    // Sort cards in each column by the date shown on the card, earliest first (1st → 30th),
+    // so the board reads in calendar order. Undated cards go last.
+    const cardSortDate = (c) =>
+      getIssueDateParts(c.due_date || c.dueDate) || getIssueDateParts(c.start_date) || getIssueEffectiveDateStr(c);
     Object.keys(newBoard).forEach(col => {
       newBoard[col].sort((a, b) => {
-        const dateA = getIssueEffectiveDateStr(a);
-        const dateB = getIssueEffectiveDateStr(b);
+        const dateA = cardSortDate(a);
+        const dateB = cardSortDate(b);
         if (dateA && dateB && dateA !== dateB) {
-          return dateB.localeCompare(dateA);
+          return dateA.localeCompare(dateB);
         }
         if (dateA && !dateB) return -1;
         if (!dateA && dateB) return 1;
@@ -967,10 +1064,10 @@ const ITKanbanPage = ({ department }) => {
         const timeA = a.created_at ? new Date(a.created_at).getTime() : (Number(a.id) || 0);
         const timeB = b.created_at ? new Date(b.created_at).getTime() : (Number(b.id) || 0);
         if (timeA && timeB && timeA !== timeB) {
-          return timeB - timeA;
+          return timeA - timeB;
         }
 
-        return (Number(b.id) || 0) - (Number(a.id) || 0);
+        return (Number(a.id) || 0) - (Number(b.id) || 0);
       });
     });
 
@@ -1061,6 +1158,9 @@ const ITKanbanPage = ({ department }) => {
       if (openCardAssigneeDropdown && !e.target.closest('.card-assignee-dropdown')) {
         setOpenCardAssigneeDropdown(null);
       }
+      if (openCardPriorityDropdown && !e.target.closest('.card-priority-dropdown')) {
+        setOpenCardPriorityDropdown(null);
+      }
       if (openSubtasksPopover && !e.target.closest('.card-subtask-popover')) {
         setOpenSubtasksPopover(null);
       }
@@ -1070,7 +1170,7 @@ const ITKanbanPage = ({ department }) => {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [activeCreateColumn, activeFilterDropdown, openCardAssigneeDropdown, openSubtasksPopover, showSprintDetails]);
+  }, [activeCreateColumn, activeFilterDropdown, openCardAssigneeDropdown, openCardPriorityDropdown, openSubtasksPopover, showSprintDetails]);
 
 
   const handleCreateInlineIssue = async (col) => {
@@ -1313,8 +1413,17 @@ const ITKanbanPage = ({ department }) => {
   };
 
   const deleteIssue = async (key) => {
+    if (!canDelete) {
+      showErrorToast(TICKET_DELETE_DENIED_MESSAGE);
+      return;
+    }
     try {
-      await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE', headers: ticketDeleteHeaders(user) });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showErrorToast(data.error || 'Failed to delete ticket');
+        return;
+      }
 
       setAllRawIssues(prev => prev.filter(c => c.key !== key && c.issue_key !== key));
       setBoardData(prev => {
@@ -1531,7 +1640,7 @@ const ITKanbanPage = ({ department }) => {
                   setCreateDrawerInitialSummary('');
                   setIsCreateDrawerOpen(true);
                 }}
-                className="bg-red-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors"
+                className="bg-red-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium flex items-center gap-1.5 transition-colors"
               >
                 <Plus size={14} /> Create
               </button>
@@ -1570,7 +1679,7 @@ const ITKanbanPage = ({ department }) => {
                           'bg-purple-600 text-white',
                           'bg-amber-600 text-white',
                           'bg-pink-600 text-white',
-                          'bg-indigo-600 text-white',
+                          'bg-red-600 text-white',
                           'bg-teal-600 text-white'
                         ];
                         const colorClass = colors[Number(u.id || 0) % colors.length];
@@ -1611,7 +1720,7 @@ const ITKanbanPage = ({ department }) => {
                     <div className="w-40">
                       <SearchableSelect
                         prefix="Project:"
-                        buttonClassName={`p-2 rounded text-xs font-medium border transition-colors ${selectedProjectId !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                        buttonClassName={`p-2 rounded text-xs font-medium border transition-colors ${selectedProjectId !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                         dropdownClassName="w-64"
                         options={[
                           { value: 'ALL', label: 'All Projects' },
@@ -1627,12 +1736,12 @@ const ITKanbanPage = ({ department }) => {
                     <div className="relative">
                       <button
                         onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'status' ? null : 'status')}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedStatus !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700'}`}
+                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedStatus !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700'}`}
                       >
                         Status: {selectedStatus !== 'ALL' ? selectedStatus : 'All'} <ChevronDown size={14} />
                       </button>
                       {activeFilterDropdown === 'status' && (
-                        <div className="absolute left-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-xl py-1 z-50 text-xs text-gray-700">
+                        <div className="absolute left-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded shadow-xl py-1 z-50 text-xs text-gray-700">
                           {['ALL', ...columnOrder].map(s => (
                             <div
                               key={s}
@@ -1650,13 +1759,13 @@ const ITKanbanPage = ({ department }) => {
                     <div className="relative">
                       <button
                         onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'priority' ? null : 'priority')}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedPriority !== 'ALL' ? 'bg-blue-50  font-semibold' : 'bg-white border-gray-300 text-gray-700'}`}
+                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedPriority !== 'ALL' ? 'bg-blue-50  ' : 'bg-white border-gray-300 text-gray-700'}`}
                       >
                         Priority: {selectedPriority !== 'ALL' ? selectedPriority : 'All'} <ChevronDown size={14} />
                       </button>
                       {activeFilterDropdown === 'priority' && (
-                        <div className="absolute left-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-xl py-1 z-50 text-xs text-gray-700">
-                          {['ALL', 'High', 'Medium', 'Low'].map(p => (
+                        <div className="absolute left-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded shadow-xl py-1 z-50 text-xs text-gray-700">
+                          {['ALL', 'Critical', 'High', 'Medium', 'Low'].map(p => (
                             <div
                               key={p}
                               onClick={() => { setSelectedPriority(p); setActiveFilterDropdown(null); }}
@@ -1673,7 +1782,7 @@ const ITKanbanPage = ({ department }) => {
                     <div className="relative">
                       <button
                         onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'date' ? null : 'date')}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${dateFilter !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700'}`}
+                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${dateFilter !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700'}`}
                         title="Filter issues date wise"
                       >
                         <Calendar size={13} className={dateFilter !== 'ALL' ? 'text-blue-600' : 'text-gray-500'} />
@@ -1683,7 +1792,7 @@ const ITKanbanPage = ({ department }) => {
                       {activeFilterDropdown === 'date' && (
                         <div className="absolute left-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded shadow-xl p-3 z-50 text-xs text-gray-700 font-sans">
                           <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
-                            <span className="font-semibold text-gray-800 flex items-center gap-1.5">
+                            <span className=" text-gray-800 flex items-center gap-1.5">
                               <Calendar size={13} className="text-blue-600" /> Filter by Date
                             </span>
                             {dateFilter !== 'ALL' && (
@@ -1734,7 +1843,7 @@ const ITKanbanPage = ({ department }) => {
                           {/* Custom Specific Date Picker */}
                           <div className="border-t border-gray-100 pt-2 space-y-2">
                             <div>
-                              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                              <label className="block text-[11px]  text-gray-600 mb-1">
                                 Specific Date:
                               </label>
                               <input
@@ -1753,7 +1862,7 @@ const ITKanbanPage = ({ department }) => {
 
                             {/* Custom Date Range Picker */}
                             <div>
-                              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                              <label className="block text-[11px]  text-gray-600 mb-1">
                                 Date Range:
                               </label>
                               <div className="grid grid-cols-2 gap-1.5">
@@ -1809,7 +1918,7 @@ const ITKanbanPage = ({ department }) => {
                       <SearchableSelect
                         prefix="Assignee:"
                         multiple={true}
-                        buttonClassName={`p-2 rounded text-xs font-medium border transition-colors ${selectedAssignees.length > 0 ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                        buttonClassName={`p-2 rounded text-xs font-medium border transition-colors ${selectedAssignees.length > 0 ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                         dropdownClassName="w-64"
                         options={[
                           { value: 'ALL', label: 'All Assignees' },
@@ -1845,7 +1954,7 @@ const ITKanbanPage = ({ department }) => {
                           setSelectedAssignees([]);
                         }
                       }}
-                      className={`flex items-center gap-1.5 p-2 rounded text-xs font-semibold border transition-all cursor-pointer ${onlyMyIssues
+                      className={`flex items-center gap-1.5 p-2 rounded text-xs  border transition-all cursor-pointer ${onlyMyIssues
                         ? 'bg-red-600  text-white shadow-sm'
                         : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
                         }`}
@@ -1909,7 +2018,7 @@ const ITKanbanPage = ({ department }) => {
                           <div className="absolute right-0 top-full mt-2 w-[350px] bg-white border border-gray-200 rounded shadow-xl z-50 p-5 max-h-[70vh] overflow-y-auto">
                             {activeSprints.map((s, i) => (
                               <div key={s.id} className={i > 0 ? 'mt-5 pt-5 border-t border-gray-200' : ''}>
-                                <h4 className="text-[15px] font-semibold text-gray-900">{s.name}</h4>
+                                <h4 className="text-[15px]  text-gray-900">{s.name}</h4>
                                 <p className="text-[14px] text-gray-700 mt-1.5">{sprintTimeLeft(s.end_date)}</p>
                                 {s.goal && <p className="text-[12px] text-gray-500 mt-1.5 italic">{s.goal}</p>}
                                 <div className="grid grid-cols-2 gap-3 mt-3">
@@ -1946,11 +2055,11 @@ const ITKanbanPage = ({ department }) => {
                   </div>
                   {isManager ? (
                     <>
-                      <h3 className="text-base font-semibold text-gray-900 mb-1">Get started in the backlog</h3>
+                      <h3 className="text-base  text-gray-900 mb-1">Get started in the backlog</h3>
                       <p className="text-sm text-gray-500 mb-4">Plan and start a sprint to see work items here.</p>
                       <button
                         onClick={() => navigate(`${workspaceBase}/backlog`)}
-                        className="p-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                        className="p-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
                       >
                         Go to Backlog
                       </button>
@@ -1958,7 +2067,7 @@ const ITKanbanPage = ({ department }) => {
                   ) : (
                     // Employees cannot open the Backlog, so pointing them there would dead-end.
                     <>
-                      <h3 className="text-base font-semibold text-gray-900 mb-1">No work items yet</h3>
+                      <h3 className="text-base  text-gray-900 mb-1">No work items yet</h3>
                       <p className="text-sm text-gray-500">
                         Your manager hasn't started a sprint. Work will appear here once it does.
                       </p>
@@ -1973,7 +2082,7 @@ const ITKanbanPage = ({ department }) => {
                         <div
                           {...provided.droppableProps}
                           ref={provided.innerRef}
-                          className="flex gap-4 overflow-x-auto overflow-y-hidden h-full items-stretch"
+                          className="flex gap-4 overflow-x-auto overflow-y-hidden h-full items-stretch no-scrollbar"
                         >
                           {columnOrder.map((col, index) => (
                             <Draggable key={col} draggableId={col} index={index}>
@@ -2019,10 +2128,10 @@ const ITKanbanPage = ({ department }) => {
                                                   style={{
                                                     ...provided.draggableProps.style,
                                                   }}
-                                                  className={`relative group bg-white border rounded p-3 hover:shadow-md transition-all duration-200 ${(selectedIssue === card.key || (card.isSubtask && selectedIssue === card.parentKey && String(selectedSubtaskKey) === String(card.subtaskId))) ? 'ring-2 ring-blue-500 border-transparent' : 'border-gray-200'} ${snapshot.isDragging ? 'shadow-lg rotate-2' : ''}`}
+                                                  className={`relative group bg-white border border-gray-200 border-l-4 ${getLabelStyle(getCardLabels(card)[0]).accent} rounded px-3 pt-2.5 pb-2 ${(selectedIssue === card.key || (card.isSubtask && selectedIssue === card.parentKey && String(selectedSubtaskKey) === String(card.subtaskId))) ? 'ring-2 ring-blue-500 shadow-sm' : ''} ${snapshot.isDragging ? 'shadow-lg' : 'shadow-sm hover:shadow-md transition-shadow duration-150'}`}
                                                 >
-                                                  {/* Delete Trash Button */}
-                                                  <button
+                                                  {/* Delete Trash Button (managers only) */}
+                                                  {canDelete && <button
                                                     onClick={(e) => {
                                                       e.stopPropagation();
                                                       if (card.isSubtask) {
@@ -2047,36 +2156,113 @@ const ITKanbanPage = ({ department }) => {
                                                     title={card.isSubtask ? "Delete Subtask" : "Delete Ticket"}
                                                   >
                                                     <Trash2 size={13} />
-                                                  </button>
+                                                  </button>}
 
-                                                  {/* Jira strikes through the key of a finished work item. */}
-                                                  <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                                                    <span
-                                                      className={`text-blue-600 text-xs hover:underline font-medium cursor-pointer ${isDoneStatus(card.status) ? 'line-through' : ''}`}
-                                                      onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if (card.isSubtask) {
-                                                          setSelectedIssue(card.parentKey);
-                                                          setSelectedSubtaskKey(card.subtaskId || card.key);
-                                                        } else {
-                                                          setSelectedIssue(card.key);
-                                                          setSelectedSubtaskKey(null);
-                                                        }
-                                                      }}
-                                                    >
-                                                      {card.key}
-                                                    </span>
-                                                  </div>
-                                                  <div className="text-sm text-gray-900 font-medium mb-3 leading-snug cursor-grab active:cursor-grabbing line-clamp-2" title={card.title}>{card.title}</div>
+                                                  {(() => {
+                                                    const labels = getCardLabels(card);
+                                                    const { client, text } = splitCardTitle(card);
+                                                    return (
+                                                      <>
+                                                        {/* WORK-TYPE LABELS */}
+                                                        {(labels.length > 0 || card.isSubtask) && (
+                                                          <div className="flex items-center gap-1 mb-1.5 flex-wrap pr-6">
+                                                            {card.isSubtask && (
+                                                              <span className="text-[10px]  uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200">
+                                                                Subtask
+                                                              </span>
+                                                            )}
+                                                            {labels.map(label => (
+                                                              <span
+                                                                key={label}
+                                                                title={label}
+                                                                className={`text-[10px]  uppercase tracking-wide px-1.5 py-0.5 rounded ring-1 ring-inset max-w-[150px] truncate ${getLabelStyle(label).chip}`}
+                                                              >
+                                                                {label}
+                                                              </span>
+                                                            ))}
+                                                          </div>
+                                                        )}
 
+                                                        {/* CLIENT + TITLE */}
+                                                        {client && (
+                                                          <div className="text-[11px] text-gray-500 font-medium truncate pr-6" title={client}>
+                                                            {client}
+                                                          </div>
+                                                        )}
+                                                        <div
+                                                          className={`text-[13px] text-gray-900 font-medium leading-snug line-clamp-2 mb-2.5 cursor-grab active:cursor-grabbing ${labels.length === 0 && !client ? 'pr-6' : ''}`}
+                                                          title={card.title}
+                                                        >
+                                                          {text}
+                                                        </div>
+                                                      </>
+                                                    );
+                                                  })()}
 
-                                                  <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
+                                                  {/* FOOTER: key + priority | date + assignee */}
+                                                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                                                    <div className="flex items-center gap-1.5 min-w-0">
                                                       {TYPE_ICONS[card.type] || TYPE_ICONS.Task}
-                                                      {PRIORITY_ICONS[card.priority]}
-                                                      <span className="text-xs text-gray-600">{card.priority}</span>
+                                                      {/* Jira strikes through the key of a finished work item. */}
+                                                      <span
+                                                        className={`text-[11px]  text-gray-500 hover:text-blue-600 hover:underline cursor-pointer truncate ${isDoneStatus(card.status) ? 'line-through' : ''}`}
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          if (card.isSubtask) {
+                                                            setSelectedIssue(card.parentKey);
+                                                            setSelectedSubtaskKey(card.subtaskId || card.key);
+                                                          } else {
+                                                            setSelectedIssue(card.key);
+                                                            setSelectedSubtaskKey(null);
+                                                          }
+                                                        }}
+                                                      >
+                                                        {card.key}
+                                                      </span>
+                                                      <div className="relative card-priority-dropdown shrink-0">
+                                                        <button
+                                                          type="button"
+                                                          onClick={(e) => handleOpenCardPriority(e, card.key)}
+                                                          className={`flex items-center gap-0.5 pl-0.5 pr-1 py-0.5 rounded text-[11px] text-gray-600 hover:bg-gray-100 transition cursor-pointer ${openCardPriorityDropdown === card.key ? 'bg-gray-100' : ''}`}
+                                                          title={`Priority: ${card.priority || 'None'} (click to change)`}
+                                                        >
+                                                          {PRIORITY_ICONS[card.priority] || <ArrowUp size={14} className="text-gray-300" />}
+                                                          <span>{card.priority || 'Set'}</span>
+                                                        </button>
+
+                                                        {openCardPriorityDropdown === card.key && (
+                                                          <BodyPortal>
+                                                            <div
+                                                              onClick={(e) => e.stopPropagation()}
+                                                              onMouseDown={(e) => e.stopPropagation()}
+                                                              onPointerDown={(e) => e.stopPropagation()}
+                                                              style={{
+                                                                position: 'fixed',
+                                                                top: `${cardPriorityPos.top}px`,
+                                                                left: `${cardPriorityPos.left}px`,
+                                                                width: '160px',
+                                                                zIndex: 99999
+                                                              }}
+                                                              className="card-priority-dropdown bg-white border border-gray-200 rounded shadow-xl py-1 text-xs text-gray-700"
+                                                            >
+                                                              <div className="px-3 pt-1 pb-1.5 text-[10px]  uppercase tracking-wide text-gray-400">Priority</div>
+                                                              {['Critical', 'High', 'Medium', 'Low'].map(p => (
+                                                                <div
+                                                                  key={p}
+                                                                  onClick={() => handleUpdateCardPriority(card, p)}
+                                                                  className={`px-3 py-1.5 flex items-center gap-2 cursor-pointer hover:bg-blue-50 transition-colors ${card.priority === p ? 'bg-[#deebff]  text-blue-900' : ''}`}
+                                                                >
+                                                                  {PRIORITY_ICONS[p]}
+                                                                  <span>{p}</span>
+                                                                  {card.priority === p && <Check size={14} className="text-blue-600 ml-auto" />}
+                                                                </div>
+                                                              ))}
+                                                            </div>
+                                                          </BodyPortal>
+                                                        )}
+                                                      </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-1.5 shrink-0">
                                                       {/* Due / Start Date Badge */}
                                                       {(() => {
                                                         const value = card.due_date || card.start_date;
@@ -2119,139 +2305,143 @@ const ITKanbanPage = ({ department }) => {
 
                                                           {/* JIRA CARD ASSIGNEE POPUP MENU (Right Side Floating) */}
                                                           {openCardAssigneeDropdown === card.key && (
-                                                            <div
-                                                              onClick={(e) => e.stopPropagation()}
-                                                              style={{
-                                                                position: 'fixed',
-                                                                top: `${cardAssigneePos.top}px`,
-                                                                left: `${cardAssigneePos.left}px`,
-                                                                width: '260px',
-                                                                zIndex: 99999
-                                                              }}
-                                                              className="bg-white border border-gray-200 rounded shadow-2xl py-1.5 text-xs text-gray-700 font-sans border-t-2 border-t-blue-500"
-                                                            >
-                                                              {/* Jira Top Active / Search Input Box */}
-                                                              <div className="p-2 border-b border-gray-100 bg-white">
-                                                                <div className="relative">
-                                                                  <input
-                                                                    type="text"
-                                                                    autoFocus
-                                                                    value={assigneeSearchQuery}
-                                                                    onChange={(e) => setAssigneeSearchQuery(e.target.value)}
-                                                                    placeholder="Search users..."
-                                                                    className="w-full px-3 py-1.5 text-xs border-2 border-blue-500 rounded-md focus:outline-none bg-white text-gray-900 font-medium placeholder:text-gray-400"
-                                                                  />
-                                                                </div>
-                                                                {card.assignee && card.assignee !== 'Unassigned' && (
-                                                                  <div className="mt-1.5 px-0.5 flex items-center justify-between text-[11px] text-gray-500">
-                                                                    <span className="truncate">Current: <strong className="text-gray-800 font-semibold">{card.assignee}</strong></span>
-                                                                    <button
-                                                                      type="button"
-                                                                      onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned', card)}
-                                                                      className="text-red-600 hover:text-red-700 hover:underline font-semibold ml-2 shrink-0 cursor-pointer"
-                                                                    >
-                                                                      Clear / Unassign
-                                                                    </button>
+                                                            <BodyPortal>
+                                                              <div
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                onPointerDown={(e) => e.stopPropagation()}
+                                                                style={{
+                                                                  position: 'fixed',
+                                                                  top: `${cardAssigneePos.top}px`,
+                                                                  left: `${cardAssigneePos.left}px`,
+                                                                  width: '260px',
+                                                                  zIndex: 99999
+                                                                }}
+                                                                className="card-assignee-dropdown bg-white border border-gray-200 rounded shadow-2xl py-1.5 text-xs text-gray-700 font-sans border-t-2 border-t-blue-500"
+                                                              >
+                                                                {/* Jira Top Active / Search Input Box */}
+                                                                <div className="p-2 border-b border-gray-100 bg-white">
+                                                                  <div className="relative">
+                                                                    <input
+                                                                      type="text"
+                                                                      autoFocus
+                                                                      value={assigneeSearchQuery}
+                                                                      onChange={(e) => setAssigneeSearchQuery(e.target.value)}
+                                                                      placeholder="Search users..."
+                                                                      className="w-full px-3 py-1.5 text-xs border-2 border-blue-500 rounded focus:outline-none bg-white text-gray-900 font-medium placeholder:text-gray-400"
+                                                                    />
                                                                   </div>
-                                                                )}
-                                                              </div>
+                                                                  {card.assignee && card.assignee !== 'Unassigned' && (
+                                                                    <div className="mt-1.5 px-0.5 flex items-center justify-between text-[11px] text-gray-500">
+                                                                      <span className="truncate">Current: <strong className="text-gray-800 ">{card.assignee}</strong></span>
+                                                                      <button
+                                                                        type="button"
+                                                                        onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned', card)}
+                                                                        className="text-red-600 hover:text-red-700 hover:underline  ml-2 shrink-0 cursor-pointer"
+                                                                      >
+                                                                        Clear / Unassign
+                                                                      </button>
+                                                                    </div>
+                                                                  )}
+                                                                </div>
 
-                                                              <div className="max-h-60 overflow-y-auto py-1 custom-scrollbar">
-                                                                {/* Unassigned Option */}
-                                                                {(!assigneeSearchQuery.trim() || 'unassigned'.includes(assigneeSearchQuery.toLowerCase().trim())) && (
+                                                                <div className="max-h-60 overflow-y-auto py-1 custom-scrollbar">
+                                                                  {/* Unassigned Option */}
+                                                                  {(!assigneeSearchQuery.trim() || 'unassigned'.includes(assigneeSearchQuery.toLowerCase().trim())) && (
+                                                                    <div
+                                                                      onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned', card)}
+                                                                      className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee === 'Unassigned' || !card.assignee ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'
+                                                                        }`}
+                                                                    >
+                                                                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
+                                                                        <User size={13} className="text-gray-600" />
+                                                                      </div>
+                                                                      <span className="text-xs font-medium">Unassigned</span>
+                                                                      {(card.assignee === 'Unassigned' || !card.assignee) && <Check size={14} className="text-blue-600 ml-auto shrink-0" />}
+                                                                    </div>
+                                                                  )}
+
+                                                                  {/* Automatic Option */}
                                                                   <div
-                                                                    onClick={() => handleUpdateCardAssignee(card.key, 'Unassigned', card)}
-                                                                    className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee === 'Unassigned' || !card.assignee ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
-                                                                      }`}
+                                                                    onClick={() => {
+                                                                      const myName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : 'Unassigned';
+                                                                      handleUpdateCardAssignee(card.key, myName, card);
+                                                                    }}
+                                                                    className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 text-gray-700 font-medium border-b border-gray-100 transition-colors"
                                                                   >
                                                                     <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
                                                                       <User size={13} className="text-gray-600" />
                                                                     </div>
-                                                                    <span className="text-xs font-medium">Unassigned</span>
-                                                                    {(card.assignee === 'Unassigned' || !card.assignee) && <Check size={14} className="text-blue-600 ml-auto shrink-0" />}
+                                                                    <span className="text-xs font-medium">Automatic</span>
                                                                   </div>
-                                                                )}
 
-                                                                {/* Automatic Option */}
-                                                                <div
-                                                                  onClick={() => {
-                                                                    const myName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : 'Unassigned';
-                                                                    handleUpdateCardAssignee(card.key, myName, card);
-                                                                  }}
-                                                                  className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 text-gray-700 font-medium border-b border-gray-100 transition-colors"
-                                                                >
-                                                                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
-                                                                    <User size={13} className="text-gray-600" />
-                                                                  </div>
-                                                                  <span className="text-xs font-medium">Automatic</span>
+                                                                  {/* Logged in User (Assign to me) Option */}
+                                                                  {user && (
+                                                                    <div
+                                                                      onClick={() => {
+                                                                        const myName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+                                                                        handleUpdateCardAssignee(card.key, myName, card);
+                                                                      }}
+                                                                      className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee && (card.assignee.toLowerCase().includes((user.first_name || '').toLowerCase()) || card.assignee.toLowerCase() === user.username.toLowerCase())
+                                                                        ? 'bg-[#deebff]  text-blue-900'
+                                                                        : 'text-gray-700'
+                                                                        }`}
+                                                                    >
+                                                                      <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]  shrink-0">
+                                                                        {getInitials(user.first_name || user.username)}
+                                                                      </div>
+                                                                      <div className="flex-1 min-w-0">
+                                                                        <div className="truncate text-xs font-medium text-gray-900">
+                                                                          {`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username} <span className="text-[10px] text-gray-500 font-normal">(assign to me)</span>
+                                                                        </div>
+                                                                        {user.email && <div className="text-[10px] text-gray-500 truncate leading-none mt-0.5">{user.email}</div>}
+                                                                      </div>
+                                                                    </div>
+                                                                  )}
+
+                                                                  {/* Team Users List */}
+                                                                  {itUsersList
+                                                                    .filter(u => {
+                                                                      if (user && (u.id === user.id || u.username === user.username)) return false;
+                                                                      const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || '';
+                                                                      return name.toLowerCase().includes(assigneeSearchQuery.toLowerCase()) || (u.email && u.email.toLowerCase().includes(assigneeSearchQuery.toLowerCase()));
+                                                                    })
+                                                                    .map((u) => {
+                                                                      const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'User';
+                                                                      const initials = getInitials(fullName);
+                                                                      const isCurrentAssignee = card.assignee && card.assignee.toLowerCase() === fullName.toLowerCase();
+
+                                                                      const colors = [
+                                                                        'bg-red-600 text-white',
+                                                                        'bg-purple-600 text-white',
+                                                                        'bg-amber-600 text-white',
+                                                                        'bg-pink-600 text-white',
+                                                                        'bg-red-600 text-white',
+                                                                        'bg-teal-600 text-white'
+                                                                      ];
+                                                                      const colorClass = colors[Number(u.id || 0) % colors.length];
+
+                                                                      return (
+                                                                        <div
+                                                                          key={u.id || u.username}
+                                                                          onClick={() => handleUpdateCardAssignee(card.key, fullName, card)}
+                                                                          className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${isCurrentAssignee ? 'bg-[#deebff] text-blue-900 ' : 'text-gray-700'
+                                                                            }`}
+                                                                        >
+                                                                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px]  shrink-0 ${colorClass}`}>
+                                                                            {initials}
+                                                                          </div>
+                                                                          <div className="flex-1 min-w-0">
+                                                                            <div className="truncate text-xs font-medium text-gray-900">{fullName}</div>
+                                                                            {u.email && <div className="text-[10px] text-gray-500 truncate leading-none mt-0.5">{u.email}</div>}
+                                                                          </div>
+                                                                          {isCurrentAssignee && <Check size={14} className="text-blue-600 shrink-0" />}
+                                                                        </div>
+                                                                      );
+                                                                    })}
                                                                 </div>
-
-                                                                {/* Logged in User (Assign to me) Option */}
-                                                                {user && (
-                                                                  <div
-                                                                    onClick={() => {
-                                                                      const myName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
-                                                                      handleUpdateCardAssignee(card.key, myName, card);
-                                                                    }}
-                                                                    className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee && (card.assignee.toLowerCase().includes((user.first_name || '').toLowerCase()) || card.assignee.toLowerCase() === user.username.toLowerCase())
-                                                                      ? 'bg-[#deebff] font-semibold text-blue-900'
-                                                                      : 'text-gray-700'
-                                                                      }`}
-                                                                  >
-                                                                    <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]  shrink-0">
-                                                                      {getInitials(user.first_name || user.username)}
-                                                                    </div>
-                                                                    <div className="flex-1 min-w-0">
-                                                                      <div className="truncate text-xs font-medium text-gray-900">
-                                                                        {`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username} <span className="text-[10px] text-gray-500 font-normal">(assign to me)</span>
-                                                                      </div>
-                                                                      {user.email && <div className="text-[10px] text-gray-500 truncate leading-none mt-0.5">{user.email}</div>}
-                                                                    </div>
-                                                                  </div>
-                                                                )}
-
-                                                                {/* Team Users List */}
-                                                                {itUsersList
-                                                                  .filter(u => {
-                                                                    if (user && (u.id === user.id || u.username === user.username)) return false;
-                                                                    const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || '';
-                                                                    return name.toLowerCase().includes(assigneeSearchQuery.toLowerCase()) || (u.email && u.email.toLowerCase().includes(assigneeSearchQuery.toLowerCase()));
-                                                                  })
-                                                                  .map((u) => {
-                                                                    const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'User';
-                                                                    const initials = getInitials(fullName);
-                                                                    const isCurrentAssignee = card.assignee && card.assignee.toLowerCase() === fullName.toLowerCase();
-
-                                                                    const colors = [
-                                                                      'bg-red-600 text-white',
-                                                                      'bg-purple-600 text-white',
-                                                                      'bg-amber-600 text-white',
-                                                                      'bg-pink-600 text-white',
-                                                                      'bg-indigo-600 text-white',
-                                                                      'bg-teal-600 text-white'
-                                                                    ];
-                                                                    const colorClass = colors[Number(u.id || 0) % colors.length];
-
-                                                                    return (
-                                                                      <div
-                                                                        key={u.id || u.username}
-                                                                        onClick={() => handleUpdateCardAssignee(card.key, fullName, card)}
-                                                                        className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${isCurrentAssignee ? 'bg-[#deebff] text-blue-900 font-semibold' : 'text-gray-700'
-                                                                          }`}
-                                                                      >
-                                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px]  shrink-0 ${colorClass}`}>
-                                                                          {initials}
-                                                                        </div>
-                                                                        <div className="flex-1 min-w-0">
-                                                                          <div className="truncate text-xs font-medium text-gray-900">{fullName}</div>
-                                                                          {u.email && <div className="text-[10px] text-gray-500 truncate leading-none mt-0.5">{u.email}</div>}
-                                                                        </div>
-                                                                        {isCurrentAssignee && <Check size={14} className="text-blue-600 shrink-0" />}
-                                                                      </div>
-                                                                    );
-                                                                  })}
                                                               </div>
-                                                            </div>
+                                                            </BodyPortal>
                                                           )}
                                                         </div>
                                                       )}
@@ -2301,7 +2491,7 @@ const ITKanbanPage = ({ department }) => {
                                                 <ChevronDown size={10} />
                                               </button>
                                               {openInlineDropdown === 'type' && (
-                                                <div className="absolute left-0 bottom-full mb-1.5 w-40 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-50 text-xs text-gray-800 animate-in fade-in zoom-in-95 duration-100">
+                                                <div className="absolute left-0 bottom-full mb-1.5 w-40 bg-white border border-gray-200 rounded shadow-xl py-1 z-50 text-xs text-gray-800 animate-in fade-in zoom-in-95 duration-100">
                                                   <div className="px-2.5 py-1 text-[10px]  text-gray-400 uppercase tracking-wider">
                                                     Work Type
                                                   </div>
@@ -2312,7 +2502,7 @@ const ITKanbanPage = ({ department }) => {
                                                         setNewIssueType(type);
                                                         setOpenInlineDropdown(null);
                                                       }}
-                                                      className={`px-2.5 py-1.5 hover:bg-blue-50 flex items-center gap-2 cursor-pointer font-medium ${newIssueType === type ? 'bg-[#deebff] text-blue-900 font-semibold' : 'text-gray-700'
+                                                      className={`px-2.5 py-1.5 hover:bg-blue-50 flex items-center gap-2 cursor-pointer font-medium ${newIssueType === type ? 'bg-[#deebff] text-blue-900 ' : 'text-gray-700'
                                                         }`}
                                                     >
                                                       {TYPE_ICONS_SM[type] || <CheckSquare size={12} className="text-blue-500 fill-blue-100" />}
@@ -2337,7 +2527,7 @@ const ITKanbanPage = ({ department }) => {
                                               >
                                                 <Calendar size={13} />
                                                 {newIssueDueDate ? (
-                                                  <span className="text-[11px] font-semibold">
+                                                  <span className="text-[11px] ">
                                                     {(() => {
                                                       const parts = newIssueDueDate.split('-');
                                                       if (parts.length === 3) {
@@ -2350,9 +2540,9 @@ const ITKanbanPage = ({ department }) => {
                                                 ) : null}
                                               </button>
                                               {openInlineDropdown === 'date' && (
-                                                <div className="absolute left-0 bottom-full mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-2xl p-3 z-50 text-gray-800 animate-in fade-in zoom-in-95 duration-100">
+                                                <div className="absolute left-0 bottom-full mb-2 w-64 bg-white border border-gray-200 rounded shadow-2xl p-3 z-50 text-gray-800 animate-in fade-in zoom-in-95 duration-100">
                                                   <div className="flex items-center justify-between pb-2 border-b border-gray-100 mb-2.5">
-                                                    <span className="font-semibold text-xs text-gray-700 flex items-center gap-1.5">
+                                                    <span className=" text-xs text-gray-700 flex items-center gap-1.5">
                                                       <Calendar size={13} className="text-blue-600" /> Due Date
                                                     </span>
                                                     {newIssueDueDate && (
@@ -2458,7 +2648,7 @@ const ITKanbanPage = ({ department }) => {
                                                 )}
                                               </button>
                                               {openInlineDropdown === 'assignee' && (
-                                                <div className="absolute left-0 bottom-full mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-2xl py-1.5 z-50 text-xs text-gray-700 border-t-2 border-t-blue-500 animate-in fade-in zoom-in-95 duration-100">
+                                                <div className="absolute left-0 bottom-full mb-2 w-64 bg-white border border-gray-200 rounded shadow-2xl py-1.5 z-50 text-xs text-gray-700 border-t-2 border-t-blue-500 animate-in fade-in zoom-in-95 duration-100">
                                                   <div className="p-2 border-b border-gray-100 bg-white">
                                                     <input
                                                       type="text"
@@ -2477,7 +2667,7 @@ const ITKanbanPage = ({ department }) => {
                                                             setNewIssueAssignee('Unassigned');
                                                             setOpenInlineDropdown(null);
                                                           }}
-                                                          className="text-red-600 hover:text-red-700 hover:underline font-semibold ml-2 shrink-0 cursor-pointer"
+                                                          className="text-red-600 hover:text-red-700 hover:underline  ml-2 shrink-0 cursor-pointer"
                                                         >
                                                           Unassign
                                                         </button>
@@ -2493,7 +2683,7 @@ const ITKanbanPage = ({ department }) => {
                                                           setNewIssueAssignee('Unassigned');
                                                           setOpenInlineDropdown(null);
                                                         }}
-                                                        className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${newIssueAssignee === 'Unassigned' ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
+                                                        className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${newIssueAssignee === 'Unassigned' ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'
                                                           }`}
                                                       >
                                                         <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
@@ -2511,7 +2701,7 @@ const ITKanbanPage = ({ department }) => {
                                                           setNewIssueAssignee('Automatic');
                                                           setOpenInlineDropdown(null);
                                                         }}
-                                                        className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${newIssueAssignee === 'Automatic' ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
+                                                        className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${newIssueAssignee === 'Automatic' ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'
                                                           }`}
                                                       >
                                                         <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
@@ -2531,7 +2721,7 @@ const ITKanbanPage = ({ department }) => {
                                                           setOpenInlineDropdown(null);
                                                         }}
                                                         className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 border-b border-gray-100 transition-colors ${newIssueAssignee && (newIssueAssignee.toLowerCase() === (user.username || '').toLowerCase() || newIssueAssignee.toLowerCase().includes((user.first_name || '').toLowerCase()))
-                                                          ? 'bg-[#deebff] font-semibold text-blue-900'
+                                                          ? 'bg-[#deebff]  text-blue-900'
                                                           : 'text-gray-700'
                                                           }`}
                                                       >
@@ -2567,7 +2757,7 @@ const ITKanbanPage = ({ department }) => {
                                                           'bg-purple-600 text-white',
                                                           'bg-amber-600 text-white',
                                                           'bg-pink-600 text-white',
-                                                          'bg-indigo-600 text-white',
+                                                          'bg-red-600 text-white',
                                                           'bg-teal-600 text-white'
                                                         ];
                                                         const colorClass = colors[Number(u.id || 0) % colors.length];
@@ -2579,7 +2769,7 @@ const ITKanbanPage = ({ department }) => {
                                                               setNewIssueAssignee(fullName);
                                                               setOpenInlineDropdown(null);
                                                             }}
-                                                            className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${isSelected ? 'bg-[#deebff] text-blue-900 font-semibold' : 'text-gray-700'
+                                                            className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${isSelected ? 'bg-[#deebff] text-blue-900 ' : 'text-gray-700'
                                                               }`}
                                                           >
                                                             <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px]  shrink-0 ${colorClass}`}>
@@ -2614,7 +2804,7 @@ const ITKanbanPage = ({ department }) => {
                                                   <ChevronDown size={10} />
                                                 </button>
                                                 {openInlineDropdown === 'project' && (
-                                                  <div className="absolute left-0 bottom-full mb-2 w-52 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-50 text-xs">
+                                                  <div className="absolute left-0 bottom-full mb-2 w-52 bg-white border border-gray-200 rounded shadow-xl py-1 z-50 text-xs">
                                                     <div className="px-2.5 py-1 text-[10px]  text-gray-400 uppercase tracking-wider">
                                                       Assign to Project
                                                     </div>
@@ -2626,7 +2816,7 @@ const ITKanbanPage = ({ department }) => {
                                                             setNewIssueProjectId(proj.id);
                                                             setOpenInlineDropdown(null);
                                                           }}
-                                                          className={`px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2 truncate ${Number(newIssueProjectId) === Number(proj.id) ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'
+                                                          className={`px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2 truncate ${Number(newIssueProjectId) === Number(proj.id) ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'
                                                             }`}
                                                         >
                                                           <Folder size={12} className="text-amber-500 shrink-0" />
@@ -2755,7 +2945,7 @@ const ITKanbanPage = ({ department }) => {
             <ITIssueDetailsPanel
               issue={selectedIssueData}
               updateIssue={updateIssue}
-              deleteIssue={deleteIssue}
+              deleteIssue={canDelete ? deleteIssue : undefined}
               onClose={() => {
                 setSelectedIssue(null);
                 setSelectedSubtaskKey(null);

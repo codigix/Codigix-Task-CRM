@@ -18,14 +18,14 @@ const Footer = () => {
               The only platform you need to run your entire business. Unify your data, automate your workflows, and grow faster.
             </p>
             <div className="mb-6">
-              <h4 className="text-white font-semibold mb-3">Subscribe to our newsletter</h4>
+              <h4 className="text-white  mb-3">Subscribe to our newsletter</h4>
               <div className="flex gap-2 max-w-sm">
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="bg-slate-800 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 w-full transition-colors"
+                  className="bg-slate-800 border border-slate-700 text-white p-2.5 rounded focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 w-full transition-colors"
                 />
-                <button className="bg-red-600 hover:bg-red-600 text-white p-2.5 rounded-xl font-medium transition-colors whitespace-nowrap shadow-lg shadow-red-600/20">
+                <button className="bg-red-600 hover:bg-red-600 text-white p-2.5 rounded font-medium transition-colors whitespace-nowrap shadow-lg shadow-red-600/20">
                   Subscribe
                 </button>
               </div>
@@ -33,7 +33,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">Modules</h4>
+            <h4 className="text-white  mb-4">Modules</h4>
             <ul className="space-y-3">
               <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Sales &amp; Pipeline</a></li>
               <li><a href="https://hrmsystem.codigixinfotech.com/" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-white transition-colors flex items-center gap-1">HR Management <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg></a></li>
@@ -44,7 +44,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">Resources</h4>
+            <h4 className="text-white  mb-4">Resources</h4>
             <ul className="space-y-3">
               <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Documentation</a></li>
               <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Blog</a></li>
@@ -54,7 +54,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">Company</h4>
+            <h4 className="text-white  mb-4">Company</h4>
             <ul className="space-y-3">
               <li><a href="#" className="text-slate-400 hover:text-white transition-colors">About</a></li>
               <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Careers</a></li>

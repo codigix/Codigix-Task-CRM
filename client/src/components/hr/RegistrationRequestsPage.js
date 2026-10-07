@@ -50,7 +50,7 @@ const getRoleName = (department, roleType) => {
 const StatusBadge = ({ status }) => {
   if (status === 'Approved') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs  bg-emerald-50 text-emerald-700 border border-emerald-200">
         <CheckCircle2 size={13} />
         Approved
       </span>
@@ -58,14 +58,14 @@ const StatusBadge = ({ status }) => {
   }
   if (status === 'Rejected') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs  bg-rose-50 text-rose-700 border border-rose-200">
         <XCircle size={13} />
         Rejected
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs  bg-amber-50 text-amber-700 border border-amber-200">
       <Clock size={13} />
       Pending Review
     </span>
@@ -243,11 +243,10 @@ const RegistrationRequestsPage = () => {
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border text-sm animate-fade-in ${
-            toastMessage.type === 'success'
-              ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-              : 'bg-rose-50 text-rose-900 border-rose-200'
-          }`}
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded shadow-lg border text-sm animate-fade-in ${toastMessage.type === 'success'
+            ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+            : 'bg-rose-50 text-rose-900 border-rose-200'
+            }`}
         >
           {toastMessage.type === 'success' ? (
             <CheckCircle2 className="text-emerald-600 flex-shrink-0" size={20} />
@@ -267,7 +266,7 @@ const RegistrationRequestsPage = () => {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl  text-gray-900 tracking-tight flex items-center gap-2">
             <UserCheck className="text-red-600" size={26} />
             Registration Requests
           </h1>
@@ -279,7 +278,7 @@ const RegistrationRequestsPage = () => {
         <button
           onClick={fetchRequests}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm self-start md:self-auto"
+          className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-200 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm self-start md:self-auto"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           <span>Refresh</span>
@@ -290,75 +289,71 @@ const RegistrationRequestsPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
           onClick={() => setSelectedStatus('all')}
-          className={`p-5 bg-white rounded-xl border transition-all cursor-pointer ${
-            selectedStatus === 'all' ? 'border-indigo-500 ring-2 ring-indigo-50 shadow-sm' : 'border-gray-100 hover:border-gray-200'
-          }`}
+          className={`p-5 bg-white rounded border transition-all cursor-pointer ${selectedStatus === 'all' ? 'border-indigo-500 ring-2 ring-indigo-50 shadow-sm' : 'border-gray-100 hover:border-gray-200'
+            }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Requests</span>
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded">
               <Users size={18} />
             </div>
           </div>
-          <div className="mt-3 text-2xl font-bold text-gray-900">{counts.total}</div>
+          <div className="mt-3 text-2xl  text-gray-900">{counts.total}</div>
           <span className="text-xs text-gray-400 mt-1 block">All registered applicants</span>
         </div>
 
         <div
           onClick={() => setSelectedStatus('Pending')}
-          className={`p-5 bg-white rounded-xl border transition-all cursor-pointer ${
-            selectedStatus === 'Pending' ? 'border-amber-500 ring-2 ring-amber-50 shadow-sm' : 'border-gray-100 hover:border-gray-200'
-          }`}
+          className={`p-5 bg-white rounded border transition-all cursor-pointer ${selectedStatus === 'Pending' ? 'border-amber-500 ring-2 ring-amber-50 shadow-sm' : 'border-gray-100 hover:border-gray-200'
+            }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-amber-700 uppercase tracking-wider">Pending Review</span>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+            <div className="p-2 bg-amber-50 text-amber-600 rounded">
               <Clock size={18} />
             </div>
           </div>
-          <div className="mt-3 text-2xl font-bold text-amber-600">{counts.pending}</div>
+          <div className="mt-3 text-2xl  text-amber-600">{counts.pending}</div>
           <span className="text-xs text-amber-600/70 mt-1 block">Requires HR / Admin action</span>
         </div>
 
         <div
           onClick={() => setSelectedStatus('Approved')}
-          className={`p-5 bg-white rounded-xl border transition-all cursor-pointer ${
-            selectedStatus === 'Approved' ? 'border-emerald-500 ring-2 ring-emerald-50 shadow-sm' : 'border-gray-100 hover:border-gray-200'
-          }`}
+          className={`p-5 bg-white rounded border transition-all cursor-pointer ${selectedStatus === 'Approved' ? 'border-emerald-500 ring-2 ring-emerald-50 shadow-sm' : 'border-gray-100 hover:border-gray-200'
+            }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-emerald-700 uppercase tracking-wider">Approved Users</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded">
               <UserCheck size={18} />
             </div>
           </div>
-          <div className="mt-3 text-2xl font-bold text-emerald-600">{counts.approved}</div>
+          <div className="mt-3 text-2xl  text-emerald-600">{counts.approved}</div>
           <span className="text-xs text-emerald-600/70 mt-1 block">Active user accounts created</span>
         </div>
 
         <div
           onClick={() => setSelectedStatus('Rejected')}
-          className={`p-5 bg-white rounded-xl border transition-all cursor-pointer ${
-            selectedStatus === 'Rejected' ? 'border-rose-500 ring-2 ring-rose-50 shadow-sm' : 'border-gray-100 hover:border-gray-200'
-          }`}
+          className={`p-5 bg-white rounded border transition-all cursor-pointer ${selectedStatus === 'Rejected' ? 'border-rose-500 ring-2 ring-rose-50 shadow-sm' : 'border-gray-100 hover:border-gray-200'
+            }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-rose-700 uppercase tracking-wider">Rejected Requests</span>
-            <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+            <div className="p-2 bg-rose-50 text-rose-600 rounded">
               <UserX size={18} />
             </div>
           </div>
-          <div className="mt-3 text-2xl font-bold text-rose-600">{counts.rejected}</div>
+          <div className="mt-3 text-2xl  text-rose-600">{counts.rejected}</div>
           <span className="text-xs text-rose-600/70 mt-1 block">Archived, no access granted</span>
         </div>
       </div>
 
       {/* Main Table Container */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded border border-gray-200 shadow-sm overflow-hidden">
         {/* Controls Bar */}
         <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
           {/* Status Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-lg self-start">
+          <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded self-start">
             {[
               { id: 'all', label: 'All', count: counts.total },
               { id: 'Pending', label: 'Pending', count: counts.pending },
@@ -368,19 +363,17 @@ const RegistrationRequestsPage = () => {
               <button
                 key={tab.id}
                 onClick={() => setSelectedStatus(tab.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
-                  selectedStatus === tab.id
-                    ? 'bg-white text-gray-900 shadow-xs font-semibold'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 ${selectedStatus === tab.id
+                  ? 'bg-white text-gray-900 shadow-xs '
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 <span>{tab.label}</span>
                 <span
-                  className={`text-[11px] px-1.5 py-0.2 rounded-full ${
-                    selectedStatus === tab.id
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'bg-gray-200 text-gray-600'
-                  }`}
+                  className={`text-[11px] px-1.5 py-0.2 rounded-full ${selectedStatus === tab.id
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'bg-gray-200 text-gray-600'
+                    }`}
                 >
                   {tab.count}
                 </span>
@@ -396,7 +389,7 @@ const RegistrationRequestsPage = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search name, email, department..."
-              className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all placeholder:text-gray-400"
+              className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all placeholder:text-gray-400"
             />
             {searchQuery && (
               <button
@@ -413,7 +406,7 @@ const RegistrationRequestsPage = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+              <tr className="border-b border-gray-100 bg-gray-50/50 text-[11px]  text-gray-500 uppercase tracking-wider">
                 <th className="py-3.5 px-4">Applicant</th>
                 <th className="py-3.5 px-4">Contact Info</th>
                 <th className="py-3.5 px-4">Department</th>
@@ -463,11 +456,11 @@ const RegistrationRequestsPage = () => {
                       {/* Applicant */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-red-100 text-red-700 font-semibold flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
+                          <div className="w-9 h-9 rounded-full bg-red-100 text-red-700  flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
                             {initials}
                           </div>
                           <div>
-                            <div className="font-semibold text-gray-900 group-hover:text-red-600 transition-colors">
+                            <div className=" text-gray-900 group-hover:text-red-600 transition-colors">
                               {fullName}
                             </div>
                           </div>
@@ -560,7 +553,7 @@ const RegistrationRequestsPage = () => {
 
                               <button
                                 onClick={() => handleOpenModal(req, 'view')}
-                                className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                                className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                                 title="View candidate registration details"
                               >
                                 <Eye size={16} />
@@ -569,7 +562,7 @@ const RegistrationRequestsPage = () => {
                           ) : (
                             <button
                               onClick={() => handleOpenModal(req, 'view')}
-                              className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                              className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                               title="View all details"
                             >
                               <Eye size={16} />
@@ -589,15 +582,15 @@ const RegistrationRequestsPage = () => {
       {/* Review & Details Modal */}
       {isModalOpen && selectedRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-2xl overflow-hidden animate-scale-up">
+          <div className="bg-white rounded shadow-2xl border border-gray-100 w-full max-w-2xl overflow-hidden animate-scale-up">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 font-bold flex items-center justify-center text-sm shadow-xs">
+                <div className="w-10 h-10 rounded-full bg-red-100 text-red-700  flex items-center justify-center text-sm shadow-xs">
                   {selectedRequest.first_name?.[0] || 'U'}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">
+                  <h3 className="text-base  text-gray-900">
                     {selectedRequest.first_name} {selectedRequest.last_name}
                   </h3>
                   <p className="text-xs text-gray-500">
@@ -610,7 +603,7 @@ const RegistrationRequestsPage = () => {
                 <StatusBadge status={selectedRequest.status} />
                 <button
                   onClick={handleCloseModal}
-                  className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100 transition-colors"
                 >
                   <X size={18} />
                 </button>
@@ -621,10 +614,10 @@ const RegistrationRequestsPage = () => {
             <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
               {/* Informational Banner */}
               {selectedRequest.status === 'Approved' && (
-                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 flex items-start gap-2.5">
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800 flex items-start gap-2.5">
                   <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-semibold">User Account Approved & Registered</div>
+                    <div className="">User Account Approved & Registered</div>
                     <div className="text-emerald-700 mt-0.5">
                       This user has been created and activated in the CRM. They can log in with their email and password.
                     </div>
@@ -633,10 +626,10 @@ const RegistrationRequestsPage = () => {
               )}
 
               {selectedRequest.status === 'Rejected' && (
-                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 flex items-start gap-2.5">
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded text-xs text-rose-800 flex items-start gap-2.5">
                   <XCircle size={18} className="text-rose-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-semibold">Request Rejected</div>
+                    <div className="">Request Rejected</div>
                     <div className="text-rose-700 mt-0.5">
                       This registration request was rejected. No user account was created. It is retained strictly as an audit record.
                     </div>
@@ -646,24 +639,24 @@ const RegistrationRequestsPage = () => {
 
               {/* Form Details Grid */}
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <h4 className="text-xs  text-gray-500 uppercase tracking-wider">
                   Submitted Registration Information
                 </h4>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50/70 p-4 rounded-xl border border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50/70 p-4 rounded border border-gray-100">
                   <div>
                     <span className="text-xs text-gray-500 block">First Name</span>
-                    <span className="text-sm font-semibold text-gray-900">{selectedRequest.first_name}</span>
+                    <span className="text-sm  text-gray-900">{selectedRequest.first_name}</span>
                   </div>
 
                   <div>
                     <span className="text-xs text-gray-500 block">Last Name</span>
-                    <span className="text-sm font-semibold text-gray-900">{selectedRequest.last_name || '-'}</span>
+                    <span className="text-sm  text-gray-900">{selectedRequest.last_name || '-'}</span>
                   </div>
 
                   <div>
                     <span className="text-xs text-gray-500 block">Email Address</span>
-                    <span className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                    <span className="text-sm  text-gray-900 flex items-center gap-1.5">
                       <Mail size={14} className="text-gray-400" />
                       {selectedRequest.email}
                     </span>
@@ -671,7 +664,7 @@ const RegistrationRequestsPage = () => {
 
                   <div>
                     <span className="text-xs text-gray-500 block">Phone Number</span>
-                    <span className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                    <span className="text-sm  text-gray-900 flex items-center gap-1.5">
                       <Phone size={14} className="text-gray-400" />
                       {selectedRequest.phone || 'Not provided'}
                     </span>
@@ -679,7 +672,7 @@ const RegistrationRequestsPage = () => {
 
                   <div>
                     <span className="text-xs text-gray-500 block">Submission Date</span>
-                    <span className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                    <span className="text-sm  text-gray-900 flex items-center gap-1.5">
                       <Calendar size={14} className="text-gray-400" />
                       {formatDate(selectedRequest.created_at)}
                     </span>
@@ -695,20 +688,20 @@ const RegistrationRequestsPage = () => {
 
                 {/* Department & Role Assignment by HR / Admin */}
                 {selectedRequest.status === 'Pending' ? (
-                  <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-4">
+                  <div className="p-4 bg-amber-50/70 border border-amber-200 rounded space-y-4">
                     <div className="flex items-center justify-between pb-2 border-b border-amber-200/60">
-                      <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
+                      <div className="flex items-center gap-2 text-amber-900  text-xs uppercase tracking-wider">
                         <Briefcase size={15} className="text-amber-700" />
                         <span>Assign Department & Designation</span>
                       </div>
-                      <span className="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+                      <span className="text-[11px]  text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
                         HR / Admin Decision
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-800 mb-1.5">
+                        <label className="block text-xs  text-gray-800 mb-1.5">
                           Department <span className="text-red-500">*</span>
                         </label>
                         <select
@@ -719,7 +712,7 @@ const RegistrationRequestsPage = () => {
                             setAssignedRoleType('');
                             setAssignmentError('');
                           }}
-                          className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                          className="w-full p-2.5 bg-white border border-gray-300 rounded text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                         >
                           <option value="">-- Select Department --</option>
                           {DEPARTMENTS.map((dept) => (
@@ -731,7 +724,7 @@ const RegistrationRequestsPage = () => {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-gray-800 mb-1.5">
+                        <label className="block text-xs  text-gray-800 mb-1.5">
                           Role Type / Designation <span className="text-red-500">*</span>
                         </label>
                         <select
@@ -741,7 +734,7 @@ const RegistrationRequestsPage = () => {
                             setAssignmentError('');
                           }}
                           disabled={!assignedDepartment}
-                          className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                          className="w-full p-2.5 bg-white border border-gray-300 rounded text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                         >
                           <option value="">
                             {assignedDepartment ? '-- Select Role / Designation --' : '-- Choose Department First --'}
@@ -755,35 +748,34 @@ const RegistrationRequestsPage = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between bg-white/90 p-2.5 rounded-lg border border-amber-200/80 text-xs">
+                    <div className="flex items-center justify-between bg-white/90 p-2.5 rounded border border-amber-200/80 text-xs">
                       <span className="text-gray-600">System Role that will be granted:</span>
-                      <span className={`font-bold px-2.5 py-0.5 rounded text-xs border ${
-                        assignedRoleType
-                          ? 'text-indigo-700 bg-indigo-50 border-indigo-200'
-                          : 'text-gray-400 bg-gray-50 border-gray-200'
-                      }`}>
+                      <span className={` px-2.5 py-0.5 rounded text-xs border ${assignedRoleType
+                        ? 'text-indigo-700 bg-indigo-50 border-indigo-200'
+                        : 'text-gray-400 bg-gray-50 border-gray-200'
+                        }`}>
                         {assignedRoleType ? getRoleName(assignedDepartment, assignedRoleType) : 'Pending Selection'}
                       </span>
                     </div>
 
                     {assignmentError && (
-                      <div className="p-2.5 bg-red-100 border border-red-200 text-red-700 rounded-lg text-xs flex items-center gap-1.5">
+                      <div className="p-2.5 bg-red-100 border border-red-200 text-red-700 rounded text-xs flex items-center gap-1.5">
                         <AlertCircle size={15} />
                         <span>{assignmentError}</span>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-2 text-xs">
-                    <div className="font-bold text-gray-700 uppercase tracking-wider">Assigned Department & Role</div>
+                  <div className="p-4 bg-gray-50 rounded border border-gray-100 space-y-2 text-xs">
+                    <div className=" text-gray-700 uppercase tracking-wider">Assigned Department & Role</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-900 font-medium">
                       <div>
                         <span className="text-gray-400 block text-[11px]">Department:</span>
-                        <span className="text-gray-900 font-semibold">{selectedRequest.department || 'Not Assigned'}</span>
+                        <span className="text-gray-900 ">{selectedRequest.department || 'Not Assigned'}</span>
                       </div>
                       <div>
                         <span className="text-gray-400 block text-[11px]">Designation / System Role:</span>
-                        <span className="text-gray-900 font-semibold">{selectedRequest.role_name || selectedRequest.role_type || 'Not Assigned'}</span>
+                        <span className="text-gray-900 ">{selectedRequest.role_name || selectedRequest.role_type || 'Not Assigned'}</span>
                       </div>
                     </div>
                   </div>
@@ -792,8 +784,8 @@ const RegistrationRequestsPage = () => {
 
               {/* Reviewer Audit Trail */}
               {(selectedRequest.reviewed_at || selectedRequest.reviewed_by) && (
-                <div className="space-y-2 p-4 bg-gray-50 rounded-xl border border-gray-100 text-xs">
-                  <h4 className="font-bold text-gray-700 uppercase tracking-wider">Review Audit Trail</h4>
+                <div className="space-y-2 p-4 bg-gray-50 rounded border border-gray-100 text-xs">
+                  <h4 className=" text-gray-700 uppercase tracking-wider">Review Audit Trail</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-600">
                     <div>
                       <span className="text-gray-400 block">Reviewed By:</span>
@@ -817,8 +809,8 @@ const RegistrationRequestsPage = () => {
 
               {/* Rejection Prompt Box */}
               {showRejectPrompt && selectedRequest.status === 'Pending' && (
-                <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl space-y-3 animate-fade-in">
-                  <div className="flex items-center gap-2 text-rose-800 font-semibold text-xs">
+                <div className="p-4 bg-rose-50 border border-rose-200 rounded space-y-3 animate-fade-in">
+                  <div className="flex items-center gap-2 text-rose-800  text-xs">
                     <ShieldAlert size={16} />
                     <span>Confirm Rejection of Registration Request</span>
                   </div>
@@ -864,7 +856,7 @@ const RegistrationRequestsPage = () => {
               <button
                 type="button"
                 onClick={handleCloseModal}
-                className="px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 rounded-lg text-xs font-medium transition-colors"
+                className="px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 rounded text-xs font-medium transition-colors"
               >
                 Close
               </button>
@@ -875,7 +867,7 @@ const RegistrationRequestsPage = () => {
                     type="button"
                     onClick={() => setShowRejectPrompt(true)}
                     disabled={actionLoading}
-                    className="px-4 py-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-4 py-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded text-xs font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <UserX size={15} />
                     <span>Reject Request</span>
@@ -885,7 +877,7 @@ const RegistrationRequestsPage = () => {
                     type="button"
                     onClick={() => handleApprove(selectedRequest.id)}
                     disabled={actionLoading}
-                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-all shadow-xs flex items-center gap-2 disabled:opacity-50 active:scale-98"
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-medium transition-all shadow-xs flex items-center gap-2 disabled:opacity-50 active:scale-98"
                   >
                     {actionLoading ? (
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

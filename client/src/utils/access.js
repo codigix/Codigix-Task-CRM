@@ -42,5 +42,30 @@ export const canViewProjectFinancialsAndManage = (user, designation = '') => {
   return Boolean(isPrivileged);
 };
 
+/**
+ * Who may delete a ticket. Everyone can edit tickets, but only managers (and admins) can
+ * delete them. Mirrors the server check in it-kanban-routes, which is the real gate.
+ */
+export const canDeleteTickets = (user) => {
+  const role = String(user?.role || user?.role_name || '').toLowerCase();
+  return role.includes('manager') || role.includes('admin');
+};
+
+/**
+ * Identifies the signed-in user to the server (x-user-id), so it can look up their role
+ * itself — used for deletes and for approving performance points.
+ */
+export const ticketDeleteHeaders = (user) => {
+  const headers = {};
+  const u = user || (() => {
+    try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch (e) { return null; }
+  })();
+  const id = u?.id || u?.userId;
+  if (id) headers['x-user-id'] = String(id);
+  return headers;
+};
+
+export const TICKET_DELETE_DENIED_MESSAGE = 'Only managers can delete tickets.';
+
 export default isManagerDesignation;
 

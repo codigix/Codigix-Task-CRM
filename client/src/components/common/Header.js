@@ -163,11 +163,22 @@ const Header = ({ toggleSidebar }) => {
     if (notif.entityKey && (notif.entityType === 'issue' || notif.entityType === 'subtask')) {
       const base = userWorkspacePath(user);
       if (base) {
-        // Subtask keys look like MKT-103-1; the board holds the parent card (MKT-103).
-        const parts = String(notif.entityKey).split('-');
-        const boardKey = parts.length > 2 ? parts.slice(0, 2).join('-') : notif.entityKey;
+        // Subtask keys are the parent key plus "-N" (MKT-103-1); the board holds the parent
+        // card. Only strip for subtasks: project keys can contain dashes (PRJ-2026-0029-101).
+        const key = String(notif.entityKey);
+        const boardKey = notif.entityType === 'subtask' ? key.replace(/-\d+$/, '') : key;
         return `${base}/kanban?ticketKey=${encodeURIComponent(boardKey)}`;
       }
+    }
+    // Calendar invitations and cancellations open the calendar.
+    if (notif.entityType === 'calendar_event') {
+      const base = userWorkspacePath(user);
+      if (base) return `${base}/calendar`;
+    }
+    // Board-wide reminders (e.g. "8 unassigned tickets overdue") open the board itself.
+    if (notif.entityType === 'board') {
+      const base = userWorkspacePath(user);
+      if (base) return `${base}/kanban`;
     }
     if (notif.entityType === 'registration_request') {
       const base = userWorkspacePath(user);
@@ -379,9 +390,9 @@ const Header = ({ toggleSidebar }) => {
                           navigate(item.path);
                           setShowQuickAccess(false);
                         }}
-                        className="menu-item p-3 hover:bg-teal-50 rounded-md cursor-pointer group transition-all duration-200"
+                        className="menu-item p-3 hover:bg-teal-50 rounded cursor-pointer group transition-all duration-200"
                       >
-                        <p className="text-gray-900 text-xs font-semibold group-hover:text-teal-600 transition-colors">{item.label}</p>
+                        <p className="text-gray-900 text-xs  group-hover:text-teal-600 transition-colors">{item.label}</p>
                         <p className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">{item.desc}</p>
                       </div>
                     ))}
@@ -401,7 +412,7 @@ const Header = ({ toggleSidebar }) => {
               </button>
               {showHelp && (
                 <div className="dropdown-menu absolute right-0 mt-2 w-64 bg-white z-50 p-4 rounded shadow-xl border border-gray-100">
-                  <h4 className="text-xs font-semibold text-gray-900 mb-1">Help & Support</h4>
+                  <h4 className="text-xs  text-gray-900 mb-1">Help & Support</h4>
                   <p className="text-xs text-gray-500 mb-2">Need assistance with your Codigix dashboard? Our support team is here to help.</p>
                   <a href="mailto:support@codigix.com" className="text-xs text-blue-600 hover:underline">Email: support@codigix.com</a>
                 </div>
@@ -433,7 +444,7 @@ const Header = ({ toggleSidebar }) => {
               {showMessages && (
                 <div className="dropdown-menu absolute right-0 mt-2 w-80 bg-white z-50 rounded shadow-xl border border-gray-100 py-1">
                   <div className="p-3 border-b border-gray-100 flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-gray-900">Messages</h3>
+                    <h3 className="text-xs  text-gray-900">Messages</h3>
                     {messagesData.some(m => !m.read) && (
                       <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full ">New</span>
                     )}
@@ -453,7 +464,7 @@ const Header = ({ toggleSidebar }) => {
                             {msg.avatar}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-gray-900">{msg.name}</p>
+                            <p className="text-xs  text-gray-900">{msg.name}</p>
                             <p className="text-xs text-gray-600 truncate mt-0.5">{msg.message}</p>
                             <p className="text-xs text-gray-400 mt-1">{msg.time}</p>
                           </div>
@@ -494,7 +505,7 @@ const Header = ({ toggleSidebar }) => {
               {showNotifications && (
                 <div className="dropdown-menu absolute right-0 mt-2 w-84 bg-white z-50 rounded shadow-2xl border border-gray-100 py-1 overflow-hidden animate-in fade-in zoom-in duration-150">
                   <div className="p-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                    <h3 className="text-xs font-semibold text-gray-900 flex items-center gap-1.5">
+                    <h3 className="text-xs  text-gray-900 flex items-center gap-1.5">
                       <Bell size={14} className="text-gray-700" />
                       Notifications {unreadCount > 0 && <span className="text-red-500 ">({unreadCount})</span>}
                     </h3>
@@ -502,7 +513,7 @@ const Header = ({ toggleSidebar }) => {
                       {unreadCount > 0 && (
                         <button
                           onClick={markAllNotificationsRead}
-                          className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold transition-colors"
+                          className="text-[10px] text-blue-600 hover:text-blue-800  transition-colors"
                         >
                           Mark all read
                         </button>
@@ -533,7 +544,7 @@ const Header = ({ toggleSidebar }) => {
                         <>
                           <button
                             onClick={handleTestDeviceAlert}
-                            className="px-2 py-0.5 bg-red-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition-colors shadow-xs"
+                            className="px-2 py-0.5 bg-red-600 text-white rounded text-[10px]  hover:bg-blue-700 transition-colors shadow-xs"
                             title="Send a test notification to your screen"
                           >
                             Test Alert
@@ -551,7 +562,7 @@ const Header = ({ toggleSidebar }) => {
                       ) : (
                         <button
                           onClick={handleEnableDeviceAlerts}
-                          className="px-2.5 py-1 bg-red-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition-colors shadow-xs animate-pulse"
+                          className="px-2.5 py-1 bg-red-600 text-white rounded text-[10px]  hover:bg-blue-700 transition-colors shadow-xs animate-pulse"
                         >
                           Enable Alerts
                         </button>
@@ -579,7 +590,7 @@ const Header = ({ toggleSidebar }) => {
                             {notif.avatar}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-gray-900">{notif.title}</p>
+                            <p className="text-xs  text-gray-900">{notif.title}</p>
                             <p className="text-xs text-gray-600 mt-0.5">{notif.message}</p>
                             <p className="text-xs text-gray-400 mt-1">
                               {notif.name !== 'System' ? `${notif.name} · ` : ''}{notif.time}
@@ -637,7 +648,7 @@ const Header = ({ toggleSidebar }) => {
                         navigate('/profile-settings');
                         setShowProfile(false);
                       }}
-                      className="menu-item w-full text-left p-2 text-xs text-gray-700 hover:bg-blue-50 rounded-md transition-colors flex items-center gap-2"
+                      className="menu-item w-full text-left p-2 text-xs text-gray-700 hover:bg-blue-50 rounded transition-colors flex items-center gap-2"
                     >
                       <User size={15} />
                       Profile Settings
@@ -647,7 +658,7 @@ const Header = ({ toggleSidebar }) => {
                         navigate('/notifications');
                         setShowProfile(false);
                       }}
-                      className="menu-item w-full text-left p-2 text-xs text-gray-700 hover:bg-purple-50 rounded-md transition-colors flex items-center gap-2"
+                      className="menu-item w-full text-left p-2 text-xs text-gray-700 hover:bg-purple-50 rounded transition-colors flex items-center gap-2"
                     >
                       <BellIcon size={15} />
                       Notifications
@@ -657,7 +668,7 @@ const Header = ({ toggleSidebar }) => {
                         setShowHelp(true);
                         setShowProfile(false);
                       }}
-                      className="menu-item w-full text-left p-2 text-xs text-gray-700 hover:bg-green-50 rounded-md transition-colors flex items-center gap-2"
+                      className="menu-item w-full text-left p-2 text-xs text-gray-700 hover:bg-green-50 rounded transition-colors flex items-center gap-2"
                     >
                       <HelpCircle size={15} />
                       Help & Support
@@ -667,7 +678,7 @@ const Header = ({ toggleSidebar }) => {
                         navigate('/profile-settings');
                         setShowProfile(false);
                       }}
-                      className="menu-item w-full text-left p-2 text-xs text-gray-700 hover:bg-orange-50 rounded-md transition-colors flex items-center gap-2"
+                      className="menu-item w-full text-left p-2 text-xs text-gray-700 hover:bg-orange-50 rounded transition-colors flex items-center gap-2"
                     >
                       <Settings size={15} />
                       Settings
@@ -679,7 +690,7 @@ const Header = ({ toggleSidebar }) => {
                         logout();
                         navigate('/login');
                       }}
-                      className="menu-item w-full text-left p-2 text-xs text-red-600 hover:bg-red-50 rounded-md transition-colors flex items-center gap-2"
+                      className="menu-item w-full text-left p-2 text-xs text-red-600 hover:bg-red-50 rounded transition-colors flex items-center gap-2"
                     >
                       <LogOut size={15} />
                       Sign Out
@@ -700,7 +711,7 @@ const Header = ({ toggleSidebar }) => {
               <Bell size={13} className="text-white animate-bounce" />
             </span>
             <span>
-              <strong className="font-semibold">Enable System Notifications:</strong> Get real-time alerts on your Windows screen whenever tasks are assigned or updated.
+              <strong className="">Enable System Notifications:</strong> Get real-time alerts on your Windows screen whenever tasks are assigned or updated.
             </span>
           </div>
           <div className="flex items-center gap-2">

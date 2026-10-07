@@ -56,7 +56,7 @@ const RoleBasedSection = () => {
                   className={`text-left p-4 md:p-5 rounded transition-all duration-300 border-2 ${isActive ? 'bg-white border-red-500 shadow-xl shadow-red-900/5 scale-[1.02]' : 'bg-transparent border-transparent hover:bg-white/50'}`}
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <div className={`p-2.5 rounded-xl transition-colors duration-300 ${isActive ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' : 'bg-slate-200 text-slate-500'}`}>
+                    <div className={`p-2.5 rounded transition-colors duration-300 ${isActive ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' : 'bg-slate-200 text-slate-500'}`}>
                       <Icon size={22} />
                     </div>
                     <h3 className={`text-xl  tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>

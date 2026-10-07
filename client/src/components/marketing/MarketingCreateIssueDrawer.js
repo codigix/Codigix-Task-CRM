@@ -609,9 +609,9 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-lg">
           <h2 className="text-xl text-gray-800 font-medium tracking-tight">Create Marketing Ticket</h2>
           <div className="flex items-center gap-1 text-gray-500">
-            <button type="button" className="p-1.5 hover:bg-gray-100 rounded-md transition-colors" onClick={handleClose} title="Minimize"><Minus size={16} /></button>
-            <button type="button" className="p-1.5 hover:bg-gray-100 rounded-md transition-colors" onClick={() => setIsMaximized(!isMaximized)} title={isMaximized ? "Shrink to side panel" : "Expand to centered modal"}><Maximize2 size={14} /></button>
-            <button type="button" className="p-1.5 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors" onClick={handleClose} title="Close"><X size={16} /></button>
+            <button type="button" className="p-1.5 hover:bg-gray-100 rounded transition-colors" onClick={handleClose} title="Minimize"><Minus size={16} /></button>
+            <button type="button" className="p-1.5 hover:bg-gray-100 rounded transition-colors" onClick={() => setIsMaximized(!isMaximized)} title={isMaximized ? "Shrink to side panel" : "Expand to centered modal"}><Maximize2 size={14} /></button>
+            <button type="button" className="p-1.5 hover:bg-gray-100 hover:text-gray-900 rounded transition-colors" onClick={handleClose} title="Close"><X size={16} /></button>
           </div>
         </div>
 
@@ -623,7 +623,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Space */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Space <span className="text-red-500">*</span></label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Space <span className="text-red-500">*</span></label>
               <SearchableDropdown
                 options={projects}
                 value={formData.space}
@@ -650,7 +650,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
                 }}
                 placeholder={projects.length === 0 ? 'No Marketing projects available' : 'Select project'}
                 labelRenderer={projectLabel}
-                iconRenderer={(p) => p ? <div className="w-5 h-5 bg-indigo-600 rounded flex items-center justify-center text-white text-xs">{(p.name || '').trim().charAt(0).toUpperCase()}</div> : null}
+                iconRenderer={(p) => p ? <div className="w-5 h-5 bg-red-600 rounded flex items-center justify-center text-white text-xs">{(p.name || '').trim().charAt(0).toUpperCase()}</div> : null}
               />
             </div>
 
@@ -658,7 +658,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
                 sprint; it stays selectable so work can go straight into any sprint, or be
                 left in the Backlog. */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Sprint</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Sprint</label>
               <SearchableDropdown
                 options={sprints}
                 value={formData.sprint}
@@ -676,7 +676,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Work type */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Work type <span className="text-red-500">*</span></label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Work type <span className="text-red-500">*</span></label>
               <SearchableDropdown
                 options={WORK_TYPES.map(w => w.name)}
                 value={formData.workType}
@@ -687,7 +687,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
                   const wt = WORK_TYPES.find(w => w.name === t);
                   if (!wt) return null;
                   const Icon = wt.icon;
-                  return <div className={`p-0.5 rounded-sm ${wt.color}`}><Icon size={12} /></div>;
+                  return <div className={`p-0.5 rounded ${wt.color}`}><Icon size={12} /></div>;
                 }}
               />
               <div className="flex items-center gap-1 text-sm text-blue-600 font-medium cursor-pointer hover:underline mt-1">
@@ -699,7 +699,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Status */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Status</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Status</label>
               <SimpleDropdown
                 options={STATUSES}
                 value={formData.status}
@@ -710,7 +710,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Priority */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Priority</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Priority</label>
               <SimpleDropdown
                 options={['High', 'Medium', 'Low']}
                 value={formData.priority}
@@ -720,7 +720,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Summary */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Summary <span className="text-red-500">*</span></label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Summary <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 value={formData.summary}
@@ -736,7 +736,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Description */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Description</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Description</label>
               <div className="border border-gray-300 rounded-[3px] overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-shadow bg-white">
 
                 {/* Rich Text Toolbar */}
@@ -815,7 +815,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
             {/* Assignee */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="block text-[12px] font-semibold text-gray-700">Assignee</label>
+                <label className="block text-[12px]  text-gray-700">Assignee</label>
                 <button
                   type="button"
                   onClick={handleAssignToMe}
@@ -844,7 +844,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Parent */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Parent</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Parent</label>
               <SearchableDropdown
                 options={projects}
                 value={formData.parent}
@@ -857,7 +857,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Due date */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Due date</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Due date</label>
               <div className="flex items-center justify-between w-64 border border-gray-300 rounded-[3px] px-2.5 py-1.5 bg-white cursor-pointer hover:bg-gray-50 text-gray-500 relative">
                 <input
                   type="date"
@@ -872,7 +872,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Labels */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Labels</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Labels</label>
               <div className="flex flex-wrap gap-2 items-center border border-gray-300 rounded-[3px] px-2.5 py-1.5 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-shadow">
                 {formData.labels.map(l => (
                   <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1 group">
@@ -929,7 +929,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Team */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Team</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Team</label>
               <SearchableDropdown
                 options={teams}
                 value={formData.team}
@@ -951,7 +951,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Start date */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Start date</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Start date</label>
               <div className="flex items-center justify-between w-64 border border-gray-300 rounded-[3px] px-2.5 py-1.5 bg-white cursor-pointer hover:bg-gray-50 text-gray-500 relative">
                 <input
                   type="date"
@@ -967,7 +967,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Effort points */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Effort points</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Effort points</label>
               <SimpleDropdown
                 options={['None', '1', '2', '3', '5', '8']}
                 value={formData.storyPoints || 'None'}
@@ -978,7 +978,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Reporter */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Reporter <span className="text-red-500">*</span></label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Reporter <span className="text-red-500">*</span></label>
               <SearchableDropdown
                 options={users}
                 value={formData.reporter}
@@ -995,7 +995,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Attachment */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Attachment</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Attachment</label>
               <input
                 type="file"
                 ref={fileInputRef}
@@ -1039,7 +1039,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
                             </div>
                           )}
                           <div className="min-w-0">
-                            <div className="text-xs font-semibold text-gray-800 truncate" title={file.name}>
+                            <div className="text-xs  text-gray-800 truncate" title={file.name}>
                               {file.name}
                             </div>
                             <div className="text-[10px] text-gray-400 font-medium">
@@ -1067,7 +1067,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Linked work items */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Linked work items</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Linked work items</label>
               <div className="flex gap-2">
                 <div className="w-1/3">
                   <SearchableDropdown
@@ -1092,7 +1092,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
 
             {/* Flagged */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-700 mb-1.5">Flagged</label>
+              <label className="block text-[12px]  text-gray-700 mb-1.5">Flagged</label>
               <div className="flex items-center gap-2 mb-1 cursor-pointer" onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, flagged: !prev.flagged })); }}>
                 <input
                   type="checkbox"

@@ -176,10 +176,10 @@ const SeoGmbDocumentsPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(`/${isIT ? 'it' : 'seo-gmb'}/manager/${user?.username || 'ashwini'}/documents/upload`)} className="p-2 bg-white border border-gray-200 text-gray-700 rounded-md text-sm font-medium flex items-center gap-2  hover:bg-gray-50 transition-colors">
+          <button onClick={() => navigate(`/${isIT ? 'it' : 'seo-gmb'}/manager/${user?.username || 'ashwini'}/documents/upload`)} className="p-2 bg-white border border-gray-200 text-gray-700 rounded text-sm font-medium flex items-center gap-2  hover:bg-gray-50 transition-colors">
             <Upload size={14} /> Upload Document
           </button>
-          <button onClick={() => navigate(`/${isIT ? 'it' : 'seo-gmb'}/manager/${user?.username || 'ashwini'}/documents/upload`)} className="p-2 bg-white border border-gray-200 text-gray-700 rounded-md text-sm font-medium flex items-center gap-2  hover:bg-gray-50 transition-colors">
+          <button onClick={() => navigate(`/${isIT ? 'it' : 'seo-gmb'}/manager/${user?.username || 'ashwini'}/documents/upload`)} className="p-2 bg-white border border-gray-200 text-gray-700 rounded text-sm font-medium flex items-center gap-2  hover:bg-gray-50 transition-colors">
             <Folder size={14} /> New Folder
           </button>
         </div>
@@ -195,8 +195,8 @@ const SeoGmbDocumentsPage = () => {
           { title: 'Recently Added', val: recentDocumentsCount.toString(), sub: 'This week', icon: Clock, color: 'text-emerald-500', bg: 'bg-emerald-50' },
           { title: 'Shared Documents', val: sharedDocuments.toString(), sub: 'Shared files', icon: Users, color: 'text-cyan-500', bg: 'bg-cyan-50' },
         ].map((k, i) => (
-          <div key={i} className="bg-white p-2 rounded-xl border border-gray-100  flex items-center gap-2">
-            <div className={`p-3 rounded-xl ${k.bg} ${k.color} shrink-0`}><k.icon size={20} /></div>
+          <div key={i} className="bg-white p-2 rounded border border-gray-100  flex items-center gap-2">
+            <div className={`p-3 rounded ${k.bg} ${k.color} shrink-0`}><k.icon size={20} /></div>
             <div>
               <div className="text-xs font-medium text-gray-500 mb-0.5">{k.title}</div>
               <div className="text-xl  text-gray-900 mb-0.5">{k.val}</div>
@@ -259,7 +259,7 @@ const SeoGmbDocumentsPage = () => {
           </div>
 
           {/* Documents Table */}
-          <div className="bg-white rounded-xl border border-gray-100  flex flex-col">
+          <div className="bg-white rounded border border-gray-100  flex flex-col">
             <div className="px-5 py-4 border-b border-gray-100">
               <h2 className="text-[13px]  text-gray-900">Documents List <span className="text-gray-500 font-normal">(Total: {filteredFiles.length})</span></h2>
             </div>
@@ -309,9 +309,9 @@ const SeoGmbDocumentsPage = () => {
                         <td className="p-2 text-center text-gray-500">{doc.version}</td>
                         <td className="py-3 px-5 text-center">
                           <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={(e) => { e.stopPropagation(); alert(`Previewing document: ${doc.name}`); }} title="Preview Document" className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"><Eye size={14} /></button>
-                            <button onClick={(e) => { e.stopPropagation(); alert(`Downloading document: ${doc.name}`); }} title="Download Document" className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"><Download size={14} /></button>
-                            <button onClick={(e) => { e.stopPropagation(); alert(`Opening context menu for: ${doc.name}`); }} title="More Options" className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"><MoreVertical size={14} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); alert(`Previewing document: ${doc.name}`); }} title="Preview Document" className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"><Eye size={14} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); alert(`Downloading document: ${doc.name}`); }} title="Download Document" className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"><Download size={14} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); alert(`Opening context menu for: ${doc.name}`); }} title="More Options" className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"><MoreVertical size={14} /></button>
                           </div>
                         </td>
                       </tr>
@@ -320,27 +320,27 @@ const SeoGmbDocumentsPage = () => {
                           <td colSpan="10" className="px-5 py-4">
                             <div className="flex gap-8 pl-8 border-l-2 border-indigo-200 ml-4">
                               <div>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 font-semibold">Folder Location</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 ">Folder Location</p>
                                 <p className="text-sm font-medium text-gray-900 flex items-center gap-2">
                                   <Folder size={14} className="text-gray-400" />
                                   {doc.folder || 'Root'}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 font-semibold">Access Level</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 ">Access Level</p>
                                 <p className="text-sm font-medium text-gray-900 flex items-center gap-2">
                                   {doc.access === 'Private' ? <Lock size={14} className="text-amber-500" /> : <Globe size={14} className="text-emerald-500" />}
                                   {doc.access || 'Private'}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 font-semibold">Document ID</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 ">Document ID</p>
                                 <p className="text-sm font-medium text-gray-900 font-mono">
                                   DOC-{String(doc.id).padStart(4, '0')}
                                 </p>
                               </div>
                               <div className="flex-1">
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 font-semibold">Description</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 ">Description</p>
                                 <p className="text-sm text-gray-700">
                                   {doc.sub !== 'Document' ? doc.sub : 'No additional description provided for this document.'}
                                 </p>
@@ -361,7 +361,7 @@ const SeoGmbDocumentsPage = () => {
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 mr-4">
                   <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100"><ChevronDown size={12} className="rotate-90" /></button>
-                  <button className="w-6 h-6 flex items-center justify-center rounded bg-indigo-600 text-white font-medium">1</button>
+                  <button className="w-6 h-6 flex items-center justify-center rounded bg-red-600 text-white font-medium">1</button>
                   <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 font-medium">2</button>
                   <button className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 font-medium">3</button>
                   <span className="px-1">...</span>
@@ -377,7 +377,7 @@ const SeoGmbDocumentsPage = () => {
           </div>
 
           {/* Recent Documents Cards */}
-          <div className="bg-white rounded-xl border border-gray-100  p-2">
+          <div className="bg-white rounded border border-gray-100  p-2">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-[13px]  text-gray-900">Recent Documents</h3>
               <span className="text-xs text-indigo-600 font-medium cursor-pointer hover:underline">View All</span>
@@ -410,7 +410,7 @@ const SeoGmbDocumentsPage = () => {
         <div className="col-span-4 flex flex-col gap-6">
 
           {/* Storage Overview */}
-          <div className="bg-white p-2 rounded-xl border border-gray-100  flex flex-col">
+          <div className="bg-white p-2 rounded border border-gray-100  flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-[13px]  text-gray-900">Storage Overview</h3>
               <span className="text-xs text-indigo-600 font-medium cursor-pointer hover:underline">View Details</span>
@@ -452,7 +452,7 @@ const SeoGmbDocumentsPage = () => {
           </div>
 
           {/* Quick Access */}
-          <div className="bg-white p-2 rounded-xl border border-gray-100 ">
+          <div className="bg-white p-2 rounded border border-gray-100 ">
             <h3 className="text-[13px]  text-gray-900 mb-4">Quick Access</h3>
             <div className="space-y-1">
               {[
@@ -463,7 +463,7 @@ const SeoGmbDocumentsPage = () => {
               ].map((q, i) => (
                 <div key={i} className="flex items-center justify-between p-2 rounded hover:bg-gray-50 cursor-pointer transition-colors group">
                   <div className="flex items-center gap-3">
-                    <div className={`p-1.5 rounded-md ${q.bg} ${q.color}`}><q.icon size={14} /></div>
+                    <div className={`p-1.5 rounded ${q.bg} ${q.color}`}><q.icon size={14} /></div>
                     <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{q.label}</span>
                   </div>
                   <span className="text-xs font-medium text-gray-500">{q.count}</span>
@@ -473,7 +473,7 @@ const SeoGmbDocumentsPage = () => {
           </div>
 
           {/* Folders */}
-          <div className="bg-white p-2 rounded-xl border border-gray-100  flex-1">
+          <div className="bg-white p-2 rounded border border-gray-100  flex-1">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-[13px]  text-gray-900">Folders</h3>
               <span className="text-xs text-indigo-600 font-medium cursor-pointer hover:underline flex items-center gap-1"><Plus size={10} /> New Folder</span>

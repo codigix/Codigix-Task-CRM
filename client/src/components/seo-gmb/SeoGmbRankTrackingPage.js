@@ -229,7 +229,7 @@ export default function SeoGmbRankTrackingPage() {
           </button>
           <button
             onClick={() => setActiveTab('Keyword Rankings')}
-            className="bg-indigo-500 hover:bg-indigo-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="bg-indigo-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Plus size={14} /> Add Keywords
           </button>
@@ -389,7 +389,7 @@ export default function SeoGmbRankTrackingPage() {
                   </button>
                   <button
                     onClick={() => makeAdd('keywords')({ keyword: 'New Keyword', location: 'India', device: 'Desktop', rank: '10', prevRank: '10', change: '→ 0', best: '10', volume: '1,000' })}
-                    className="bg-indigo-500 hover:bg-indigo-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
+                    className="bg-indigo-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
                     <Plus size={13} /> Add Keywords
                   </button>

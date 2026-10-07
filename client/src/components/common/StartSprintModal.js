@@ -98,7 +98,7 @@ const StartSprintModal = ({ isOpen, sprint, itemCount, onCancel, onStart, mode =
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded shadow-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between px-6 pt-5 pb-3">
-          <h2 className="text-xl font-semibold text-gray-900">{isEdit ? 'Edit Sprint' : 'Start Sprint'}</h2>
+          <h2 className="text-xl  text-gray-900">{isEdit ? 'Edit Sprint' : 'Start Sprint'}</h2>
           <button onClick={onCancel} className="text-gray-400 hover:text-gray-700 p-1 rounded transition">
             <X size={18} />
           </button>
@@ -117,7 +117,7 @@ const StartSprintModal = ({ isOpen, sprint, itemCount, onCancel, onStart, mode =
           )}
 
           <div>
-            <label className="block text-[13px] font-semibold text-gray-700 mb-1">
+            <label className="block text-[13px]  text-gray-700 mb-1">
               Sprint name <span className="text-red-500">*</span>
             </label>
             <input
@@ -129,7 +129,7 @@ const StartSprintModal = ({ isOpen, sprint, itemCount, onCancel, onStart, mode =
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-gray-700 mb-1">
+            <label className="block text-[13px]  text-gray-700 mb-1">
               Duration <span className="text-red-500">*</span>
             </label>
             <select
@@ -142,7 +142,7 @@ const StartSprintModal = ({ isOpen, sprint, itemCount, onCancel, onStart, mode =
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-gray-700 mb-1">
+            <label className="block text-[13px]  text-gray-700 mb-1">
               Start date <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
@@ -162,7 +162,7 @@ const StartSprintModal = ({ isOpen, sprint, itemCount, onCancel, onStart, mode =
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-gray-700 mb-1">
+            <label className="block text-[13px]  text-gray-700 mb-1">
               End date <span className="text-red-500">*</span>
             </label>
             <input
@@ -179,7 +179,7 @@ const StartSprintModal = ({ isOpen, sprint, itemCount, onCancel, onStart, mode =
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-gray-700 mb-1">Sprint goal</label>
+            <label className="block text-[13px]  text-gray-700 mb-1">Sprint goal</label>
             <textarea
               value={goal}
               onChange={(e) => setGoal(e.target.value)}

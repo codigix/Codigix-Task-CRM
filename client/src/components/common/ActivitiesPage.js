@@ -373,7 +373,7 @@ const ActivitiesPage = () => {
             </button>
             <button
               onClick={() => setActiveFilter('Lead Created')}
-              className={`p-2 rounded text-xs   flex items-center gap-1 transition ${activeFilter === 'Lead Created' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              className={`p-2 rounded text-xs   flex items-center gap-1 transition ${activeFilter === 'Lead Created' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
             >
               <Star size={14} /> Leads
             </button>

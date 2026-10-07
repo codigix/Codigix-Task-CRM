@@ -51,7 +51,7 @@ const ContactActionDropdown = ({ contact, onEdit, onDelete, onPreview, onClone, 
     setIsOpen(false);
   };
 
-  const triggerClasses = variant === 'red' 
+  const triggerClasses = variant === 'red'
     ? " text-gray-900 p-1 rounded hover:bg-red-600 transition flex-shrink-0 hover:text-white"
     : "text-[#9CA3AF] hover:bg-gray-100 p-1 rounded transition flex-shrink-0 hover:text-gray-700";
 
@@ -104,7 +104,7 @@ const ContactActionDropdown = ({ contact, onEdit, onDelete, onPreview, onClone, 
           {onSendToDepartment && (
             <div className="relative">
               <button
-                className={`w-full flex items-center justify-between gap-2 p-2 px-3 text-xs text-gray-700 hover:bg-gray-50 transition ${showDeptSubmenu ? 'bg-gray-50 font-semibold' : ''}`}
+                className={`w-full flex items-center justify-between gap-2 p-2 px-3 text-xs text-gray-700 hover:bg-gray-50 transition ${showDeptSubmenu ? 'bg-gray-50 ' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowDeptSubmenu(!showDeptSubmenu);
@@ -116,7 +116,7 @@ const ContactActionDropdown = ({ contact, onEdit, onDelete, onPreview, onClone, 
                 </div>
                 <ChevronDown size={14} className={`transition-transform duration-200 ${showDeptSubmenu ? 'rotate-180' : ''}`} />
               </button>
-              
+
               {showDeptSubmenu && (
                 <div className="bg-gray-50/50 py-1 border-t border-b border-gray-100 pl-4">
                   <button

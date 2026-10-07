@@ -212,7 +212,7 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
 
       const leadName = lead.lead_name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || lead.name || `Lead #${lead.id}`;
       const companyName = lead.company || lead.company_name || '';
-      
+
       let autoTitle = '';
       if (lead.project_name) {
         autoTitle = `${lead.project_name} Proposal`;
@@ -226,7 +226,7 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
 
       let matchedProjectId = '';
       if (lead.project_name && projects && projects.length > 0) {
-        const foundProj = projects.find(p => 
+        const foundProj = projects.find(p =>
           (p.project_name || p.name || '').toLowerCase() === lead.project_name.toLowerCase()
         );
         if (foundProj) matchedProjectId = foundProj.id.toString();
@@ -483,7 +483,7 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
     <div className="fixed inset-0 z-50 flex justify-end bg-black/20">
       <div className="h-full w-full md:w-[72%] lg:w-[60%] xl:w-[55%] bg-white shadow-xl overflow-y-auto border-l border-gray-200">
         <div className="flex justify-between items-center p-3  border-b border-[#EAECF0] sticky top-0 bg-white z-10">
-          <h2 className="text-md font-semibold text-gray-900">{isEditMode ? 'Edit Proposal' : 'Create New Proposal'}</h2>
+          <h2 className="text-md  text-gray-900">{isEditMode ? 'Edit Proposal' : 'Create New Proposal'}</h2>
           <button
             onClick={handleCancel}
             disabled={isLoading}
@@ -552,18 +552,18 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
           {selectedLeadInfo && (
             <div className="p-3 bg-blue-50/70 border border-blue-200 rounded text-xs space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-blue-900 flex items-center gap-1.5">
+                <span className=" text-blue-900 flex items-center gap-1.5">
                   <User size={13} className="text-blue-600" />
                   Client & Lead Information
                 </span>
                 <div className="flex items-center gap-1.5">
                   {selectedLeadInfo.status && (
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-semibold">
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] ">
                       {selectedLeadInfo.status}
                     </span>
                   )}
                   {selectedLeadInfo.business_type && (
-                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-semibold">
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] ">
                       {selectedLeadInfo.business_type}
                     </span>
                   )}
@@ -574,7 +574,7 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
                 <div className="p-2 bg-white/90 border border-blue-100 rounded text-[11px] space-y-1">
                   {selectedLeadInfo.service_needed && (
                     <div className="pt-1">
-                      <span className="text-blue-900 font-semibold block text-[11px] mb-1">
+                      <span className="text-blue-900  block text-[11px] mb-1">
                         Services Needed:
                       </span>
                       <ul className="space-y-1">
@@ -679,7 +679,7 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
                   <Upload size={32} className={`text-[#1F2020] ${isUploadingFile ? 'animate-bounce text-blue-600' : ''}`} />
                   <p className="text-xs  text-gray-600">
                     {isUploadingFile ? (
-                      <span className="text-blue-600 font-semibold">Uploading file to server...</span>
+                      <span className="text-blue-600 ">Uploading file to server...</span>
                     ) : (
                       <>Drop your files here or <span className="text-blue-500 hover:underline">browse</span></>
                     )}
@@ -752,13 +752,13 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
             Cancel
           </button>
           <button
-              type="submit"
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="px-4 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition font-medium disabled:opacity-50"
-            >
-              {isLoading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Proposal' : 'Create')}
-            </button>
+            type="submit"
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className="px-4 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition font-medium disabled:opacity-50"
+          >
+            {isLoading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Proposal' : 'Create')}
+          </button>
         </div>
       </div>
     </div>

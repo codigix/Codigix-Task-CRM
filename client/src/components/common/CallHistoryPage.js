@@ -497,7 +497,7 @@ export default function CallHistoryPage() {
             {selectedCaller.meetingLink && (
               <button
                 onClick={() => handleJoinMeeting(selectedCaller.meetingLink)}
-                className="w-full p-2  bg-indigo-500 hover:bg-indigo-600 text-white rounded   text-xs  transition-colors">
+                className="w-full p-2  bg-indigo-500 hover:bg-red-600 text-white rounded   text-xs  transition-colors">
                 Join Meeting
               </button>
             )}

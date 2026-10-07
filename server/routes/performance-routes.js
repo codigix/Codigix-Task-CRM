@@ -96,15 +96,19 @@ module.exports = function setupPerformanceRoutes(app, pool) {
 
   app.get('/api/performance/it/:departmentId', async (req, res) => {
     try {
-      // Calculate performance strictly from task_contributions (The Ledger)
+      // Approved points from the ledger, for everyone in the IT department. Counted by who
+      // earned them (the ledger's user), so board tickets — whose ledger rows are keyed by
+      // issue key, not a general task id — are included. The URL's department id is
+      // ignored: callers have passed the wrong one (1 = Admin).
       const [contributions] = await pool.query(`
         SELECT COUNT(*) as total_contributions,
                SUM(tc.effort_points) as total_earned_points
         FROM task_contributions tc
-        JOIN general_tasks t ON tc.task_id = t.id
-        WHERE tc.approval_status = 'Approved' 
-        AND t.department_id = ?
-      `, [req.params.departmentId]);
+        JOIN users u ON u.id = CAST(tc.user_id AS UNSIGNED)
+        LEFT JOIN departments d ON d.id = u.department_id
+        WHERE tc.approval_status = 'Approved'
+          AND (u.department LIKE '%IT%' OR d.name LIKE 'IT%')
+      `);
 
       // Legacy task metrics for historical context (if needed by frontend)
       const [tasks] = await pool.query(`

@@ -285,7 +285,7 @@ const ContractsPage = () => {
       <p className="text-xs text-gray-500 mb-2 truncate">{contract.contract_type || 'N/A'}</p>
 
       {contract.deal_name && (
-        <div className="flex items-center gap-1.5 mb-2.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 text-xs font-semibold truncate">
+        <div className="flex items-center gap-1.5 mb-2.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 text-xs  truncate">
           <span>🎯</span>
           <span className="truncate">Deal: {contract.deal_name}</span>
         </div>

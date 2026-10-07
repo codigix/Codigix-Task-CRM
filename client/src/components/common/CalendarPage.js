@@ -103,7 +103,7 @@ function GuestEmailsInput({ emails, onChange }) {
 
   return (
     <div>
-      <label className="text-xs text-gray-700  tracking-wider block mb-1.5 font-semibold">
+      <label className="text-xs text-gray-700  tracking-wider block mb-1.5 ">
         <User size={11} className="inline mr-1" />Guest Emails
       </label>
       <div className="flex flex-wrap gap-1.5 p-2 border border-gray-200 rounded focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-50 bg-white min-h-[42px] transition-all">
@@ -262,7 +262,7 @@ function AddEventModal({ onClose, onSave, defaultDate, eventToEdit }) {
 
           {/* Event Mode */}
           <div>
-            <label className="text-xs text-gray-700  tracking-wider block mb-1.5 font-semibold">Event Mode</label>
+            <label className="text-xs text-gray-700  tracking-wider block mb-1.5 ">Event Mode</label>
             <div className="flex gap-4">
               <label className="flex items-center text-sm font-medium text-gray-700 cursor-pointer">
                 <input
@@ -306,7 +306,7 @@ function AddEventModal({ onClose, onSave, defaultDate, eventToEdit }) {
           {form.eventMode === 'online' ? (
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-700  tracking-wider block mb-1.5 font-semibold">Online Meeting Tool</label>
+                <label className="text-xs text-gray-700  tracking-wider block mb-1.5 ">Online Meeting Tool</label>
                 <div className="relative">
                   <select
                     value={form.onlineMode}
@@ -325,7 +325,7 @@ function AddEventModal({ onClose, onSave, defaultDate, eventToEdit }) {
               </div>
 
               <div>
-                <label className="text-xs text-gray-700  tracking-wider block mb-1.5 font-semibold">Meeting Link</label>
+                <label className="text-xs text-gray-700  tracking-wider block mb-1.5 ">Meeting Link</label>
                 <div className="relative flex items-center">
                   <input
                     type="text"
@@ -342,7 +342,7 @@ function AddEventModal({ onClose, onSave, defaultDate, eventToEdit }) {
             </div>
           ) : (
             <div>
-              <label className="text-xs text-gray-700  tracking-wider block mb-1.5 font-semibold"><MapPin size={11} className="inline mr-1" />Location</label>
+              <label className="text-xs text-gray-700  tracking-wider block mb-1.5 "><MapPin size={11} className="inline mr-1" />Location</label>
               <input
                 type="text"
                 placeholder="e.g. Meeting Room 2, Office, etc."
@@ -399,7 +399,7 @@ function EventDetail({ event, onClose, onEdit, onDelete, onSyncTrigger }) {
           <div className="flex items-center gap-2"><Clock size={13} className="text-gray-400 shrink-0" />{event.startTime} – {event.endTime}</div>
           <div className="flex items-center gap-2">
             <span className="text-gray-400 shrink-0   text-xs">Mode:</span>
-            <span className={`px-2 py-0.5 rounded text-sm font-semibold ${isEventOnline
+            <span className={`px-2 py-0.5 rounded text-sm  ${isEventOnline
               ? 'bg-blue-50 text-blue-700 border border-blue-100'
               : 'bg-orange-50 text-orange-700 border border-orange-100'
               }`}>
@@ -414,7 +414,7 @@ function EventDetail({ event, onClose, onEdit, onDelete, onSyncTrigger }) {
           )}
           {event.meetingLink && (
             <div className="flex flex-col gap-1 bg-blue-50/50 p-2.5 rounded border border-blue-100 text-sm">
-              <span className="font-semibold text-blue-700">Meeting Link:</span>
+              <span className=" text-blue-700">Meeting Link:</span>
               <a
                 href={event.meetingLink.startsWith('/') ? `${window.location.origin}${event.meetingLink}` : event.meetingLink}
                 target="_blank"
@@ -466,7 +466,7 @@ function EventDetail({ event, onClose, onEdit, onDelete, onSyncTrigger }) {
                 onEdit(event);
                 onClose();
               }}
-              className="flex-1 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded text-blue-700 font-semibold transition-colors cursor-pointer text-center text-sm"
+              className="flex-1 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded text-blue-700  transition-colors cursor-pointer text-center text-sm"
             >
               Edit Event
             </button>
@@ -477,7 +477,7 @@ function EventDetail({ event, onClose, onEdit, onDelete, onSyncTrigger }) {
                   onClose();
                 }
               }}
-              className="flex-1 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded text-red-700 font-semibold transition-colors cursor-pointer text-center text-sm"
+              className="flex-1 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded text-red-700  transition-colors cursor-pointer text-center text-sm"
             >
               Delete Event
             </button>
@@ -525,7 +525,7 @@ function SyncMeetLinkModal({ event, onClose, onSync }) {
               }
             }}
             disabled={!linkInput.trim()}
-            className="px-4 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-blue-700 font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-blue-700  transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Sync Link
           </button>

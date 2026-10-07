@@ -594,7 +594,7 @@ const ProfileSettingsPage = () => {
           <div className="flex-1 text-center md:text-left">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
               <h2 className="text-xl  text-gray-900">{profile.firstName} {profile.lastName}</h2>
-              <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-md border border-indigo-100">
+              <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-xs  rounded border border-indigo-100">
                 {profile.role || 'Team Member'}
               </span>
             </div>
@@ -667,7 +667,7 @@ const ProfileSettingsPage = () => {
               <span className="text-xs text-gray-500   tracking-wider">Reports To</span>
             </div>
             <div className="mt-2">
-              <h4 className="text-sm font-semibold text-gray-800">{reportsTo.title}</h4>
+              <h4 className="text-sm  text-gray-800">{reportsTo.title}</h4>
               <p className="text-xs text-gray-400 mt-0.5">{reportsTo.name}</p>
             </div>
           </div>
@@ -680,7 +680,7 @@ const ProfileSettingsPage = () => {
               <span className="text-xs text-gray-500   tracking-wider">Team Size</span>
             </div>
             <div className="mt-2">
-              <h4 className="text-sm font-semibold text-gray-800">{teamSize > 0 ? `${teamSize} Members` : '1 Member'}</h4>
+              <h4 className="text-sm  text-gray-800">{teamSize > 0 ? `${teamSize} Members` : '1 Member'}</h4>
               <p className="text-xs text-gray-400 mt-0.5">Active in Department</p>
             </div>
           </div>
@@ -813,7 +813,7 @@ const ProfileSettingsPage = () => {
             <div className="lg:col-span-8 bg-white border border-gray-150 rounded p-2 ">
               <div className="flex items-center justify-between mb-6">
                 <h3 className=" text-gray-800 text-sm sm:text-base">Monthly Ticket Progress</h3>
-                <select className="px-2.5 py-1 text-xs border border-gray-200 rounded-md bg-gray-50 text-gray-600 outline-none">
+                <select className="px-2.5 py-1 text-xs border border-gray-200 rounded bg-gray-50 text-gray-600 outline-none">
                   <option>This Year</option>
                   <option>Last Year</option>
                 </select>
@@ -906,7 +906,7 @@ const ProfileSettingsPage = () => {
                               className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-gray-200"
                             />
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                            <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs  flex-shrink-0">
                               {userItem.name.charAt(0).toUpperCase()}
                             </div>
                           )}
@@ -914,7 +914,7 @@ const ProfileSettingsPage = () => {
                             <h4 className="text-xs text-gray-800 truncate font-medium">{userItem.name}</h4>
                             <p className="text-[11px] text-gray-400 truncate">{userItem.role}</p>
                           </div>
-                          <span className="text-xs font-semibold text-gray-700">{userItem.workload}% ({userItem.taskCount} {userItem.taskCount === 1 ? 'task' : 'tasks'})</span>
+                          <span className="text-xs  text-gray-700">{userItem.workload}% ({userItem.taskCount} {userItem.taskCount === 1 ? 'task' : 'tasks'})</span>
                         </div>
                         <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
                           <div
@@ -965,7 +965,7 @@ const ProfileSettingsPage = () => {
                           return (
                             <div
                               key={rowIdx}
-                              className={`w-4 h-4 rounded-sm ${getHeatmapBg(val)} transition hover:scale-110 cursor-pointer`}
+                              className={`w-4 h-4 rounded ${getHeatmapBg(val)} transition hover:scale-110 cursor-pointer`}
                               title={`Activity level: ${val}/4`}
                             ></div>
                           );
@@ -978,11 +978,11 @@ const ProfileSettingsPage = () => {
               </div>
               <div className="flex justify-end items-center gap-1.5 mt-4 text-xs text-gray-500  pr-3">
                 <span>Less</span>
-                <div className="w-3 h-3 bg-gray-100 rounded-sm"></div>
-                <div className="w-3 h-3 bg-emerald-100 rounded-sm"></div>
-                <div className="w-3 h-3 bg-emerald-300 rounded-sm"></div>
-                <div className="w-3 h-3 bg-emerald-500 rounded-sm"></div>
-                <div className="w-3 h-3 bg-emerald-700 rounded-sm"></div>
+                <div className="w-3 h-3 bg-gray-100 rounded"></div>
+                <div className="w-3 h-3 bg-emerald-100 rounded"></div>
+                <div className="w-3 h-3 bg-emerald-300 rounded"></div>
+                <div className="w-3 h-3 bg-emerald-500 rounded"></div>
+                <div className="w-3 h-3 bg-emerald-700 rounded"></div>
                 <span>More</span>
               </div>
             </div>
@@ -1777,14 +1777,14 @@ const ProfileSettingsPage = () => {
                       {agent.avatar && !agent.avatar.includes('preadmin') ? (
                         <img src={agent.avatar} className="w-8 h-8 rounded-full object-cover border border-gray-100" alt="avatar" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold">
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs ">
                           {agent.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="text-gray-900 font-medium truncate">{agent.name}</span>
-                          <span className="text-indigo-600 font-semibold">{agent.workload}% ({agent.taskCount} tasks)</span>
+                          <span className="text-indigo-600 ">{agent.workload}% ({agent.taskCount} tasks)</span>
                         </div>
                         <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                           <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(100, Math.max(agent.workload, 10))}%` }}></div>
@@ -2092,7 +2092,7 @@ const ProfileSettingsPage = () => {
                 <div className="grid grid-cols-3 gap-4">
                   {[
                     { id: 'light', name: 'Light Theme', color: 'bg-white border-gray-200' },
-                    { id: 'dark', name: 'Dark Theme (Sleek)', color: 'bg-gray-900 border-gray-850 text-white' },
+                    { id: 'dark', name: 'Dark Theme (Sleek)', color: 'bg-red-600 border-gray-850 text-white' },
                     { id: 'system', name: 'Sync with System', color: 'bg-gradient-to-r from-white to-gray-800 border-gray-200' }
                   ].map((theme) => (
                     <button

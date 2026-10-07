@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { taskAPI, projectAPI, itKanbanAPI, usersAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import BoardTabs from '../common/BoardTabs';
-import { 
-  FileText, ChevronLeft, Search, Filter, Eye, X, Clock, User, 
-  Briefcase, Activity, Calendar, MessageSquare, History, Tag, 
+import {
+  FileText, ChevronLeft, Search, Filter, Eye, X, Clock, User,
+  Briefcase, Activity, Calendar, MessageSquare, History, Tag,
   CheckCircle2, AlertCircle, Clock3, UserCheck, UserX, ExternalLink,
   Layers, ArrowUpRight
 } from 'lucide-react';
@@ -226,7 +226,7 @@ const ITTicketAssignmentsPage = () => {
       const matchStatus = !statusFilter || task.status === statusFilter;
       const matchPriority = !priorityFilter || task.priority === priorityFilter;
       const matchCreator = !createdByFilter || task.created_by_name === createdByFilter;
-      const matchAssignee = !assignedToFilter || 
+      const matchAssignee = !assignedToFilter ||
         (assignedToFilter === 'UNASSIGNED' ? !task.assigned_to_name : task.assigned_to_name === assignedToFilter);
 
       return matchSearch && matchDept && matchStatus && matchPriority && matchCreator && matchAssignee;
@@ -298,13 +298,13 @@ const ITTicketAssignmentsPage = () => {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => navigate(urlPrefix + '/dashboard')}
-                  className="p-2 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition shadow-sm"
+                  className="p-2 bg-white border border-gray-200 text-gray-600 rounded hover:bg-gray-50 hover:text-gray-900 transition shadow-sm"
                   title="Back to Dashboard"
                 >
                   <ChevronLeft size={18} />
                 </button>
                 <div>
-                  <h1 className="text-2xl text-gray-900 font-bold flex items-center gap-2">
+                  <h1 className="text-2xl text-gray-900  flex items-center gap-2">
                     <FileText className="text-blue-600" size={24} />
                     Ticket Assignments Overview
                   </h1>
@@ -317,13 +317,13 @@ const ITTicketAssignmentsPage = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigate(urlPrefix + '/kanban')}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 shadow-sm transition"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs  rounded hover:bg-gray-50 shadow-sm transition"
                 >
                   <Layers size={14} className="text-blue-600" /> Open Kanban Board
                 </button>
                 <button
                   onClick={() => navigate(urlPrefix + '/backlog')}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 shadow-sm transition"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-red-700 text-white text-xs  rounded hover:bg-blue-700 shadow-sm transition"
                 >
                   <ExternalLink size={14} /> Go to Backlog
                 </button>
@@ -332,55 +332,55 @@ const ITTicketAssignmentsPage = () => {
 
             {/* Quick Metrics Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <div className="bg-white p-4 rounded border border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Tickets</span>
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <span className="text-xs  text-gray-500 uppercase tracking-wider">Total Tickets</span>
+                  <div className="w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center">
                     <FileText size={16} />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-gray-900 mt-2">{stats.total}</div>
+                <div className="text-2xl  text-gray-900 mt-2">{stats.total}</div>
                 <div className="text-xs text-gray-400 mt-1">Across all departments</div>
               </div>
 
-              <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <div className="bg-white p-4 rounded border border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">In Progress</span>
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <span className="text-xs  text-gray-500 uppercase tracking-wider">In Progress</span>
+                  <div className="w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center">
                     <Clock3 size={16} />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-blue-600 mt-2">{stats.inProgress}</div>
+                <div className="text-2xl  text-blue-600 mt-2">{stats.inProgress}</div>
                 <div className="text-xs text-gray-400 mt-1">Actively being worked on</div>
               </div>
 
-              <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <div className="bg-white p-4 rounded border border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Completed</span>
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <span className="text-xs  text-gray-500 uppercase tracking-wider">Completed</span>
+                  <div className="w-8 h-8 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center">
                     <CheckCircle2 size={16} />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-emerald-600 mt-2">{stats.completed}</div>
+                <div className="text-2xl  text-emerald-600 mt-2">{stats.completed}</div>
                 <div className="text-xs text-gray-400 mt-1">Resolved tickets</div>
               </div>
 
-              <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <div className="bg-white p-4 rounded border border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Unassigned</span>
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <span className="text-xs  text-gray-500 uppercase tracking-wider">Unassigned</span>
+                  <div className="w-8 h-8 rounded bg-amber-50 text-amber-600 flex items-center justify-center">
                     <UserX size={16} />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-amber-600 mt-2">{stats.unassigned}</div>
+                <div className="text-2xl  text-amber-600 mt-2">{stats.unassigned}</div>
                 <div className="text-xs text-gray-400 mt-1">Awaiting assignment</div>
               </div>
             </div>
 
             {/* Department Filter Tabs */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">Department:</span>
+                <span className="text-xs  text-gray-400 uppercase tracking-wider mr-2">Department:</span>
                 {[
                   { key: 'ALL', label: 'All Departments', count: tasks.length },
                   { key: 'IT', label: 'IT', count: tasks.filter(t => (t.department || 'IT').toLowerCase() === 'it').length },
@@ -389,16 +389,14 @@ const ITTicketAssignmentsPage = () => {
                   <button
                     key={tab.key}
                     onClick={() => { setDepartmentFilter(tab.key); setCurrentPage(1); }}
-                    className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-2 ${
-                      departmentFilter === tab.key
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-                    }`}
+                    className={`px-3.5 py-1.5 text-xs  rounded transition flex items-center gap-2 ${departmentFilter === tab.key
+                      ? 'bg-red-700 text-white shadow-sm'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
+                      }`}
                   >
                     <span>{tab.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                      departmentFilter === tab.key ? 'bg-blue-700 text-blue-100' : 'bg-gray-200 text-gray-700'
-                    }`}>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full  ${departmentFilter === tab.key ? 'bg-blue-700 text-blue-100' : 'bg-gray-200 text-gray-700'
+                      }`}>
                       {tab.count}
                     </span>
                   </button>
@@ -406,13 +404,13 @@ const ITTicketAssignmentsPage = () => {
               </div>
 
               <div className="text-xs text-gray-500">
-                Showing <span className="font-bold text-gray-800">{filteredTasks.length}</span> of {tasks.length} tickets
+                Showing <span className=" text-gray-800">{filteredTasks.length}</span> of {tasks.length} tickets
               </div>
             </div>
 
             {/* Filters Toolbar */}
-            <div className="flex items-center gap-3 flex-wrap p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-1.5 text-gray-500 text-xs font-bold uppercase tracking-wider mr-1">
+            <div className="flex items-center gap-3 flex-wrap p-4 bg-white rounded border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-1.5 text-gray-500 text-xs  uppercase tracking-wider mr-1">
                 <Filter size={14} className="text-blue-600" /> Filter by:
               </div>
 
@@ -422,7 +420,7 @@ const ITTicketAssignmentsPage = () => {
                 <input
                   type="text"
                   placeholder="Search key, title, assignee..."
-                  className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                  className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                   value={searchTerm}
                   onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 />
@@ -430,7 +428,7 @@ const ITTicketAssignmentsPage = () => {
 
               {/* Status Filter */}
               <select
-                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:bg-white focus:border-blue-500 cursor-pointer font-medium text-gray-700"
+                className="bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-xs focus:outline-none focus:bg-white focus:border-blue-500 cursor-pointer font-medium text-gray-700"
                 value={statusFilter}
                 onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
               >
@@ -440,7 +438,7 @@ const ITTicketAssignmentsPage = () => {
 
               {/* Priority Filter */}
               <select
-                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:bg-white focus:border-blue-500 cursor-pointer font-medium text-gray-700"
+                className="bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-xs focus:outline-none focus:bg-white focus:border-blue-500 cursor-pointer font-medium text-gray-700"
                 value={priorityFilter}
                 onChange={(e) => { setPriorityFilter(e.target.value); setCurrentPage(1); }}
               >
@@ -450,7 +448,7 @@ const ITTicketAssignmentsPage = () => {
 
               {/* Creator Filter */}
               <select
-                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:bg-white focus:border-blue-500 cursor-pointer font-medium text-gray-700 max-w-[170px]"
+                className="bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-xs focus:outline-none focus:bg-white focus:border-blue-500 cursor-pointer font-medium text-gray-700 max-w-[170px]"
                 value={createdByFilter}
                 onChange={(e) => { setCreatedByFilter(e.target.value); setCurrentPage(1); }}
               >
@@ -460,7 +458,7 @@ const ITTicketAssignmentsPage = () => {
 
               {/* Assignee Filter */}
               <select
-                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:bg-white focus:border-blue-500 cursor-pointer font-medium text-gray-700 max-w-[170px]"
+                className="bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-xs focus:outline-none focus:bg-white focus:border-blue-500 cursor-pointer font-medium text-gray-700 max-w-[170px]"
                 value={assignedToFilter}
                 onChange={(e) => { setAssignedToFilter(e.target.value); setCurrentPage(1); }}
               >
@@ -472,7 +470,7 @@ const ITTicketAssignmentsPage = () => {
               {hasActiveFilters && (
                 <button
                   onClick={resetFilters}
-                  className="px-3 py-1.5 text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg font-semibold transition ml-auto flex items-center gap-1"
+                  className="px-3 py-1.5 text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded  transition ml-auto flex items-center gap-1"
                 >
                   <X size={13} /> Reset Filters
                 </button>
@@ -481,7 +479,7 @@ const ITTicketAssignmentsPage = () => {
           </div>
 
           {/* TABLE CONTENT */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded border border-gray-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               {loading ? (
                 <div className="p-16 text-center text-gray-400 flex flex-col items-center justify-center gap-3">
@@ -492,34 +490,34 @@ const ITTicketAssignmentsPage = () => {
                 <table className="w-full text-left text-xs whitespace-nowrap">
                   <thead className="bg-gray-50/80 text-gray-500 border-b border-gray-200">
                     <tr>
-                      <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Ticket Key</th>
-                      <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Ticket Summary</th>
-                      <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Department</th>
-                      <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Project / Workspace</th>
-                      <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Initiated By</th>
-                      <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Assigned To</th>
-                      <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Status</th>
-                      <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Priority</th>
-                      <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px]">Due Date</th>
-                      <th className="py-3.5 px-4 font-semibold uppercase tracking-wider text-[11px] text-right">Actions</th>
+                      <th className="py-3.5 px-4  uppercase tracking-wider text-[11px]">Ticket Key</th>
+                      <th className="py-3.5 px-4  uppercase tracking-wider text-[11px]">Ticket Summary</th>
+                      <th className="py-3.5 px-4  uppercase tracking-wider text-[11px]">Department</th>
+                      <th className="py-3.5 px-4  uppercase tracking-wider text-[11px]">Project / Workspace</th>
+                      <th className="py-3.5 px-4  uppercase tracking-wider text-[11px]">Initiated By</th>
+                      <th className="py-3.5 px-4  uppercase tracking-wider text-[11px]">Assigned To</th>
+                      <th className="py-3.5 px-4  uppercase tracking-wider text-[11px]">Status</th>
+                      <th className="py-3.5 px-4  uppercase tracking-wider text-[11px]">Priority</th>
+                      <th className="py-3.5 px-4  uppercase tracking-wider text-[11px]">Due Date</th>
+                      <th className="py-3.5 px-4  uppercase tracking-wider text-[11px] text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {paginatedTasks.map((task, idx) => {
                       const isMarketing = (task.department || '').toLowerCase() === 'marketing';
                       return (
-                        <tr 
-                          key={task.id || idx} 
+                        <tr
+                          key={task.id || idx}
                           onClick={() => setSelectedTicket(task)}
                           className="hover:bg-blue-50/40 transition cursor-pointer group"
                         >
                           <td className="py-3.5 px-4">
-                            <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 group-hover:underline">
+                            <span className=" text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 group-hover:underline">
                               {task.key}
                             </span>
                           </td>
                           <td className="py-3.5 px-4 font-medium text-gray-900 whitespace-normal break-words max-w-[320px] min-w-[220px]">
-                            <div className="line-clamp-2 font-semibold text-gray-800 group-hover:text-blue-600 transition" title={task.title}>
+                            <div className="line-clamp-2  text-gray-800 group-hover:text-blue-600 transition" title={task.title}>
                               {task.title}
                             </div>
                             {task.sprint_name && (
@@ -529,11 +527,10 @@ const ITTicketAssignmentsPage = () => {
                             )}
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border ${
-                              isMarketing 
-                                ? 'bg-orange-50 text-orange-700 border-orange-200' 
-                                : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                            }`}>
+                            <span className={`text-[10px]  px-2 py-0.5 rounded uppercase tracking-wider border ${isMarketing
+                              ? 'bg-orange-50 text-orange-700 border-orange-200'
+                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              }`}>
                               {task.department || 'IT'}
                             </span>
                           </td>
@@ -544,7 +541,7 @@ const ITTicketAssignmentsPage = () => {
                           </td>
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
                                 {(task.created_by_name || 'S').charAt(0).toUpperCase()}
                               </div>
                               <span className="text-gray-800 font-medium">{task.created_by_name || 'System'}</span>
@@ -554,25 +551,25 @@ const ITTicketAssignmentsPage = () => {
                             <div className="flex items-center gap-2">
                               {task.assigned_to_name ? (
                                 <>
-                                  <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                                  <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]  shrink-0">
                                     {task.assigned_to_name.charAt(0).toUpperCase()}
                                   </div>
                                   <span className="text-gray-800 font-medium">{task.assigned_to_name}</span>
                                 </>
                               ) : (
-                                <span className="text-amber-700 bg-amber-50 border border-amber-200 text-[10px] font-semibold px-2 py-0.5 rounded">
+                                <span className="text-amber-700 bg-amber-50 border border-amber-200 text-[10px]  px-2 py-0.5 rounded">
                                   Unassigned
                                 </span>
                               )}
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${getStatusBadgeClass(task.status)}`}>
+                            <span className={`px-2 py-0.5 rounded text-[11px]  border ${getStatusBadgeClass(task.status)}`}>
                               {task.status || 'TO DO'}
                             </span>
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${getPriorityBadgeClass(task.priority)}`}>
+                            <span className={`px-2 py-0.5 rounded text-[11px]  border ${getPriorityBadgeClass(task.priority)}`}>
                               {task.priority || 'Medium'}
                             </span>
                           </td>
@@ -582,7 +579,7 @@ const ITTicketAssignmentsPage = () => {
                           <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => setSelectedTicket(task)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded text-xs font-semibold transition"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded text-xs  transition"
                             >
                               <Eye size={13} /> View
                             </button>
@@ -595,12 +592,12 @@ const ITTicketAssignmentsPage = () => {
                         <td colSpan="10" className="p-16 text-center text-gray-500">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <FileText size={36} className="text-gray-300" />
-                            <p className="font-semibold text-gray-700">No ticket assignments found</p>
+                            <p className=" text-gray-700">No ticket assignments found</p>
                             <p className="text-xs text-gray-400">Try adjusting your department filter or search criteria.</p>
                             {hasActiveFilters && (
                               <button
                                 onClick={resetFilters}
-                                className="mt-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md text-xs font-semibold hover:bg-blue-100 transition"
+                                className="mt-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded text-xs  hover:bg-blue-100 transition"
                               >
                                 Clear All Filters
                               </button>
@@ -618,7 +615,7 @@ const ITTicketAssignmentsPage = () => {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50/50">
                 <span className="text-xs text-gray-500">
-                  Page <span className="font-semibold text-gray-800">{currentPage}</span> of {totalPages}
+                  Page <span className=" text-gray-800">{currentPage}</span> of {totalPages}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
@@ -637,11 +634,10 @@ const ITTicketAssignmentsPage = () => {
                           {prevVal && p - prevVal > 1 && <span className="text-gray-400 text-xs px-1">…</span>}
                           <button
                             onClick={() => setCurrentPage(p)}
-                            className={`px-2.5 py-1 text-xs font-medium rounded ${
-                              currentPage === p
-                                ? 'bg-blue-600 text-white font-semibold'
-                                : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'
-                            }`}
+                            className={`px-2.5 py-1 text-xs font-medium rounded ${currentPage === p
+                              ? 'bg-red-700 text-white '
+                              : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'
+                              }`}
                           >
                             {p}
                           </button>
@@ -665,28 +661,27 @@ const ITTicketAssignmentsPage = () => {
 
       {/* TICKET DETAILS HIERARCHY MODAL */}
       {selectedTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-600/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200">
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-gray-50/60">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm shadow-sm">
+                <div className="w-10 h-10 rounded bg-blue-100 text-blue-600 flex items-center justify-center  text-sm shadow-sm">
                   <FileText size={20} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                    <span className="text-xs  text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                       {selectedTicket.key}
                     </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border ${
-                      selectedTicket.department?.toLowerCase() === 'marketing'
-                        ? 'bg-orange-50 text-orange-700 border-orange-200'
-                        : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                    }`}>
+                    <span className={`text-[10px]  px-2 py-0.5 rounded uppercase tracking-wider border ${selectedTicket.department?.toLowerCase() === 'marketing'
+                      ? 'bg-orange-50 text-orange-700 border-orange-200'
+                      : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                      }`}>
                       {selectedTicket.department || 'IT'}
                     </span>
                   </div>
-                  <h2 className="text-base font-bold text-gray-900 mt-1">
+                  <h2 className="text-base  text-gray-900 mt-1">
                     {selectedTicket.title}
                   </h2>
                 </div>
@@ -703,9 +698,9 @@ const ITTicketAssignmentsPage = () => {
             <div className="p-6 max-h-[70vh] overflow-y-auto space-y-6">
               {/* Description if present */}
               {selectedTicket.description && (
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Description</h4>
-                  <div 
+                <div className="bg-gray-50 p-4 rounded border border-gray-200">
+                  <h4 className="text-xs  text-gray-500 uppercase tracking-wider mb-1.5">Description</h4>
+                  <div
                     className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed prose prose-sm max-w-none"
                     dangerouslySetInnerHTML={{ __html: selectedTicket.description }}
                   />
@@ -716,14 +711,14 @@ const ITTicketAssignmentsPage = () => {
               <div className="relative pl-6 space-y-7 before:absolute before:inset-y-0 before:left-2.5 before:w-[2px] before:bg-blue-100">
                 {/* Step 1: Initiation */}
                 <div className="relative">
-                  <div className="absolute -left-6 w-5 h-5 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center shadow-sm">
+                  <div className="absolute -left-6 w-5 h-5 rounded-full bg-red-700 border-2 border-white flex items-center justify-center shadow-sm">
                     <User size={10} className="text-white" />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Initiated By</h4>
+                      <h4 className="text-xs  text-gray-500 uppercase tracking-wider">Initiated By</h4>
                       <div className="mt-1 flex items-center gap-2">
-                        <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded border border-blue-200">
+                        <span className="text-xs  text-blue-700 bg-blue-50 px-2.5 py-1 rounded border border-blue-200">
                           {selectedTicket.created_by_name || 'System User'}
                         </span>
                       </div>
@@ -742,13 +737,13 @@ const ITTicketAssignmentsPage = () => {
                     <Briefcase size={10} className="text-white" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Project Workspace</h4>
+                    <h4 className="text-xs  text-gray-500 uppercase tracking-wider">Project Workspace</h4>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded border border-purple-200">
+                      <span className="text-xs  text-purple-700 bg-purple-50 px-2.5 py-1 rounded border border-purple-200">
                         {selectedTicket.project_name || 'General Workspace'}
                       </span>
                       {selectedTicket.sprint_name && (
-                        <span className="text-xs font-semibold text-gray-700 bg-gray-100 px-2.5 py-1 rounded border border-gray-200">
+                        <span className="text-xs  text-gray-700 bg-gray-100 px-2.5 py-1 rounded border border-gray-200">
                           🏃 {selectedTicket.sprint_name}
                         </span>
                       )}
@@ -762,14 +757,14 @@ const ITTicketAssignmentsPage = () => {
                     <UserCheck size={10} className="text-white" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Assigned To</h4>
+                    <h4 className="text-xs  text-gray-500 uppercase tracking-wider">Assigned To</h4>
                     <div className="mt-1 flex items-center gap-2">
                       {selectedTicket.assigned_to_name ? (
-                        <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
+                        <span className="text-xs  text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
                           {selectedTicket.assigned_to_name}
                         </span>
                       ) : (
-                        <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded border border-amber-200">
+                        <span className="text-xs  text-amber-700 bg-amber-50 px-2.5 py-1 rounded border border-amber-200">
                           Unassigned
                         </span>
                       )}
@@ -784,12 +779,12 @@ const ITTicketAssignmentsPage = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Status & Priority</h4>
+                      <h4 className="text-xs  text-gray-500 uppercase tracking-wider">Status & Priority</h4>
                       <div className="mt-1 flex items-center gap-2">
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded border ${getStatusBadgeClass(selectedTicket.status)}`}>
+                        <span className={`text-xs  px-2.5 py-1 rounded border ${getStatusBadgeClass(selectedTicket.status)}`}>
                           {selectedTicket.status}
                         </span>
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded border ${getPriorityBadgeClass(selectedTicket.priority)}`}>
+                        <span className={`text-xs  px-2.5 py-1 rounded border ${getPriorityBadgeClass(selectedTicket.priority)}`}>
                           {selectedTicket.priority} Priority
                         </span>
                       </div>
@@ -811,13 +806,13 @@ const ITTicketAssignmentsPage = () => {
                   setSelectedTicket(null);
                   navigate(`${urlPrefix}/kanban?ticketKey=${encodeURIComponent(selectedTicket.key)}`);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs  text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition"
               >
                 <ArrowUpRight size={14} /> Open in Kanban Board
               </button>
               <button
                 onClick={() => setSelectedTicket(null)}
-                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-100 transition shadow-sm"
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-xs  rounded hover:bg-gray-100 transition shadow-sm"
               >
                 Close View
               </button>

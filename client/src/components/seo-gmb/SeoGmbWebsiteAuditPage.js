@@ -1470,7 +1470,7 @@ export default function SeoGmbWebsiteAuditPage() {
                 ].map((issue, idx) => (
                   <div key={idx} className="flex justify-between items-center text-xs border-b border-slate-50 pb-2">
                     <span className="font-medium text-slate-700 truncate pr-4">{issue.name}</span>
-                    <span className={`text-xs  px-2 py-0.5 rounded-md ${issue.bg}`}>{issue.count}</span>
+                    <span className={`text-xs  px-2 py-0.5 rounded ${issue.bg}`}>{issue.count}</span>
                   </div>
                 ))}
               </div>
@@ -1545,7 +1545,7 @@ export default function SeoGmbWebsiteAuditPage() {
                         const displayLabel = !hasIssues || isAllFixed || currentScore === 100 ? 'All Good' : `${unfixedCount} issue${unfixedCount > 1 ? 's' : ''}`;
                         const badgeColor = !hasIssues || isAllFixed || currentScore === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600';
                         return (
-                          <span className={`text-xs font-extrabold px-2 py-0.5 rounded-md ${badgeColor}`}>
+                          <span className={`text-xs font-extrabold px-2 py-0.5 rounded ${badgeColor}`}>
                             {displayLabel}
                           </span>
                         );

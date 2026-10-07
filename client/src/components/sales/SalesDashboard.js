@@ -41,7 +41,7 @@ import { useAuth } from '../../hooks/useAuth';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const GlassCard = ({ children, className = '' }) => (
-  <div className={`bg-white/80 backdrop-blur-md border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 ${className}`}>
+  <div className={`bg-white/80 backdrop-blur-md border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded p-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 ${className}`}>
     {children}
   </div>
 );
@@ -134,24 +134,24 @@ const SalesDashboard = () => {
 
   return (
     <div className="w-full bg-gradient-to-br from-[#F8FAFC] to-[#F1F5F9] min-h-screen p-4 md:p-6 font-sans">
-      
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Sales Hub</h1>
+          <h1 className="text-2xl  text-slate-800 tracking-tight">Sales Hub</h1>
           <p className="text-sm text-slate-500 mt-1">Welcome back, here's what's happening with your deals today.</p>
         </div>
-        <div className="flex items-center gap-4 bg-white/60 backdrop-blur-sm p-2 rounded-xl border border-white shadow-sm">
+        <div className="flex items-center gap-4 bg-white/60 backdrop-blur-sm p-2 rounded border border-white shadow-sm">
           <div className="flex flex-col items-end px-3 border-r border-slate-200">
-            <span className="text-sm font-semibold text-slate-800">{user?.name || 'User'}</span>
+            <span className="text-sm  text-slate-800">{user?.name || 'User'}</span>
             <span className="text-xs text-indigo-600 font-medium">{user?.role || 'Sales Representative'}</span>
           </div>
           <div className="relative cursor-pointer group">
-            <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white shadow-sm transition-transform group-hover:scale-105">
+            <div className="w-10 h-10 rounded overflow-hidden border-2 border-white shadow-sm transition-transform group-hover:scale-105">
               {user?.avatar ? (
                 <img src={user.avatar} alt="profile" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-sm text-white font-bold">
+                <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-sm text-white ">
                   {user?.name?.charAt(0) || 'U'}
                 </div>
               )}
@@ -169,13 +169,13 @@ const SalesDashboard = () => {
               {item.icon}
             </div>
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-slate-50 rounded-lg shadow-inner">
+              <div className="p-2 bg-slate-50 rounded shadow-inner">
                 {item.icon}
               </div>
               <h3 className="text-sm font-medium text-slate-500">{item.title}</h3>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-slate-800 tracking-tight">{item.value}</span>
+              <span className="text-3xl  text-slate-800 tracking-tight">{item.value}</span>
             </div>
             <div className="mt-3 flex items-center gap-1.5">
               {item.trend === 'up' && <ArrowUp size={14} className="text-emerald-500" />}
@@ -190,41 +190,41 @@ const SalesDashboard = () => {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-        
+
         {/* Pipeline Value Chart (Spans 2 columns) */}
         <GlassCard className="xl:col-span-2 flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Pipeline Velocity</h2>
+              <h2 className="text-lg  text-slate-800">Pipeline Velocity</h2>
               <p className="text-xs text-slate-500 mt-1">Value of deals across active stages</p>
             </div>
-            <div className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded-full">This Quarter</div>
+            <div className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs  rounded-full">This Quarter</div>
           </div>
-          
+
           <div className="flex-1 min-h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={pipelineData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                 <defs>
                   <linearGradient id="colorProspects" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.2}/>
+                    <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.2} />
                   </linearGradient>
                   <linearGradient id="colorQualified" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0.2}/>
+                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0.2} />
                   </linearGradient>
                   <linearGradient id="colorProposals" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0.2}/>
+                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0.2} />
                   </linearGradient>
                   <linearGradient id="colorWon" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#34d399" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#34d399" stopOpacity={0.2}/>
+                    <stop offset="5%" stopColor="#34d399" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#34d399" stopOpacity={0.2} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b', fontWeight: 500 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(value) => `₹${value/1000}k`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(value) => `₹${value / 1000}k`} />
                 <Tooltip
                   cursor={{ fill: '#f1f5f9', opacity: 0.4 }}
                   contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
@@ -243,10 +243,10 @@ const SalesDashboard = () => {
         {/* Target Progress Donut */}
         <GlassCard className="flex flex-col">
           <div className="mb-2">
-            <h2 className="text-lg font-bold text-slate-800">Target Achievement</h2>
+            <h2 className="text-lg  text-slate-800">Target Achievement</h2>
             <p className="text-xs text-slate-500 mt-1">Goal vs Actual Revenue</p>
           </div>
-          
+
           <div className="flex-1 flex flex-col items-center justify-center relative min-h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -270,25 +270,25 @@ const SalesDashboard = () => {
                   <Label
                     value={`${progressPercent}%`}
                     position="center"
-                    className="text-3xl font-bold fill-slate-800"
+                    className="text-3xl  fill-slate-800"
                   />
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute top-[65%] left-1/2 -translate-x-1/2 text-center w-full pt-2">
-              <p className="text-sm font-semibold text-slate-700">₹{wonValue.toLocaleString()}</p>
+              <p className="text-sm  text-slate-700">₹{wonValue.toLocaleString()}</p>
               <p className="text-xs text-slate-400">of ₹{totalTarget.toLocaleString()} goal</p>
             </div>
           </div>
-          
+
           <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-slate-500 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-indigo-500"></div>Achieved</span>
-              <span className="text-sm font-semibold text-slate-700">₹{wonValue.toLocaleString()}</span>
+              <span className="text-sm  text-slate-700">₹{wonValue.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-slate-500 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-200"></div>Remaining</span>
-              <span className="text-sm font-semibold text-slate-700">₹{Math.max(0, totalTarget - wonValue).toLocaleString()}</span>
+              <span className="text-sm  text-slate-700">₹{Math.max(0, totalTarget - wonValue).toLocaleString()}</span>
             </div>
           </div>
         </GlassCard>
@@ -296,29 +296,29 @@ const SalesDashboard = () => {
 
       {/* Actionable Insights & Events Row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        
+
         {/* Performance Metrics */}
         <GlassCard>
           <div className="flex items-center gap-2 mb-6">
             <Activity className="text-indigo-500" size={20} />
-            <h3 className="text-lg font-bold text-slate-800">Performance Metrics</h3>
+            <h3 className="text-lg  text-slate-800">Performance Metrics</h3>
           </div>
-          
+
           <div className="space-y-5">
             <div className="group">
               <div className="flex justify-between items-center mb-1.5">
                 <span className="text-sm font-medium text-slate-600">Win Rate</span>
-                <span className="text-sm font-bold text-slate-800">68%</span>
+                <span className="text-sm  text-slate-800">68%</span>
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full bg-emerald-400 rounded-full w-[68%] group-hover:bg-emerald-500 transition-colors" />
               </div>
             </div>
-            
+
             <div className="group">
               <div className="flex justify-between items-center mb-1.5">
                 <span className="text-sm font-medium text-slate-600">Sales Cycle Velocity</span>
-                <span className="text-sm font-bold text-slate-800">14 Days</span>
+                <span className="text-sm  text-slate-800">14 Days</span>
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full bg-indigo-400 rounded-full w-[85%] group-hover:bg-indigo-500 transition-colors" />
@@ -326,14 +326,14 @@ const SalesDashboard = () => {
             </div>
 
             <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
-               <div>
-                  <p className="text-xs text-slate-400 mb-1">Avg Deal Size</p>
-                  <p className="text-lg font-bold text-slate-700">₹45,000</p>
-               </div>
-               <div>
-                  <p className="text-xs text-slate-400 mb-1">Conversion Ratio</p>
-                  <p className="text-lg font-bold text-slate-700">1 : 3</p>
-               </div>
+              <div>
+                <p className="text-xs text-slate-400 mb-1">Avg Deal Size</p>
+                <p className="text-lg  text-slate-700">₹45,000</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 mb-1">Conversion Ratio</p>
+                <p className="text-lg  text-slate-700">1 : 3</p>
+              </div>
             </div>
           </div>
         </GlassCard>
@@ -343,21 +343,21 @@ const SalesDashboard = () => {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <Bell className="text-rose-500" size={20} />
-              <h3 className="text-lg font-bold text-slate-800">Action Center</h3>
+              <h3 className="text-lg  text-slate-800">Action Center</h3>
             </div>
-            <span className="bg-rose-100 text-rose-600 text-xs font-bold px-2 py-0.5 rounded-full">3 Alerts</span>
+            <span className="bg-rose-100 text-rose-600 text-xs  px-2 py-0.5 rounded-full">3 Alerts</span>
           </div>
-          
+
           <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100/50 hover:bg-amber-100/50 transition-colors cursor-pointer">
+            <div className="flex items-start gap-3 p-3 bg-amber-50 rounded border border-amber-100/50 hover:bg-amber-100/50 transition-colors cursor-pointer">
               <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium text-amber-900">Follow-up overdue</p>
                 <p className="text-xs text-amber-700 mt-0.5">TechCorp Enterprise deal requires immediate attention.</p>
               </div>
             </div>
-            
-            <div className="flex items-start gap-3 p-3 bg-rose-50 rounded-xl border border-rose-100/50 hover:bg-rose-100/50 transition-colors cursor-pointer">
+
+            <div className="flex items-start gap-3 p-3 bg-rose-50 rounded border border-rose-100/50 hover:bg-rose-100/50 transition-colors cursor-pointer">
               <AlertCircle size={16} className="text-rose-500 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium text-rose-900">Stalled Opportunity</p>
@@ -365,7 +365,7 @@ const SalesDashboard = () => {
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100/50 hover:bg-emerald-100/50 transition-colors cursor-pointer">
+            <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded border border-emerald-100/50 hover:bg-emerald-100/50 transition-colors cursor-pointer">
               <Target size={16} className="text-emerald-500 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium text-emerald-900">Hot Lead Assigned</p>
@@ -379,7 +379,7 @@ const SalesDashboard = () => {
         <div className="xl:col-span-1">
           <UpcomingEvents />
         </div>
-        
+
       </div>
     </div>
   );

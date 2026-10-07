@@ -165,7 +165,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
               {selectedSpace?.code || config.defaultPrefix}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Create {department} Ticket</h2>
+              <h2 className="text-base  text-gray-900">Create {department} Ticket</h2>
               <p className="text-xs text-gray-500">Add a new task or deliverable to {config.departmentName}</p>
             </div>
           </div>
@@ -182,7 +182,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
 
           {/* SPACE SELECTION */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">{department} Space / Track</label>
+            <label className="block text-xs  text-gray-700 mb-1">{department} Space / Track</label>
             <select
               value={selectedSpace?.id}
               onChange={(e) => {
@@ -201,7 +201,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
 
           {/* ISSUE TYPE SELECTOR */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Ticket Type</label>
+            <label className="block text-xs  text-gray-700 mb-1.5">Ticket Type</label>
             <div className="grid grid-cols-3 gap-2">
               {config.issueTypes.map(type => {
                 const Icon = type.icon;
@@ -216,7 +216,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
                       : 'border-gray-200 hover:bg-gray-50 text-gray-700'
                       }`}
                   >
-                    <div className={`p-1.5 rounded-md ${type.color}`}>
+                    <div className={`p-1.5 rounded ${type.color}`}>
                       <Icon size={14} />
                     </div>
                     <span>{type.name}</span>
@@ -228,7 +228,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
 
           {/* SUMMARY / TITLE */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
+            <label className="block text-xs  text-gray-700 mb-1">
               Summary / Task Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -244,12 +244,12 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
           {/* DESCRIPTION WITH AI IMPROVER */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold text-gray-700">Detailed Description / Specs</label>
+              <label className="block text-xs  text-gray-700">Detailed Description / Specs</label>
               <button
                 type="button"
                 onClick={handleAiImproveDraft}
                 disabled={isImprovingDescription}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded-md hover:bg-purple-100 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded hover:bg-purple-100 transition-colors"
               >
                 <Sparkles size={13} className={isImprovingDescription ? 'animate-spin' : ''} />
                 <span>{isImprovingDescription ? 'Enhancing...' : 'AI Enhance Brief'}</span>
@@ -267,7 +267,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
           {/* STATUS & PRIORITY */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Status Column</label>
+              <label className="block text-xs  text-gray-700 mb-1">Status Column</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
@@ -280,7 +280,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Priority</label>
+              <label className="block text-xs  text-gray-700 mb-1">Priority</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
@@ -296,7 +296,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
           {/* ASSIGNEE & DUE DATE */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Assignee</label>
+              <label className="block text-xs  text-gray-700 mb-1">Assignee</label>
               <select
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
@@ -315,7 +315,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Target Due Date</label>
+              <label className="block text-xs  text-gray-700 mb-1">Target Due Date</label>
               <input
                 type="date"
                 value={dueDate}

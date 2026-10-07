@@ -373,7 +373,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
             {/* Linked Deal */}
             {(contract.deal_name || contract.deal_id) && (
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                <label className="block text-xs  text-gray-700 mb-2">
                   Linked Deal / Converted Lead
                 </label>
                 <div className="p-3 bg-indigo-50 border border-indigo-100 rounded flex items-center gap-2.5">
@@ -388,7 +388,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
 
             {/* Description */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-2">
+              <label className="block text-xs  text-gray-700 mb-2">
                 Description & Terms
               </label>
               {isEditing ? (
@@ -407,7 +407,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
             {/* Attached Files & Documents */}
             {contract.files && (
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                <label className="block text-xs  text-gray-700 mb-2">
                   Attached Files & Legal Documents
                 </label>
                 {(() => {
@@ -427,7 +427,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
                           <div className="flex items-center gap-2.5 min-w-0">
                             <span className="text-base">📄</span>
                             <div className="min-w-0">
-                              <p className="text-xs font-semibold text-gray-900 truncate">{file.name}</p>
+                              <p className="text-xs  text-gray-900 truncate">{file.name}</p>
                               <span className="text-[10px] text-gray-400 font-medium">
                                 {file.category || 'Contract Document'} • {file.size ? (file.size / 1024).toFixed(1) + ' KB' : ''}
                               </span>

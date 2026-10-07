@@ -215,7 +215,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                   Client & Lead Details
                 </h2>
                 {proposal.business_type && (
-                  <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs font-semibold">
+                  <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-xs ">
                     {proposal.business_type}
                   </span>
                 )}
@@ -239,7 +239,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                 {proposal.assigned_to_name && (
                   <div>
                     <span className="text-gray-500">Assigned To:</span>{' '}
-                    <span className="text-gray-800 font-semibold block mt-0.5">{proposal.assigned_to_name}</span>
+                    <span className="text-gray-800  block mt-0.5">{proposal.assigned_to_name}</span>
                   </div>
                 )}
               </div>
@@ -247,7 +247,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
               {/* Services List */}
               {servicesList.length > 0 && (
                 <div className="pt-3 border-t border-gray-100">
-                  <p className="text-xs font-semibold text-gray-700 mb-2.5 flex items-center gap-1.5">
+                  <p className="text-xs  text-gray-700 mb-2.5 flex items-center gap-1.5">
                     <span>🎯</span> Services Needed ({servicesList.length})
                   </p>
                   <ul className="space-y-2">
@@ -276,13 +276,13 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 bg-gray-50 rounded border border-gray-100">
                   <p className="text-xs text-gray-500">Proposal Date</p>
-                  <p className="text-base font-semibold text-gray-900 mt-1">
+                  <p className="text-base  text-gray-900 mt-1">
                     {proposal.proposal_date ? new Date(proposal.proposal_date).toLocaleDateString() : 'N/A'}
                   </p>
                 </div>
                 <div className="p-3 bg-gray-50 rounded border border-gray-100">
                   <p className="text-xs text-gray-500">Open Till</p>
-                  <p className="text-base font-semibold text-gray-900 mt-1">
+                  <p className="text-base  text-gray-900 mt-1">
                     {proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}
                   </p>
                 </div>
@@ -342,7 +342,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                             📄
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition" title={fileName}>
+                            <p className=" text-gray-900 truncate group-hover:text-blue-600 transition" title={fileName}>
                               {fileName}
                             </p>
                             <p className="text-[10px] text-gray-400">
@@ -410,7 +410,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
               {proposal.status === 'Draft' && (
                 <button
                   onClick={() => handleStatusChange('Submitted')}
-                  className="w-full p-2.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 transition"
+                  className="w-full p-2.5 bg-red-600 text-white rounded text-xs  hover:bg-red-700 transition"
                 >
                   Submit for Approval
                 </button>
@@ -420,14 +420,14 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                 <div className="space-y-2">
                   <button
                     onClick={() => handleStatusChange('Approved')}
-                    className="w-full p-2.5 bg-green-600 text-white rounded text-xs font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2"
+                    className="w-full p-2.5 bg-green-600 text-white rounded text-xs  hover:bg-green-700 transition flex items-center justify-center gap-2"
                   >
                     <CheckCircle size={15} />
                     Approve Proposal
                   </button>
                   <button
                     onClick={() => handleStatusChange('Rejected')}
-                    className="w-full p-2.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2"
+                    className="w-full p-2.5 bg-red-600 text-white rounded text-xs  hover:bg-red-700 transition flex items-center justify-center gap-2"
                   >
                     <XCircle size={15} />
                     Reject
@@ -438,7 +438,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
               {proposal.status === 'Approved' && (
                 <button
                   onClick={() => handleStatusChange('Sent')}
-                  className="w-full p-2.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  className="w-full p-2.5 bg-red-600 text-white rounded text-xs  hover:bg-blue-700 transition flex items-center justify-center gap-2"
                 >
                   <Send size={15} />
                   Send to Client
@@ -449,13 +449,13 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                 <div className="space-y-2">
                   <button
                     onClick={() => handleStatusChange('Accepted')}
-                    className="w-full p-2.5 bg-green-600 text-white rounded text-xs font-semibold hover:bg-green-700 transition"
+                    className="w-full p-2.5 bg-green-600 text-white rounded text-xs  hover:bg-green-700 transition"
                   >
                     Mark as Accepted
                   </button>
                   <button
                     onClick={() => handleStatusChange('Declined')}
-                    className="w-full p-2.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 transition"
+                    className="w-full p-2.5 bg-red-600 text-white rounded text-xs  hover:bg-red-700 transition"
                   >
                     Mark as Declined
                   </button>
@@ -464,7 +464,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
 
               <button
                 onClick={() => setIsEditing(true)}
-                className="w-full p-2.5 bg-white border border-gray-300 text-gray-700 rounded text-xs font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
+                className="w-full p-2.5 bg-white border border-gray-300 text-gray-700 rounded text-xs  hover:bg-gray-50 transition flex items-center justify-center gap-2"
               >
                 <Edit2 size={14} />
                 Edit Proposal Details
@@ -477,18 +477,18 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
               <div className="space-y-2 text-xs">
                 <div>
                   <p className="text-[11px] text-gray-500">Client / Company</p>
-                  <p className="font-semibold text-gray-900">{proposal.client_name || 'N/A'}</p>
+                  <p className=" text-gray-900">{proposal.client_name || 'N/A'}</p>
                 </div>
                 {proposal.lead_name && (
                   <div>
                     <p className="text-[11px] text-gray-500">Lead Contact Person</p>
-                    <p className="font-semibold text-gray-900">{proposal.lead_name}</p>
+                    <p className=" text-gray-900">{proposal.lead_name}</p>
                   </div>
                 )}
                 {proposal.assigned_to_name && (
                   <div>
                     <p className="text-[11px] text-gray-500">Assigned Salesperson</p>
-                    <p className="font-semibold text-gray-900">{proposal.assigned_to_name}</p>
+                    <p className=" text-gray-900">{proposal.assigned_to_name}</p>
                   </div>
                 )}
                 <div>

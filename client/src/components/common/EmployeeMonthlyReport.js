@@ -77,7 +77,7 @@ const EmployeeMonthlyReport = () => {
           <p className="text-slate-500 text-sm mt-1">Track employee velocity, efficiency, and overall scores.</p>
         </div>
 
-        <div className="flex items-center gap-3 bg-white p-2 rounded-lg shadow-sm border border-slate-200">
+        <div className="flex items-center gap-3 bg-white p-2 rounded shadow-sm border border-slate-200">
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -183,7 +183,7 @@ const EmployeeMonthlyReport = () => {
                     <div className=" text-slate-800">{row.name}</div>
                   </td>
                   <td className="p-2 text-center">
-                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-sm font-medium">
+                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-1 rounded text-sm font-medium">
                       <CheckCircle size={14} className="text-slate-400" />
                       {row.tasksCompleted}
                     </span>

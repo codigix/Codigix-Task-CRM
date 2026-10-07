@@ -1,9 +1,47 @@
 const crypto = require('crypto');
 const pool = require('../config/database');
 
+// Passwords are stored as "scrypt$<salt>$<hash>" with a random salt per password.
+// Older rows hold a PBKDF2 hash made with one fixed salt for everybody; those still verify,
+// and verifyPassword reports needsUpgrade so login can re-save them in the new format.
+const SCRYPT_PARAMS = { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
+
+const legacyHash = (password) => crypto.pbkdf2Sync(String(password), 'salt', 1000, 64, 'sha512').toString('hex');
+
+// New hashes use the salted scrypt format; login verifies both formats (verifyPassword).
 function hashPassword(password) {
-  return crypto.pbkdf2Sync(password, 'salt', 1000, 64, 'sha512').toString('hex');
+  return hashPasswordSecure(password);
 }
+
+function hashPasswordSecure(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(String(password), salt, 64, SCRYPT_PARAMS).toString('hex');
+  return `scrypt$${salt}$${hash}`;
+}
+
+const safeEqualHex = (a, b) => {
+  const ba = Buffer.from(String(a), 'hex');
+  const bb = Buffer.from(String(b), 'hex');
+  return ba.length === bb.length && ba.length > 0 && crypto.timingSafeEqual(ba, bb);
+};
+
+function verifyPassword(password, stored) {
+  if (!password || !stored) return { ok: false, needsUpgrade: false };
+  const value = String(stored);
+  if (value.startsWith('scrypt$')) {
+    const [, salt, hash] = value.split('$');
+    const candidate = crypto.scryptSync(String(password), salt, 64, SCRYPT_PARAMS).toString('hex');
+    return { ok: safeEqualHex(candidate, hash), needsUpgrade: false };
+  }
+  if (/^[0-9a-f]{128}$/i.test(value)) {
+    const ok = safeEqualHex(legacyHash(password), value);
+    return { ok, needsUpgrade: ok };
+  }
+  return { ok: false, needsUpgrade: false };
+}
+
+// True when a value is already one of our stored hash formats (so it must not be hashed again).
+const isPasswordHash = (value) => /^scrypt\$[0-9a-f]{32}\$[0-9a-f]{128}$/.test(String(value || '')) || /^[0-9a-f]{128}$/i.test(String(value || ''));
 
 async function checkPermission(userId, module, action) {
   let connection;
@@ -314,4 +352,4 @@ async function generateEstimationNumber(pool, prefix = 'EST') {
   }
 }
 
-module.exports = { hashPassword, checkPermission, generateEstimationNumber, resolveDealForLead, generateProjectTasks };
+module.exports = { hashPassword, hashPasswordSecure, verifyPassword, isPasswordHash, checkPermission, generateEstimationNumber, resolveDealForLead, generateProjectTasks };

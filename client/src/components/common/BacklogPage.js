@@ -7,7 +7,7 @@ import {
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
 import { useAuth } from '../../hooks/useAuth';
-import { isManagerDesignation } from '../../utils/access';
+import { isManagerDesignation, canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE } from '../../utils/access';
 import { API_BASE_URL } from '../../config/environment';
 import BoardTabs from './BoardTabs';
 import StartSprintModal from './StartSprintModal';
@@ -50,7 +50,7 @@ const titleCase = (s) => String(s || '')
 
 const AVATAR_COLORS = [
   'bg-red-600', 'bg-emerald-600', 'bg-purple-600',
-  'bg-orange-500', 'bg-pink-600', 'bg-teal-600', 'bg-indigo-600'
+  'bg-orange-500', 'bg-pink-600', 'bg-teal-600', 'bg-red-600'
 ];
 
 const avatarColor = (name) => {
@@ -350,11 +350,10 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
             {item.issue_key}
           </span>
           {item.department && (
-            <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-              item.department.toLowerCase() === 'marketing'
-                ? 'bg-orange-50 text-orange-700 border border-orange-200'
-                : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-            }`}>
+            <span className={`shrink-0 text-[10px]  px-1.5 py-0.5 rounded uppercase tracking-wider ${item.department.toLowerCase() === 'marketing'
+              ? 'bg-orange-50 text-orange-700 border border-orange-200'
+              : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+              }`}>
               {item.department}
             </span>
           )}
@@ -393,7 +392,7 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
           />
 
           <div className="shrink-0 flex items-center gap-1">
-            <button
+            {onDelete && <button
               onClick={(e) => {
                 e.stopPropagation();
                 Swal.fire({
@@ -414,7 +413,7 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
               title="Delete task"
             >
               <Trash2 size={14} />
-            </button>
+            </button>}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -455,13 +454,17 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
                 Copy key
               </div>
 
-              <div className="border-t border-gray-100 my-1" />
-              <div
-                onClick={() => { setMenuOpen(false); onDelete(item); }}
-                className="px-3 py-1.5 hover:bg-red-50 cursor-pointer text-red-600 flex items-center gap-2"
-              >
-                <Trash2 size={12} /> Delete
-              </div>
+              {onDelete && (
+                <>
+                  <div className="border-t border-gray-100 my-1" />
+                  <div
+                    onClick={() => { setMenuOpen(false); onDelete(item); }}
+                    className="px-3 py-1.5 hover:bg-red-50 cursor-pointer text-red-600 flex items-center gap-2"
+                  >
+                    <Trash2 size={12} /> Delete
+                  </div>
+                </>
+              )}
             </AnchoredMenu>
           </div>
         </div>
@@ -472,6 +475,8 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
 
 const BacklogPage = ({ department }) => {
   const { user } = useAuth();
+  // Everyone can edit tickets; only managers can delete them.
+  const canDelete = canDeleteTickets(user);
   const { designation, username } = useParams();
   const canPlanSprints = isManagerDesignation(designation);
 
@@ -677,9 +682,16 @@ const BacklogPage = ({ department }) => {
   };
 
   const deleteItem = async (issueKey) => {
+    if (!canDelete) {
+      showErrorToast(TICKET_DELETE_DENIED_MESSAGE);
+      return;
+    }
     try {
-      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete work item');
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}`, { method: 'DELETE', headers: ticketDeleteHeaders(user) });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to delete work item');
+      }
       setSelectedKey(null);
       load();
       showSuccessToast(`Task ${issueKey} deleted successfully`);
@@ -1005,7 +1017,7 @@ const BacklogPage = ({ department }) => {
           <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-4">
             <Lock size={22} className="text-gray-400" />
           </div>
-          <h3 className="text-base font-semibold text-gray-900 mb-1">Backlog is managed by your manager</h3>
+          <h3 className="text-base  text-gray-900 mb-1">Backlog is managed by your manager</h3>
           <p className="text-sm text-gray-500 max-w-sm">
             Sprint planning is handled by managers. Your assigned work is on the Board.
           </p>
@@ -1089,7 +1101,7 @@ const BacklogPage = ({ department }) => {
           {isManager && (
             <div className="flex flex-wrap items-center justify-between gap-4 mb-5 pb-3 border-b border-gray-200">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">Department:</span>
+                <span className="text-xs  text-gray-500 uppercase tracking-wider mr-1">Department:</span>
                 {[
                   { key: 'ALL', label: 'All Sprints', count: sprints.length },
                   { key: 'IT', label: 'IT', count: sprints.filter(s => (s.department || 'IT').toLowerCase() === 'it').length },
@@ -1098,23 +1110,21 @@ const BacklogPage = ({ department }) => {
                   <button
                     key={tab.key}
                     onClick={() => setSelectedDepartmentFilter(tab.key)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
-                      selectedDepartmentFilter === tab.key
-                        ? 'bg-blue-600 text-white shadow-sm font-semibold'
-                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                    }`}
+                    className={`px-3 py-1.5 text-xs font-medium rounded transition flex items-center gap-1.5 ${selectedDepartmentFilter === tab.key
+                      ? 'bg-red-700 text-white shadow-sm '
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                      }`}
                   >
                     <span>{tab.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                      selectedDepartmentFilter === tab.key ? 'bg-blue-700 text-blue-100' : 'bg-gray-100 text-gray-600'
-                    }`}>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${selectedDepartmentFilter === tab.key ? 'bg-blue-700 text-blue-100' : 'bg-gray-100 text-gray-600'
+                      }`}>
                       {tab.count}
                     </span>
                   </button>
                 ))}
               </div>
               <div className="text-xs text-gray-500">
-                Showing <span className="font-semibold text-gray-800">{displayedSprints.length}</span> sprint{displayedSprints.length === 1 ? '' : 's'} across {selectedDepartmentFilter === 'ALL' ? 'IT & Marketing' : selectedDepartmentFilter}
+                Showing <span className=" text-gray-800">{displayedSprints.length}</span> sprint{displayedSprints.length === 1 ? '' : 's'} across {selectedDepartmentFilter === 'ALL' ? 'IT & Marketing' : selectedDepartmentFilter}
               </div>
             </div>
           )}
@@ -1126,7 +1136,7 @@ const BacklogPage = ({ department }) => {
                 {collapsed.backlog ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
               </button>
               <Inbox size={14} className="text-gray-500" />
-              <span className="font-semibold text-sm text-gray-900">Backlog</span>
+              <span className=" text-sm text-gray-900">Backlog</span>
               <span className="text-xs text-gray-500">
                 ({displayedBacklog.length} work item{displayedBacklog.length === 1 ? '' : 's'})
               </span>
@@ -1152,7 +1162,7 @@ const BacklogPage = ({ department }) => {
                         currentSprintId={null} users={assignableUsers}
                         currentUserName={currentUserName} isSelected={selectedKey === item.issue_key}
                         onMove={moveItem} onOpen={openIssue} onUpdate={updateItem}
-                        onDelete={(item) => deleteItem(item.issue_key)} onCopy={copyToClipboard} />
+                        onDelete={canDelete ? (item) => deleteItem(item.issue_key) : undefined} onCopy={copyToClipboard} />
                     ))}
                     {displayedBacklog.length === 0 && (
                       <div className="px-4 py-8 text-center text-xs text-gray-400">Your backlog is empty.</div>
@@ -1172,25 +1182,24 @@ const BacklogPage = ({ department }) => {
 
             return (
               <div key={sprint.id} className="mb-4 border border-gray-200 rounded bg-white overflow-hidden shadow-sm">
-                <div 
+                <div
                   onClick={() => toggle(`s${sprint.id}`, true)}
                   className={`flex items-center gap-3 px-3 py-2.5 bg-gray-50 cursor-pointer select-none hover:bg-gray-100/70 transition-colors ${!isCollapsed ? 'border-b border-gray-200' : ''}`}
                 >
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); toggle(`s${sprint.id}`, true); }} 
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggle(`s${sprint.id}`, true); }}
                     className="text-gray-500 hover:text-gray-800"
                     title={isCollapsed ? 'Click to open sprint' : 'Click to close sprint'}
                   >
                     {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                   </button>
-                  <span className="font-semibold text-sm text-gray-900">{sprint.name}</span>
+                  <span className=" text-sm text-gray-900">{sprint.name}</span>
 
                   {sprint.department && (
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded tracking-wide ${
-                      sprint.department.toLowerCase() === 'marketing'
-                        ? 'bg-orange-100 text-orange-700 border border-orange-200'
-                        : 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                    }`}>
+                    <span className={`text-[10px]  px-2 py-0.5 rounded tracking-wide ${sprint.department.toLowerCase() === 'marketing'
+                      ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                      : 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                      }`}>
                       {sprint.department}
                     </span>
                   )}
@@ -1270,7 +1279,7 @@ const BacklogPage = ({ department }) => {
                             currentSprintId={sprint.id} users={assignableUsers}
                             currentUserName={currentUserName} isSelected={selectedKey === item.issue_key}
                             onMove={moveItem} onOpen={openIssue} onUpdate={updateItem}
-                            onDelete={(item) => deleteItem(item.issue_key)} onCopy={copyToClipboard} />
+                            onDelete={canDelete ? (item) => deleteItem(item.issue_key) : undefined} onCopy={copyToClipboard} />
                         ))}
                         {sprint.issues.length === 0 && (
                           <div className="px-4 py-6 text-center text-xs text-gray-400">
@@ -1295,7 +1304,7 @@ const BacklogPage = ({ department }) => {
       <ITIssueDetailsPanel
         issue={selectedIssue}
         updateIssue={updateItem}
-        deleteIssue={deleteItem}
+        deleteIssue={canDelete ? deleteItem : undefined}
         onClose={() => setSelectedKey(null)}
         onIssueCreated={load}
       />

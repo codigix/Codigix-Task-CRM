@@ -72,7 +72,7 @@ const ComparisonSection = () => {
                     <X size={20} className="text-slate-200" />
                   )}
                 </div>
-                <div className="col-span-1 flex justify-between md:justify-center px-6 md:px-0 py-4 md:py-3 bg-red-50/40 rounded-xl border border-transparent group-hover:bg-red-50 group-hover:border-red-100 transition-colors relative overflow-hidden">
+                <div className="col-span-1 flex justify-between md:justify-center px-6 md:px-0 py-4 md:py-3 bg-red-50/40 rounded border border-transparent group-hover:bg-red-50 group-hover:border-red-100 transition-colors relative overflow-hidden">
                   <span className="md:hidden text-xs  text-red-600">Codigix:</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-pulse transition-opacity"></div>
                   {feature.codigix ? (
@@ -89,7 +89,7 @@ const ComparisonSection = () => {
           </div>
 
           {/* Footer note */}
-          <div className="mt-8 text-center bg-white/50 backdrop-blur-sm rounded-xl py-3 border border-slate-200/50 inline-block px-6 mx-auto flex items-center justify-center gap-2">
+          <div className="mt-8 text-center bg-white/50 backdrop-blur-sm rounded py-3 border border-slate-200/50 inline-block px-6 mx-auto flex items-center justify-center gap-2">
             <span className="text-xs text-slate-500">
               * HR capabilities powered by our dedicated <a href="https://hrmsystem.codigixinfotech.com/" target="_blank" rel="noreferrer" className="text-red-600  hover:underline">Codigix HRM System</a>
             </span>

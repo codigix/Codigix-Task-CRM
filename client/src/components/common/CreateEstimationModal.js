@@ -471,7 +471,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         <div className="p-4 sm:p-6 overflow-y-auto space-y-6 custom-scrollbar bg-slate-50/50">
 
           {/* ================= SECTION 1: BASIC INFORMATION ================= */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
             <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
               <div className="w-7 h-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center  text-xs">1</div>
               <h3 className=" text-slate-900 text-sm sm:text-base">Basic Information</h3>
@@ -480,7 +480,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Estimation Number */}
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Estimation Number</label>
+                <label className="block text-xs  text-slate-600 mb-1">Estimation Number</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -494,7 +494,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
               {/* Estimation Title */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                <label className="block text-xs  text-slate-600 mb-1">
                   Estimation Title <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -509,7 +509,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
               {/* Estimation Date */}
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                <label className="block text-xs  text-slate-600 mb-1">
                   Estimation Date <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -524,7 +524,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
               {/* Status */}
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
+                <label className="block text-xs  text-slate-600 mb-1">Status</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
@@ -540,7 +540,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
               {/* Prepared By / Assigned To */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Prepared By / Assigned To</label>
+                <label className="block text-xs  text-slate-600 mb-1">Prepared By / Assigned To</label>
                 <select
                   value={assignedExecutiveId}
                   onChange={(e) => setAssignedExecutiveId(e.target.value)}
@@ -558,7 +558,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           </div>
 
           {/* ================= SECTION 2: RELATED INFORMATION ================= */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center  text-xs">2</div>
@@ -572,7 +572,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Client */}
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                <label className="block text-xs  text-slate-600 mb-1">
                   Client <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -590,7 +590,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
               {/* Related Lead */}
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                <label className="block text-xs  text-slate-600 mb-1">
                   Related Lead <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -610,7 +610,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
               {/* Related Proposal (Optional) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                <label className="block text-xs  text-slate-600 mb-1">
                   Related Proposal <span className="text-slate-400 text-[10px] font-normal">(Optional)</span>
                 </label>
                 <select
@@ -629,7 +629,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
               {/* Related Quotation (Optional) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                <label className="block text-xs  text-slate-600 mb-1">
                   Related Quotation <span className="text-slate-400 text-[10px] font-normal">(Optional)</span>
                 </label>
                 <select
@@ -649,7 +649,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           </div>
 
           {/* ================= SECTION 3: REQUIREMENT SUMMARY ================= */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center  text-xs">3</div>
@@ -668,7 +668,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           </div>
 
           {/* ================= SECTION 4: WORK / TASK ESTIMATION ================= */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center  text-xs">4</div>
@@ -680,7 +680,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               <button
                 type="button"
                 onClick={handleAddTask}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-blue-700 text-white rounded text-xs  transition-colors shadow-sm"
               >
                 <Plus size={14} /> Add Task
               </button>
@@ -774,7 +774,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             </div>
 
             {/* Task Summary Bar */}
-            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded flex flex-wrap items-center justify-between gap-3 text-xs font-semibold">
+            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded flex flex-wrap items-center justify-between gap-3 text-xs ">
               <div className="flex items-center gap-4 text-slate-700">
                 <span>Tasks Count: <strong className="text-slate-900">{tasks.length}</strong></span>
                 <span>Total Estimated Hours: <strong className="text-blue-600 ">{totalEstimatedHours} hrs</strong></span>
@@ -786,7 +786,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           </div>
 
           {/* ================= SECTION 5: ADDITIONAL / EXTERNAL COSTS ================= */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center  text-xs">5</div>
@@ -798,7 +798,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               <button
                 type="button"
                 onClick={handleAddCost}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-semibold transition-colors border border-slate-300"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs  transition-colors border border-slate-300"
               >
                 <Plus size={14} /> Add Cost
               </button>
@@ -871,7 +871,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             </div>
 
             {/* Additional Cost Summary Bar */}
-            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded flex items-center justify-between text-xs font-semibold">
+            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded flex items-center justify-between text-xs ">
               <span className="text-slate-600">Additional Expenses: {additionalCosts.length} items</span>
               <span className="text-slate-800">
                 Total Additional Cost: <strong className="text-sm  text-slate-950 ml-1">₹{totalAdditionalCost.toLocaleString('en-IN')}</strong>
@@ -883,7 +883,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
             {/* SECTION 6: COST SUMMARY */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-5 shadow-md flex flex-col justify-between border border-slate-800">
+            <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded p-5 shadow-md flex flex-col justify-between border border-slate-800">
               <div>
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-700/60">
                   <div className="flex items-center gap-2">
@@ -898,11 +898,11 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 <div className="space-y-3 text-xs">
                   <div className="flex justify-between items-center text-slate-300">
                     <span>Resource Cost (Labor):</span>
-                    <span className="font-semibold text-white">₹{totalResourceCost.toLocaleString('en-IN')}</span>
+                    <span className=" text-white">₹{totalResourceCost.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between items-center text-slate-300">
                     <span>Additional / External Costs:</span>
-                    <span className="font-semibold text-white">₹{totalAdditionalCost.toLocaleString('en-IN')}</span>
+                    <span className=" text-white">₹{totalAdditionalCost.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex justify-between items-center text-slate-300">
                     <span>Other Internal Overheads:</span>
@@ -922,7 +922,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
               <div className="mt-5 pt-4 border-t border-slate-700/70 flex justify-between items-end">
                 <div>
-                  <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Total Internal Cost</p>
+                  <p className="text-[11px] uppercase tracking-wider text-slate-400 ">Total Internal Cost</p>
                   <p className="text-[10px] text-slate-400">Resource + External + Overheads</p>
                 </div>
                 <p className="text-xl sm:text-2xl font-black text-amber-400">
@@ -932,7 +932,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             </div>
 
             {/* SECTION 7: PRICING & PROFIT STRATEGY */}
-            <div className="lg:col-span-7 bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="lg:col-span-7 bg-white rounded p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-2">
@@ -949,7 +949,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4 text-xs">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Profit Margin (%)</label>
+                    <label className="block text-[11px]  text-slate-600 mb-1">Profit Margin (%)</label>
                     <div className="relative">
                       <input
                         type="number"
@@ -964,7 +964,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Discount Buffer (%)</label>
+                    <label className="block text-[11px]  text-slate-600 mb-1">Discount Buffer (%)</label>
                     <div className="relative">
                       <input
                         type="number"
@@ -979,7 +979,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                   </div>
 
                   <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Expected Profit</label>
+                    <label className="block text-[11px]  text-slate-600 mb-1">Expected Profit</label>
                     <div className="px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded text-xs  text-emerald-800">
                       ₹{expectedProfit.toLocaleString('en-IN')}
                     </div>
@@ -988,7 +988,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                 {/* KPI Highlight Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div className="p-3.5 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl border border-emerald-300">
+                  <div className="p-3.5 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded border border-emerald-300">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[11px]  text-emerald-800 uppercase tracking-wider">Recommended Selling Price</span>
                       <span className="text-[10px]  px-1.5 py-0.2 rounded bg-emerald-200/60 text-emerald-900">Recommended</span>
@@ -999,7 +999,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                     <p className="text-[10px] text-emerald-700 mt-0.5">Cost + {profitMargin}% margin</p>
                   </div>
 
-                  <div className="p-3.5 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl border border-amber-300">
+                  <div className="p-3.5 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded border border-amber-300">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[11px]  text-amber-900 uppercase tracking-wider">Minimum Acceptable Price</span>
                       <span className="text-[10px]  px-1.5 py-0.2 rounded bg-amber-200/60 text-amber-950">Negotiation Floor</span>
@@ -1021,7 +1021,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           </div>
 
           {/* ================= SECTION 8: TIMELINE ESTIMATION ================= */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center  text-xs">8</div>
@@ -1033,7 +1033,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               <button
                 type="button"
                 onClick={handleAddPhase}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-semibold transition-colors border border-slate-300"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs  transition-colors border border-slate-300"
               >
                 <Plus size={14} /> Add Phase
               </button>
@@ -1041,7 +1041,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
             {/* Total Duration Row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-50 border border-slate-200 rounded mb-4 text-xs items-center">
-              <span className="font-semibold text-slate-700">Estimated Total Project Duration:</span>
+              <span className=" text-slate-700">Estimated Total Project Duration:</span>
               <div className="flex items-center gap-2 sm:col-span-2">
                 <input
                   type="number"
@@ -1135,7 +1135,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
             {/* SECTION 9: ASSUMPTIONS */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+            <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
               <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
                 <div className="w-7 h-7 rounded bg-blue-50 text-blue-600 flex items-center justify-center  text-xs">9</div>
                 <div>
@@ -1153,7 +1153,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             </div>
 
             {/* SECTION 10: RISKS */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+            <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
               <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
                 <div className="w-7 h-7 rounded bg-amber-50 text-amber-600 flex items-center justify-center  text-xs">10</div>
                 <div>
@@ -1173,7 +1173,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           </div>
 
           {/* ================= SECTION 11: INTERNAL NOTES ================= */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded bg-slate-100 text-slate-700 flex items-center justify-center  text-xs">11</div>
@@ -1211,7 +1211,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             <button
               type="button"
               onClick={onClose}
-              className="p-2 border border-slate-300 rounded text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              className="p-2 border border-slate-300 rounded text-xs  text-slate-700 hover:bg-slate-50 transition-colors"
             >
               Cancel
             </button>
@@ -1220,7 +1220,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               type="button"
               disabled={isSubmitting}
               onClick={() => handleFormSubmit('Draft')}
-              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded text-xs font-semibold transition-colors disabled:opacity-50"
+              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded text-xs  transition-colors disabled:opacity-50"
             >
               Save as Draft
             </button>
@@ -1229,7 +1229,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               type="button"
               disabled={isSubmitting}
               onClick={() => handleFormSubmit('Under Review')}
-              className="p-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              className="p-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs  transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
             >
               <Clock size={14} /> Submit for Internal Review
             </button>
@@ -1238,7 +1238,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               type="button"
               disabled={isSubmitting}
               onClick={() => handleFormSubmit('Approved Internally')}
-              className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs  transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5"
             >
               <CheckCircle2 size={14} /> Approve Estimation
             </button>

@@ -556,7 +556,7 @@ const CrmProjectsPage = ({ department }) => {
                         {project.manager_avatar ? (
                           <img src={project.manager_avatar} alt="Manager" className="w-6 h-6 rounded-full object-cover border border-gray-200" />
                         ) : project.manager_first_name ? (
-                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-semibold">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs ">
                             {project.manager_first_name.charAt(0)}
                           </div>
                         ) : null}
@@ -747,7 +747,7 @@ const CrmProjectsPage = ({ department }) => {
                           {/* Left Panel: Project Info */}
                           <div className="w-[220px] pr-4 flex-shrink-0 flex items-center justify-between border-r border-gray-100 py-1">
                             <div className="min-w-0">
-                              <h4 className="text-xs font-semibold text-gray-900 truncate cursor-pointer hover:text-blue-600 transition-colors" onClick={() => navigateToProject(p.id)} title={p.name || p.title}>
+                              <h4 className="text-xs  text-gray-900 truncate cursor-pointer hover:text-blue-600 transition-colors" onClick={() => navigateToProject(p.id)} title={p.name || p.title}>
                                 {p.name || p.title}
                               </h4>
                               <p className="text-[10px] text-gray-500 truncate mt-0.5">{p.department_name || p.workflow_type || 'Uncategorized'}</p>
@@ -774,7 +774,7 @@ const CrmProjectsPage = ({ department }) => {
 
                             {/* Gantt Bar */}
                             <div
-                              className={`absolute top-2 h-6 rounded-md shadow-sm bg-gradient-to-r ${getStatusColor(p.status)} cursor-pointer transition-all hover:scale-y-110 flex items-center overflow-hidden group-hover:shadow-md z-20`}
+                              className={`absolute top-2 h-6 rounded shadow-sm bg-gradient-to-r ${getStatusColor(p.status)} cursor-pointer transition-all hover:scale-y-110 flex items-center overflow-hidden group-hover:shadow-md z-20`}
                               style={{
                                 left: `${getLeft(actualStart)}%`,
                                 width: `${getWidth(actualStart, actualEnd)}%`,
@@ -787,7 +787,7 @@ const CrmProjectsPage = ({ department }) => {
                               {p.progress > 0 && (
                                 <div className="absolute top-0 left-0 bottom-0 bg-black/10 border-r border-black/10" style={{ width: `${p.progress}%` }} />
                               )}
-                              <span className="relative z-10 text-[10px] text-white font-semibold px-2 truncate drop-shadow-sm">
+                              <span className="relative z-10 text-[10px] text-white  px-2 truncate drop-shadow-sm">
                                 {p.progress || 0}%
                               </span>
                             </div>
@@ -796,7 +796,7 @@ const CrmProjectsPage = ({ department }) => {
                       );
                     })}
                     {filteredProjects.length === 0 && (
-                      <div className="text-center py-12 bg-gray-50 rounded-md border border-gray-100 border-dashed">
+                      <div className="text-center py-12 bg-gray-50 rounded border border-gray-100 border-dashed">
                         <p className="text-sm text-gray-500 font-medium">No projects to display on timeline.</p>
                       </div>
                     )}
@@ -954,7 +954,7 @@ const CrmProjectsPage = ({ department }) => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
           <div className="bg-white rounded shadow-xl w-full max-w-md mx-4 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Network size={16} className="text-blue-600" /> Assign Team to Project</h2>
+              <h2 className="text-sm  text-gray-900 flex items-center gap-2"><Network size={16} className="text-blue-600" /> Assign Team to Project</h2>
               <button onClick={() => setIsAssignTeamModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <XCircle size={18} />
               </button>

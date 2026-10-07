@@ -272,6 +272,8 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const logout = useCallback(() => {
+    // Ends the server session too (clears the httpOnly cookie), not just local state.
+    fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => { });
     setUser(null);
     localStorage.removeItem('currentUser');
     localStorage.removeItem('user');
@@ -280,7 +282,9 @@ export const AuthProvider = ({ children }) => {
   const validateUser = useCallback(async () => {
     if (!user || !user.id) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/users/${user.id}`);
+      // /auth/me answers for the session cookie. Without a valid session it returns 401,
+      // and the global fetch handler (setupAuthFetch.js) sends the user to /login.
+      const res = await fetch(`${API_BASE_URL}/auth/me`);
       if (res.status === 404) {
         // User has been deleted from the database
         console.warn('Current user account no longer exists in database. Forcing logout...');
@@ -293,6 +297,12 @@ export const AuthProvider = ({ children }) => {
 
       if (res.ok) {
         const dbUser = await res.json();
+        // The session is the source of truth: if it belongs to someone else (e.g. another
+        // account signed in from a second tab), switch to that user.
+        if (dbUser && dbUser.id && String(dbUser.id) !== String(user.id)) {
+          setUser({ ...dbUser, role: dbUser.role_name || dbUser.role });
+          return;
+        }
         if (dbUser && dbUser.role_name && (dbUser.role_name !== user.role || dbUser.role_name !== user.role_name)) {
           const updated = {
             ...user,

@@ -154,7 +154,7 @@ const ITBugTrackingPage = () => {
           <div className="flex justify-between items-center mb-6">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold text-gray-900">Bug Tracking</h1>
+                <h1 className="text-2xl  text-gray-900">Bug Tracking</h1>
                 <Bug size={20} className="text-gray-400" />
               </div>
               <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
@@ -437,7 +437,7 @@ const ITBugTrackingPage = () => {
                   <span className="sr-only">Close panel</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 </button>
-                <h2 className="font-semibold text-gray-900">BUG-{selectedBug.id}</h2>
+                <h2 className=" text-gray-900">BUG-{selectedBug.id}</h2>
               </div>
               <div className="flex items-center gap-2">
                 <button className="p-1.5 hover:bg-gray-100 rounded text-gray-500" title="Expand"><Maximize2 size={14} /></button>
@@ -452,7 +452,7 @@ const ITBugTrackingPage = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-xl font-semibold text-gray-900">{selectedBug.title}</h2>
+                    <h2 className="text-xl  text-gray-900">{selectedBug.title}</h2>
                     <StatusBadge status={selectedBug.status} />
                   </div>
                   <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -516,7 +516,7 @@ const ITBugTrackingPage = () => {
               <hr className="my-6 border-gray-100" />
 
               <div className="mb-6">
-                <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
+                <h4 className=" text-gray-900 mb-2">Description</h4>
                 <p className="text-gray-600 leading-relaxed text-[13px]">
                   {selectedBug.description || 'No description provided.'}
                 </p>

@@ -12,6 +12,7 @@ import ITIssueDetailsPanel from '../it/ITIssueDetailsPanel';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
 import { API_BASE_URL } from '../../config/environment';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE } from '../../utils/access';
 
 function BookmarkIcon(props) {
   return <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" {...props}><path d="M5 3v18l7-4.5 7 4.5V3z" /></svg>;
@@ -472,11 +473,19 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
   };
 
   const deleteIssue = async (key) => {
-    setAllRawIssues(prev => prev.filter(issue => issue.issue_key !== key && issue.key !== key));
-    setSelectedIssue(null);
-
+    if (!canDeleteTickets(user)) {
+      showErrorToast(TICKET_DELETE_DENIED_MESSAGE);
+      return;
+    }
     try {
-      await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE', headers: ticketDeleteHeaders(user) });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showErrorToast(data.error || 'Failed to delete ticket');
+        return;
+      }
+      setAllRawIssues(prev => prev.filter(issue => issue.issue_key !== key && issue.key !== key));
+      setSelectedIssue(null);
     } catch (err) {
       console.error('Failed to delete issue', err);
     }
@@ -574,7 +583,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                 <input
                   type="text"
                   placeholder="Search issues..."
-                  className="pl-8 pr-4 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-48 transition-all"
+                  className="pl-8 pr-4 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-48 transition-all"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -582,7 +591,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
               </div>
               <button
                 onClick={() => setIsCreateDrawerOpen(true)}
-                className="bg-red-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1.5 shadow-sm transition"
+                className="bg-red-600 hover:bg-blue-700 text-white text-xs  px-3 py-1.5 rounded flex items-center gap-1.5 shadow-sm transition"
               >
                 <Plus size={14} />
                 Create Issue
@@ -608,12 +617,12 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                   <ChevronDown size={14} className="text-gray-400" />
                 </button>
                 {activeFilterDropdown === 'space' && (
-                  <div className="absolute left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-30">
+                  <div className="absolute left-0 mt-1 w-56 bg-white rounded shadow-lg border border-gray-200 py-1 z-30">
                     {config.spaces.map(sp => (
                       <div
                         key={sp.id}
                         onClick={() => { setSelectedSpace(sp.code); setActiveFilterDropdown(null); }}
-                        className={`px-3 py-2 text-xs flex items-center space-x-2 hover:bg-gray-50 cursor-pointer ${selectedSpace === sp.code ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700'}`}
+                        className={`px-3 py-2 text-xs flex items-center space-x-2 hover:bg-gray-50 cursor-pointer ${selectedSpace === sp.code ? 'bg-blue-50 text-blue-600 ' : 'text-gray-700'}`}
                       >
                         <span className="w-4 h-4 rounded bg-gray-200 text-gray-700 flex items-center justify-center text-[9px] ">
                           {sp.code}
@@ -635,7 +644,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                   <ChevronDown size={14} className="text-gray-400" />
                 </button>
                 {activeFilterDropdown === 'project' && (
-                  <div className="absolute left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-30">
+                  <div className="absolute left-0 mt-1 w-48 bg-white rounded shadow-lg border border-gray-200 py-1 z-30">
                     <div
                       onClick={() => { setSelectedProjectId('ALL'); setActiveFilterDropdown(null); }}
                       className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedProjectId === 'ALL' ? ' text-blue-600' : 'text-gray-700'}`}
@@ -665,7 +674,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                   <ChevronDown size={14} className="text-gray-400" />
                 </button>
                 {activeFilterDropdown === 'type' && (
-                  <div className="absolute left-0 mt-1 w-36 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-30">
+                  <div className="absolute left-0 mt-1 w-36 bg-white rounded shadow-lg border border-gray-200 py-1 z-30">
                     <div
                       onClick={() => { setSelectedType('ALL'); setActiveFilterDropdown(null); }}
                       className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedType === 'ALL' ? ' text-blue-600' : 'text-gray-700'}`}
@@ -696,7 +705,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                   <ChevronDown size={14} className="text-gray-400" />
                 </button>
                 {activeFilterDropdown === 'priority' && (
-                  <div className="absolute left-0 mt-1 w-36 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-30">
+                  <div className="absolute left-0 mt-1 w-36 bg-white rounded shadow-lg border border-gray-200 py-1 z-30">
                     {['ALL', 'High', 'Medium', 'Low'].map(p => (
                       <div
                         key={p}
@@ -720,7 +729,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                   <ChevronDown size={14} className="text-gray-400" />
                 </button>
                 {activeFilterDropdown === 'assignee' && (
-                  <div className="absolute left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-30 max-h-60 overflow-y-auto">
+                  <div className="absolute left-0 mt-1 w-48 bg-white rounded shadow-lg border border-gray-200 py-1 z-30 max-h-60 overflow-y-auto">
                     <div
                       onClick={() => { setSelectedAssignee('ALL'); setActiveFilterDropdown(null); }}
                       className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${selectedAssignee === 'ALL' ? ' text-blue-600' : 'text-gray-700'}`}
@@ -794,7 +803,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                               {/* COLUMN HEADER */}
                               <div
                                 {...provided.dragHandleProps}
-                                className="p-3 bg-white border-b border-gray-200 rounded-t-lg flex items-center justify-between font-semibold text-xs text-gray-700 select-none cursor-grab active:cursor-grabbing"
+                                className="p-3 bg-white border-b border-gray-200 rounded-t-lg flex items-center justify-between  text-xs text-gray-700 select-none cursor-grab active:cursor-grabbing"
                               >
                                 <div className="flex items-center space-x-2">
                                   <span>{col}</span>
@@ -842,7 +851,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                                               <div className="flex items-center justify-between mb-2">
                                                 <div className="flex items-center space-x-1.5">
                                                   {TYPE_ICONS[card.type] || TYPE_ICONS.Task}
-                                                  <span className="text-xs font-semibold text-blue-600 group-hover:underline">
+                                                  <span className="text-xs  text-blue-600 group-hover:underline">
                                                     {cardKey}
                                                   </span>
                                                 </div>
@@ -920,7 +929,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                                         <div className="flex items-center justify-between">
                                           <button
                                             onClick={() => handleCreateInlineIssue(col)}
-                                            className="px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded hover:bg-blue-700 transition"
+                                            className="px-3 py-1 bg-red-600 text-white text-xs  rounded hover:bg-blue-700 transition"
                                           >
                                             Add
                                           </button>
@@ -981,7 +990,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                             </button>
                             <button
                               onClick={handleAddColumn}
-                              className="px-3 py-1 text-xs bg-red-600 text-white rounded font-semibold hover:bg-blue-700"
+                              className="px-3 py-1 text-xs bg-red-600 text-white rounded  hover:bg-blue-700"
                             >
                               Add
                             </button>
@@ -990,7 +999,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                       ) : (
                         <button
                           onClick={() => setIsAddingColumn(true)}
-                          className="w-full h-10 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded text-xs font-semibold text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1 transition bg-white/40 hover:bg-white"
+                          className="w-full h-10 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded text-xs  text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1 transition bg-white/40 hover:bg-white"
                         >
                           <Plus size={14} />
                           <span>Add column</span>
@@ -1031,7 +1040,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
           style={{ top: subtaskPos.top, left: subtaskPos.left }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between mb-2 font-semibold text-gray-800 border-b pb-1.5">
+          <div className="flex items-center justify-between mb-2  text-gray-800 border-b pb-1.5">
             <span>Subtasks ({openSubtasksPopover})</span>
             <button onClick={() => setOpenSubtasksPopover(null)} className="text-gray-400 hover:text-gray-600">
               <X size={14} />
@@ -1080,7 +1089,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
           style={{ top: cardAssigneePos.top, left: cardAssigneePos.left }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between mb-2 font-semibold text-gray-800 border-b pb-1.5">
+          <div className="flex items-center justify-between mb-2  text-gray-800 border-b pb-1.5">
             <span>Assignee ({openCardAssigneeDropdown})</span>
             <button onClick={() => setOpenCardAssigneeDropdown(null)} className="text-gray-400 hover:text-gray-600">
               <X size={14} />

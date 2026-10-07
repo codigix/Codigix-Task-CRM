@@ -97,7 +97,7 @@ export default function ITTesterDashboard() {
           />
           <button
             onClick={() => setIsTestCaseModalOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded  font-medium flex items-center gap-2 transition-colors"
+            className="bg-red-600 hover:bg-red-700 text-white p-2 rounded  font-medium flex items-center gap-2 transition-colors"
           >
             + Create Test
           </button>

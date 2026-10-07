@@ -190,7 +190,7 @@ export default function SeoGmbOffPageSeoPage() {
           </button>
           <button
             onClick={() => setActiveTab('Backlink Management')}
-            className="bg-indigo-500 hover:bg-indigo-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="bg-indigo-500 hover:bg-red-600 border-none text-white rounded p-2 text-xs  flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Plus size={14} /> Add New Campaign
           </button>

@@ -12,6 +12,7 @@ import BoardTabs from '../common/BoardTabs';
 import DataTable from '../common/DataTable';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE } from '../../utils/access';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -63,6 +64,8 @@ const ALL_COLUMNS = [
 
 const ITTasksPage = () => {
   const { user } = useAuth();
+  // Everyone can edit tickets; only managers can delete them.
+  const canDelete = canDeleteTickets(user);
   const { designation, username } = useParams();
   const isManager = Boolean(
     (designation && (
@@ -293,7 +296,7 @@ const ITTasksPage = () => {
           // Check if it's a subtask key
           for (const parent of tasks) {
             let curSt = parent.subtasks;
-            if (typeof curSt === 'string') { try { curSt = JSON.parse(curSt); } catch(e) { curSt = []; } }
+            if (typeof curSt === 'string') { try { curSt = JSON.parse(curSt); } catch (e) { curSt = []; } }
             if (Array.isArray(curSt)) {
               const matched = curSt.find(st => st.subtaskKey === ticketKey || `${parent.issue_key || parent.key}-${st.id}` === ticketKey);
               if (matched) {
@@ -325,9 +328,16 @@ const ITTasksPage = () => {
   };
 
   const deleteIssue = async (key) => {
+    if (!canDelete) {
+      showErrorToast(TICKET_DELETE_DENIED_MESSAGE);
+      return;
+    }
     try {
-      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete issue');
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE', headers: ticketDeleteHeaders(user) });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to delete issue');
+      }
       setTasks(prev => prev.filter(t => t.issue_key !== key && t.key !== key));
       setSelectedIssue(null);
       showSuccessToast(`Task ${key} deleted successfully`);
@@ -364,7 +374,7 @@ const ITTasksPage = () => {
           break;
         case 'key':
           renderFn = (val, row) => (
-            <span className={`text-blue-600 font-semibold hover:underline ${isDoneStatus(row.status) ? 'line-through' : ''}`}>
+            <span className={`text-blue-600  hover:underline ${isDoneStatus(row.status) ? 'line-through' : ''}`}>
               {(row.issue_key || row.key)}
             </span>
           );
@@ -374,7 +384,7 @@ const ITTasksPage = () => {
             const fullSummary = row.title || row.summary || '';
             const displaySummary = fullSummary.length > 60 ? fullSummary.substring(0, 60) + '...' : fullSummary;
             return (
-              <span className="text-gray-900 font-semibold cursor-pointer" title={fullSummary}>
+              <span className="text-gray-900  cursor-pointer" title={fullSummary}>
                 {displaySummary || '-'}
               </span>
             );
@@ -398,7 +408,7 @@ const ITTasksPage = () => {
         case 'reporter':
           renderFn = (val, row) => (
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] font-semibold">
+              <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] ">
                 {(row.reporter ? row.reporter.charAt(0) : "U")}
               </div>
               <span>{row.reporter || "Unassigned"}</span>
@@ -437,7 +447,7 @@ const ITTasksPage = () => {
           renderFn = (val, row) => <span className="text-gray-500 font-medium">{row.due_date ? new Date(row.due_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : row.due_date || '-'}</span>;
           break;
         case 'actions':
-          renderFn = (val, row) => (
+          renderFn = (val, row) => !canDelete ? null : (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -486,13 +496,13 @@ const ITTasksPage = () => {
           renderFn = (val, row) => (
             <div className="flex items-center gap-1">
               {row.labels && Array.isArray(row.labels) && row.labels.map(l => (
-                <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 rounded text-xs font-semibold">{l}</span>
+                <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 rounded text-xs ">{l}</span>
               ))}
             </div>
           );
           break;
         case 'actions':
-          renderFn = (val, row) => (
+          renderFn = (val, row) => !canDelete ? null : (
             <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={(e) => {
@@ -549,7 +559,7 @@ const ITTasksPage = () => {
       }
       return { ...col, sortable: col.key !== 'actions', render: renderFn };
     });
-  }, [deleteIssue]);
+  }, [deleteIssue, canDelete]);
 
   return (
     <>
@@ -593,7 +603,7 @@ const ITTasksPage = () => {
                           'bg-purple-600 text-white',
                           'bg-amber-600 text-white',
                           'bg-pink-600 text-white',
-                          'bg-indigo-600 text-white',
+                          'bg-red-600 text-white',
                           'bg-teal-600 text-white'
                         ];
                         const colorClass = colors[Number(u.id || 0) % colors.length];
@@ -635,7 +645,7 @@ const ITTasksPage = () => {
                         Project: {selectedProjectId === 'ALL' ? 'All Projects' : (projectsList.find(p => Number(p.id) === Number(selectedProjectId))?.name || 'Selected Project')} <ChevronDown size={14} />
                       </button>
                       {openFilterDropdown === 'project' && (
-                        <div className="absolute left-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs max-h-60 overflow-y-auto">
+                        <div className="absolute left-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded shadow-lg py-1 z-30 text-xs max-h-60 overflow-y-auto">
                           <div onClick={() => { setSelectedProjectId('ALL'); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedProjectId === 'ALL' ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                             All Projects
                           </div>
@@ -653,7 +663,7 @@ const ITTasksPage = () => {
                         Type: {selectedType === 'ALL' ? 'All' : selectedType} <ChevronDown size={14} />
                       </button>
                       {openFilterDropdown === 'type' && (
-                        <div className="absolute left-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs">
+                        <div className="absolute left-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded shadow-lg py-1 z-30 text-xs">
                           {['ALL', 'Task', 'Bug', 'Story', 'Test'].map(t => (
                             <div key={t} onClick={() => { setSelectedType(t); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedType === t ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                               {t === 'ALL' ? 'All Types' : t}
@@ -668,7 +678,7 @@ const ITTasksPage = () => {
                         Status: {selectedStatus === 'ALL' ? 'All' : selectedStatus} <ChevronDown size={14} />
                       </button>
                       {openFilterDropdown === 'status' && (
-                        <div className="absolute left-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs">
+                        <div className="absolute left-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded shadow-lg py-1 z-30 text-xs">
                           {['ALL', 'TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'].map(st => (
                             <div key={st} onClick={() => { setSelectedStatus(st); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedStatus === st ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                               {st === 'ALL' ? 'All Statuses' : st}
@@ -683,7 +693,7 @@ const ITTasksPage = () => {
                         Priority: {selectedPriority === 'ALL' ? 'All' : selectedPriority} <ChevronDown size={14} />
                       </button>
                       {openFilterDropdown === 'priority' && (
-                        <div className="absolute left-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs">
+                        <div className="absolute left-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded shadow-lg py-1 z-30 text-xs">
                           {['ALL', 'Low', 'Medium', 'High'].map(pr => (
                             <div key={pr} onClick={() => { setSelectedPriority(pr); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedPriority === pr ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                               {pr === 'ALL' ? 'All Priorities' : pr}
@@ -698,12 +708,12 @@ const ITTasksPage = () => {
                         <div className="relative interactive-dropdown">
                           <button
                             onClick={() => setOpenFilterDropdown(openFilterDropdown === 'assignee' ? null : 'assignee')}
-                            className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedAssignees.length > 0 ? 'bg-blue-50 border-blue-200 text-blue-700 font-semibold' : 'bg-white border-gray-300 text-gray-700'}`}
+                            className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedAssignees.length > 0 ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700'}`}
                           >
                             Assignee: {selectedAssignees.length === 0 ? 'All' : selectedAssignees.length === 1 ? selectedAssignees[0] : `${selectedAssignees.length} Selected`} <ChevronDown size={14} />
                           </button>
                           {openFilterDropdown === 'assignee' && (
-                            <div className="absolute left-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-md shadow-xl py-1 z-50 text-xs text-gray-700 max-h-60 overflow-y-auto">
+                            <div className="absolute left-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded shadow-xl py-1 z-50 text-xs text-gray-700 max-h-60 overflow-y-auto">
                               <div onClick={() => { setSelectedAssignees([]); setOpenFilterDropdown(null); }} className={`p-2 hover:bg-gray-50 cursor-pointer ${selectedAssignees.length === 0 ? ' text-blue-600 bg-blue-50' : 'text-gray-700'}`}>
                                 All Assignees
                               </div>
@@ -746,7 +756,7 @@ const ITTasksPage = () => {
                               setSelectedAssignees([]);
                             }
                           }}
-                          className={`px-3 py-1.5 rounded text-xs font-semibold border transition cursor-pointer ${onlyMyIssues ? 'bg-red-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                          className={`px-3 py-1.5 rounded text-xs  border transition cursor-pointer ${onlyMyIssues ? 'bg-red-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
                         >
                           Only My Issues
                         </button>
@@ -763,7 +773,7 @@ const ITTasksPage = () => {
                   <div className="relative interactive-dropdown">
                     <button onClick={() => toggleDropdown('moreOptions')} className="text-gray-400 hover:text-gray-600"><MoreHorizontal size={16} /></button>
                     {openFilterDropdown === 'moreOptions' && (
-                      <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs">
+                      <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded shadow-lg py-1 z-30 text-xs">
                         <div className="p-2 hover:bg-gray-50 cursor-pointer text-gray-700">Bulk modify</div>
                         <div className="p-2 hover:bg-gray-50 cursor-pointer text-gray-700">Import issues</div>
                       </div>

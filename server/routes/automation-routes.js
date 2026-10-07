@@ -1,8 +1,10 @@
 const automationService = require('../services/automationService');
+const { requireAdmin } = require('../middleware/session');
 
 module.exports = function setupAutomationRoutes(app, pool) {
   
-  app.get('/api/automation/run-checks', async (req, res) => {
+  // Sends real reminders and alerts to people, so only admins may trigger it by hand.
+  app.get('/api/automation/run-checks', requireAdmin, async (req, res) => {
     try {
       const results = await automationService.runAllChecks();
       res.json({

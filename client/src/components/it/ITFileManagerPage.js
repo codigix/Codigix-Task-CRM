@@ -156,7 +156,7 @@ export default function ITFileManagerPage() {
 
       {/* Toast Notification */}
       {notification && (
-        <div className="fixed top-2 right-6 z-50 bg-gray-900 text-white text-xs  p-2.5 rounded shadow-xl flex items-center gap-2 animate-pulse">
+        <div className="fixed top-2 right-6 z-50 bg-red-600 text-white text-xs  p-2.5 rounded shadow-xl flex items-center gap-2 animate-pulse">
           <Check size={14} className="text-green-400" /> {notification}
         </div>
       )}

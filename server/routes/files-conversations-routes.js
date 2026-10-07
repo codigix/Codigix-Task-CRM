@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { UPLOAD_DIR } = require('../config/upload');
+const { UPLOAD_DIR, uploadFileFilter, safeUploadName, UPLOAD_LIMITS } = require('../config/upload');
 
 module.exports = function setupFilesConversationsRoutes(app, pool) {
 
@@ -15,10 +15,10 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
     },
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, uniqueSuffix + '-' + file.originalname);
+      cb(null, uniqueSuffix + '-' + safeUploadName(file.originalname));
     }
   });
-  const upload = multer({ storage: storage });
+  const upload = multer({ storage: storage, fileFilter: uploadFileFilter, limits: UPLOAD_LIMITS });
 
   async function getConnection() {
     return pool.getConnection();

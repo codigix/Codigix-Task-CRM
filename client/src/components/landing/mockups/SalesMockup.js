@@ -33,12 +33,12 @@ const SalesMockup = () => {
         <div className="flex items-center gap-3">
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="text" placeholder="Search deals..." className="text-xs bg-slate-50 border border-slate-200 rounded-md pl-8 pr-3 py-1.5 w-48 outline-none focus:border-red-400" disabled />
+            <input type="text" placeholder="Search deals..." className="text-xs bg-slate-50 border border-slate-200 rounded pl-8 pr-3 py-1.5 w-48 outline-none focus:border-red-400" disabled />
           </div>
-          <button className="text-slate-500 bg-white border border-slate-200 p-1.5 rounded-md hover:bg-slate-50">
+          <button className="text-slate-500 bg-white border border-slate-200 p-1.5 rounded hover:bg-slate-50">
             <Filter size={14} />
           </button>
-          <button className="bg-red-600 text-white text-xs font-medium px-4 py-1.5 rounded-md hover:bg-red-700">
+          <button className="bg-red-600 text-white text-xs font-medium px-4 py-1.5 rounded hover:bg-red-700">
             Create Deal
           </button>
         </div>
@@ -53,7 +53,7 @@ const SalesMockup = () => {
           { l: 'Avg Deal Size', v: '$45,200', c: 'text-slate-800' }
         ].map((stat, i) => (
           <div key={i} className="bg-white rounded border border-slate-200 p-3 flex flex-col justify-center">
-            <span className="text-[9px] text-slate-500 uppercase font-semibold mb-0.5 tracking-wider">{stat.l}</span>
+            <span className="text-[9px] text-slate-500 uppercase  mb-0.5 tracking-wider">{stat.l}</span>
             <span className={`text-lg  ${stat.c}`}>{stat.v}</span>
           </div>
         ))}
@@ -91,7 +91,7 @@ const SalesMockup = () => {
                   {deal.value}
                 </div>
                 <div className="col-span-2 flex justify-center">
-                  <span className={`text-[9px] px-2 py-0.5 rounded-full border font-semibold ${getStageColor(deal.stage)}`}>
+                  <span className={`text-[9px] px-2 py-0.5 rounded-full border  ${getStageColor(deal.stage)}`}>
                     {deal.stage}
                   </span>
                 </div>

@@ -774,13 +774,13 @@ const CrmDealsPage = () => {
           <div className="flex items-center bg-gray-50 border border-gray-100 rounded p-1">
             <button
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white  text-red  ' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`p-1.5 rounded transition-all ${viewMode === 'list' ? 'bg-white  text-red  ' : 'text-gray-400 hover:text-gray-600'}`}
             >
               <List size={18} />
             </button>
             <button
               onClick={() => setViewMode('kanban')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white  text-red  ' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`p-1.5 rounded transition-all ${viewMode === 'kanban' ? 'bg-white  text-red  ' : 'text-gray-400 hover:text-gray-600'}`}
             >
               <Grid size={18} />
             </button>

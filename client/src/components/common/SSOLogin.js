@@ -76,7 +76,7 @@ export default function SSOLogin() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded shadow p-8 max-w-md w-full text-center">
         <div className="w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Authenticating</h2>
+        <h2 className="text-xl  text-gray-900 mb-2">Authenticating</h2>
         <p className="text-gray-500">Logging you securely into the CRM via SSO...</p>
       </div>
     </div>

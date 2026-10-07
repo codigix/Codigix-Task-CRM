@@ -153,10 +153,11 @@ module.exports = function setupNotificationsRoutes(app, pool) {
 
   // ── Endpoints ─────────────────────────────────────────────────────────
 
-  // List notifications for a user (defaults to the x-user-id header).
+  // List the signed-in user's notifications. x-user-id comes from the verified session, so
+  // one user can no longer read another's by passing ?user_id=.
   app.get('/api/notifications', async (req, res) => {
     try {
-      const userId = req.query.user_id || req.headers['x-user-id'];
+      const userId = req.headers['x-user-id'];
       if (!userId) return res.status(400).json({ error: 'user_id is required' });
 
       const { unread, limit = 30, skip = 0, type } = req.query;
@@ -188,7 +189,7 @@ module.exports = function setupNotificationsRoutes(app, pool) {
   // Lightweight badge count for polling.
   app.get('/api/notifications/unread-count', async (req, res) => {
     try {
-      const userId = req.query.user_id || req.headers['x-user-id'];
+      const userId = req.headers['x-user-id'];
       if (!userId) return res.json({ unreadCount: 0 });
       const [[row]] = await db.query(
         'SELECT COUNT(*) AS unread FROM notifications WHERE user_id = ? AND is_read = 0',
@@ -218,7 +219,7 @@ module.exports = function setupNotificationsRoutes(app, pool) {
         role,
         excludeUserId: exclude_user_id || req.headers['x-user-id'],
         type, title, message, link,
-        actorName: actor_name || req.headers['x-user-name'],
+        actorName: req.headers['x-user-name'] || actor_name,
         entityType: entity_type,
         entityKey: entity_key
       });
@@ -234,7 +235,7 @@ module.exports = function setupNotificationsRoutes(app, pool) {
 
   app.put('/api/notifications/read-all', async (req, res) => {
     try {
-      const userId = req.body.user_id || req.headers['x-user-id'];
+      const userId = req.headers['x-user-id'];
       if (!userId) return res.status(400).json({ error: 'user_id is required' });
       const [result] = await db.query(
         'UPDATE notifications SET is_read = 1, read_at = NOW() WHERE user_id = ? AND is_read = 0',
@@ -249,8 +250,8 @@ module.exports = function setupNotificationsRoutes(app, pool) {
   app.put('/api/notifications/:id/read', async (req, res) => {
     try {
       const [result] = await db.query(
-        'UPDATE notifications SET is_read = 1, read_at = NOW() WHERE id = ?',
-        [req.params.id]
+        'UPDATE notifications SET is_read = 1, read_at = NOW() WHERE id = ? AND user_id = ?',
+        [req.params.id, req.headers['x-user-id']]
       );
       if (result.affectedRows === 0) return res.status(404).json({ error: 'Notification not found' });
       res.json({ success: true });
@@ -261,7 +262,7 @@ module.exports = function setupNotificationsRoutes(app, pool) {
 
   app.delete('/api/notifications/:id', async (req, res) => {
     try {
-      const [result] = await db.query('DELETE FROM notifications WHERE id = ?', [req.params.id]);
+      const [result] = await db.query('DELETE FROM notifications WHERE id = ? AND user_id = ?', [req.params.id, req.headers['x-user-id']]);
       if (result.affectedRows === 0) return res.status(404).json({ error: 'Notification not found' });
       res.json({ success: true });
     } catch (error) {
@@ -272,7 +273,7 @@ module.exports = function setupNotificationsRoutes(app, pool) {
   // Clear everything already read, for the "clear" action in the UI.
   app.delete('/api/notifications', async (req, res) => {
     try {
-      const userId = req.query.user_id || req.headers['x-user-id'];
+      const userId = req.headers['x-user-id'];
       if (!userId) return res.status(400).json({ error: 'user_id is required' });
       const [result] = await db.query('DELETE FROM notifications WHERE user_id = ? AND is_read = 1', [userId]);
       res.json({ success: true, deleted: result.affectedRows });

@@ -15,10 +15,10 @@ const ITIssueLinkedItems = ({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-gray-700 tracking-wide block">Linked work items</label>
+        <label className="text-xs  text-gray-700 tracking-wide block">Linked work items</label>
         <button
           onClick={() => setIsLinkingIssue(!isLinkingIssue)}
-          className="flex items-center gap-1 text-xs text-blue-600 font-semibold hover:underline bg-transparent cursor-pointer"
+          className="flex items-center gap-1 text-xs text-blue-600  hover:underline bg-transparent cursor-pointer"
         >
           <Plus size={13} /> Link work item
         </button>
@@ -29,8 +29,8 @@ const ITIssueLinkedItems = ({
           <div key={li.key} className="flex items-center justify-between text-xs border border-gray-100 p-2 rounded bg-gray-50/50 hover:bg-gray-50 group transition">
             <div className="flex items-center gap-2">
               <CornerDownRight size={13} className="text-gray-400" />
-              <span className="font-semibold text-gray-500">{li.relation}</span>
-              <a href={`#${li.key}`} className="font-semibold text-blue-600 hover:underline">{li.key}</a>
+              <span className=" text-gray-500">{li.relation}</span>
+              <a href={`#${li.key}`} className=" text-blue-600 hover:underline">{li.key}</a>
               <span className="text-gray-700 font-medium truncate max-w-[200px]">{li.title}</span>
             </div>
             <button

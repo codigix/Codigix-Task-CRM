@@ -76,7 +76,7 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-      <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white w-full max-w-2xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-blue-700 to-indigo-900 text-white px-5 py-4 flex items-center justify-between shadow">
           <div className="flex items-center gap-3">
@@ -84,7 +84,7 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
               <Mail size={20} />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-white">Send Proposal Email Preview</h3>
+              <h3 className="text-base  text-white">Send Proposal Email Preview</h3>
               <p className="text-xs text-blue-100">Review all details before sending proposal to client</p>
             </div>
           </div>
@@ -102,7 +102,7 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
           {/* Email Meta Fields */}
           <div className="bg-gray-50 border border-gray-200 rounded p-3.5 space-y-2.5">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-700 w-24 shrink-0">To Email:*</span>
+              <span className=" text-gray-700 w-24 shrink-0">To Email:*</span>
               <input
                 type="email"
                 value={recipientEmail}
@@ -112,7 +112,7 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-700 w-24 shrink-0">Subject:*</span>
+              <span className=" text-gray-700 w-24 shrink-0">Subject:*</span>
               <input
                 type="text"
                 value={subject}
@@ -145,7 +145,7 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
               <span className="text-[11px]  text-emerald-900 block mb-1.5">Services Needed:</span>
               <div className="flex flex-wrap gap-1.5">
                 {proposal.service_needed.split(',').map((s, idx) => (
-                  <span key={idx} className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[10px] font-semibold border border-emerald-200">
+                  <span key={idx} className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[10px]  border border-emerald-200">
                     {s.trim()}
                   </span>
                 ))}
@@ -180,7 +180,7 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
 
           {/* Custom Message to Client */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
+            <label className="block text-xs  text-gray-700 mb-1">
               Email Body Message
             </label>
             <textarea
@@ -215,7 +215,7 @@ const SendProposalEmailModal = ({ isOpen, onClose, proposal, onSuccess }) => {
             type="button"
             onClick={handleSend}
             disabled={isSending}
-            className="p-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
+            className="p-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs  shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
           >
             {isSending ? (
               <>

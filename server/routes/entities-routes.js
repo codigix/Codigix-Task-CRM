@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { generateProjectTasks } = require('../middleware/helpers');
+const { generateProjectTasks, hashPassword, isPasswordHash } = require('../middleware/helpers');
 
 module.exports = function setupEntitiesRoutes(app, pool) {
   // Use pool.query directly for better connection management
@@ -476,7 +476,7 @@ module.exports = function setupEntitiesRoutes(app, pool) {
 
       if (password) {
         updateFields.push('password = ?');
-        params.push(password);
+        params.push(isPasswordHash(password) ? password : hashPassword(password));
       }
 
       params.push(targetId);
@@ -544,7 +544,7 @@ module.exports = function setupEntitiesRoutes(app, pool) {
           role_id, department, email_opt_out, status
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          userUuid, first_name, last_name || null, username, email, password, 
+          userUuid, first_name, last_name || null, username, email, isPasswordHash(password) ? password : hashPassword(password),
           phone1 || null, phone1_country || 'US', 
           phone2 || null, phone2_country || 'US', 
           location || null, avatar || null, finalRoleId, department || null,

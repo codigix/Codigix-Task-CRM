@@ -63,12 +63,12 @@ const SeoGmbGeoOptimizationPage = () => {
   }, [projectId, dateRange]);
 
   const KPICard = ({ title, value, change, changeLabel, icon: Icon, colorClass, sparklineColor }) => (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center h-full relative overflow-hidden group">
+    <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col justify-center h-full relative overflow-hidden group">
       <div className="flex items-center gap-3 mb-2">
         <div className={`p-2 rounded bg-opacity-10 ${colorClass.replace('text', 'bg')}`}>
           <Icon size={18} className={colorClass} />
         </div>
-        <span className="text-gray-900 text-xs font-semibold">{title}</span>
+        <span className="text-gray-900 text-xs ">{title}</span>
       </div>
       <div className="flex justify-between items-end">
         <div>
@@ -111,9 +111,9 @@ const SeoGmbGeoOptimizationPage = () => {
 
         {/* Row 2 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-semibold text-gray-900 text-sm">AI Engine Visibility</h3>
+              <h3 className=" text-gray-900 text-sm">AI Engine Visibility</h3>
               <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
                 <option>Last 7 Days ▾</option>
               </select>
@@ -125,16 +125,16 @@ const SeoGmbGeoOptimizationPage = () => {
                   <div className="flex-1 h-2 bg-gray-100 rounded-full mx-3 overflow-hidden">
                     <div className={`h-full ${eng.color}`} style={{ width: `${eng.s}%` }}></div>
                   </div>
-                  <span className="w-8 font-semibold text-gray-900">{eng.s}%</span>
-                  <span className="w-10 text-right font-semibold text-green-500">{eng.c}</span>
+                  <span className="w-8  text-gray-900">{eng.s}%</span>
+                  <span className="w-10 text-right  text-green-500">{eng.c}</span>
                 </div>
               ))}
             </div>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-4 hover:underline text-center w-full">View All AI Engines &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-4 hover:underline text-center w-full">View All AI Engines &rarr;</button>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">AI Visibility Trend</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">AI Visibility Trend</h3>
             <div className="h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.trendData}>
@@ -159,8 +159,8 @@ const SeoGmbGeoOptimizationPage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">GEO Score Breakdown</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col">
+            <h3 className=" text-gray-900 text-sm mb-4">GEO Score Breakdown</h3>
             <div className="flex-1 flex items-center justify-between">
               <div className="relative w-[140px] h-[140px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -173,14 +173,14 @@ const SeoGmbGeoOptimizationPage = () => {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-2xl  text-gray-900">{ov.geoScore.value}</span>
-                  <span className="text-[10px] text-gray-500 font-semibold">/100</span>
+                  <span className="text-[10px] text-gray-500 ">/100</span>
                 </div>
               </div>
               <div className="flex-1 pl-4 space-y-3">
                 {data.geoScoreDist.map((item, i) => (
                   <div key={i} className="flex items-center justify-between text-[10px] font-medium">
                     <div className="flex items-center gap-1.5 text-gray-700">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: item.color }}></div>
+                      <div className="w-2 h-2 rounded" style={{ backgroundColor: item.color }}></div>
                       {item.name}
                     </div>
                     <span className="text-gray-900 ">{item.value}<span className="text-gray-400 font-normal">/100</span></span>
@@ -188,20 +188,20 @@ const SeoGmbGeoOptimizationPage = () => {
                 ))}
               </div>
             </div>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-4 hover:underline text-center w-full">View Full Breakdown &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-4 hover:underline text-center w-full">View Full Breakdown &rarr;</button>
           </div>
         </div>
 
         {/* Row 3 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Top AI Citations (Sources)</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">Top AI Citations (Sources)</h3>
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                  <th className="pb-2 font-semibold">Source</th>
-                  <th className="pb-2 font-semibold text-center">Mentions</th>
-                  <th className="pb-2 font-semibold text-center">Trend</th>
+                  <th className="pb-2 ">Source</th>
+                  <th className="pb-2  text-center">Mentions</th>
+                  <th className="pb-2  text-center">Trend</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -214,11 +214,11 @@ const SeoGmbGeoOptimizationPage = () => {
                 ))}
               </tbody>
             </table>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-4 hover:underline text-center w-full">View All Citations &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-4 hover:underline text-center w-full">View All Citations &rarr;</button>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Top Optimization Opportunities</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">Top Optimization Opportunities</h3>
             <div className="space-y-4">
               {data.optimizationOpportunities.map((opp, i) => (
                 <div key={i} className="flex justify-between items-center text-xs">
@@ -230,18 +230,18 @@ const SeoGmbGeoOptimizationPage = () => {
                 </div>
               ))}
             </div>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-4 hover:underline text-center w-full">View All Opportunities &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-4 hover:underline text-center w-full">View All Opportunities &rarr;</button>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Recent GEO Audits</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">Recent GEO Audits</h3>
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                  <th className="pb-2 font-semibold">Audit Name</th>
-                  <th className="pb-2 font-semibold">Date</th>
-                  <th className="pb-2 font-semibold text-center">GEO Score</th>
-                  <th className="pb-2 font-semibold text-center">Status</th>
+                  <th className="pb-2 ">Audit Name</th>
+                  <th className="pb-2 ">Date</th>
+                  <th className="pb-2  text-center">GEO Score</th>
+                  <th className="pb-2  text-center">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -257,7 +257,7 @@ const SeoGmbGeoOptimizationPage = () => {
                 ))}
               </tbody>
             </table>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-4 hover:underline text-center w-full">View All Audits &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-4 hover:underline text-center w-full">View All Audits &rarr;</button>
           </div>
         </div>
       </div>
@@ -269,9 +269,9 @@ const SeoGmbGeoOptimizationPage = () => {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm lg:col-span-2">
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm lg:col-span-2">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-semibold text-gray-900 text-sm">AI Engine Visibility Overview</h3>
+              <h3 className=" text-gray-900 text-sm">AI Engine Visibility Overview</h3>
               <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
                 <option>Last 7 Days ▾</option>
               </select>
@@ -280,12 +280,12 @@ const SeoGmbGeoOptimizationPage = () => {
               <table className="w-full text-left text-xs whitespace-nowrap">
                 <thead>
                   <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                    <th className="pb-3 font-semibold">AI Platform</th>
-                    <th className="pb-3 font-semibold text-center">Visibility Score</th>
-                    <th className="pb-3 font-semibold text-center">Change</th>
-                    <th className="pb-3 font-semibold text-center">Mentions</th>
-                    <th className="pb-3 font-semibold text-center">Citations</th>
-                    <th className="pb-3 font-semibold text-center">Trend</th>
+                    <th className="pb-3 ">AI Platform</th>
+                    <th className="pb-3  text-center">Visibility Score</th>
+                    <th className="pb-3  text-center">Change</th>
+                    <th className="pb-3  text-center">Mentions</th>
+                    <th className="pb-3  text-center">Citations</th>
+                    <th className="pb-3  text-center">Trend</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -312,8 +312,8 @@ const SeoGmbGeoOptimizationPage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">AI Engine Share of Mentions</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">AI Engine Share of Mentions</h3>
             <div className="flex-1 flex flex-col items-center">
               <div className="relative w-[180px] h-[180px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -326,14 +326,14 @@ const SeoGmbGeoOptimizationPage = () => {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-2xl  text-gray-900">2,042</span>
-                  <span className="text-[10px] text-gray-500 font-semibold">Total Mentions</span>
+                  <span className="text-[10px] text-gray-500 ">Total Mentions</span>
                 </div>
               </div>
               <div className="w-full mt-4 space-y-2 px-2">
                 {data.aiEngineShare.map((item, i) => (
                   <div key={i} className="flex items-center justify-between text-[10px] font-medium">
                     <div className="flex items-center gap-1.5 text-gray-700">
-                      <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }}></div>
+                      <div className="w-2.5 h-2.5 rounded" style={{ backgroundColor: item.color }}></div>
                       {item.name}
                     </div>
                     <span className="text-gray-900 ">{item.value}%</span>
@@ -344,10 +344,10 @@ const SeoGmbGeoOptimizationPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900 text-sm">AI Engine Insights</h3>
-            <button className="text-indigo-600 text-[10px] font-semibold hover:underline">View All Insights &rarr;</button>
+            <h3 className=" text-gray-900 text-sm">AI Engine Insights</h3>
+            <button className="text-indigo-600 text-[10px]  hover:underline">View All Insights &rarr;</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {data.aiEngineInsights.map((card, i) => {
@@ -359,7 +359,7 @@ const SeoGmbGeoOptimizationPage = () => {
                 <div key={i} className="border border-gray-100 rounded p-4 bg-gray-50/30 hover:bg-gray-50 transition">
                   <div className="flex items-center gap-2 mb-3">
                     <div className={`p-1.5 rounded ${bgs[card.p]}`}><Icon size={14} className={colors[card.p]} /></div>
-                    <span className="font-semibold text-gray-900 text-xs">{card.p}</span>
+                    <span className=" text-gray-900 text-xs">{card.p}</span>
                   </div>
                   <h4 className="font-medium text-gray-800 text-xs mb-2">{card.h}</h4>
                   <div className="text-[10px]  text-green-600 mb-3">{card.st}</div>
@@ -387,8 +387,8 @@ const SeoGmbGeoOptimizationPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm lg:col-span-2">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Content Trend</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm lg:col-span-2">
+            <h3 className=" text-gray-900 text-sm mb-4">Content Trend</h3>
             <div className="h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data.sparklineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -408,8 +408,8 @@ const SeoGmbGeoOptimizationPage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Citations by Source Type</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">Citations by Source Type</h3>
             <div className="flex-1 flex flex-col items-center justify-center">
               <div className="relative w-[150px] h-[150px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -422,14 +422,14 @@ const SeoGmbGeoOptimizationPage = () => {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-xl  text-gray-900">{cKpi.total.value}</span>
-                  <span className="text-[9px] text-gray-500 font-semibold">Total</span>
+                  <span className="text-[9px] text-gray-500 ">Total</span>
                 </div>
               </div>
               <div className="w-full mt-2 grid grid-cols-2 gap-2 px-2">
                 {data.citationsBySource.map((item, i) => (
                   <div key={i} className="flex items-center justify-between text-[9px] font-medium">
                     <div className="flex items-center gap-1 text-gray-700">
-                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: item.color }}></div> {item.name}
+                      <div className="w-2 h-2 rounded" style={{ backgroundColor: item.color }}></div> {item.name}
                     </div>
                     <span className="text-gray-900 ">{item.value}%</span>
                   </div>
@@ -440,16 +440,16 @@ const SeoGmbGeoOptimizationPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Top Citation Sources</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">Top Citation Sources</h3>
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                  <th className="pb-3 font-semibold">Source</th>
-                  <th className="pb-3 font-semibold text-center">Type</th>
-                  <th className="pb-3 font-semibold text-center">Citations</th>
-                  <th className="pb-3 font-semibold text-center">Authority</th>
-                  <th className="pb-3 font-semibold text-center">Trend</th>
+                  <th className="pb-3 ">Source</th>
+                  <th className="pb-3  text-center">Type</th>
+                  <th className="pb-3  text-center">Citations</th>
+                  <th className="pb-3  text-center">Authority</th>
+                  <th className="pb-3  text-center">Trend</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -464,11 +464,11 @@ const SeoGmbGeoOptimizationPage = () => {
                 ))}
               </tbody>
             </table>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-4 hover:underline text-center w-full">View All Sources &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-4 hover:underline text-center w-full">View All Sources &rarr;</button>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Citation Opportunities</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">Citation Opportunities</h3>
             <div className="space-y-4 mt-4">
               {[
                 { icon: Target, t: 'Get featured on industry blogs' },
@@ -484,7 +484,7 @@ const SeoGmbGeoOptimizationPage = () => {
                 </div>
               ))}
             </div>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-6 hover:underline text-center w-full">View All Opportunities &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-6 hover:underline text-center w-full">View All Opportunities &rarr;</button>
           </div>
         </div>
       </div>
@@ -497,14 +497,14 @@ const SeoGmbGeoOptimizationPage = () => {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex items-center justify-between col-span-1">
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex items-center justify-between col-span-1">
             <div className="w-full">
-              <h3 className="font-semibold text-gray-900 text-xs mb-2">Schema Coverage</h3>
+              <h3 className=" text-gray-900 text-xs mb-2">Schema Coverage</h3>
               <div className="flex items-end gap-2">
                 <span className="text-3xl  text-green-600">{es.coverage.value}<span className="text-lg text-gray-400">/100</span></span>
               </div>
               <span className="text-[10px]  text-green-600 block mt-1">{es.coverage.status}</span>
-              <span className="text-[9px] font-semibold text-green-600 block mt-2">↑ {es.coverage.trend}% <span className="text-gray-400">vs last 7 days</span></span>
+              <span className="text-[9px]  text-green-600 block mt-2">↑ {es.coverage.trend}% <span className="text-gray-400">vs last 7 days</span></span>
               <div className="mt-4 space-y-1 w-full">
                 <div className="flex justify-between text-[10px] font-medium"><span className="text-gray-500">Valid Schemas</span><span className="text-gray-900 ">{es.coverage.valid}</span></div>
                 <div className="flex justify-between text-[10px] font-medium"><span className="text-gray-500">Warnings</span><span className="text-gray-900 ">{es.coverage.warnings}</span></div>
@@ -513,16 +513,16 @@ const SeoGmbGeoOptimizationPage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1">
-            <h3 className="font-semibold text-gray-900 text-xs mb-4">Schema Types</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm col-span-1">
+            <h3 className=" text-gray-900 text-xs mb-4">Schema Types</h3>
             <table className="w-full text-left text-[9px] whitespace-nowrap">
               <thead>
                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                  <th className="pb-2 font-semibold">Schema Type</th>
-                  <th className="pb-2 font-semibold text-center">Valid</th>
-                  <th className="pb-2 font-semibold text-center">Warnings</th>
-                  <th className="pb-2 font-semibold text-center">Errors</th>
-                  <th className="pb-2 font-semibold text-center">Coverage</th>
+                  <th className="pb-2 ">Schema Type</th>
+                  <th className="pb-2  text-center">Valid</th>
+                  <th className="pb-2  text-center">Warnings</th>
+                  <th className="pb-2  text-center">Errors</th>
+                  <th className="pb-2  text-center">Coverage</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -537,11 +537,11 @@ const SeoGmbGeoOptimizationPage = () => {
                 ))}
               </tbody>
             </table>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-2 hover:underline text-center w-full">View All Schemas &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-2 hover:underline text-center w-full">View All Schemas &rarr;</button>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1">
-            <h3 className="font-semibold text-gray-900 text-xs mb-2">Entity Recognition</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm col-span-1">
+            <h3 className=" text-gray-900 text-xs mb-2">Entity Recognition</h3>
             <span className="text-[10px] text-gray-500">Total Entities</span>
             <div className="text-3xl  text-gray-900 mb-4">{es.recognition.total}</div>
             <div className="space-y-2">
@@ -551,20 +551,20 @@ const SeoGmbGeoOptimizationPage = () => {
               <div className="flex justify-between text-[10px] font-medium border-b border-gray-50 pb-1"><span className="text-gray-600">Products</span><span className="text-gray-900 ">{es.recognition.products}</span></div>
               <div className="flex justify-between text-[10px] font-medium border-b border-gray-50 pb-1"><span className="text-gray-600">Services</span><span className="text-gray-900 ">{es.recognition.services}</span></div>
             </div>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline text-center w-full">View All Entities &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-3 hover:underline text-center w-full">View All Entities &rarr;</button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Top Entities</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">Top Entities</h3>
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                  <th className="pb-3 font-semibold">Entity</th>
-                  <th className="pb-3 font-semibold text-center">Type</th>
-                  <th className="pb-3 font-semibold text-center">Mentions</th>
-                  <th className="pb-3 font-semibold text-center">Trend</th>
+                  <th className="pb-3 ">Entity</th>
+                  <th className="pb-3  text-center">Type</th>
+                  <th className="pb-3  text-center">Mentions</th>
+                  <th className="pb-3  text-center">Trend</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -578,15 +578,15 @@ const SeoGmbGeoOptimizationPage = () => {
                 ))}
               </tbody>
             </table>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-4 hover:underline text-center w-full">View All Entities &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-4 hover:underline text-center w-full">View All Entities &rarr;</button>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Schema Issues</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">Schema Issues</h3>
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                  <th className="pb-3 font-semibold">Issue</th>
+                  <th className="pb-3 ">Issue</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -600,7 +600,7 @@ const SeoGmbGeoOptimizationPage = () => {
                 ))}
               </tbody>
             </table>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-4 hover:underline text-center w-full">View All Issues &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-4 hover:underline text-center w-full">View All Issues &rarr;</button>
           </div>
         </div>
       </div>
@@ -619,21 +619,21 @@ const SeoGmbGeoOptimizationPage = () => {
           <KPICard title="Implemented" value={rec.implemented} icon={CheckCircle2} colorClass="text-indigo-600" />
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900">Recommendations</h3>
-            <button className="text-indigo-600 text-[10px] font-semibold hover:underline">View All Recommendations &rarr;</button>
+            <h3 className=" text-gray-900">Recommendations</h3>
+            <button className="text-indigo-600 text-[10px]  hover:underline">View All Recommendations &rarr;</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                  <th className="pb-3 font-semibold">Recommendation</th>
-                  <th className="pb-3 font-semibold text-center">Priority</th>
-                  <th className="pb-3 font-semibold text-center">Impact</th>
-                  <th className="pb-3 font-semibold text-center">Effort</th>
-                  <th className="pb-3 font-semibold text-center">Status</th>
-                  <th className="pb-3 font-semibold text-center">Action</th>
+                  <th className="pb-3 ">Recommendation</th>
+                  <th className="pb-3  text-center">Priority</th>
+                  <th className="pb-3  text-center">Impact</th>
+                  <th className="pb-3  text-center">Effort</th>
+                  <th className="pb-3  text-center">Status</th>
+                  <th className="pb-3  text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -643,9 +643,9 @@ const SeoGmbGeoOptimizationPage = () => {
                     <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded  ${row.p === 'High' ? 'text-red-600 bg-red-50' : row.p === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.p}</span></td>
                     <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded  ${row.i === 'High' ? 'text-red-600 bg-red-50' : row.i === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.i}</span></td>
                     <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded  ${row.e === 'High' ? 'text-red-600 bg-red-50' : row.e === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50'}`}>{row.e}</span></td>
-                    <td className="py-3 text-center"><span className={`font-semibold ${row.s === 'Completed' ? 'text-green-600' : row.s === 'In Progress' ? 'text-indigo-600' : 'text-gray-500'}`}>{row.s}</span></td>
+                    <td className="py-3 text-center"><span className={` ${row.s === 'Completed' ? 'text-green-600' : row.s === 'In Progress' ? 'text-indigo-600' : 'text-gray-500'}`}>{row.s}</span></td>
                     <td className="py-3 text-center">
-                      <button className={`px-3 py-1 rounded text-[10px]  transition flex items-center justify-center mx-auto ${row.a === 'Done' ? 'text-green-600' : (row.a === 'Fix Now' ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200')}`}>
+                      <button className={`px-3 py-1 rounded text-[10px]  transition flex items-center justify-center mx-auto ${row.a === 'Done' ? 'text-green-600' : (row.a === 'Fix Now' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200')}`}>
                         {row.a === 'Done' ? <Check size={14} /> : row.a}
                       </button>
                     </td>
@@ -654,7 +654,7 @@ const SeoGmbGeoOptimizationPage = () => {
               </tbody>
             </table>
           </div>
-          <button className="mt-6 flex items-center justify-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline w-full">
+          <button className="mt-6 flex items-center justify-center gap-1 text-indigo-600 text-[10px]  hover:underline w-full">
             View Implementation Plan &rarr;
           </button>
         </div>
@@ -668,8 +668,8 @@ const SeoGmbGeoOptimizationPage = () => {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1 flex flex-col items-center text-center">
-            <h3 className="font-semibold text-gray-900 text-sm mb-6 w-full text-left">Audit Summary</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm col-span-1 flex flex-col items-center text-center">
+            <h3 className=" text-gray-900 text-sm mb-6 w-full text-left">Audit Summary</h3>
             <div className="relative w-[120px] h-[120px] mb-4">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -684,13 +684,13 @@ const SeoGmbGeoOptimizationPage = () => {
             </div>
             <div className="text-[10px]  text-green-600 bg-green-50 px-2 py-0.5 rounded mb-2">{ar.summary.status}</div>
             <div className="text-[9px] text-gray-400 mb-6">{ar.summary.date}</div>
-            <button className="flex items-center gap-2 text-indigo-600 text-[10px] font-semibold hover:underline">
+            <button className="flex items-center gap-2 text-indigo-600 text-[10px]  hover:underline">
               <Download size={14} /> Download PDF
             </button>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1">
-            <h3 className="font-semibold text-gray-900 text-sm mb-6">Audit Details</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm col-span-1">
+            <h3 className=" text-gray-900 text-sm mb-6">Audit Details</h3>
             <div className="space-y-4">
               <div className="flex justify-between text-xs font-medium border-b border-gray-50 pb-2"><span className="text-gray-600">Pages Crawled</span><span className="text-gray-900 ">{ar.details.pagesCrawled}</span></div>
               <div className="flex justify-between text-xs font-medium border-b border-gray-50 pb-2"><span className="text-gray-600">Indexable Pages</span><span className="text-gray-900 ">{ar.details.indexablePages}</span></div>
@@ -700,8 +700,8 @@ const SeoGmbGeoOptimizationPage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm col-span-1">
-            <h3 className="font-semibold text-gray-900 text-sm mb-6">Score Breakdown</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm col-span-1">
+            <h3 className=" text-gray-900 text-sm mb-6">Score Breakdown</h3>
             <div className="space-y-4">
               {ar.scoreBreakdown.map((item, i) => (
                 <div key={i} className="text-[10px]">
@@ -710,7 +710,7 @@ const SeoGmbGeoOptimizationPage = () => {
                     <span className=" text-gray-900">{item.v}/100</span>
                   </div>
                   <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full bg-indigo-600`} style={{ width: `${item.v}%` }}></div>
+                    <div className={`h-full bg-red-600`} style={{ width: `${item.v}%` }}></div>
                   </div>
                 </div>
               ))}
@@ -719,16 +719,16 @@ const SeoGmbGeoOptimizationPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm lg:col-span-2">
-            <h3 className="font-semibold text-gray-900 text-sm mb-6">Audit Sections</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm lg:col-span-2">
+            <h3 className=" text-gray-900 text-sm mb-6">Audit Sections</h3>
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                  <th className="pb-3 font-semibold">Section</th>
-                  <th className="pb-3 font-semibold text-center">Score</th>
-                  <th className="pb-3 font-semibold text-center">Issues</th>
-                  <th className="pb-3 font-semibold text-center">Status</th>
-                  <th className="pb-3 font-semibold text-center">Action</th>
+                  <th className="pb-3 ">Section</th>
+                  <th className="pb-3  text-center">Score</th>
+                  <th className="pb-3  text-center">Issues</th>
+                  <th className="pb-3  text-center">Status</th>
+                  <th className="pb-3  text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -741,7 +741,7 @@ const SeoGmbGeoOptimizationPage = () => {
                       <span className="px-2 py-0.5 rounded text-[9px]  bg-green-50 text-green-600">{row.st}</span>
                     </td>
                     <td className="py-3 text-center">
-                      <button className="text-indigo-600 text-[10px] font-semibold hover:underline">View Details</button>
+                      <button className="text-indigo-600 text-[10px]  hover:underline">View Details</button>
                     </td>
                   </tr>
                 ))}
@@ -749,8 +749,8 @@ const SeoGmbGeoOptimizationPage = () => {
             </table>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Top Issues</h3>
+          <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+            <h3 className=" text-gray-900 text-sm mb-4">Top Issues</h3>
             <div className="space-y-4 mt-2">
               {ar.topIssues.map((issue, idx) => (
                 <div key={idx} className="flex items-center gap-2 text-xs text-gray-700">
@@ -759,7 +759,7 @@ const SeoGmbGeoOptimizationPage = () => {
                 </div>
               ))}
             </div>
-            <button className="text-indigo-600 text-[10px] font-semibold mt-6 hover:underline text-center w-full">View All Issues &rarr;</button>
+            <button className="text-indigo-600 text-[10px]  mt-6 hover:underline text-center w-full">View All Issues &rarr;</button>
           </div>
         </div>
       </div>
@@ -771,7 +771,7 @@ const SeoGmbGeoOptimizationPage = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-6 py-4 flex flex-wrap items-center justify-between gap-4 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <div className="p-2 border border-gray-200 rounded bg-indigo-600">
+          <div className="p-2 border border-gray-200 rounded bg-red-600">
             <Globe className="text-white" size={20} />
           </div>
           <div>
@@ -793,7 +793,7 @@ const SeoGmbGeoOptimizationPage = () => {
           <button className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">
             <RefreshCw size={14} />
           </button>
-          <button className="p-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+          <button className="p-2 bg-red-600 text-white text-xs  rounded hover:bg-red-700 transition shadow-sm flex items-center gap-2">
             <Download size={14} /> Export Report
           </button>
         </div>
@@ -822,12 +822,12 @@ const SeoGmbGeoOptimizationPage = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64 text-indigo-600">
             <RefreshCw size={32} className="animate-spin mb-4" />
-            <p className="font-semibold text-sm">Loading GEO Optimization Data...</p>
+            <p className=" text-sm">Loading GEO Optimization Data...</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center h-64 text-red-500">
             <AlertTriangle size={32} className="mb-4" />
-            <p className="font-semibold text-sm">{error}</p>
+            <p className=" text-sm">{error}</p>
           </div>
         ) : (
           <>

@@ -101,7 +101,7 @@ const ModuleShowcase = () => {
                   <div className="w-3 h-3 rounded-full bg-green-400 shadow-sm border border-green-500/20"></div>
                 </div>
                 <div className="flex-1 flex justify-center">
-                  <div className="flex items-center text-xs font-medium text-slate-500 bg-slate-100/80 px-4 py-1.5 rounded-md shadow-sm border border-slate-200/50 max-w-[200px] truncate">
+                  <div className="flex items-center text-xs font-medium text-slate-500 bg-slate-100/80 px-4 py-1.5 rounded shadow-sm border border-slate-200/50 max-w-[200px] truncate">
                     <span className="opacity-50 mr-1">🔒</span> app.codigix.com/module/{activeModule}
                   </div>
                 </div>

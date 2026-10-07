@@ -4,13 +4,13 @@ import { Plus, Sparkles, ChevronDown, User, Trash2, X, CheckSquare, Edit3, Searc
 
 const AVATAR_COLORS = [
   'bg-red-600 text-white',
-  'bg-blue-600 text-white',
+  'bg-red-700 text-white',
   'bg-purple-600 text-white',
   'bg-emerald-600 text-white',
   'bg-orange-500 text-white',
   'bg-pink-600 text-white',
   'bg-teal-600 text-white',
-  'bg-indigo-600 text-white'
+  'bg-red-600 text-white'
 ];
 
 const getSubtaskAvatarColor = (name) => {
@@ -136,7 +136,7 @@ export const SubtaskAssigneePicker = ({
                 <User size={11} className="text-gray-500" />
               </div>
             ) : (
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-semibold shrink-0 ${getSubtaskAvatarColor(currentName)}`}>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px]  shrink-0 ${getSubtaskAvatarColor(currentName)}`}>
                 {getSafeInitials(currentName, getInitials)}
               </div>
             )}
@@ -157,7 +157,7 @@ export const SubtaskAssigneePicker = ({
               <User size={10} className="text-gray-500" />
             </div>
           ) : (
-            <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-semibold shrink-0 ${getSubtaskAvatarColor(currentName)}`}>
+            <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px]  shrink-0 ${getSubtaskAvatarColor(currentName)}`}>
               {getSafeInitials(currentName, getInitials)}
             </div>
           )}
@@ -182,7 +182,7 @@ export const SubtaskAssigneePicker = ({
           <div
             ref={dropdownRef}
             onClick={(e) => e.stopPropagation()}
-            className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] overflow-hidden text-xs font-sans animate-in fade-in zoom-in-95 duration-100"
+            className="fixed bg-white border border-gray-200 rounded shadow-xl z-[9999] overflow-hidden text-xs font-sans animate-in fade-in zoom-in-95 duration-100"
             style={{
               top: `${menuTop}px`,
               left: `${menuLeft}px`,
@@ -214,7 +214,7 @@ export const SubtaskAssigneePicker = ({
               {(!q || 'unassigned'.includes(q)) && (
                 <div
                   onClick={() => handlePick('Unassigned')}
-                  className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isUnassigned ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                  className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isUnassigned ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                 >
                   <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
                     <User size={12} className="text-gray-500" />
@@ -231,9 +231,9 @@ export const SubtaskAssigneePicker = ({
                   <div
                     key={u.id || uName}
                     onClick={() => handlePick(uName)}
-                    className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff] font-semibold text-blue-900' : 'text-gray-700'}`}
+                    className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                   >
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-semibold shrink-0 ${getSubtaskAvatarColor(uName)}`}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px]  shrink-0 ${getSubtaskAvatarColor(uName)}`}>
                       {getSafeInitials(uName, getInitials)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -350,7 +350,7 @@ const ITSubtasksTable = ({
       {/* Subtasks Header & Progress */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-gray-700 tracking-wide block">
+          <label className="text-xs  text-gray-700 tracking-wide block">
             Subtasks ({subtasks.filter(s => s.completed || s.status === 'Done').length} of {subtasks.length} completed)
           </label>
           {subtasks.length > 0 && (
@@ -366,7 +366,7 @@ const ITSubtasksTable = ({
               setTimeout(() => document.getElementById('subtask-inline-input')?.focus(), 50);
             }
           }}
-          className="flex items-center gap-1 text-xs text-blue-600 font-semibold hover:underline bg-transparent cursor-pointer"
+          className="flex items-center gap-1 text-xs text-blue-600  hover:underline bg-transparent cursor-pointer"
           title="Add subtask"
         >
           <Plus size={13} /> Add subtask
@@ -389,7 +389,7 @@ const ITSubtasksTable = ({
         const isMultiline = (newSubtaskTitle || '').includes('\n') || parsedItems.length > 1;
 
         return (
-          <div className="p-3 bg-blue-50/40 border border-blue-200 rounded-lg space-y-2.5 my-2 animate-in fade-in duration-150 shadow-xs">
+          <div className="p-3 bg-blue-50/40 border border-blue-200 rounded space-y-2.5 my-2 animate-in fade-in duration-150 shadow-xs">
             <div className="flex flex-col gap-1.5">
               <textarea
                 id="subtask-inline-input"
@@ -408,7 +408,7 @@ const ITSubtasksTable = ({
                   }
                 }}
                 placeholder="What needs to be done? Paste any list or bullet points here to create subtasks..."
-                className="w-full text-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-gray-900 shadow-xs resize-y placeholder:text-gray-400 font-sans"
+                className="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-gray-900 shadow-xs resize-y placeholder:text-gray-400 font-sans"
               />
               {isMultiline && (
                 <div className="flex items-center justify-between text-[11px] px-1 animate-in fade-in">
@@ -427,7 +427,7 @@ const ITSubtasksTable = ({
                 <button
                   onClick={handleAddSubtask}
                   disabled={!newSubtaskTitle.trim()}
-                  className="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 disabled:opacity-50 cursor-pointer shadow-xs transition flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-red-600 text-white rounded text-xs  hover:bg-red-700 disabled:opacity-50 cursor-pointer shadow-xs transition flex items-center gap-1.5"
                 >
                   <span>{parsedItems.length > 1 ? `Create ${parsedItems.length} Subtasks` : 'Create'}</span>
                 </button>
@@ -462,11 +462,11 @@ const ITSubtasksTable = ({
         <div className="border border-gray-200 rounded overflow-hidden my-3 shadow-2xs font-sans text-xs bg-white">
           <table className="w-full text-left border-collapse table-fixed">
             <thead>
-              <tr className="bg-gray-50/90 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <th className="py-2 px-3 font-semibold text-gray-600 w-[42%] truncate">Work</th>
-                <th className="py-2 px-1 font-semibold text-gray-600 w-[14%] text-center truncate">Priority</th>
-                <th className="py-2 px-1 font-semibold text-gray-600 w-[24%] text-center truncate">Assignee</th>
-                <th className="py-2 px-2 font-semibold text-gray-600 w-[16%] text-right truncate">Status</th>
+              <tr className="bg-gray-50/90 border-b border-gray-200 text-xs  text-gray-500 uppercase tracking-wider">
+                <th className="py-2 px-3  text-gray-600 w-[42%] truncate">Work</th>
+                <th className="py-2 px-1  text-gray-600 w-[14%] text-center truncate">Priority</th>
+                <th className="py-2 px-1  text-gray-600 w-[24%] text-center truncate">Assignee</th>
+                <th className="py-2 px-2  text-gray-600 w-[16%] text-right truncate">Status</th>
                 <th className="py-2 px-1 w-[4%] text-center"></th>
               </tr>
             </thead>
@@ -496,7 +496,7 @@ const ITSubtasksTable = ({
                               setSubtaskViewIndex(idx);
                             }
                           }}
-                          className="text-xs text-blue-600 font-semibold hover:underline cursor-pointer shrink-0"
+                          className="text-xs text-blue-600  hover:underline cursor-pointer shrink-0"
                           title="Click to view subtask details"
                         >
                           {subtaskKey}
@@ -563,7 +563,7 @@ const ITSubtasksTable = ({
                             setSubtasks(updatedSubtasks);
                             handleUpdate({ subtasks: updatedSubtasks });
                           }}
-                          className={`text-xs font-semibold px-2 py-0.5 rounded border appearance-none cursor-pointer pr-5 focus:outline-none transition ${currentSubtaskStatus === 'Done'
+                          className={`text-xs  px-2 py-0.5 rounded border appearance-none cursor-pointer pr-5 focus:outline-none transition ${currentSubtaskStatus === 'Done'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                             : currentSubtaskStatus === 'In Progress'
                               ? 'bg-blue-50 text-blue-700 border-blue-300'
@@ -608,12 +608,12 @@ const ITSubtasksTable = ({
       {/* SUBTASK QUICK VIEW / INSPECT MODAL */}
       {selectedSubtaskForView && (
         <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4 font-sans animate-fade-in">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200 flex flex-col">
+          <div className="bg-white rounded shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200 flex flex-col">
             {/* Modal Header */}
             <div className="p-3.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckSquare size={16} className="text-blue-600" />
-                <span className="text-xs font-semibold text-blue-600">{selectedSubtaskForView.subtaskKey}</span>
+                <span className="text-xs  text-blue-600">{selectedSubtaskForView.subtaskKey}</span>
                 <span className="text-xs text-gray-400">Subtask Details</span>
               </div>
               <button
@@ -628,7 +628,7 @@ const ITSubtasksTable = ({
             <div className="p-4 space-y-4 text-xs">
               {/* Title Input */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Subtask Title</label>
+                <label className="text-xs  text-gray-500 uppercase tracking-wider block">Subtask Title</label>
                 <input
                   type="text"
                   value={selectedSubtaskForView.title}
@@ -637,7 +637,7 @@ const ITSubtasksTable = ({
                     setSelectedSubtaskForView(prev => ({ ...prev, title: newTitle }));
                     handleTitleChange(selectedSubtaskForView.id, newTitle);
                   }}
-                  className="w-full text-sm font-semibold text-gray-900 border border-gray-300 rounded p-2 focus:ring-1 focus:ring-blue-500 outline-none"
+                  className="w-full text-sm  text-gray-900 border border-gray-300 rounded p-2 focus:ring-1 focus:ring-blue-500 outline-none"
                 />
               </div>
 
@@ -645,7 +645,7 @@ const ITSubtasksTable = ({
               <div className="grid grid-cols-3 gap-3 bg-gray-50 p-3 rounded border border-gray-100">
                 {/* Status */}
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 block mb-1">Status</span>
+                  <span className="text-[10px]  text-gray-500 block mb-1">Status</span>
                   <select
                     value={selectedSubtaskForView.status || 'To Do'}
                     onChange={(e) => {
@@ -659,7 +659,7 @@ const ITSubtasksTable = ({
                       setSubtasks(updatedSubtasks);
                       handleUpdate({ subtasks: updatedSubtasks });
                     }}
-                    className="w-full text-xs font-semibold px-2 py-1 rounded border border-gray-300 bg-white"
+                    className="w-full text-xs  px-2 py-1 rounded border border-gray-300 bg-white"
                   >
                     <option value="To Do">To Do</option>
                     <option value="In Progress">In Progress</option>
@@ -669,11 +669,11 @@ const ITSubtasksTable = ({
 
                 {/* Priority */}
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 block mb-1">Priority</span>
+                  <span className="text-[10px]  text-gray-500 block mb-1">Priority</span>
                   <select
                     value={selectedSubtaskForView.priority || 'Medium'}
                     onChange={(e) => handlePriorityChange(selectedSubtaskForView.id, e.target.value)}
-                    className="w-full text-xs font-semibold px-2 py-1 rounded border border-gray-300 bg-white"
+                    className="w-full text-xs  px-2 py-1 rounded border border-gray-300 bg-white"
                   >
                     <option value="Highest">Highest</option>
                     <option value="High">High</option>
@@ -686,7 +686,7 @@ const ITSubtasksTable = ({
 
                 {/* Assignee */}
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 block mb-1">Assignee</span>
+                  <span className="text-[10px]  text-gray-500 block mb-1">Assignee</span>
                   <SubtaskAssigneePicker
                     assignee={selectedSubtaskForView.assignee || 'Unassigned'}
                     usersList={usersList}
@@ -700,7 +700,7 @@ const ITSubtasksTable = ({
               {/* Parent Task Context */}
               <div className="bg-blue-50/50 border border-blue-100 rounded p-2.5 text-xs">
                 <span className="text-gray-500 font-medium block text-xs">Parent Ticket</span>
-                <span className="font-semibold text-blue-600">{issue?.key || 'WR-101'}: {issue?.title}</span>
+                <span className=" text-blue-600">{issue?.key || 'WR-101'}: {issue?.title}</span>
               </div>
             </div>
 
@@ -711,7 +711,7 @@ const ITSubtasksTable = ({
                   deleteSubtask(selectedSubtaskForView.id);
                   setSelectedSubtaskForView(null);
                 }}
-                className="text-red-600 hover:text-red-700 font-semibold cursor-pointer flex items-center gap-1"
+                className="text-red-600 hover:text-red-700  cursor-pointer flex items-center gap-1"
               >
                 <Trash2 size={13} /> Delete Subtask
               </button>
@@ -722,13 +722,13 @@ const ITSubtasksTable = ({
                     handleSubtaskAiImprove(selectedSubtaskForView, subtaskViewIndex || 0);
                     setSelectedSubtaskForView(null);
                   }}
-                  className="px-3.5 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold rounded hover:bg-indigo-100 cursor-pointer flex items-center gap-1"
+                  className="px-3.5 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700  rounded hover:bg-indigo-100 cursor-pointer flex items-center gap-1"
                 >
                   <Sparkles size={12} /> ✨ AI Spec Sheet
                 </button>
                 <button
                   onClick={() => setSelectedSubtaskForView(null)}
-                  className="px-3 py-1.5 bg-red-600 hover:bg-blue-700 text-white rounded font-semibold cursor-pointer"
+                  className="px-3 py-1.5 bg-red-600 hover:bg-blue-700 text-white rounded  cursor-pointer"
                 >
                   Done / Close
                 </button>

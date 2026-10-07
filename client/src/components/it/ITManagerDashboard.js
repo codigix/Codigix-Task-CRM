@@ -118,10 +118,10 @@ const ITManagerDashboard = () => {
 
   // Compute KPI Data
   const activeProjectsCount = projects.filter(p => p.status === 'Active' || p.status === 'In Progress').length;
-  
+
   const totalTicketsCount = tasks.length;
   const totalBugsCount = tasks.filter(t => (t.type === 'Bug' || (t.title && t.title.toLowerCase().includes('bug')))).length;
-  
+
   let totalMinutes = 0;
   tasks.forEach(t => {
     if (t.time_spent) {
@@ -166,7 +166,7 @@ const ITManagerDashboard = () => {
     const status = t.status || 'UNASSIGNED';
     statusCounts[status] = (statusCounts[status] || 0) + 1;
   });
-  
+
   const timeTrackingData = Object.keys(statusCounts).map((status, idx) => {
     const colors = ['#3b82f6', '#8b5cf6', '#22c55e', '#eab308', '#ef4444', '#64748b'];
     return {
@@ -238,7 +238,7 @@ const ITManagerDashboard = () => {
   const teamWorkload = Object.keys(taskAssignees).slice(0, 5).map((name, idx) => {
     const data = taskAssignees[name];
     const progress = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
-    const colors = ['bg-indigo-600', 'bg-rose-500', 'bg-emerald-500', 'bg-amber-500', 'bg-blue-500'];
+    const colors = ['bg-red-600', 'bg-rose-500', 'bg-emerald-500', 'bg-amber-500', 'bg-blue-500'];
     return {
       name: name,
       role: 'IT Staff',
@@ -287,15 +287,15 @@ const ITManagerDashboard = () => {
               <p className="text-gray-500 text-sm mt-1">Welcome back, {displayName}! Here's what's happening with your projects today.</p>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setIsWidgetDrawerOpen(true)} className="p-2 bg-white border border-indigo-200 text-indigo-600 rounded-md text-sm font-medium flex items-center gap-2 hover:bg-indigo-50 transition-colors cursor-pointer">
+              <button onClick={() => setIsWidgetDrawerOpen(true)} className="p-2 bg-white border border-indigo-200 text-indigo-600 rounded text-sm font-medium flex items-center gap-2 hover:bg-indigo-50 transition-colors cursor-pointer">
                 <Layout size={16} />
                 Manage Widgets
               </button>
-              <button onClick={() => navigate(urlPrefix + '/projects')} className="p-2 bg-indigo-600 text-white rounded-md text-sm font-medium flex items-center gap-2 hover:bg-indigo-700 transition-colors">
+              <button onClick={() => navigate(urlPrefix + '/projects')} className="p-2 bg-red-600 text-white rounded text-sm font-medium flex items-center gap-2 hover:bg-red-700 transition-colors">
                 <Plus size={16} />
                 New Project
               </button>
-              <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-md ml-2 cursor-pointer ">
+              <div className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded ml-2 cursor-pointer ">
                 <Calendar size={14} className="text-gray-500" />
                 <span className="text-xs font-medium text-gray-700">Today, 15 July 2026</span>
                 <ChevronRight size={14} className="text-gray-400 rotate-90 ml-1" />
@@ -327,30 +327,30 @@ const ITManagerDashboard = () => {
 
           {/* AI EXECUTIVE SUMMARY ROW */}
           {widgets.aiSummary && (
-            <div className="mb-6 relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50 border border-indigo-100 rounded-xl shadow-sm p-5 group transition-all hover:shadow-md">
+            <div className="mb-6 relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50 border border-indigo-100 rounded shadow-sm p-5 group transition-all hover:shadow-md">
               <div className="absolute right-0 top-0 -mt-4 -mr-4 text-indigo-600/5 group-hover:text-indigo-600/10 transition-colors pointer-events-none">
                 <Sparkles size={160} />
               </div>
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-md shadow-sm">
+                    <div className="p-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded shadow-sm">
                       <Sparkles size={16} />
                     </div>
                     <h3 className="text-sm  text-transparent bg-clip-text bg-gradient-to-r from-indigo-900 to-blue-800">AI Task & Blocker Summary</h3>
                   </div>
-                  <span className="text-[10px] font-semibold tracking-wider text-indigo-500 bg-indigo-100/50 px-2 py-1 rounded-full uppercase">Live Analysis</span>
+                  <span className="text-[10px]  tracking-wider text-indigo-500 bg-indigo-100/50 px-2 py-1 rounded-full uppercase">Live Analysis</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6 text-[13px]">
                   <div className="space-y-2.5 text-indigo-900/80 leading-relaxed">
                     <p>
-                      <strong className="text-indigo-900 font-semibold">Overview:</strong> The team is currently handling <strong className="text-indigo-700 bg-indigo-100/50 px-1 rounded">{tasks.length}</strong> active tasks across <strong className="text-indigo-700 bg-indigo-100/50 px-1 rounded">{activeProjectsCount}</strong> projects. Velocity is stable, with <strong className="text-emerald-700 bg-emerald-100/50 px-1 rounded">{completedCount}</strong> tasks recently completed and <strong className="text-amber-700 bg-amber-100/50 px-1 rounded">{inProgressTasksCount}</strong> actively in progress.
+                      <strong className="text-indigo-900 ">Overview:</strong> The team is currently handling <strong className="text-indigo-700 bg-indigo-100/50 px-1 rounded">{tasks.length}</strong> active tasks across <strong className="text-indigo-700 bg-indigo-100/50 px-1 rounded">{activeProjectsCount}</strong> projects. Velocity is stable, with <strong className="text-emerald-700 bg-emerald-100/50 px-1 rounded">{completedCount}</strong> tasks recently completed and <strong className="text-amber-700 bg-amber-100/50 px-1 rounded">{inProgressTasksCount}</strong> actively in progress.
                     </p>
                   </div>
                   <div className="space-y-2.5 text-indigo-900/80 leading-relaxed">
                     <p>
-                      <strong className="text-rose-900 font-semibold">Blockers & Risks:</strong> There are <strong className="text-rose-700 bg-rose-100/50 px-1 rounded">{openBugsCount}</strong> open bugs requiring attention. Priority should be given to the <strong className="text-rose-700 bg-rose-100/50 px-1 rounded">{tasks.filter(t => t.priority === 'High' && t.status !== 'DONE' && t.status !== 'TESTING').length}</strong> high-priority tasks currently in the pipeline to prevent downstream bottlenecks.
+                      <strong className="text-rose-900 ">Blockers & Risks:</strong> There are <strong className="text-rose-700 bg-rose-100/50 px-1 rounded">{openBugsCount}</strong> open bugs requiring attention. Priority should be given to the <strong className="text-rose-700 bg-rose-100/50 px-1 rounded">{tasks.filter(t => t.priority === 'High' && t.status !== 'DONE' && t.status !== 'TESTING').length}</strong> high-priority tasks currently in the pipeline to prevent downstream bottlenecks.
                     </p>
                   </div>
                 </div>
@@ -465,7 +465,7 @@ const ITManagerDashboard = () => {
 
                 <div className="space-y-5">
                   {[
-                    { label: 'To Do', count: todoCount, color: 'bg-indigo-600', icon: Folder, iconBg: 'bg-indigo-50' },
+                    { label: 'To Do', count: todoCount, color: 'bg-red-600', icon: Folder, iconBg: 'bg-indigo-50' },
                     { label: 'In Progress', count: inProgressTasksCount, color: 'bg-red-600', icon: ClipboardCheck, iconBg: 'bg-blue-50' },
                     { label: 'In Review', count: inReviewCount, color: 'bg-amber-500', icon: FileText, iconBg: 'bg-amber-50' },
                     { label: 'Completed', count: completedCount, color: 'bg-emerald-500', icon: CheckCircle, iconBg: 'bg-emerald-50' },
@@ -602,7 +602,7 @@ const ITManagerDashboard = () => {
           {widgets.ticketList && (
             <div className="mb-6 bg-white p-4 rounded border border-gray-100">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-semibold text-gray-900">Ticket Creation & Assignment Overview</h3>
+                <h3 className="text-sm  text-gray-900">Ticket Creation & Assignment Overview</h3>
                 <span onClick={() => navigate(urlPrefix + '/tasks')} className="text-xs text-indigo-600 font-medium hover:underline cursor-pointer">View All Tickets</span>
               </div>
               <div className="overflow-x-auto">
@@ -710,7 +710,7 @@ const ITManagerDashboard = () => {
           {/* Widget Drawer */}
           <div className={`fixed inset-y-0 right-0 w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ${isWidgetDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="p-2 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-              <h3 className="font-semibold text-gray-900">Manage Widgets</h3>
+              <h3 className=" text-gray-900">Manage Widgets</h3>
               <button onClick={() => setIsWidgetDrawerOpen(false)} className="text-gray-500 hover:text-gray-700">
                 <X size={18} />
               </button>
@@ -731,7 +731,7 @@ const ITManagerDashboard = () => {
                   <span className="text-sm font-medium text-gray-700">{w.label}</span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={widgets[w.key]} onChange={() => setWidgets({ ...widgets, [w.key]: !widgets[w.key] })} />
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
               ))}

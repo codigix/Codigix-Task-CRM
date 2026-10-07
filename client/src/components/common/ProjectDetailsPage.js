@@ -456,7 +456,7 @@ const ProjectDetailsPage = () => {
       <div className="w-full h-screen p-8 bg-gray-50 flex flex-col items-center justify-center">
         <h2 className="text-xl  text-gray-900 mb-2">Project not found</h2>
         <p className="text-gray-600 mb-4">{error || "The project you're looking for doesn't exist."}</p>
-        <button onClick={() => navigate(-1)} className="p-2 bg-red-600 text-white rounded-md font-medium text-sm">
+        <button onClick={() => navigate(-1)} className="p-2 bg-red-600 text-white rounded font-medium text-sm">
           Go Back
         </button>
       </div>
@@ -585,9 +585,9 @@ const ProjectDetailsPage = () => {
                               {m.first_name ? m.first_name[0].toUpperCase() : 'U'}
                             </div>
                           )}
-                          <span className="font-semibold text-gray-800">{m.first_name} {m.last_name}</span>
+                          <span className=" text-gray-800">{m.first_name} {m.last_name}</span>
                         </div>
-                        <span className="text-[9px] text-gray-500 font-semibold bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{m.role || 'Member'}</span>
+                        <span className="text-[9px] text-gray-500  bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{m.role || 'Member'}</span>
                       </div>
                     ))}
                     {teamRoster.length === 0 && (
@@ -699,12 +699,12 @@ const ProjectDetailsPage = () => {
               <td className="p-3 text-center"><input type="checkbox" className="rounded border-gray-300" /></td>
               <td className="p-3 font-medium text-gray-900">{t.title}</td>
               <td className="p-3 flex items-center gap-1.5">
-                {t.avatar ? <img src={t.avatar} alt="A" className="w-5 h-5 rounded-full" /> : <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex justify-center items-center text-[9px] font-semibold">{t.first_name?.[0] || 'U'}</div>}
+                {t.avatar ? <img src={t.avatar} alt="A" className="w-5 h-5 rounded-full" /> : <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex justify-center items-center text-[9px] ">{t.first_name?.[0] || 'U'}</div>}
                 {t.first_name || t.assigned_to || 'Unassigned'}
               </td>
               <td className="p-3">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex justify-center items-center text-[9px] font-semibold">
+                  <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex justify-center items-center text-[9px] ">
                     {(t.reporter || 'U').substring(0, 1).toUpperCase()}
                   </div>
                   <span className="text-gray-700 font-medium">{t.reporter || 'Unassigned'}</span>
@@ -732,7 +732,7 @@ const ProjectDetailsPage = () => {
               <td className="p-3 text-center">
                 <div className="relative inline-block text-left group">
                   <button className="text-gray-400 hover:text-gray-600 focus:outline-none"><MoreHorizontal size={14} /></button>
-                  <div className="hidden group-hover:block absolute right-0 z-10 w-24 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                  <div className="hidden group-hover:block absolute right-0 z-10 w-24 origin-top-right rounded bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                     <div className="py-1">
                       <button onClick={() => setSelectedIssueId(t.id)} className="text-gray-700 block p-2 text-xs w-full text-left hover:bg-gray-100">Edit</button>
                       <button onClick={() => handleTaskDelete(t.id, t.task_source)} className="text-red-600 block p-2 text-xs w-full text-left hover:bg-gray-100">Delete</button>
@@ -788,7 +788,7 @@ const ProjectDetailsPage = () => {
         {/* Add/Edit Milestone Modal */}
         {isMilestoneModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6">
+            <div className="bg-white rounded shadow-2xl w-full max-w-lg mx-4 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className=" text-gray-900 text-base">{editingMilestone ? 'Edit Milestone' : 'Add Milestone'}</h3>
                 <button onClick={() => { setIsMilestoneModalOpen(false); setEditingMilestone(null); }} className="text-gray-400 hover:text-gray-600">✕</button>
@@ -847,7 +847,7 @@ const ProjectDetailsPage = () => {
 
         <div className="bg-white rounded border border-gray-200 animate-fade-in">
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-gray-900 text-sm font-semibold">Project Milestones ({milestones.length})</h3>
+            <h3 className="text-gray-900 text-sm ">Project Milestones ({milestones.length})</h3>
             <button onClick={() => { setEditingMilestone(null); setMilestoneForm({ title: '', description: '', owner_id: '', start_date: '', due_date: '', status: 'Not Started', progress: 0 }); setIsMilestoneModalOpen(true); }} className="flex items-center gap-1.5 text-xs text-white bg-red-600 p-2 rounded font-medium hover:bg-blue-700">
               <Plus size={12} /> Add Milestone
             </button>
@@ -993,7 +993,7 @@ const ProjectDetailsPage = () => {
                 placeholder="Search files..."
                 value={fileSearchQuery}
                 onChange={(e) => setFileSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500 w-64"
+                className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded focus:outline-none focus:border-blue-500 w-64"
               />
             </div>
           </div>
@@ -1238,11 +1238,11 @@ const ProjectDetailsPage = () => {
       <div className="space-y-6 max-w-xl text-sm">
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Project Name</label>
-          <input type="text" defaultValue={project.name || project.title} className="w-full border border-gray-200 rounded-md p-2 focus:border-blue-500 focus:outline-none" />
+          <input type="text" defaultValue={project.name || project.title} className="w-full border border-gray-200 rounded p-2 focus:border-blue-500 focus:outline-none" />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
-          <select className="w-full border border-gray-200 rounded-md p-2 focus:border-blue-500 focus:outline-none">
+          <select className="w-full border border-gray-200 rounded p-2 focus:border-blue-500 focus:outline-none">
             <option>Planning</option>
             <option selected={project.status === 'In Progress'}>In Progress</option>
             <option>On Hold</option>
@@ -1251,7 +1251,7 @@ const ProjectDetailsPage = () => {
         </div>
         <div className="pt-4 border-t border-gray-100">
           <h4 className=" text-red-600 text-xs mb-2">Danger Zone</h4>
-          <button className="bg-red-50 text-red-600 border border-red-200 p-2 rounded-md text-xs font-medium hover:bg-red-100 transition">
+          <button className="bg-red-50 text-red-600 border border-red-200 p-2 rounded text-xs font-medium hover:bg-red-100 transition">
             Archive Project
           </button>
         </div>
@@ -1263,11 +1263,11 @@ const ProjectDetailsPage = () => {
     return (
       <div className="flex items-center gap-3">
         {canManage && (
-          <button onClick={() => setIsEditModalOpen(true)} className="p-2 bg-white border border-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
+          <button onClick={() => setIsEditModalOpen(true)} className="p-2 bg-white border border-gray-200 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
             <Edit3 size={14} /> Edit Project
           </button>
         )}
-        <button onClick={() => setIsCreateDrawerOpen(true)} className="p-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 flex items-center gap-2 ">
+        <button onClick={() => setIsCreateDrawerOpen(true)} className="p-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-blue-700 flex items-center gap-2 ">
           <Plus size={14} /> Create Task
         </button>
       </div>
@@ -1340,7 +1340,7 @@ const ProjectDetailsPage = () => {
                   {project.manager_avatar ? (
                     <img src={project.manager_avatar} alt="manager" className="w-5 h-5 rounded-full" />
                   ) : project.manager_first_name ? (
-                    <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[9px] font-semibold">
+                    <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[9px] ">
                       {project.manager_first_name.charAt(0)}
                     </div>
                   ) : null}

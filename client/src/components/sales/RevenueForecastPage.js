@@ -143,7 +143,7 @@ const RevenueForecastPage = () => {
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`p-2 text-xs font-medium rounded-md transition-all ${timeRange === range ? 'bg-red-600 text-white ' : 'text-gray-600 hover:bg-gray-50'
+                className={`p-2 text-xs font-medium rounded transition-all ${timeRange === range ? 'bg-red-600 text-white ' : 'text-gray-600 hover:bg-gray-50'
                   }`}
               >
                 {range.charAt(0).toUpperCase() + range.slice(1)}

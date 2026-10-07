@@ -459,7 +459,7 @@ const EstimationsPage = () => {
                 <div className="flex items-center gap-3">
                   <h3 className="text-lg   text-gray-900">Estimation Details</h3>
                   <span
-                    className="px-3 py-1 text-xs   rounded-md inline-block"
+                    className="px-3 py-1 text-xs   rounded inline-block"
                     style={{ backgroundColor: getStatusColor(estimation.status) + '20', color: getStatusColor(estimation.status) }}
                   >
                     {estimation.status}
@@ -947,7 +947,7 @@ const EstimationsPage = () => {
   };
 
   const ActionMenu = ({ estimation, onClose, className = "right-0 top-10" }) => (
-    <div className={`absolute ${className} bg-white border border-slate-200 rounded-xl shadow-2xl z-[100] w-56 text-left py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}>
+    <div className={`absolute ${className} bg-white border border-slate-200 rounded shadow-2xl z-[100] w-56 text-left py-1 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -1113,7 +1113,7 @@ const EstimationsPage = () => {
                       <label key={opt} className="flex items-center gap-3 cursor-pointer group py-0.5">
                         <div className={`w-4.5 h-4.5 rounded border-2 flex items-center justify-center transition-all ${activeFilters[section.id]?.includes(opt) ? 'bg-red-600 border-red-600' : 'border-gray-200 group-hover:border-red-400'}`}>
                           {activeFilters[section.id]?.includes(opt) && (
-                            <div className="w-2 h-2 bg-white rounded-sm transform rotate-45 border-b-2 border-r-2 border-red-600" />
+                            <div className="w-2 h-2 bg-white rounded transform rotate-45 border-b-2 border-r-2 border-red-600" />
                           )}
                         </div>
                         <input type="checkbox" className="hidden" checked={activeFilters[section.id]?.includes(opt)} onChange={() => toggleFilter(section.id, opt)} />
@@ -1152,9 +1152,9 @@ const EstimationsPage = () => {
             >
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-0.5 opacity-20 group-hover:opacity-40 transition-opacity">
-                  <div className="w-3.5 h-0.5 bg-gray-900 rounded-full" />
-                  <div className="w-3.5 h-0.5 bg-gray-900 rounded-full" />
-                  <div className="w-3.5 h-0.5 bg-gray-900 rounded-full" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
                 </div>
                 <span className={`text-xs  transition-colors ${visibleColumns[col] ? 'text-gray-900 ' : 'text-gray-500'}`}>{col}</span>
               </div>
@@ -1234,7 +1234,7 @@ const EstimationsPage = () => {
           <div>
             <h1 className="text-xl  text-slate-900 flex items-center gap-2 flex-wrap">
               Estimations Management
-              <span className="inline-block px-2.5 py-0.5 bg-red-50 text-red-600 text-xs font-semibold rounded-full border border-red-100">
+              <span className="inline-block px-2.5 py-0.5 bg-red-50 text-red-600 text-xs  rounded-full border border-red-100">
                 {filteredEstimations.length}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs  bg-amber-50 text-amber-800 border border-amber-300 shadow-sm">
@@ -1280,43 +1280,43 @@ const EstimationsPage = () => {
         {/* 9 Summary Metric Widgets */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2.5 pt-2 border-t border-slate-100">
           <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-center">
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Total Est.</p>
+            <p className="text-[10px]  text-slate-500 uppercase tracking-wider">Total Est.</p>
             <p className="text-base  text-slate-900 mt-0.5">{summaryMetrics.totalCount}</p>
           </div>
           <div className="bg-amber-50/50 p-2.5 rounded border border-amber-200 text-center">
-            <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider">Draft</p>
+            <p className="text-[10px]  text-amber-700 uppercase tracking-wider">Draft</p>
             <p className="text-base  text-amber-900 mt-0.5">{summaryMetrics.draftCount}</p>
           </div>
           <div className="bg-blue-50/50 p-2.5 rounded border border-blue-200 text-center">
-            <p className="text-[10px] font-semibold text-blue-700 uppercase tracking-wider">Sent</p>
+            <p className="text-[10px]  text-blue-700 uppercase tracking-wider">Sent</p>
             <p className="text-base  text-blue-900 mt-0.5">{summaryMetrics.sentCount}</p>
           </div>
           <div className="bg-indigo-50/50 p-2.5 rounded border border-indigo-200 text-center">
-            <p className="text-[10px] font-semibold text-indigo-700 uppercase tracking-wider">Revised</p>
+            <p className="text-[10px]  text-indigo-700 uppercase tracking-wider">Revised</p>
             <p className="text-base  text-indigo-900 mt-0.5">{summaryMetrics.revisedCount}</p>
           </div>
           <div className="bg-emerald-50/50 p-2.5 rounded border border-emerald-200 text-center">
-            <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">Accepted</p>
+            <p className="text-[10px]  text-emerald-700 uppercase tracking-wider">Accepted</p>
             <p className="text-base  text-emerald-900 mt-0.5">{summaryMetrics.acceptedCount}</p>
           </div>
           <div className="bg-rose-50/50 p-2.5 rounded border border-rose-200 text-center">
-            <p className="text-[10px] font-semibold text-rose-700 uppercase tracking-wider">Rejected</p>
+            <p className="text-[10px]  text-rose-700 uppercase tracking-wider">Rejected</p>
             <p className="text-base  text-rose-900 mt-0.5">{summaryMetrics.rejectedCount}</p>
           </div>
           <div className="bg-slate-50 p-2.5 rounded border border-slate-200 text-center col-span-2 sm:col-span-1">
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Est. Value</p>
+            <p className="text-[10px]  text-slate-500 uppercase tracking-wider">Est. Value</p>
             <p className="text-xs  text-slate-900 mt-1 truncate" title={`INR ${summaryMetrics.totalVal.toLocaleString()}`}>
               INR {summaryMetrics.totalVal.toLocaleString()}
             </p>
           </div>
           <div className="bg-emerald-50/50 p-2.5 rounded border border-emerald-200 text-center col-span-2 sm:col-span-1">
-            <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">Won Value</p>
+            <p className="text-[10px]  text-emerald-700 uppercase tracking-wider">Won Value</p>
             <p className="text-xs  text-emerald-800 mt-1 truncate" title={`INR ${summaryMetrics.acceptedVal.toLocaleString()}`}>
               INR {summaryMetrics.acceptedVal.toLocaleString()}
             </p>
           </div>
           <div className="bg-purple-50/50 p-2.5 rounded border border-purple-200 text-center col-span-2 sm:col-span-1">
-            <p className="text-[10px] font-semibold text-purple-700 uppercase tracking-wider">Win Rate</p>
+            <p className="text-[10px]  text-purple-700 uppercase tracking-wider">Win Rate</p>
             <p className="text-base  text-purple-900 mt-0.5">{summaryMetrics.convRate}%</p>
           </div>
         </div>
@@ -1487,7 +1487,7 @@ const EstimationsPage = () => {
                       columnEstimations.map((item) => (
                         <div
                           key={item.id}
-                          className="border border-slate-200 rounded-xl p-3 mb-3 bg-white hover:shadow-md transition-all duration-200 cursor-pointer relative group/card flex flex-col justify-between"
+                          className="border border-slate-200 rounded p-3 mb-3 bg-white hover:shadow-md transition-all duration-200 cursor-pointer relative group/card flex flex-col justify-between"
                           draggable
                           onDragStart={(e) => handleDragStart(e, item)}
                           onDragEnd={handleDragEnd}
@@ -1512,7 +1512,7 @@ const EstimationsPage = () => {
                                 )}
                                 <div className="min-w-0">
                                   {visibleColumns['Client'] && (
-                                    <h3 className="font-semibold text-xs text-slate-900 truncate" title={getCardValue(item, 'company')}>
+                                    <h3 className=" text-xs text-slate-900 truncate" title={getCardValue(item, 'company')}>
                                       {getCardValue(item, 'company')}
                                     </h3>
                                   )}
@@ -1585,9 +1585,9 @@ const EstimationsPage = () => {
                             {item.expiry_date && (() => {
                               const diffDays = Math.ceil((new Date(item.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
                               if (diffDays < 0) {
-                                return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Expired</span>;
+                                return <span className="text-[10px]  px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Expired</span>;
                               } else if (diffDays <= 3) {
-                                return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">In {diffDays}d</span>;
+                                return <span className="text-[10px]  px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">In {diffDays}d</span>;
                               }
                               return null;
                             })()}
@@ -1718,7 +1718,7 @@ const EstimationsPage = () => {
                           <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-xs text-gray-600 border border-gray-200 overflow-hidden ">
                             {item.logo ? <img src={item.logo} alt="" className="w-full h-full object-cover" /> : getCardValue(item, 'company')[0]}
                           </div>
-                          <span className="text-xs font-semibold text-slate-900 hover:text-blue-600">{getCardValue(item, 'company')}</span>
+                          <span className="text-xs  text-slate-900 hover:text-blue-600">{getCardValue(item, 'company')}</span>
                         </div>
                       </td>
                     )}
@@ -1743,9 +1743,9 @@ const EstimationsPage = () => {
                         {item.expiry_date ? (() => {
                           const diffDays = Math.ceil((new Date(item.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
                           if (diffDays < 0) {
-                            return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Expired</span>;
+                            return <span className="text-[10px]  px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Expired</span>;
                           } else if (diffDays <= 3) {
-                            return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">In {diffDays}d</span>;
+                            return <span className="text-[10px]  px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">In {diffDays}d</span>;
                           }
                           return new Date(item.expiry_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                         })() : 'Not set'}

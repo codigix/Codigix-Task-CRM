@@ -53,12 +53,12 @@ const SeoGmbPredictiveAnalysisPage = () => {
   ];
 
   const KPICard = ({ title, value, change, changeLabel, icon: Icon, colorClass, sparklineColor }) => (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center h-full relative overflow-hidden group">
+    <div className="bg-white rounded border border-gray-100 p-5 shadow-sm flex flex-col justify-center h-full relative overflow-hidden group">
       <div className="flex items-center gap-3 mb-2">
         <div className={`p-2 rounded bg-opacity-10 ${colorClass.replace('text', 'bg')}`}>
           <Icon size={18} className={colorClass} />
         </div>
-        <span className="text-gray-900 text-xs font-semibold">{title}</span>
+        <span className="text-gray-900 text-xs ">{title}</span>
       </div>
       <div className="flex justify-between items-end">
         <div>
@@ -97,9 +97,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm lg:col-span-2">
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm lg:col-span-2">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900">Traffic Forecast</h3>
+            <h3 className=" text-gray-900">Traffic Forecast</h3>
             <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
               <option>Next 90 Days ▾</option>
             </select>
@@ -128,18 +128,18 @@ const SeoGmbPredictiveAnalysisPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900">Top Opportunities</h3>
-            <button className="text-indigo-600 text-[10px] font-semibold hover:underline">View All Opportunities &rarr;</button>
+            <h3 className=" text-gray-900">Top Opportunities</h3>
+            <button className="text-indigo-600 text-[10px]  hover:underline">View All Opportunities &rarr;</button>
           </div>
           <table className="w-full text-left text-[10px] whitespace-nowrap">
             <thead>
               <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                <th className="pb-2 font-semibold">Opportunity</th>
-                <th className="pb-2 font-semibold text-center">Impact</th>
-                <th className="pb-2 font-semibold text-center">Effort</th>
-                <th className="pb-2 font-semibold text-center">Score</th>
+                <th className="pb-2 ">Opportunity</th>
+                <th className="pb-2  text-center">Impact</th>
+                <th className="pb-2  text-center">Effort</th>
+                <th className="pb-2  text-center">Score</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -166,14 +166,14 @@ const SeoGmbPredictiveAnalysisPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Shortened versions of the other forecasts for Overview */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-          <h3 className="font-semibold text-gray-900 mb-4 text-xs">Keyword Forecast</h3>
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+          <h3 className=" text-gray-900 mb-4 text-xs">Keyword Forecast</h3>
           <table className="w-full text-left text-[10px] whitespace-nowrap">
             <thead>
               <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                <th className="pb-2 font-semibold">Keyword</th>
-                <th className="pb-2 font-semibold text-center">Cur</th>
-                <th className="pb-2 font-semibold text-center">Pred</th>
+                <th className="pb-2 ">Keyword</th>
+                <th className="pb-2  text-center">Cur</th>
+                <th className="pb-2  text-center">Pred</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -182,17 +182,17 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <tr><td className="py-2 text-indigo-600">erp for sme</td><td className="py-2 text-center text-gray-500">15</td><td className="py-2 text-center text-green-600 ">7</td></tr>
             </tbody>
           </table>
-          <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('Keyword Forecast')}>View Full Forecast &rarr;</button>
+          <button className="text-indigo-600 text-[10px]  mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('Keyword Forecast')}>View Full Forecast &rarr;</button>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-          <h3 className="font-semibold text-gray-900 mb-4 text-xs">AI Visibility Forecast</h3>
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+          <h3 className=" text-gray-900 mb-4 text-xs">AI Visibility Forecast</h3>
           <table className="w-full text-left text-[10px] whitespace-nowrap">
             <thead>
               <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                <th className="pb-2 font-semibold">Platform</th>
-                <th className="pb-2 font-semibold text-center">Cur Score</th>
-                <th className="pb-2 font-semibold text-center">Pred Score</th>
+                <th className="pb-2 ">Platform</th>
+                <th className="pb-2  text-center">Cur Score</th>
+                <th className="pb-2  text-center">Pred Score</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -201,11 +201,11 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <tr><td className="py-2">Gemini</td><td className="py-2 text-center text-gray-500">65/100</td><td className="py-2 text-center text-green-600 ">78/100</td></tr>
             </tbody>
           </table>
-          <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('AI Visibility Forecast')}>View Full AI Visibility &rarr;</button>
+          <button className="text-indigo-600 text-[10px]  mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('AI Visibility Forecast')}>View Full AI Visibility &rarr;</button>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-          <h3 className="font-semibold text-gray-900 mb-4 text-xs">Conversions Forecast</h3>
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+          <h3 className=" text-gray-900 mb-4 text-xs">Conversions Forecast</h3>
           <div className="h-[120px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={convData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
@@ -215,7 +215,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <button className="text-indigo-600 text-[10px] font-semibold mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('Conversions Forecast')}>View Full Conversions &rarr;</button>
+          <button className="text-indigo-600 text-[10px]  mt-3 hover:underline w-full text-center" onClick={() => setActiveTab('Conversions Forecast')}>View Full Conversions &rarr;</button>
         </div>
       </div>
     </div>
@@ -224,9 +224,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
   const renderTrafficForecastTab = () => (
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm lg:col-span-2">
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm lg:col-span-2">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900">Traffic Forecast</h3>
+            <h3 className=" text-gray-900">Traffic Forecast</h3>
             <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
               <option>Next 90 Days ▾</option>
             </select>
@@ -253,13 +253,13 @@ const SeoGmbPredictiveAnalysisPage = () => {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
+          <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px]  hover:underline">
             <Download size={12} /> Download Forecast Report
           </button>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-          <h3 className="font-semibold text-gray-900 mb-6">Forecast Summary</h3>
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+          <h3 className=" text-gray-900 mb-6">Forecast Summary</h3>
           <div className="space-y-4">
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Predicted Traffic (Next 90 Days)</span>
@@ -295,9 +295,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
         <KPICard title="Declining Keywords" value="42" change="-5" changeLabel="down" icon={TrendingDown} colorClass="text-red-500" />
         <KPICard title="New Opportunities" value="114" icon={Eye} colorClass="text-blue-600" />
       </div>
-      <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-semibold text-gray-900">Keyword Forecast</h3>
+          <h3 className=" text-gray-900">Keyword Forecast</h3>
           <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
             <option>Next 90 Days ▾</option>
           </select>
@@ -306,12 +306,12 @@ const SeoGmbPredictiveAnalysisPage = () => {
           <table className="w-full text-left text-xs whitespace-nowrap">
             <thead>
               <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                <th className="pb-3 font-semibold">Keyword</th>
-                <th className="pb-3 font-semibold text-center">Current Rank</th>
-                <th className="pb-3 font-semibold text-center">Predicted Rank</th>
-                <th className="pb-3 font-semibold text-center">Change</th>
-                <th className="pb-3 font-semibold text-center">Probability</th>
-                <th className="pb-3 font-semibold text-center">Search Volume</th>
+                <th className="pb-3 ">Keyword</th>
+                <th className="pb-3  text-center">Current Rank</th>
+                <th className="pb-3  text-center">Predicted Rank</th>
+                <th className="pb-3  text-center">Change</th>
+                <th className="pb-3  text-center">Probability</th>
+                <th className="pb-3  text-center">Search Volume</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -337,7 +337,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             </tbody>
           </table>
         </div>
-        <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
+        <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px]  hover:underline">
           <Download size={12} /> Download Keyword Report
         </button>
       </div>
@@ -352,9 +352,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
         <KPICard title="Total Citations (Predicted)" value="12,850" icon={Link} colorClass="text-blue-600" />
         <KPICard title="Growth (Next 30 Days)" value="14.2%" icon={Activity} colorClass="text-indigo-600" />
       </div>
-      <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-semibold text-gray-900">AI Visibility Forecast</h3>
+          <h3 className=" text-gray-900">AI Visibility Forecast</h3>
           <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
             <option>Next 90 Days ▾</option>
           </select>
@@ -363,11 +363,11 @@ const SeoGmbPredictiveAnalysisPage = () => {
           <table className="w-full text-left text-xs whitespace-nowrap">
             <thead>
               <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                <th className="pb-3 font-semibold">AI Platform</th>
-                <th className="pb-3 font-semibold text-center">Current Score</th>
-                <th className="pb-3 font-semibold text-center">Predicted Score</th>
-                <th className="pb-3 font-semibold text-center">Change</th>
-                <th className="pb-3 font-semibold text-center">Predicted Mentions</th>
+                <th className="pb-3 ">AI Platform</th>
+                <th className="pb-3  text-center">Current Score</th>
+                <th className="pb-3  text-center">Predicted Score</th>
+                <th className="pb-3  text-center">Change</th>
+                <th className="pb-3  text-center">Predicted Mentions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -390,7 +390,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             </tbody>
           </table>
         </div>
-        <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
+        <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px]  hover:underline">
           <Download size={12} /> Download AI Visibility Report
         </button>
       </div>
@@ -407,9 +407,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm lg:col-span-2">
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm lg:col-span-2">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900">Conversions Forecast</h3>
+            <h3 className=" text-gray-900">Conversions Forecast</h3>
             <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
               <option>Next 90 Days ▾</option>
             </select>
@@ -425,13 +425,13 @@ const SeoGmbPredictiveAnalysisPage = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
+          <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px]  hover:underline">
             <Download size={12} /> Download Conversions Report
           </button>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-          <h3 className="font-semibold text-gray-900 mb-6">Forecast Breakdown</h3>
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
+          <h3 className=" text-gray-900 mb-6">Forecast Breakdown</h3>
           <div className="space-y-4">
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
               <span className="text-gray-500">Conversions (Next 90 Days)</span>
@@ -454,7 +454,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <span className=" text-green-600">2.85%</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs pt-4">
-              <span className="font-semibold text-gray-900">Revenue (Predicted)</span>
+              <span className=" text-gray-900">Revenue (Predicted)</span>
               <span className=" text-indigo-600">₹12,48,300</span>
             </div>
             <div className="flex justify-between border-b border-gray-100 pb-2 text-xs">
@@ -484,9 +484,9 @@ const SeoGmbPredictiveAnalysisPage = () => {
           <KPICard title="Your Growth (Next 30 Days)" value="18.6%" icon={TrendingUp} colorClass="text-green-600" />
           <KPICard title="Top Competitor Growth" value="14.4%" icon={Activity} colorClass="text-indigo-600" />
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+        <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-gray-900">Competitor Forecast</h3>
+            <h3 className=" text-gray-900">Competitor Forecast</h3>
             <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
               <option>Next 90 Days ▾</option>
             </select>
@@ -496,11 +496,11 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <table className="w-full text-left text-xs whitespace-nowrap">
                 <thead>
                   <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                    <th className="pb-3 font-semibold">Competitor</th>
-                    <th className="pb-3 font-semibold text-center">Current Traffic</th>
-                    <th className="pb-3 font-semibold text-center">Predicted Traffic (90 Days)</th>
-                    <th className="pb-3 font-semibold text-center">Change</th>
-                    <th className="pb-3 font-semibold text-center">Market Share</th>
+                    <th className="pb-3 ">Competitor</th>
+                    <th className="pb-3  text-center">Current Traffic</th>
+                    <th className="pb-3  text-center">Predicted Traffic (90 Days)</th>
+                    <th className="pb-3  text-center">Change</th>
+                    <th className="pb-3  text-center">Market Share</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -521,13 +521,13 @@ const SeoGmbPredictiveAnalysisPage = () => {
                   ))}
                 </tbody>
               </table>
-              <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
+              <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px]  hover:underline">
                 <Download size={12} /> Download Competitor Report
               </button>
             </div>
 
             <div className="w-full lg:w-[250px] flex flex-col items-center border-l border-gray-100 pl-8">
-              <h4 className="text-xs font-semibold text-gray-700 mb-4 w-full text-center">Predicted Market Share</h4>
+              <h4 className="text-xs  text-gray-700 mb-4 w-full text-center">Predicted Market Share</h4>
               <div className="relative w-[180px] h-[180px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -542,7 +542,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
                 {marketShareData.map((d, i) => (
                   <div key={i} className="flex justify-between items-center text-[10px]">
                     <div className="flex items-center gap-1.5 text-gray-600">
-                      <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: d.color }}></div>
+                      <div className="w-2.5 h-2.5 rounded" style={{ backgroundColor: d.color }}></div>
                       {d.name}
                     </div>
                     <span className=" text-gray-900">{d.value}%</span>
@@ -562,11 +562,11 @@ const SeoGmbPredictiveAnalysisPage = () => {
         <KPICard title="High Risk Areas" value="2" icon={AlertTriangle} colorClass="text-red-600" />
         <KPICard title="Medium Risk Areas" value="3" icon={AlertTriangle} colorClass="text-yellow-600" />
         <KPICard title="Low Risk Areas" value="2" icon={CheckCircle} colorClass="text-green-600" />
-        <KPICard title="Overall Risk Score" value={<span>62 <span className="text-sm font-medium text-gray-400">/100</span> <span className="text-[10px] font-semibold text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded ml-1">Medium</span></span>} icon={Shield} colorClass="text-orange-500" />
+        <KPICard title="Overall Risk Score" value={<span>62 <span className="text-sm font-medium text-gray-400">/100</span> <span className="text-[10px]  text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded ml-1">Medium</span></span>} icon={Shield} colorClass="text-orange-500" />
       </div>
-      <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <div className="bg-white rounded border border-gray-100 p-5 shadow-sm">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-semibold text-gray-900">Risk Analysis</h3>
+          <h3 className=" text-gray-900">Risk Analysis</h3>
           <select className="bg-white border border-gray-200 text-gray-700 text-[10px] px-2 py-1 rounded outline-none">
             <option>Next 90 Days ▾</option>
           </select>
@@ -575,11 +575,11 @@ const SeoGmbPredictiveAnalysisPage = () => {
           <table className="w-full text-left text-xs whitespace-nowrap">
             <thead>
               <tr className="text-gray-400 border-b border-gray-100 uppercase tracking-wider">
-                <th className="pb-3 font-semibold">Risk Factor</th>
-                <th className="pb-3 font-semibold text-center">Impact</th>
-                <th className="pb-3 font-semibold text-center">Probability</th>
-                <th className="pb-3 font-semibold text-center">Risk Score</th>
-                <th className="pb-3 font-semibold">Recommendation</th>
+                <th className="pb-3 ">Risk Factor</th>
+                <th className="pb-3  text-center">Impact</th>
+                <th className="pb-3  text-center">Probability</th>
+                <th className="pb-3  text-center">Risk Score</th>
+                <th className="pb-3 ">Recommendation</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -606,7 +606,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             </tbody>
           </table>
         </div>
-        <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px] font-semibold hover:underline">
+        <button className="mt-4 flex items-center gap-1 text-indigo-600 text-[10px]  hover:underline">
           <Download size={12} /> Download Risk Report
         </button>
       </div>
@@ -633,7 +633,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <div
                 key={type.id}
                 onClick={() => setForecastType(type.id)}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition flex items-start gap-3 ${forecastType === type.id ? 'border-indigo-600 bg-indigo-50/20' : 'border-gray-100 bg-white hover:border-gray-200'}`}
+                className={`p-4 rounded border-2 cursor-pointer transition flex items-start gap-3 ${forecastType === type.id ? 'border-indigo-600 bg-indigo-50/20' : 'border-gray-100 bg-white hover:border-gray-200'}`}
               >
                 <div className={`p-2 rounded ${type.bg}`}><type.icon size={16} className={type.color} /></div>
                 <div className="flex-1">
@@ -641,7 +641,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
                   <p className="text-[10px] text-gray-500 mt-0.5">{type.desc}</p>
                 </div>
                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${forecastType === type.id ? 'border-indigo-600' : 'border-gray-300'}`}>
-                  {forecastType === type.id && <div className="w-2 h-2 rounded-full bg-indigo-600"></div>}
+                  {forecastType === type.id && <div className="w-2 h-2 rounded-full bg-red-600"></div>}
                 </div>
               </div>
             ))}
@@ -650,26 +650,26 @@ const SeoGmbPredictiveAnalysisPage = () => {
 
         {/* Middle Column: Configuration */}
         <div className="lg:col-span-6 space-y-6">
-          <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+          <div className="bg-white rounded border border-gray-100 p-6 shadow-sm">
             <h3 className=" text-gray-900 text-sm">2. Forecast Configuration</h3>
             <p className="text-xs text-gray-500 mb-6">Set the parameters for your forecast</p>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Project / Domain <span className="text-red-500">*</span></label>
+                <label className="block text-xs  text-gray-700 mb-1">Project / Domain <span className="text-red-500">*</span></label>
                 <select className="w-full text-xs border border-gray-200 rounded px-3 py-2 outline-none">
                   <option>codigixinfotech.com</option>
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Search Engine</label>
+                  <label className="block text-xs  text-gray-700 mb-1">Search Engine</label>
                   <select className="w-full text-xs border border-gray-200 rounded px-3 py-2 outline-none">
                     <option>Google</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Forecast Period <span className="text-red-500">*</span></label>
+                  <label className="block text-xs  text-gray-700 mb-1">Forecast Period <span className="text-red-500">*</span></label>
                   <select className="w-full text-xs border border-gray-200 rounded px-3 py-2 outline-none">
                     <option>90 Days</option>
                   </select>
@@ -679,19 +679,19 @@ const SeoGmbPredictiveAnalysisPage = () => {
 
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Start Date</label>
+                <label className="block text-xs  text-gray-700 mb-1">Start Date</label>
                 <div className="w-full text-xs border border-gray-200 rounded px-3 py-2 flex items-center gap-2">
                   <Clock size={14} className="text-gray-400" /> May 24, 2026
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">End Date</label>
+                <label className="block text-xs  text-gray-700 mb-1">End Date</label>
                 <div className="w-full text-xs border border-gray-200 rounded px-3 py-2 flex items-center gap-2">
                   <Clock size={14} className="text-gray-400" /> Aug 21, 2026
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Granularity</label>
+                <label className="block text-xs  text-gray-700 mb-1">Granularity</label>
                 <select className="w-full text-xs border border-gray-200 rounded px-3 py-2 outline-none">
                   <option>Weekly</option>
                 </select>
@@ -699,7 +699,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             </div>
 
             <div className="mb-6">
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Location</label>
+              <label className="block text-xs  text-gray-700 mb-1">Location</label>
               <select className="w-full text-xs border border-gray-200 rounded px-3 py-2 outline-none">
                 <option>India (All)</option>
               </select>
@@ -707,7 +707,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             </div>
 
             <div className="mb-6">
-              <label className="block text-xs font-semibold text-gray-700 mb-3">Include in Forecast</label>
+              <label className="block text-xs  text-gray-700 mb-3">Include in Forecast</label>
               <div className="flex flex-wrap items-center gap-4">
                 {['Organic Traffic', 'Branded Traffic', 'Non-Branded Traffic', 'Keywords', 'Conversions'].map(opt => (
                   <label key={opt} className="flex items-center gap-2 cursor-pointer bg-gray-50 border border-gray-100 px-3 py-1.5 rounded">
@@ -719,7 +719,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-3">Historical Data Source <Info size={12} className="text-gray-400" /></label>
+              <label className="flex items-center gap-2 text-xs  text-gray-700 mb-3">Historical Data Source <Info size={12} className="text-gray-400" /></label>
               <div className="grid grid-cols-2 gap-4">
                 <label className="border border-indigo-600 bg-indigo-50/30 p-3 rounded flex items-start gap-3 cursor-pointer">
                   <input type="radio" name="dataSource" defaultChecked className="mt-1" />
@@ -739,32 +739,32 @@ const SeoGmbPredictiveAnalysisPage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+          <div className="bg-white rounded border border-gray-100 p-6 shadow-sm">
             <h3 className=" text-gray-900 text-sm">3. Advanced Settings <span className="text-gray-400 font-normal">(Optional)</span></h3>
             <p className="text-xs text-gray-500 mb-6">Fine-tune your forecast with advanced options</p>
 
             <div className="grid grid-cols-4 gap-6 items-center">
               <div className="col-span-1">
-                <label className="block text-[10px] font-semibold text-gray-700 mb-1">Seasonality</label>
+                <label className="block text-[10px]  text-gray-700 mb-1">Seasonality</label>
                 <select className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 outline-none">
                   <option>Auto Detect</option>
                 </select>
               </div>
               <div className="col-span-1">
-                <label className="block text-[10px] font-semibold text-gray-700 mb-1">Growth Trend</label>
+                <label className="block text-[10px]  text-gray-700 mb-1">Growth Trend</label>
                 <select className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 outline-none">
                   <option>Auto Detect</option>
                 </select>
               </div>
               <div className="col-span-1">
-                <label className="flex items-center gap-1 text-[10px] font-semibold text-gray-700 mb-2">Model Sensitivity <Info size={10} className="text-gray-400" /></label>
+                <label className="flex items-center gap-1 text-[10px]  text-gray-700 mb-2">Model Sensitivity <Info size={10} className="text-gray-400" /></label>
                 <input type="range" className="w-full accent-indigo-600" />
                 <div className="flex justify-between text-[9px] text-gray-500 mt-1"><span>Low</span><span>Medium</span><span>High</span></div>
               </div>
               <div className="col-span-1">
-                <label className="block text-[10px] font-semibold text-gray-700 mb-2">Exclude Outliers</label>
+                <label className="block text-[10px]  text-gray-700 mb-2">Exclude Outliers</label>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-4 bg-indigo-600 rounded-full relative cursor-pointer">
+                  <div className="w-8 h-4 bg-red-600 rounded-full relative cursor-pointer">
                     <div className="w-3 h-3 bg-white rounded-full absolute right-0.5 top-0.5"></div>
                   </div>
                   <span className="text-[9px] text-gray-500">Remove abnormal data points</span>
@@ -773,21 +773,21 @@ const SeoGmbPredictiveAnalysisPage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+          <div className="bg-white rounded border border-gray-100 p-6 shadow-sm">
             <h3 className=" text-gray-900 text-sm">4. Forecast Name & Description</h3>
             <p className="text-xs text-gray-500 mb-6">Give a name to your forecast (Optional)</p>
 
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-3">
-                <label className="block text-[10px] font-semibold text-gray-700 mb-1">Forecast Name</label>
+                <label className="block text-[10px]  text-gray-700 mb-1">Forecast Name</label>
                 <input type="text" defaultValue="Q3 Traffic Forecast 2026" className="w-full text-xs border border-gray-200 rounded px-3 py-2 outline-none" />
               </div>
               <div className="col-span-6">
-                <label className="block text-[10px] font-semibold text-gray-700 mb-1">Description</label>
+                <label className="block text-[10px]  text-gray-700 mb-1">Description</label>
                 <input type="text" defaultValue="Traffic forecast for Q3 2026 based on current trends and historical data" className="w-full text-xs border border-gray-200 rounded px-3 py-2 outline-none" />
               </div>
               <div className="col-span-3">
-                <label className="block text-[10px] font-semibold text-gray-700 mb-1">Tags (Optional)</label>
+                <label className="block text-[10px]  text-gray-700 mb-1">Tags (Optional)</label>
                 <input type="text" placeholder="Add tags (e.g., traffic, q3, 2026)" className="w-full text-xs border border-gray-200 rounded px-3 py-2 outline-none bg-gray-50" />
               </div>
             </div>
@@ -802,10 +802,10 @@ const SeoGmbPredictiveAnalysisPage = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setIsGeneratingForecast(false)} className="p-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-50 transition">
+              <button onClick={() => setIsGeneratingForecast(false)} className="p-2 border border-gray-200 text-gray-700 text-xs  rounded hover:bg-gray-50 transition">
                 Cancel
               </button>
-              <button onClick={() => setIsGeneratingForecast(false)} className="px-6 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+              <button onClick={() => setIsGeneratingForecast(false)} className="px-6 py-2 bg-red-600 text-white text-xs  rounded hover:bg-red-700 transition shadow-sm flex items-center gap-2">
                 <Sparkles size={14} /> Generate Forecast
               </button>
             </div>
@@ -814,7 +814,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
 
         {/* Right Column: Info */}
         <div className="lg:col-span-3 space-y-4">
-          <div className="bg-indigo-50/50 rounded-xl border border-indigo-100 p-5">
+          <div className="bg-indigo-50/50 rounded border border-indigo-100 p-5">
             <div className="flex items-center gap-2 mb-4">
               <Sparkles size={16} className="text-indigo-600" />
               <h3 className=" text-indigo-900 text-xs">Forecast Details</h3>
@@ -894,10 +894,10 @@ const SeoGmbPredictiveAnalysisPage = () => {
               endDate={dateRange.endDate}
               onChange={(start, end) => setDateRange({ startDate: start, endDate: end })}
             />
-            <button onClick={() => setIsGeneratingForecast(false)} className="p-2 border border-gray-200 text-gray-700 text-xs font-semibold rounded hover:bg-gray-50 transition">
+            <button onClick={() => setIsGeneratingForecast(false)} className="p-2 border border-gray-200 text-gray-700 text-xs  rounded hover:bg-gray-50 transition">
               Cancel
             </button>
-            <button onClick={() => setIsGeneratingForecast(false)} className="p-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+            <button onClick={() => setIsGeneratingForecast(false)} className="p-2 bg-red-600 text-white text-xs  rounded hover:bg-red-700 transition shadow-sm flex items-center gap-2">
               <Sparkles size={14} /> Generate Forecast
             </button>
           </div>
@@ -905,7 +905,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
       ) : (
         <div className="bg-white border-b border-gray-100 px-6 py-4 flex flex-wrap items-center justify-between gap-4 flex-shrink-0">
           <div className="flex items-center gap-4">
-            <div className="p-2 border border-gray-200 rounded bg-indigo-600">
+            <div className="p-2 border border-gray-200 rounded bg-red-600">
               <TrendingUp className="text-white" size={20} />
             </div>
             <div>
@@ -927,7 +927,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
             <button className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50">
               <RefreshCw size={14} />
             </button>
-            <button onClick={() => setIsGeneratingForecast(true)} className="p-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow-sm">
+            <button onClick={() => setIsGeneratingForecast(true)} className="p-2 bg-red-600 text-white text-xs  rounded hover:bg-red-700 transition shadow-sm">
               Generate New Forecast
             </button>
           </div>

@@ -60,13 +60,13 @@ const HRAttendance = () => {
       </div>
 
       {error && (
-        <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
+        <div className="p-4 mb-4 text-sm text-red-800 rounded bg-red-50 border border-red-200 flex items-start gap-3">
           <AlertCircle className="shrink-0 mt-0.5" size={18} />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
           <h2 className="text-lg font-medium text-gray-800 flex items-center gap-2">
             <Calendar size={18} className="text-blue-500" /> Today's Roster

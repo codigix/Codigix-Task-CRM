@@ -362,7 +362,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 <FileCheck size={20} className="text-red-600" />
                 Add New Contract
               </h2>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+              <span className="text-xs  px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
                 Deal to Contract Workflow
               </span>
             </div>
@@ -381,7 +381,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
 
         {/* ================= ERROR BANNER ================= */}
         {error && (
-          <div className="mx-5 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-xs text-red-700 font-medium">
+          <div className="mx-5 mt-4 p-3 bg-red-50 border border-red-200 rounded flex items-center gap-2.5 text-xs text-red-700 font-medium">
             <AlertCircle size={16} className="text-red-600 shrink-0" />
             <span>{error}</span>
           </div>
@@ -391,7 +391,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
         <div className="p-4 sm:p-6 space-y-3 flex-1 bg-slate-50/50 custom-scrollbar">
 
           {/* ================= STEP 1: SELECT DEAL OR CLIENT ================= */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded bg-red-50 text-red-600 flex items-center justify-center  text-xs">1</div>
@@ -414,7 +414,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Select Deal / Converted Lead */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-xs  text-slate-700 mb-1.5 flex items-center gap-1.5">
                   <Briefcase size={13} className="text-red-600" />
                   Select Deal / Converted Lead
                 </label>
@@ -442,7 +442,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
 
               {/* Select Client */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-xs  text-slate-700 mb-1.5 flex items-center gap-1.5">
                   <Building2 size={13} className="text-slate-600" />
                   Client / Company <span className="text-red-500">*</span>
                 </label>
@@ -467,13 +467,13 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
 
           {/* ================= STEP 2: DEAL & CONVERSION INTELLIGENCE PANEL ================= */}
           {selectedDeal ? (
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-4 sm:p-5 shadow-lg border border-slate-700 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded p-4 sm:p-5 shadow-lg border border-slate-700 animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-700/60">
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs  bg-amber-400 text-slate-950 shadow-sm">
                     {selectedDeal.record_type === 'Converted Lead' ? '🎯 Converted Lead' : '💼 Pipeline Deal'}
                   </span>
-                  <span className="text-xs font-semibold text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                  <span className="text-xs  text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
                     Stage: {selectedDeal.deal_stage || selectedDeal.status || selectedDeal.pipeline || 'Active'}
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
@@ -482,7 +482,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 </div>
 
                 <div className="text-right">
-                  <span className="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">Deal Budget / Value</span>
+                  <span className="text-[10px] uppercase tracking-wider text-slate-400 block ">Deal Budget / Value</span>
                   <span className="text-base sm:text-lg font-black text-amber-400">
                     ₹{selectedDeal.deal_value ? parseFloat(selectedDeal.deal_value).toLocaleString('en-IN') : '0.00'}
                   </span>
@@ -494,7 +494,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 {/* Client Company */}
                 <div className="bg-slate-800/60 p-2.5 rounded border border-slate-700/50">
                   <span className="text-[10px] text-slate-400 block mb-0.5">Company / Client</span>
-                  <div className="font-semibold text-white truncate flex items-center gap-1.5">
+                  <div className=" text-white truncate flex items-center gap-1.5">
                     <Building2 size={13} className="text-blue-400 shrink-0" />
                     <span>{selectedDeal.company_name || 'Aditya Homeopathy'}</span>
                   </div>
@@ -503,7 +503,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 {/* Contact Person */}
                 <div className="bg-slate-800/60 p-2.5 rounded border border-slate-700/50">
                   <span className="text-[10px] text-slate-400 block mb-0.5">Contact Details</span>
-                  <div className="font-semibold text-white truncate flex items-center gap-1.5">
+                  <div className=" text-white truncate flex items-center gap-1.5">
                     <User size={13} className="text-emerald-400 shrink-0" />
                     <span>{selectedDeal.contact_first_name ? `${selectedDeal.contact_first_name} ${selectedDeal.contact_last_name || ''}` : (selectedDeal.deal_name || 'Contact')}</span>
                   </div>
@@ -518,7 +518,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 {/* Services & Business Type */}
                 <div className="bg-slate-800/60 p-2.5 rounded border border-slate-700/50">
                   <span className="text-[10px] text-slate-400 block mb-0.5">Service Category</span>
-                  <div className="font-semibold text-white truncate flex items-center gap-1.5">
+                  <div className=" text-white truncate flex items-center gap-1.5">
                     <Layers size={13} className="text-indigo-400 shrink-0" />
                     <span>{selectedDeal.business_type || selectedDeal.service_name || 'General Services'}</span>
                   </div>
@@ -532,7 +532,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 {/* Owner & Timeline */}
                 <div className="bg-slate-800/60 p-2.5 rounded border border-slate-700/50">
                   <span className="text-[10px] text-slate-400 block mb-0.5">Assigned Owner</span>
-                  <div className="font-semibold text-white truncate flex items-center gap-1.5">
+                  <div className=" text-white truncate flex items-center gap-1.5">
                     <ShieldCheck size={13} className="text-amber-400 shrink-0" />
                     <span>
                       {selectedDeal.assignee_first_name ? `${selectedDeal.assignee_first_name} ${selectedDeal.assignee_last_name || ''}` : 'Sales Executive'}
@@ -547,20 +547,20 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
               {/* Original Deal Description */}
               {selectedDeal.description && (
                 <div className="mt-3 p-2.5 bg-slate-800/40 rounded border border-slate-700/40 text-xs">
-                  <span className="text-[10px] font-semibold text-slate-400 block mb-0.5">Requirements / Discussion Notes:</span>
+                  <span className="text-[10px]  text-slate-400 block mb-0.5">Requirements / Discussion Notes:</span>
                   <p className="text-slate-200 leading-relaxed italic">"{selectedDeal.description}"</p>
                 </div>
               )}
             </div>
           ) : (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-center gap-2">
               <Sparkles size={15} className="text-amber-600 shrink-0" />
               <span>Tip: Select a deal above to automatically extract and populate project scope, client details, and pricing!</span>
             </div>
           )}
 
           {/* ================= STEP 3: DEFINE THE CONTRACT ================= */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
             <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100">
               <div className="w-7 h-7 rounded bg-red-50 text-red-600 flex items-center justify-center  text-xs">2</div>
               <div>
@@ -572,7 +572,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
             <div className="space-y-4">
               {/* Contract Subject */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs  text-slate-700 mb-1">
                   Contract Subject / Title <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -587,7 +587,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
               {/* Contract Type & Value */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs  text-slate-700 mb-1">
                     Contract Type <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -602,7 +602,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs  text-slate-700 mb-1">
                     Contract Value (₹) <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -623,7 +623,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
               {/* Dates & Duration Presets */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs  text-slate-700 mb-1">
                     Start Date <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -636,7 +636,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-slate-700">
+                    <label className="text-xs  text-slate-700">
                       End Date <span className="text-red-500">*</span>
                     </label>
                     {/* Duration preset buttons */}
@@ -684,7 +684,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
               {/* Status & Payment Terms */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs  text-slate-700 mb-1">
                     Contract Status
                   </label>
                   <select
@@ -699,7 +699,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs  text-slate-700 mb-1">
                     Payment Terms
                   </label>
                   <select
@@ -716,7 +716,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
 
               {/* Contract Description & Clauses */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs  text-slate-700 mb-1">
                   Contract Scope, Clauses & Terms
                 </label>
                 <textarea
@@ -731,7 +731,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
           </div>
 
           {/* ================= STEP 4: ADD RELATED FILES & DOCUMENTS ================= */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+          <div className="bg-white rounded p-4 sm:p-5 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded bg-red-50 text-red-600 flex items-center justify-center  text-xs">3</div>
@@ -740,7 +740,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                   <p className="text-[11px] text-slate-500">Attach signed agreements, statement of work (SOW), proposal PDFs, or client KYC.</p>
                 </div>
               </div>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="text-xs  px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
                 {uploadedFiles.length} {uploadedFiles.length === 1 ? 'file' : 'files'} attached
               </span>
             </div>
@@ -752,7 +752,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
               onDragOver={handleDrag}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${dragActive
+              className={`border-2 border-dashed rounded p-6 text-center cursor-pointer transition-all ${dragActive
                 ? 'border-red-500 bg-red-50/70 scale-[1.01]'
                 : 'border-slate-300 bg-slate-50/70 hover:bg-slate-100 hover:border-slate-400'
                 }`}
@@ -788,7 +788,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                           <FileText size={16} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-slate-900 truncate">{file.name}</p>
+                          <p className="text-xs  text-slate-900 truncate">{file.name}</p>
                           <span className="text-[10px] text-slate-400">{formatFileSize(file.size)}</span>
                         </div>
                       </div>
@@ -837,7 +837,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
               type="button"
               onClick={handleCancel}
               disabled={isLoading}
-              className="p-2 border border-slate-300 rounded text-xs font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
+              className="p-2 border border-slate-300 rounded text-xs  text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
             >
               Cancel
             </button>
@@ -849,7 +849,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 setFormData(prev => ({ ...prev, status: 'Draft' }));
                 handleSubmit(e);
               }}
-              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded text-xs font-semibold transition disabled:opacity-50"
+              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded text-xs  transition disabled:opacity-50"
             >
               Save as Draft
             </button>
@@ -861,7 +861,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 setFormData(prev => ({ ...prev, status: 'Active' }));
                 handleSubmit(e);
               }}
-              className="p-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              className="p-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs  transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
             >
               {isLoading ? (
                 <>

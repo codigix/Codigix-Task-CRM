@@ -1,3 +1,5 @@
+// Must be first: makes every API request carry the login session cookie.
+import './setupAuthFetch';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';

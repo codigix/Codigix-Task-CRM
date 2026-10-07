@@ -122,7 +122,7 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded shadow-2xl w-full max-w-[520px] max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between px-6 pt-5 pb-3">
-          <h2 className="text-xl font-semibold text-gray-900">Create sprint</h2>
+          <h2 className="text-xl  text-gray-900">Create sprint</h2>
           <button onClick={onCancel} className="text-gray-400 hover:text-gray-700 p-1 rounded transition">
             <X size={18} />
           </button>
@@ -135,7 +135,7 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
 
           {isManager && (
             <div>
-              <label className="block text-[13px] font-semibold text-gray-700 mb-1">
+              <label className="block text-[13px]  text-gray-700 mb-1">
                 Department <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-4">
@@ -166,7 +166,7 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
           )}
 
           <div>
-            <label className="block text-[13px] font-semibold text-gray-700 mb-1">
+            <label className="block text-[13px]  text-gray-700 mb-1">
               Sprint name <span className="text-red-500">*</span>
             </label>
             <input
@@ -178,8 +178,8 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
           </div>
 
           <div className="relative" ref={projectDropdownRef}>
-            <label className="block text-[13px] font-semibold text-gray-700 mb-1">Project</label>
-            
+            <label className="block text-[13px]  text-gray-700 mb-1">Project</label>
+
             {/* Trigger Button */}
             <div
               tabIndex={0}
@@ -193,11 +193,10 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
                   setIsProjectDropdownOpen(!isProjectDropdownOpen);
                 }
               }}
-              className={`w-full border rounded px-3 py-2 text-[14px] bg-white flex items-center justify-between cursor-pointer transition select-none ${
-                isProjectDropdownOpen
-                  ? 'border-blue-500 ring-1 ring-blue-500'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
+              className={`w-full border rounded px-3 py-2 text-[14px] bg-white flex items-center justify-between cursor-pointer transition select-none ${isProjectDropdownOpen
+                ? 'border-blue-500 ring-1 ring-blue-500'
+                : 'border-gray-300 hover:border-gray-400'
+                }`}
             >
               <div className="flex items-center gap-2 min-w-0 mr-2">
                 {selected ? (
@@ -244,7 +243,7 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
 
             {/* Dropdown Menu */}
             {isProjectDropdownOpen && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden">
+              <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded shadow-xl z-50 overflow-hidden">
                 {/* Search Header */}
                 <div className="p-2 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
                   <Search size={15} className="text-gray-400 shrink-0 ml-1" />
@@ -283,9 +282,8 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
                         setIsProjectDropdownOpen(false);
                         setProjectSearch('');
                       }}
-                      className={`w-full text-left px-3 py-2.5 text-[13px] flex items-center justify-between transition ${
-                        projectId === '' ? 'bg-blue-50/70 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
-                      }`}
+                      className={`w-full text-left px-3 py-2.5 text-[13px] flex items-center justify-between transition ${projectId === '' ? 'bg-blue-50/70 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="italic">No project</span>
@@ -310,11 +308,10 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
                             setIsProjectDropdownOpen(false);
                             setProjectSearch('');
                           }}
-                          className={`w-full text-left px-3 py-2 text-[13px] flex items-center justify-between transition ${
-                            isSelected
-                              ? 'bg-blue-50/70 text-blue-700 font-medium'
-                              : 'text-gray-800 hover:bg-gray-50'
-                          }`}
+                          className={`w-full text-left px-3 py-2 text-[13px] flex items-center justify-between transition ${isSelected
+                            ? 'bg-blue-50/70 text-blue-700 font-medium'
+                            : 'text-gray-800 hover:bg-gray-50'
+                            }`}
                         >
                           <div className="flex flex-col min-w-0 pr-2">
                             <div className="flex items-center gap-1.5 truncate">
@@ -327,11 +324,10 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
                             </div>
                             <div className="mt-0.5">
                               <span
-                                className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                                  isMarketing
-                                    ? 'bg-amber-100 text-amber-800'
-                                    : 'bg-blue-100 text-blue-800'
-                                }`}
+                                className={`inline-block text-[10px]  px-1.5 py-0.5 rounded ${isMarketing
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-blue-100 text-blue-800'
+                                  }`}
                               >
                                 {dept}
                               </span>
@@ -360,7 +356,7 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-gray-700 mb-1">Sprint goal</label>
+            <label className="block text-[13px]  text-gray-700 mb-1">Sprint goal</label>
             <textarea
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
@@ -382,7 +378,7 @@ const CreateSprintModal = ({ isOpen, defaultName, defaultDepartment = 'IT', isMa
           <button
             onClick={handleCreate}
             disabled={isSaving}
-            className="px-5 py-2 text-[14px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition disabled:opacity-50"
+            className="px-5 py-2 text-[14px] font-medium text-white bg-red-700 hover:bg-blue-700 rounded transition disabled:opacity-50"
           >
             {isSaving ? 'Creating…' : 'Create'}
           </button>

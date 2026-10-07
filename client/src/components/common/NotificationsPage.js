@@ -217,7 +217,7 @@ export default function NotificationsPage() {
           {devicePermission === 'granted' ? (
             <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-semibold text-emerald-800">Device Alerts Active</span>
+              <span className="text-xs  text-emerald-800">Device Alerts Active</span>
               <button
                 onClick={handleTestAlert}
                 className="ml-1 text-[11px] bg-emerald-600 text-white px-2 py-0.5 rounded font-medium hover:bg-emerald-700 transition-colors shadow-xs"
@@ -240,7 +240,7 @@ export default function NotificationsPage() {
           ) : (
             <button
               onClick={handleEnableDeviceAlerts}
-              className="flex items-center gap-1.5 text-xs bg-red-600 text-white px-3.5 py-1.5 rounded font-semibold hover:bg-blue-700 transition-all shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 text-xs bg-red-600 text-white px-3.5 py-1.5 rounded  hover:bg-blue-700 transition-all shadow-sm active:scale-95"
             >
               <Smartphone size={14} /> Enable Device Alerts
             </button>

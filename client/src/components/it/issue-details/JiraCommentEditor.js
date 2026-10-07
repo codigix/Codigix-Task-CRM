@@ -272,7 +272,7 @@ const JiraCommentEditor = ({
               setMentionQuery('');
             }
           }}
-          className="p-1 hover:bg-blue-100 text-blue-600 rounded transition ml-auto flex items-center gap-1 font-semibold text-[11px] cursor-pointer"
+          className="p-1 hover:bg-blue-100 text-blue-600 rounded transition ml-auto flex items-center gap-1  text-[11px] cursor-pointer"
           title="Mention someone (@)"
         >
           <AtSign size={13} /> Mention
@@ -305,7 +305,7 @@ const JiraCommentEditor = ({
                   e.preventDefault();
                   insertMention(u.name);
                 }}
-                className={`px-2.5 py-1.5 flex items-center gap-2 cursor-pointer transition ${idx === selectedMentionIndex ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                className={`px-2.5 py-1.5 flex items-center gap-2 cursor-pointer transition ${idx === selectedMentionIndex ? 'bg-blue-50 text-blue-700 ' : 'text-gray-700 hover:bg-gray-50'
                   }`}
               >
                 <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700  text-[10px] flex items-center justify-center shrink-0">
@@ -362,7 +362,7 @@ const JiraCommentEditor = ({
           <button
             type="button"
             onClick={handleSave}
-            className="px-3.5 py-1 bg-red-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition cursor-pointer shadow-xs active:scale-95"
+            className="px-3.5 py-1 bg-red-600 hover:bg-blue-700 text-white rounded text-xs  transition cursor-pointer shadow-xs active:scale-95"
           >
             Save
           </button>

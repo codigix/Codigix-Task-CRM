@@ -13,7 +13,7 @@ const CalendarMockup = () => {
           </div>
           <div className="flex items-center gap-1 bg-slate-100 rounded border border-slate-200">
             <button className="p-1.5 hover:bg-slate-200 text-slate-500 rounded-l transition-colors"><ChevronLeft size={16} /></button>
-            <span className="text-xs font-semibold px-2 text-slate-600">Today</span>
+            <span className="text-xs  px-2 text-slate-600">Today</span>
             <button className="p-1.5 hover:bg-slate-200 text-slate-500 rounded-r transition-colors"><ChevronRight size={16} /></button>
           </div>
         </div>
@@ -102,7 +102,7 @@ const CalendarMockup = () => {
               <div className="h-[120px] bg-red-100 border-l-4 border-red-500 rounded p-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group">
                 <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-5 transition-opacity"></div>
                 <div className="text-[10px]  text-red-700">9:00 AM - 10:30 AM</div>
-                <div className="text-xs font-semibold text-red-900 leading-tight mt-0.5">Acme Corp Discovery Call</div>
+                <div className="text-xs  text-red-900 leading-tight mt-0.5">Acme Corp Discovery Call</div>
                 <div className="flex items-center gap-1 mt-2 text-red-600">
                   <Video size={10} /> <span className="text-[9px] font-medium">Codigix Meet</span>
                 </div>
@@ -112,14 +112,14 @@ const CalendarMockup = () => {
             <div className="absolute top-[240px] left-[20%] w-[20%] p-1 z-10">
               <div className="h-[80px] bg-blue-100 border-l-4 border-blue-500 rounded p-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group">
                 <div className="text-[10px]  text-blue-700">11:00 AM - 12:00 PM</div>
-                <div className="text-xs font-semibold text-blue-900 leading-tight mt-0.5">Weekly Sales Sync</div>
+                <div className="text-xs  text-blue-900 leading-tight mt-0.5">Weekly Sales Sync</div>
               </div>
             </div>
 
             <div className="absolute top-[400px] left-[40%] w-[20%] p-1 z-10">
               <div className="h-[160px] bg-emerald-100 border-l-4 border-emerald-500 rounded p-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group">
                 <div className="text-[10px]  text-emerald-700">1:00 PM - 3:00 PM</div>
-                <div className="text-xs font-semibold text-emerald-900 leading-tight mt-0.5">Q4 Planning Workshop</div>
+                <div className="text-xs  text-emerald-900 leading-tight mt-0.5">Q4 Planning Workshop</div>
                 <div className="flex items-center gap-1 mt-2 text-emerald-600">
                   <Users size={10} /> <span className="text-[9px] font-medium">Boardroom A</span>
                 </div>
@@ -129,7 +129,7 @@ const CalendarMockup = () => {
             <div className="absolute top-[320px] left-[60%] w-[20%] p-1 z-10">
               <div className="h-[80px] bg-purple-100 border-l-4 border-purple-500 rounded p-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group">
                 <div className="text-[10px]  text-purple-700">12:00 PM - 1:00 PM</div>
-                <div className="text-xs font-semibold text-purple-900 leading-tight mt-0.5">Lunch & Learn: SEO</div>
+                <div className="text-xs  text-purple-900 leading-tight mt-0.5">Lunch & Learn: SEO</div>
               </div>
             </div>
 

@@ -96,9 +96,9 @@ const DEFAULT_USERS = [
 
 const STATUS_COLORS = {
   'TO DO': 'bg-gray-100 text-gray-700 hover:bg-gray-200',
-  'IN PROGRESS': 'bg-blue-100 text-blue-800 hover:bg-blue-200 font-semibold',
-  'IN REVIEW': 'bg-purple-100 text-purple-800 hover:bg-purple-200 font-semibold',
-  'DONE': 'bg-green-100 text-green-800 hover:bg-green-200 font-semibold'
+  'IN PROGRESS': 'bg-blue-100 text-blue-800 hover:bg-blue-200 ',
+  'IN REVIEW': 'bg-purple-100 text-purple-800 hover:bg-purple-200 ',
+  'DONE': 'bg-green-100 text-green-800 hover:bg-green-200 '
 };
 
 const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssueCreated, department, initialSubtaskKey }) => {
@@ -243,6 +243,24 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       })
       .catch(err => console.error('Error fetching projects:', err));
   }, [issueDepartment]);
+
+  // The list above only holds this department's projects, but a ticket can belong to a
+  // project owned by another department (e.g. a Marketing client's work done on the IT
+  // board). Fetch that one project so the field and breadcrumb show its name, not "None".
+  useEffect(() => {
+    if (!projectId) return;
+    if (projectsList.some(p => String(p.id) === String(projectId))) return;
+    let cancelled = false;
+    fetch(`${API_BASE_URL}/projects/${projectId}`)
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        const p = data?.data || data;
+        if (cancelled || !p || p.id == null) return;
+        setProjectsList(prev => prev.some(x => String(x.id) === String(p.id)) ? prev : [...prev, p]);
+      })
+      .catch(() => { });
+    return () => { cancelled = true; };
+  }, [projectId, projectsList]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -398,6 +416,13 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       try { rawComments = JSON.parse(rawComments); } catch (e) { rawComments = []; }
     }
     setComments(Array.isArray(rawComments) ? rawComments : []);
+
+    // Linked work items are stored on the issue too (linked_issues JSON column).
+    let rawLinks = issue.linked_issues;
+    if (typeof rawLinks === 'string') {
+      try { rawLinks = JSON.parse(rawLinks); } catch (e) { rawLinks = []; }
+    }
+    setLinkedIssues(Array.isArray(rawLinks) ? rawLinks.filter(l => l && l.key) : []);
   }, [issue, initialSubtaskKey]);
 
   // Synchronize currentSubtask only if initialSubtaskKey prop explicitly changes from outside
@@ -717,7 +742,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
         try {
           const saved = await uploadDescriptionFile(f, {
             project_id: issue?.project_id || undefined,
-            userId: 1
+            userId: user?.id || undefined
           });
 
           if (issueKey) {
@@ -760,7 +785,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       setUploadingAttachment(false);
       if (e?.target && 'value' in e.target) e.target.value = '';
     }
-  }, [issue?.project_id, issue?.id, issueKey, activeSubtaskId]);
+  }, [issue?.project_id, issue?.id, issueKey, activeSubtaskId, user?.id]);
 
   // Global paste handler on panel: allows pasting screenshots directly into attachments when not in an editor
   useEffect(() => {
@@ -801,32 +826,46 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     setAttachments(prev => prev.filter((_, i) => i !== idx));
   };
 
+  // Links are saved on the issue, so they survive closing the panel. A typed key is
+  // matched against this board's tickets so the link shows the real title.
   const handleCreateLinkedIssue = () => {
-    if (!linkSearchInput.trim()) return;
-    setLinkedIssues(prev => [...prev, { relation: linkRelation, key: linkSearchInput, title: `Related task (${linkSearchInput})` }]);
+    const raw = linkSearchInput.trim();
+    if (!raw) return;
+    const typedKey = raw.split(/[:s]/)[0].toUpperCase();
+    const match = issuesList.find(i => String(i.issue_key || '').toUpperCase() === typedKey);
+    if (!match) {
+      showErrorToast(`No ticket ${typedKey} found on this board`);
+      return;
+    }
+    if (match.issue_key === issueKey) {
+      showErrorToast('A ticket cannot be linked to itself');
+      return;
+    }
+    if (linkedIssues.some(l => l.key === match.issue_key && l.relation === linkRelation)) {
+      showErrorToast('That link already exists');
+      return;
+    }
+    const next = [...linkedIssues, { relation: linkRelation, key: match.issue_key, title: match.title }];
+    setLinkedIssues(next);
+    handleUpdate({ linked_issues: next });
     setLinkSearchInput('');
     setIsLinkingIssue(false);
   };
 
   const deleteLinkedIssue = (key) => {
-    setLinkedIssues(prev => prev.filter(l => l.key !== key));
+    const next = linkedIssues.filter(l => l.key !== key);
+    setLinkedIssues(next);
+    handleUpdate({ linked_issues: next });
   };
 
   // Comments are stored on the issue itself (comments JSON column), so every change
   // is written back to the server rather than living only in component state.
-  const persistComments = async (next) => {
+  // Saved through updateIssue (not a separate PUT) so the board's copy of the issue gets
+  // the new comments too — otherwise the next edit to any other field re-rendered the panel
+  // from the board's stale copy and the comment just added disappeared.
+  const persistComments = (next) => {
     setComments(next);
-    if (!issueKey) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'x-user-name': loggedUser },
-        body: JSON.stringify({ comments: next })
-      });
-      if (!res.ok) throw new Error('Failed to save comment');
-    } catch (err) {
-      Swal.fire('Error', 'Could not save comment. Please try again.', 'error');
-    }
+    handleUpdate({ comments: next });
   };
 
   const handleAddComment = () => {
@@ -874,7 +913,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const handleDeleteWorklog = async (id) => {
     if (!issueKey) return;
     try {
-      await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/worklogs/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/worklogs/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete work log');
       loadWorklogs();
     } catch (err) {
       Swal.fire('Error', 'Could not delete work log', 'error');
@@ -920,7 +960,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       <div
         className={
           isExpanded
-            ? "fixed inset-4 md:inset-8 bg-white rounded-xl border border-gray-200 shadow-2xl z-[9999] flex flex-col font-sans text-gray-800 overflow-hidden animate-fade-in"
+            ? "fixed inset-4 md:inset-8 bg-white rounded border border-gray-200 shadow-2xl z-[9999] flex flex-col font-sans text-gray-800 overflow-hidden animate-fade-in"
             : "fixed right-0 top-0 bottom-0 w-[940px] max-w-[94vw] border-l border-gray-200 bg-white flex flex-col shadow-2xl z-[9999] animate-slide-left font-sans text-gray-800"
         }
       >
@@ -945,6 +985,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
           currentSubtask={currentSubtask}
           onBackToParent={() => setCurrentSubtask(null)}
           onOpenReviewGate={() => setShowReviewGate(true)}
+          onAttachFile={() => fileInputRef.current?.click()}
         />
 
         {/* INDEPENDENTLY SCROLLABLE 2-COLUMN JIRA CONTENT */}

@@ -65,7 +65,7 @@ const CompleteSprintModal = ({ isOpen, sprints, initialSprintId, onCancel, onCom
         </div>
 
         <div className="px-8 pt-8 pb-5">
-          <h2 className="text-xl font-semibold text-gray-900 mb-5">Complete sprint</h2>
+          <h2 className="text-xl  text-gray-900 mb-5">Complete sprint</h2>
 
           {error && (
             <div className="text-[12px] text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2 mb-4">
@@ -73,7 +73,7 @@ const CompleteSprintModal = ({ isOpen, sprints, initialSprintId, onCancel, onCom
             </div>
           )}
 
-          <label className="block text-[13px] font-semibold text-gray-700 mb-1">Select a sprint</label>
+          <label className="block text-[13px]  text-gray-700 mb-1">Select a sprint</label>
           <select
             value={sprintId}
             onChange={(e) => setSprintId(e.target.value)}
@@ -101,7 +101,7 @@ const CompleteSprintModal = ({ isOpen, sprints, initialSprintId, onCancel, onCom
 
               {openCount > 0 && (
                 <div className="mt-5">
-                  <label className="block text-[13px] font-semibold text-gray-700 mb-1">
+                  <label className="block text-[13px]  text-gray-700 mb-1">
                     Open work items action
                   </label>
                   <select

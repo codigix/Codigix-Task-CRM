@@ -58,7 +58,7 @@ const renderFormattedComment = (rawText) => {
       return (
         <span
           key={i}
-          className="inline-flex items-center px-1.5 py-0.2 mx-0.5 rounded bg-blue-100 text-blue-800 font-semibold text-[11px] border border-blue-200/70"
+          className="inline-flex items-center px-1.5 py-0.2 mx-0.5 rounded bg-blue-100 text-blue-800  text-[11px] border border-blue-200/70"
         >
           {part}
         </span>
@@ -175,18 +175,18 @@ const ITIssueActivityTabs = ({
     if (timerState.isActive && timerState.sessionStart) {
       finalSeconds += Math.floor((Date.now() - timerState.sessionStart) / 1000);
     }
-    
+
     const h = Math.floor(finalSeconds / 3600);
     const m = Math.floor((finalSeconds % 3600) / 60);
     let timeStr = '';
     if (h > 0) timeStr += `${h}h `;
     if (m > 0 || h === 0) timeStr += `${Math.max(1, m)}m`;
-    
+
     let startDateStr = '';
     if (timerState.initialSessionStart) {
-       startDateStr = new Date(timerState.initialSessionStart).toISOString().slice(0, 16);
+      startDateStr = new Date(timerState.initialSessionStart).toISOString().slice(0, 16);
     } else {
-       startDateStr = new Date().toISOString().slice(0, 16);
+      startDateStr = new Date().toISOString().slice(0, 16);
     }
 
     setWorkForm({ timeSpent: timeStr.trim(), description: '', startedAt: startDateStr, originalEstimate: '' });
@@ -260,7 +260,7 @@ const ITIssueActivityTabs = ({
 
   return (
     <div className="space-y-4 pt-4 border-t border-gray-100">
-      <label className="text-xs font-semibold text-gray-700 tracking-wide">Activity</label>
+      <label className="text-xs  text-gray-700 tracking-wide">Activity</label>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1 bg-gray-100 p-1 rounded text-xs font-medium text-gray-600">
@@ -269,7 +269,7 @@ const ITIssueActivityTabs = ({
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded transition cursor-pointer whitespace-nowrap ${activeTab === tab
-                ? 'bg-white text-blue-600 shadow-sm font-semibold'
+                ? 'bg-white text-blue-600 shadow-sm '
                 : 'hover:text-gray-900 text-gray-600'
                 }`}
             >
@@ -313,7 +313,7 @@ const ITIssueActivityTabs = ({
                   className="border border-gray-200 hover:border-blue-400/80 rounded p-2.5 text-xs text-gray-400 cursor-text transition bg-white shadow-2xs flex items-center justify-between"
                 >
                   <span>Add a comment... Type <kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] text-gray-600 border border-gray-200">@</kbd> to mention someone</span>
-                  <span className="text-[10px] text-blue-600 font-semibold">Reply</span>
+                  <span className="text-[10px] text-blue-600 ">Reply</span>
                 </div>
               )}
             </div>
@@ -335,7 +335,7 @@ const ITIssueActivityTabs = ({
                     <div className="flex-1 space-y-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-900">{c.author || 'User'}</span>
+                          <span className=" text-gray-900">{c.author || 'User'}</span>
                           <span className="text-[10px] text-gray-400">{relativeTime(c.time)}</span>
                           {c.is_edited && <span className="text-[9px] text-gray-400 italic">(edited)</span>}
                         </div>
@@ -399,7 +399,7 @@ const ITIssueActivityTabs = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-900">{c.author || 'User'}</span>
+                        <span className=" text-gray-900">{c.author || 'User'}</span>
                         <span className="text-gray-400 text-[10px]">commented</span>
                         <span className="text-[10px] text-gray-400 ml-auto">{relativeTime(c.time)}</span>
                       </div>
@@ -420,9 +420,9 @@ const ITIssueActivityTabs = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-800">
-                        <span className="font-semibold">{entry.changed_by}</span>
+                        <span className="">{entry.changed_by}</span>
                         <span className="text-gray-500"> updated </span>
-                        <span className="font-semibold">{FIELD_LABELS[entry.field] || entry.field}</span>
+                        <span className="">{FIELD_LABELS[entry.field] || entry.field}</span>
                         <span className="text-[10px] text-gray-400 ml-2">{relativeTime(entry.created_at)}</span>
                       </div>
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -448,7 +448,7 @@ const ITIssueActivityTabs = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-800">
-                        <span className="font-semibold">{w.author}</span>
+                        <span className="">{w.author}</span>
                         <span className="text-gray-500"> logged </span>
                         <span className=" text-emerald-600">{w.time_spent}</span>
                         <span className="text-[10px] text-gray-400 ml-2">{relativeTime(w.created_at)}</span>
@@ -480,9 +480,9 @@ const ITIssueActivityTabs = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-gray-800">
-                    <span className="font-semibold">{entry.changed_by}</span>
+                    <span className="">{entry.changed_by}</span>
                     <span className="text-gray-500"> updated </span>
-                    <span className="font-semibold">{FIELD_LABELS[entry.field] || entry.field}</span>
+                    <span className="">{FIELD_LABELS[entry.field] || entry.field}</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                     <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] line-through max-w-[200px] truncate">
@@ -508,10 +508,10 @@ const ITIssueActivityTabs = ({
             {[
               { label: 'Estimated', value: worklogData.originalEstimate || '0h', cls: 'text-gray-700' },
               { label: 'Logged', value: worklogData.totalSpent || '0h', cls: 'text-blue-600' },
-              { label: 'Remaining', value: worklogData.remainingEstimate || '0h', cls: worklogData.remainingEstimate?.includes('Overdue') ? 'text-red-600 font-bold' : 'text-emerald-600' }
+              { label: 'Remaining', value: worklogData.remainingEstimate || '0h', cls: worklogData.remainingEstimate?.includes('Overdue') ? 'text-red-600 ' : 'text-emerald-600' }
             ].map(s => (
               <div key={s.label} className="p-2 bg-gray-50 rounded border border-gray-100">
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">{s.label}</span>
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider block ">{s.label}</span>
                 <span className={`text-sm  ${s.cls}`}>{s.value}</span>
               </div>
             ))}
@@ -520,8 +520,8 @@ const ITIssueActivityTabs = ({
           {(timerState.isActive || liveElapsed > 0) && (
             <div className="bg-slate-50 border border-slate-200 rounded p-3 flex items-center justify-between mt-2 mb-2">
               <div>
-                <span className="text-xs font-semibold text-slate-700 block mb-0.5">Live Tracker</span>
-                <span className={`font-mono text-lg font-bold tracking-tight ${timerState.isActive ? 'text-red-600' : 'text-slate-600'}`}>
+                <span className="text-xs  text-slate-700 block mb-0.5">Live Tracker</span>
+                <span className={`font-mono text-lg  tracking-tight ${timerState.isActive ? 'text-red-600' : 'text-slate-600'}`}>
                   {formatLiveElapsed(liveElapsed)}
                 </span>
               </div>
@@ -532,7 +532,7 @@ const ITIssueActivityTabs = ({
           )}
 
           <div className="flex justify-between items-center pt-2">
-            <span className="text-xs font-semibold text-gray-700">Work Logs</span>
+            <span className="text-xs  text-gray-700">Work Logs</span>
             <button
               onClick={() => setIsLoggingWork(v => !v)}
               className="flex items-center gap-1 px-2.5 py-1 text-xs bg-red-600 text-white rounded font-medium hover:bg-blue-700 transition cursor-pointer"
@@ -545,7 +545,7 @@ const ITIssueActivityTabs = ({
             <div className="p-3 bg-gray-50 rounded border border-gray-200 space-y-2 text-xs">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-semibold text-gray-600 mb-0.5">Time Spent (e.g. 2h 30m, 1d)</label>
+                  <label className="block text-[10px]  text-gray-600 mb-0.5">Time Spent (e.g. 2h 30m, 1d)</label>
                   <input
                     type="text"
                     value={workForm.timeSpent}
@@ -555,7 +555,7 @@ const ITIssueActivityTabs = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-gray-600 mb-0.5">Date / Time</label>
+                  <label className="block text-[10px]  text-gray-600 mb-0.5">Date / Time</label>
                   <input
                     type="datetime-local"
                     value={workForm.startedAt}
@@ -565,7 +565,7 @@ const ITIssueActivityTabs = ({
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-gray-600 mb-0.5">Work Description</label>
+                <label className="block text-[10px]  text-gray-600 mb-0.5">Work Description</label>
                 <textarea
                   value={workForm.description}
                   onChange={(e) => setWorkForm(p => ({ ...p, description: e.target.value }))}
@@ -599,35 +599,35 @@ const ITIssueActivityTabs = ({
                 let startTimeStr = '';
                 if (log.started_at) {
                   const start = new Date(log.started_at);
-                  startTimeStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                  startTimeStr = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                   if (log.seconds) {
-                     const end = new Date(start.getTime() + log.seconds * 1000);
-                     endTimeStr = end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const end = new Date(start.getTime() + log.seconds * 1000);
+                    endTimeStr = end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                   }
                 }
-                
+
                 return (
                   <div key={log.id} className="flex justify-between items-start p-2 bg-gray-50 rounded border border-gray-100 text-xs group">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-800">{log.time_spent}</span>
+                        <span className=" text-gray-800">{log.time_spent}</span>
                         <span className="text-[10px] text-gray-400">by {log.author}</span>
                         <span className="text-[10px] text-gray-400">· {relativeTime(log.started_at || log.created_at)}</span>
                       </div>
-                      
+
                       {startTimeStr && (
                         <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                           <Clock size={10} />
-                           <span>Started: {startTimeStr}</span>
-                           {endTimeStr && (
-                             <>
-                               <span>→</span>
-                               <span>Stopped: {endTimeStr}</span>
-                             </>
-                           )}
+                          <Clock size={10} />
+                          <span>Started: {startTimeStr}</span>
+                          {endTimeStr && (
+                            <>
+                              <span>→</span>
+                              <span>Stopped: {endTimeStr}</span>
+                            </>
+                          )}
                         </div>
                       )}
-                      
+
                       {log.description && <p className="text-gray-600 text-[11px] mt-0.5">{log.description}</p>}
                     </div>
                     {handleDeleteWorklog && (
@@ -670,7 +670,7 @@ const ITIssueActivityTabs = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
-                          <a href={pr.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:underline">{pr.title}</a>
+                          <a href={pr.url} target="_blank" rel="noopener noreferrer" className=" text-blue-600 hover:underline">{pr.title}</a>
                           <span className="text-[10px] text-gray-400">{relativeTime(pr.created_at)}</span>
                         </div>
                         <div className="text-gray-500 mt-0.5">#{pr.pr_number} • {pr.state}</div>
@@ -713,11 +713,11 @@ const ITIssueActivityTabs = ({
       {activeTab === 'AI Docs' && (
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-semibold text-gray-700">AI Generated Documentation</span>
+            <span className="text-xs  text-gray-700">AI Generated Documentation</span>
             <button
               onClick={handleGenerateDocs}
               disabled={aiDocsLoading}
-              className="flex items-center gap-1.5 px-3 py-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded font-semibold transition cursor-pointer shadow-xs disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded  transition cursor-pointer shadow-xs disabled:opacity-50"
             >
               {aiDocsLoading ? (
                 <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -738,7 +738,7 @@ const ITIssueActivityTabs = ({
                   ['Rollback Plan', docsData.rollback_checklist]
                 ].filter(([, body]) => body).map(([heading, body]) => (
                   <div key={heading}>
-                    <h4 className="font-semibold text-indigo-900 mb-1">{heading}</h4>
+                    <h4 className=" text-indigo-900 mb-1">{heading}</h4>
                     <div className="bg-white border border-gray-200 rounded p-2.5 leading-relaxed" dangerouslySetInnerHTML={{ __html: body }} />
                   </div>
                 ))}

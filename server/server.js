@@ -14,7 +14,8 @@ const PORT = process.env.PORT || 5000;
 
 const pool = require('./config/database');
 const { testConnection } = require('./database/init');
-const { hashPassword, checkPermission } = require('./middleware/helpers');
+const { hashPassword, verifyPassword, checkPermission } = require('./middleware/helpers');
+const { createSessionMiddleware, issueSession, clearSession, requireAdmin } = require('./middleware/session');
 const automationService = require('./services/automationService');
 
 const allowedOrigins = [
@@ -31,12 +32,14 @@ const corsOptions = {
     if (!origin) return callback(null, true);
     if (
       allowedOrigins.includes(origin) ||
-      origin.endsWith('.codigixinfotech.com') ||
-      /^http:\/\/localhost:[0-9]+$/.test(origin)
+      /^https?:\/\/([a-z0-9-]+\.)*codigixinfotech\.com$/i.test(origin) ||
+      (NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1):[0-9]+$/.test(origin))
     ) {
       return callback(null, true);
     }
-    return callback(null, true);
+    // Any other website is refused: requests carry the login cookie, so allowing every
+    // origin would let a third-party page act as a signed-in user.
+    return callback(null, false);
   },
   credentials: true,
   optionsSuccessStatus: 200,
@@ -49,8 +52,18 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 // Serve static files strictly from UPLOAD_DIR defined in .env (no optional fallback paths)
 const { UPLOAD_DIR } = require('./config/upload');
-app.use('/uploads', express.static(UPLOAD_DIR));
-app.use('/api/uploads', express.static(UPLOAD_DIR));
+// Never serve database dumps, env/config files, keys, archives or scripts from uploads,
+// even if someone uploads one: these leak data or credentials when fetched by URL.
+const BLOCKED_UPLOAD_EXT = /\.(sql|sqlite|db|bak|dump|env|pem|key|p12|pfx|zip|tar|gz|7z|rar|js|mjs|cjs|sh|bat|ps1|php|py|exe)$/i;
+app.use(['/uploads', '/api/uploads'], (req, res, next) => {
+  const name = decodeURIComponent(path.basename(req.path || ''));
+  if (BLOCKED_UPLOAD_EXT.test(name) || name.startsWith('.')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  next();
+});
+app.use('/uploads', express.static(UPLOAD_DIR, { dotfiles: 'deny' }));
+app.use('/api/uploads', express.static(UPLOAD_DIR, { dotfiles: 'deny' }));
 
 // Resolving uploads matching original filenames within UPLOAD_DIR without path-to-regexp syntax errors
 app.use(['/uploads', '/api/uploads'], async (req, res, next) => {
@@ -127,71 +140,92 @@ console.log(`Port: ${PORT}`);
 // Auth Routes Router
 const authRouter = express.Router();
 
-authRouter.get('/login', (req, res) => {
-  console.log('GET /api/auth/login hit');
-  res.json({ message: 'Login GET endpoint is working' });
-});
+const loadUserByEmail = async (connection, email) => {
+  const [users] = await connection.query(
+    'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.email = ?',
+    [String(email || '').trim()]
+  );
+  return users[0] || null;
+};
+
+const publicUser = (user) => {
+  const { password: _, ...rest } = user;
+  return rest;
+};
 
 authRouter.post('/login', async (req, res) => {
-  console.log('POST /api/auth/login hit:', req.body.email);
-  console.log('Headers:', req.headers);
   let connection;
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
     }
 
     connection = await pool.getConnection();
+    const user = await loadUserByEmail(connection, email);
+    const check = user ? verifyPassword(password, user.password) : { ok: false };
 
-    const [users] = await connection.query(
-      'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.email = ?',
-      [email]
-    );
-
-    if (users.length === 0) {
+    // Same message for unknown email and wrong password, so emails cannot be probed.
+    if (!user || !check.ok) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
-
-    const user = users[0];
-    const hashedPassword = hashPassword(password);
-
-    if (hashedPassword !== user.password) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+    if (String(user.status || 'Active').toLowerCase() !== 'active') {
+      return res.status(403).json({ error: 'Your account is not active. Contact an administrator.' });
     }
 
-    const { password: _, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
+    // Re-save passwords still in the old fixed-salt format.
+    if (check.needsUpgrade) {
+      await connection.query('UPDATE users SET password = ? WHERE id = ?', [hashPassword(password), user.id])
+        .catch(err => console.error('Password upgrade failed:', err.message));
+    }
 
+    issueSession(res, user);
+    res.json(publicUser(user));
   } catch (error) {
     console.error('Login error:', error.message);
-    res.status(500).json({ error: 'Failed to login', details: error.message });
+    res.status(500).json({ error: 'Failed to login' });
   } finally {
     if (connection) connection.release();
   }
 });
 
+authRouter.post('/logout', (req, res) => {
+  clearSession(res);
+  res.json({ success: true });
+});
+
+// The signed-in user, freshly read; the client uses this to confirm its session on load.
+authRouter.get('/me', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
+      [req.user.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'User not found' });
+    res.json(publicUser(rows[0]));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load user' });
+  }
+});
+
 authRouter.post('/sso-verify', async (req, res) => {
-  const { token } = req.body;
+  const { token } = req.body || {};
   if (!token) {
     return res.status(400).json({ success: false, message: 'Token required' });
+  }
+  if (!process.env.SSO_SECRET_KEY) {
+    return res.status(503).json({ success: false, message: 'SSO is not configured on this server' });
   }
 
   let connection;
   try {
-    const secretKey = process.env.SSO_SECRET_KEY || 'hr-flow-plus-super-secret-key-2024';
-    const decoded = jwt.verify(token, secretKey);
-    const userEmail = decoded.email;
+    const decoded = jwt.verify(token, process.env.SSO_SECRET_KEY);
 
     connection = await pool.getConnection();
+    const user = await loadUserByEmail(connection, decoded.email);
 
-    const [users] = await connection.query(
-      'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.email = ?',
-      [userEmail]
-    );
-
-    if (users.length === 0) {
+    if (!user) {
       return res.json({
         success: true,
         action: 'register',
@@ -203,11 +237,12 @@ authRouter.post('/sso-verify', async (req, res) => {
         }
       });
     }
+    if (String(user.status || 'Active').toLowerCase() !== 'active') {
+      return res.status(403).json({ success: false, message: 'Your account is not active' });
+    }
 
-    const user = users[0];
-    const { password: _, ...userWithoutPassword } = user;
-
-    res.json({ success: true, user: userWithoutPassword });
+    issueSession(res, user);
+    res.json({ success: true, user: publicUser(user) });
   } catch (error) {
     console.error('SSO verify error:', error.message);
     res.status(401).json({ success: false, message: 'Invalid SSO Token' });
@@ -216,7 +251,9 @@ authRouter.post('/sso-verify', async (req, res) => {
   }
 });
 
-authRouter.post('/signup', async (req, res) => {
+// Creating an account directly (with any role) is an administrator action. People signing
+// themselves up go through /registration-request, which HR/Admin approve.
+authRouter.post('/signup', requireAdmin, async (req, res) => {
   let connection;
   try {
     const { first_name, last_name, email, password, phone, company, department, job_title } = req.body;
@@ -243,15 +280,14 @@ authRouter.post('/signup', async (req, res) => {
 
     const hashedPassword = hashPassword(password);
 
+    // Only existing roles can be given; roles are no longer created on the fly.
     let role_id = 5; // Default to Employee
     if (req.body.role_name) {
       const [roles] = await connection.query('SELECT id FROM roles WHERE name = ?', [req.body.role_name]);
-      if (roles.length > 0) {
-        role_id = roles[0].id;
-      } else {
-        const [insertRole] = await connection.query('INSERT INTO roles (name, description) VALUES (?, ?)', [req.body.role_name, `Dynamically created role for ${req.body.role_name}`]);
-        role_id = insertRole.insertId;
+      if (roles.length === 0) {
+        return res.status(400).json({ error: 'Unknown role: ' + req.body.role_name });
       }
+      role_id = roles[0].id;
     }
 
     const userUuid = crypto.randomUUID();
@@ -265,12 +301,11 @@ authRouter.post('/signup', async (req, res) => {
       [result.insertId]
     );
 
-    const { password: _, ...userWithoutPassword } = newUser[0];
-    res.status(201).json(userWithoutPassword);
+    res.status(201).json(publicUser(newUser[0]));
 
   } catch (error) {
     console.error('Signup error:', error.message);
-    res.status(500).json({ error: 'Failed to create user', details: error.message });
+    res.status(500).json({ error: 'Failed to create user' });
   } finally {
     if (connection) connection.release();
   }
@@ -359,7 +394,7 @@ authRouter.post('/registration-request', async (req, res) => {
   }
 });
 
-authRouter.post('/update-role', async (req, res) => {
+authRouter.post('/update-role', requireAdmin, async (req, res) => {
   let connection;
   try {
     const { email, role_name } = req.body;
@@ -387,7 +422,8 @@ authRouter.post('/update-role', async (req, res) => {
 
 authRouter.post('/check-permission', async (req, res) => {
   try {
-    const { userId, module, action } = req.body;
+    const { module, action } = req.body || {};
+    const userId = req.user.isAdmin && req.body?.userId ? req.body.userId : req.user.id;
     const hasPermission = await checkPermission(userId, module, action);
     res.json({ success: true, hasPermission });
   } catch (error) {
@@ -395,6 +431,9 @@ authRouter.post('/check-permission', async (req, res) => {
     res.status(500).json({ error: 'Failed to check permission', details: error.message });
   }
 });
+
+// Every /api request below needs a valid login session (see middleware/session.js).
+app.use(createSessionMiddleware(pool));
 
 // Register Auth Router
 app.use('/api/auth', authRouter);
@@ -524,6 +563,7 @@ setupNotificationsRoutes(app, pool);
 setupSprintsRoutes(app, pool);
 setupImportRoutes(app, pool);
 setupGithubRoutes(app, pool);
+require('./routes/calendar-routes')(app, pool);
 setupItServicesRoutes(app, pool);
 
 const testerDashboardRoutes = require('./routes/tester-dashboard-routes');
@@ -557,6 +597,12 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  // Rejected uploads are the client's mistake, not a server failure.
+  if (err && (err.code === 'UPLOAD_TYPE_NOT_ALLOWED' || err.code === 'LIMIT_FILE_SIZE')) {
+    return res.status(400).json({
+      error: err.code === 'LIMIT_FILE_SIZE' ? 'File is too large (max 25 MB)' : err.message
+    });
+  }
   console.error('Unhandled error:', err);
   res.status(500).json({ 
     error: NODE_ENV === 'production' ? 'Internal server error' : err.message 
@@ -574,13 +620,17 @@ const server = app.listen(PORT, async () => {
   console.log('================================================');
   await testConnection();
   
-  // Schedule automation checks every hour
-  setInterval(async () => {
-    console.log('\n⏰ Running scheduled automation checks...');
-    await automationService.runAllChecks();
-  }, 60 * 60 * 1000);
-  
-  console.log('✓ Automation checks scheduled (runs hourly)');
+  // Reminders and alerts go out through the in-app notification system.
+  automationService.setNotifier(app.locals.createNotification);
+
+  // First run a minute after startup (so a restart doesn't delay reminders by an hour),
+  // then hourly. Each reminder is sent at most once per item per day, so re-runs are safe.
+  const runAutomation = () => automationService.runAllChecks()
+    .catch(err => console.error('Automation run failed:', err.message));
+  setTimeout(runAutomation, 60 * 1000);
+  setInterval(runAutomation, 60 * 60 * 1000);
+
+  console.log('✓ Automation checks scheduled (first run in 1 minute, then hourly)');
 });
 
 process.on('SIGTERM', () => {

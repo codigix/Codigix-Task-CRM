@@ -1,309 +1,86 @@
 const express = require('express');
 const router = express.Router();
+const { buildTeamReport, buildEmployeeReport } = require('../services/performanceReport');
+
+// HR, managers and admins see everyone; anyone else only their own report.
+const canSeeTeam = (user) => {
+  const role = String(user?.role || '').toLowerCase();
+  return Boolean(user) && (user.isManager || user.isAdmin || /\bhr\b|human resource/.test(role));
+};
 
 module.exports = (pool) => {
-  // Helper to fetch and format all employees
-  const getAllEmployees = async () => {
-    // 1. Fetch all users
-    const [users] = await pool.query("SELECT id, first_name, last_name, email, role_id, created_at, avatar, department FROM users");
-    
-    // 2. Fetch all kanban issues
-    const [itIssues] = await pool.query("SELECT id, title, assignee, status, COALESCE(effort_points, story_points, 0) as effort_points, updated_at FROM it_kanban_issues WHERE assignee IS NOT NULL AND assignee != 'Unassigned'");
-    
-    // 3. Fetch project tasks
-    const [projectTasks] = await pool.query(`
-      SELECT id, title, assigned_to as assignee_id, status, COALESCE(effort_points, 0) as effort_points, actual_hours, updated_at 
-      FROM project_tasks 
-      WHERE assigned_to IS NOT NULL
-    `);
-
-    // 4. Fetch general tasks
-    const [generalTasks] = await pool.query(`
-      SELECT id, title, created_by as assignee_id, status, COALESCE(effort_points, CASE priority WHEN 'High' THEN 20 WHEN 'Medium' THEN 10 WHEN 'Low' THEN 5 ELSE 5 END) as effort_points, actual_hours, updated_at 
-      FROM general_tasks 
-      WHERE created_by IS NOT NULL
-    `);
-
-    // 5. Fetch all performance reviews
-    const [reviews] = await pool.query("SELECT employee_id, score, quality_of_work, on_time_delivery, efficiency, created_at FROM performance_reviews");
-
-    return users.map(user => {
-      const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
-      
-      const userItIssues = itIssues.filter(issue => issue.assignee && issue.assignee.toLowerCase() === fullName.toLowerCase());
-      const userProjectTasks = projectTasks.filter(t => t.assignee_id === String(user.id) || t.assignee_id == user.id);
-      const userGeneralTasks = generalTasks.filter(t => t.assignee_id === String(user.id) || t.assignee_id == user.id);
-
-      let assignedPoints = 0;
-      let earnedPoints = 0;
-      let completedGoals = 0;
-
-      const mappedTasks = [];
-      const mappedTimeLogs = [];
-
-      const allUserTasks = [
-        ...userItIssues.map(t => ({ ...t, type: 'IT Issue', actual_hours: null })),
-        ...userProjectTasks.map(t => ({ ...t, type: 'Project Task' })),
-        ...userGeneralTasks.map(t => ({ ...t, type: 'General Task' }))
-      ];
-
-      allUserTasks.forEach(issue => {
-        const pts = Number(issue.effort_points) || 0;
-        assignedPoints += pts;
-        const isCompleted = issue.status && ['DONE', 'COMPLETED', 'RESOLVED'].includes(issue.status.toUpperCase());
-        const isInProgress = issue.status && ['IN PROGRESS', 'IN_PROGRESS', 'DEVELOPMENT'].includes(issue.status.toUpperCase());
-
-        if (isCompleted) {
-          earnedPoints += pts;
-          completedGoals += 1;
-        }
-
-        // Map to frontend task structure
-        mappedTasks.push({
-          id: issue.id,
-          title: issue.title || `${issue.type} #${issue.id}`,
-          status: isCompleted ? 'Completed' : (isInProgress ? 'In Progress' : 'Pending'),
-          points: pts,
-          time: issue.updated_at ? new Date(issue.updated_at).toLocaleDateString() : 'Recent'
-        });
-
-        // Use actual hours if available, otherwise estimate
-        if (isCompleted || isInProgress) {
-          let hrs = Number(issue.actual_hours);
-          if (isNaN(hrs) || hrs === 0) {
-            hrs = pts > 0 ? (pts * 1.5) : 2; // rough estimate if no actual_hours logged yet
-          }
-          
-          mappedTimeLogs.push({
-            date: issue.updated_at ? new Date(issue.updated_at).toLocaleDateString() : 'Recent',
-            task: issue.title || `${issue.type} #${issue.id}`,
-            type: issue.type,
-            hours: hrs.toFixed(1)
-          });
-        }
-      });
-
-      // Calculate Metrics from Reviews
-      const userReviews = reviews.filter(r => r.employee_id === user.id);
-      let avgQuality = 0, avgOnTime = 0, avgEfficiency = 0, avgOverall = 0;
-      
-      if (userReviews.length > 0) {
-        avgQuality = userReviews.reduce((sum, r) => sum + (r.quality_of_work || 0), 0) / userReviews.length;
-        avgOnTime = userReviews.reduce((sum, r) => sum + (r.on_time_delivery || 0), 0) / userReviews.length;
-        avgEfficiency = userReviews.reduce((sum, r) => sum + (r.efficiency || 0), 0) / userReviews.length;
-        avgOverall = userReviews.reduce((sum, r) => sum + (r.score || 0), 0) / userReviews.length;
-      }
-
-      const mappedReviews = userReviews.map(r => ({
-        date: r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recent',
-        reviewer: 'Admin',
-        score: `${r.score}/100`
-      }));
-
-      return {
-        id: user.id,
-        name: fullName || 'Unknown',
-        role: user.role_id === 1 ? 'Admin' : (user.role_id === 2 ? 'Manager' : 'Employee'),
-        department: user.department || 'General',
-        manager: 'Sarah Jenkins',
-        joinDate: user.created_at ? new Date(user.created_at).toISOString().split('T')[0] : '2023-01-15',
-        avatar: user.avatar || `https://ui-avatars.com/api/?name=${user.first_name}+${user.last_name}&background=random`,
-        assigned: assignedPoints,
-        earned: earnedPoints,
-        onTime: Math.round(avgOnTime),
-        quality: Math.round(avgQuality),
-        efficiency: Number(avgEfficiency).toFixed(1),
-        overall: Math.round(avgOverall),
-        goalsCompleted: completedGoals,
-        totalGoals: allUserTasks.length,
-        status: avgOverall >= 90 ? 'Excellent' : (avgOverall >= 75 ? 'Good' : (userReviews.length > 0 ? 'Needs Improvement' : 'No Reviews')),
-        lastReviewDate: mappedReviews.length > 0 ? mappedReviews[0].date : 'N/A',
-        recentFeedback: 'Real data integration complete.',
-        skills: [],
-        history: userReviews,
-        tasks: mappedTasks,
-        timeLogs: mappedTimeLogs,
-        reviews: mappedReviews
-      };
-    });
-  };
-  // 1. Get Overview Metrics
-  router.get('/overview', async (req, res) => {
+  // ── Performance report (computed from recorded work only) ──────────────────
+  // GET /api/hr/performance/report?period=month|quarter|year|custom&value=2026-10&from=&to=&department=
+  router.get('/report', async (req, res) => {
+    if (!canSeeTeam(req.user)) {
+      return res.status(403).json({ error: 'Only HR, managers and admins can view the team report.' });
+    }
     try {
-      const employees = await getAllEmployees();
-      const [reviews] = await pool.query("SELECT score, quality_of_work, created_at FROM performance_reviews");
-      
-      let averageScore = 0;
-      let totalReviews = reviews.length;
-      
-      let excellent = 0;
-      let good = 0;
-      let needsImprovement = 0;
-      
-      reviews.forEach(r => {
-        const score = r.score || 0;
-        averageScore += score;
-        if (score >= 90) excellent++;
-        else if (score >= 75) good++;
-        else needsImprovement++;
-      });
-      if (totalReviews > 0) averageScore = (averageScore / totalReviews).toFixed(1);
-
-      const scoreBreakdown = [
-        { name: 'Excellent', value: excellent },
-        { name: 'Good', value: good },
-        { name: 'Needs Improvement', value: needsImprovement }
-      ];
-
-      // Dept Data
-      const deptMap = {};
-      employees.forEach(emp => {
-        const dept = emp.department || 'General';
-        if (!deptMap[dept]) deptMap[dept] = { totalScore: 0, count: 0 };
-        // We only consider employees who actually have an overall score > 0
-        if (emp.overall > 0) {
-          deptMap[dept].totalScore += emp.overall;
-          deptMap[dept].count += 1;
-        }
-      });
-
-      const deptData = Object.keys(deptMap).map(dept => ({
-        name: dept,
-        score: deptMap[dept].count > 0 ? Math.round(deptMap[dept].totalScore / deptMap[dept].count) : 0
-      })).filter(d => d.score > 0);
-
-      // Trend Data (last 6 months)
-      const trendData = [];
-      const currentYear = new Date().getFullYear();
-      const currentMonth = new Date().getMonth() + 1;
-
-      for (let i = 5; i >= 0; i--) {
-        let m = currentMonth - i;
-        let y = currentYear;
-        if (m <= 0) {
-          m += 12;
-          y -= 1;
-        }
-        const monthName = new Date(y, m - 1, 1).toLocaleString('default', { month: 'short' });
-        
-        let monthScoreSum = 0;
-        let monthScoreCount = 0;
-
-        reviews.forEach(r => {
-          if (!r.created_at) return;
-          const rDate = new Date(r.created_at);
-          if (rDate.getFullYear() === y && (rDate.getMonth() + 1) === m) {
-            monthScoreSum += (r.score || 0);
-            monthScoreCount++;
-          }
-        });
-        
-        trendData.push({
-          month: monthName,
-          value: monthScoreCount > 0 ? Math.round(monthScoreSum / monthScoreCount) : 0
-        });
-      }
-
-      // Performance Distribution (Buckets)
-      const perfDistribution = [
-        { range: '90-100', count: 0 },
-        { range: '80-89', count: 0 },
-        { range: '70-79', count: 0 },
-        { range: '60-69', count: 0 },
-        { range: '<60', count: 0 }
-      ];
-      
-      reviews.forEach(r => {
-        const s = r.score || 0;
-        if (s >= 90) perfDistribution[0].count++;
-        else if (s >= 80) perfDistribution[1].count++;
-        else if (s >= 70) perfDistribution[2].count++;
-        else if (s >= 60) perfDistribution[3].count++;
-        else perfDistribution[4].count++;
-      });
-
-      // Recent Contribution Reviews (from kanban issues)
-      const [recentIssues] = await pool.query("SELECT id, title, assignee, status, effort_points, story_points, updated_at FROM it_kanban_issues WHERE status IN ('DONE', 'IN PROGRESS', 'REVIEW') ORDER BY updated_at DESC LIMIT 6");
-      
-      const recentReviews = recentIssues.map(issue => {
-        const isDone = issue.status === 'DONE';
-        const isReview = issue.status === 'REVIEW';
-        return {
-          id: issue.id,
-          title: issue.title || `Task #${issue.id}`,
-          status: isDone ? 'Approved' : (isReview ? 'Under Review' : 'Pending Review'),
-          project: 'General Workspace',
-          contributors: 1,
-          points: Number(issue.effort_points) || Number(issue.story_points) || 5,
-          time: issue.updated_at ? new Date(issue.updated_at).toLocaleDateString() : 'Recent'
-        };
-      });
-
-      return res.json({
-        averageScore,
-        totalReviews,
-        trendData,
-        deptData,
-        scoreBreakdown,
-        perfDistribution,
-        recentReviews
-      });
+      res.json(await buildTeamReport(pool, req.query));
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Server error' });
+      if (err.message === 'Invalid date range') return res.status(400).json({ error: err.message });
+      console.error('Performance report error:', err);
+      res.status(500).json({ error: 'Failed to build the performance report' });
     }
   });
 
-  // 2. Get All Employees Performance List
-  router.get('/employees', async (req, res) => {
+  router.get('/report/employee/:id', async (req, res) => {
+    const isSelf = String(req.user?.id) === String(req.params.id);
+    if (!isSelf && !canSeeTeam(req.user)) {
+      return res.status(403).json({ error: 'You can only view your own performance report.' });
+    }
     try {
-      const employees = await getAllEmployees();
-      return res.json(employees);
+      const report = await buildEmployeeReport(pool, req.params.id, req.query);
+      if (!report) return res.status(404).json({ error: 'Employee not found' });
+      res.json(report);
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Server error' });
+      if (err.message === 'Invalid date range') return res.status(400).json({ error: err.message });
+      console.error('Employee performance report error:', err);
+      res.status(500).json({ error: 'Failed to build the employee report' });
     }
   });
 
-  // 3. Get Specific Employee Details
-  router.get('/employees/:id', async (req, res) => {
-    try {
-      const employees = await getAllEmployees();
-      const emp = employees.find(e => e.id == req.params.id);
-      if (!emp) return res.status(404).json({ error: 'Employee not found' });
-      return res.json(emp);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Server error' });
-    }
-  });
+  // The old /overview, /employees and /employees/:id endpoints were removed: they filled
+  // gaps with invented values (a fixed manager name, hours guessed from points). All
+  // performance figures now come from services/performanceReport.js via /report.
 
   // 4. Submit a new review
   router.post('/employees/:id/review', async (req, res) => {
+    if (!canSeeTeam(req.user)) {
+      return res.status(403).json({ error: 'Only HR, managers and admins can submit reviews.' });
+    }
+    if (String(req.user.id) === String(req.params.id)) {
+      return res.status(400).json({ error: 'You cannot review yourself.' });
+    }
     try {
       const empId = req.params.id;
-      const { taskCompletion, quality, onTime, efficiency, reviewGatePoints, pointsDistribution, feedback } = req.body;
-      
-      const overallScore = Math.round(
-        (Number(taskCompletion) + Number(quality) + Number(onTime) + 
-         Number(efficiency) + Number(reviewGatePoints) + Number(pointsDistribution)) / 6
-      );
+      const { taskCompletion, quality, onTime, efficiency, feedback } = req.body || {};
+      // Older clients also sent these two; they are optional now.
+      const reviewGatePoints = req.body?.reviewGatePoints ?? null;
+      const pointsDistribution = req.body?.pointsDistribution ?? null;
+
+      const ratings = [taskCompletion, quality, onTime, efficiency].map(Number);
+      if (ratings.some(n => !Number.isFinite(n) || n < 0 || n > 100)) {
+        return res.status(400).json({ error: 'Each rating must be a number from 0 to 100.' });
+      }
+      const overallScore = Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length);
 
       await pool.query(`
         INSERT INTO performance_reviews 
         (employee_id, reviewer_id, score, task_completion, quality_of_work, on_time_delivery, efficiency, review_gate_points, points_distribution, feedback)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        empId, 
-        1, // Default reviewer ID (Admin)
-        overallScore, 
-        Number(taskCompletion), 
-        Number(quality), 
-        Number(onTime), 
-        Number(efficiency), 
-        Number(reviewGatePoints), 
-        Number(pointsDistribution), 
-        feedback || ''
+        empId,
+        req.user.id,
+        overallScore,
+        ratings[0],
+        ratings[1],
+        ratings[2],
+        ratings[3],
+        // Both columns are NOT NULL; the current review form doesn't send them.
+        Number(reviewGatePoints) || 0,
+        Number(pointsDistribution) || 0,
+        String(feedback || '').slice(0, 5000)
       ]);
 
       return res.status(200).json({ success: true, message: 'Review submitted successfully.' });

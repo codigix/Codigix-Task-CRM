@@ -32,7 +32,7 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
       className="fixed inset-0 z-[100] overflow-y-auto"
     >
       <div className="flex min-h-screen items-center justify-center px-4 text-center">
-        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
+        <div className="fixed inset-0 bg-red-600/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
         <div
           className="inline-block w-full max-w-md transform overflow-hidden rounded bg-white text-left align-middle shadow-2xl transition-all border border-gray-100 relative z-10"
@@ -41,10 +41,10 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
             <div className="absolute inset-0 bg-white/10 mix-blend-overlay"></div>
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center gap-3">
-                <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                <div className="bg-white/20 p-2 rounded backdrop-blur-sm">
                   <Clock className="h-6 w-6 text-white" />
                 </div>
-                <Dialog.Title as="h3" className="text-lg font-semibold text-white">
+                <Dialog.Title as="h3" className="text-lg  text-white">
                   Start Time Tracking
                 </Dialog.Title>
               </div>
@@ -60,7 +60,7 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
           <form onSubmit={handleSubmit} className="px-6 py-5">
             <div className="mb-4">
               <p className="text-sm text-gray-500 mb-4">
-                You're moving <span className="font-semibold text-gray-800">{taskDetails?.title || 'this task'}</span> to In Progress. Please confirm your start time and estimated effort.
+                You're moving <span className=" text-gray-800">{taskDetails?.title || 'this task'}</span> to In Progress. Please confirm your start time and estimated effort.
               </p>
             </div>
 
@@ -74,7 +74,7 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
                   required
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border transition-colors"
+                  className="block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border transition-colors"
                 />
               </div>
 
@@ -87,7 +87,7 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
                   placeholder="e.g. 2h 30m"
                   value={estimatedTime}
                   onChange={(e) => setEstimatedTime(e.target.value)}
-                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border transition-colors"
+                  className="block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border transition-colors"
                 />
               </div>
             </div>
@@ -96,13 +96,13 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg border border-gray-300 bg-white p-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="rounded border border-gray-300 bg-white p-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="inline-flex justify-center rounded-lg border border-transparent bg-red-600 p-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="inline-flex justify-center rounded border border-transparent bg-red-600 p-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
                 Start Timer
               </button>

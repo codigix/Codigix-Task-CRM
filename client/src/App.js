@@ -31,7 +31,8 @@ import ITAnalyticsPage from './components/it/ITAnalyticsPage';
 import ITActivitiesPage from './components/it/ITActivitiesPage';
 import ITUploadDocumentPage from './components/it/ITUploadDocumentPage';
 import ITFileManagerPage from './components/it/ITFileManagerPage';
-import ITCalendarPage from './components/it/ITCalendarPage';
+// The IT and all other department calendars share one implementation.
+import ITCalendarPage from './components/common/TeamCalendar';
 import ITNotesPage from './components/it/ITNotesPage';
 import ITTesterDashboard from './components/it/ITTesterDashboard';
 import CreateNotePage from './components/common/CreateNotePage';
@@ -42,7 +43,7 @@ import HRAttendance from './components/hr/HRAttendance';
 import ITChatPage from './components/it/ITChatPage';
 import AudioCallPage from './components/common/AudioCallPage';
 import CallHistoryPage from './components/common/CallHistoryPage';
-import CalendarPage from './components/common/CalendarPage';
+import CalendarPage from './components/common/TeamCalendar';
 import EmailPage from './components/common/EmailPage';
 import TodoPage from './components/common/TodoPage';
 import TasksPage from './components/common/TasksPage';

@@ -313,14 +313,14 @@ const ProposalsPage = ({ onViewDetails }) => {
     };
 
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+      <div className="bg-white border border-gray-200 rounded p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+              <span className="text-xs  text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
                 {proposal.proposal_number || `PROP-${proposal.id}`}
               </span>
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${getStatusColor(proposal.status)}`}>
+              <span className={`text-[10px]  px-2 py-0.5 rounded-full ${getStatusColor(proposal.status)}`}>
                 {proposal.status || 'Draft'}
               </span>
             </div>
@@ -413,7 +413,7 @@ const ProposalsPage = ({ onViewDetails }) => {
                   ))
               )}
               {proposal.business_type && (
-                <span className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[10px] font-semibold">
+                <span className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[10px] ">
                   {proposal.business_type}
                 </span>
               )}
@@ -459,7 +459,7 @@ const ProposalsPage = ({ onViewDetails }) => {
 
             {proposal.assigned_to_name && (
               <div className="flex items-center gap-1.5 shrink-0 bg-gray-50 px-2 py-1 rounded-full border border-gray-200" title={`Assigned to: ${proposal.assigned_to_name}`}>
-                <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] font-semibold">
+                <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] ">
                   {getCompanyInitials(proposal.assigned_to_name)}
                 </div>
                 <span className="text-[10px] font-medium text-gray-700 truncate max-w-[90px]">
@@ -683,7 +683,7 @@ const ProposalsPage = ({ onViewDetails }) => {
       <div className="p-6">
         {/* KPI Summary Header */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-4 rounded border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Total Proposals</p>
               <h3 className="text-xl  text-gray-900 mt-1">{proposals.length}</h3>
@@ -694,7 +694,7 @@ const ProposalsPage = ({ onViewDetails }) => {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-4 rounded border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Approved / Sent</p>
               <h3 className="text-xl  text-indigo-600 mt-1">
@@ -707,7 +707,7 @@ const ProposalsPage = ({ onViewDetails }) => {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-4 rounded border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Accepted (Won)</p>
               <h3 className="text-xl  text-emerald-600 mt-1">
@@ -720,7 +720,7 @@ const ProposalsPage = ({ onViewDetails }) => {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-4 rounded border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Win Conversion Rate</p>
               <h3 className="text-xl  text-purple-600 mt-1">

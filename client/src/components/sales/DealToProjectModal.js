@@ -127,7 +127,7 @@ const DealToProjectModal = ({ isOpen, onClose, dealId, dealName, dealValue }) =>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="bg-green-50 border border-green-200 rounded-md p-3 flex gap-2">
+          <div className="bg-green-50 border border-green-200 rounded p-3 flex gap-2">
             <AlertCircle size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm  text-green-900">Multi-Project Support</p>
@@ -226,14 +226,14 @@ const DealToProjectModal = ({ isOpen, onClose, dealId, dealName, dealValue }) =>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-green-600 text-white py-2 rounded-md  hover:bg-green-700 disabled:opacity-50"
+              className="flex-1 bg-green-600 text-white py-2 rounded  hover:bg-green-700 disabled:opacity-50"
             >
               {loading ? 'Creating Projects...' : 'Create Project(s)'}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-gray-300 py-2 rounded-md  text-gray-700 hover:bg-gray-50"
+              className="flex-1 border border-gray-300 py-2 rounded  text-gray-700 hover:bg-gray-50"
             >
               Cancel
             </button>

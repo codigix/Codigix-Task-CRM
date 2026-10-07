@@ -519,13 +519,13 @@ const CrmLeadsPage = () => {
           <div className="flex items-center bg-gray-50 border border-gray-100 rounded p-1">
             <button
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white  text-red  ' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`p-1.5 rounded transition-all ${viewMode === 'list' ? 'bg-white  text-red  ' : 'text-gray-400 hover:text-gray-600'}`}
             >
               <List size={18} />
             </button>
             <button
               onClick={() => setViewMode('kanban')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white  text-red  ' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`p-1.5 rounded transition-all ${viewMode === 'kanban' ? 'bg-white  text-red  ' : 'text-gray-400 hover:text-gray-600'}`}
             >
               <Grid size={18} />
             </button>
@@ -683,7 +683,7 @@ const CrmLeadsPage = () => {
                             </div>
                           </div>
 
-                          <div className="space-y-1.5 mb-3 p-2 bg-gray-50/50 rounded-md border border-gray-100/50">
+                          <div className="space-y-1.5 mb-3 p-2 bg-gray-50/50 rounded border border-gray-100/50">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-500">Generate Date:</span>
                               <span className="text-gray-900 ">{formatDate(lead.created_at)}</span>

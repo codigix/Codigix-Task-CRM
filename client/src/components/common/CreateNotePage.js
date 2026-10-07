@@ -81,7 +81,7 @@ const CreateNotePage = () => {
   const ToggleSwitch = ({ checked, onChange }) => (
     <div
       onClick={() => onChange(!checked)}
-      className={`w-10 h-5 flex items-center rounded-full p-1 cursor-pointer transition-colors ${checked ? 'bg-indigo-600' : 'bg-gray-200'}`}
+      className={`w-10 h-5 flex items-center rounded-full p-1 cursor-pointer transition-colors ${checked ? 'bg-red-600' : 'bg-gray-200'}`}
     >
       <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
     </div>
@@ -96,7 +96,7 @@ const CreateNotePage = () => {
             <BookOpen size={20} />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900 leading-tight">Create New Note / Wiki Page</h1>
+            <h1 className="text-lg  text-gray-900 leading-tight">Create New Note / Wiki Page</h1>
             <p className="text-xs text-gray-500">Create, organize and share knowledge with your team.</p>
           </div>
         </div>
@@ -113,7 +113,7 @@ const CreateNotePage = () => {
 
             {/* 1. Basic Information */}
             <div className="bg-white rounded  border border-gray-100 p-6">
-              <h2 className="text-sm font-semibold text-gray-900 mb-5">1. Basic Information</h2>
+              <h2 className="text-sm  text-gray-900 mb-5">1. Basic Information</h2>
 
               <div className="grid grid-cols-2 gap-2 mb-5">
                 <div>
@@ -123,10 +123,10 @@ const CreateNotePage = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Type <span className="text-red-500">*</span></label>
                   <div className="flex bg-gray-50 p-1 rounded border border-gray-200">
-                    <button onClick={() => handleInputChange('type', 'Note')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all ${formData.type === 'Note' ? 'bg-white  text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+                    <button onClick={() => handleInputChange('type', 'Note')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded transition-all ${formData.type === 'Note' ? 'bg-white  text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
                       <FileText size={14} /> Note
                     </button>
-                    <button onClick={() => handleInputChange('type', 'Wiki Page')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all ${formData.type === 'Wiki Page' ? 'bg-indigo-50  text-indigo-600 border border-indigo-100' : 'text-gray-500 hover:text-gray-700'}`}>
+                    <button onClick={() => handleInputChange('type', 'Wiki Page')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded transition-all ${formData.type === 'Wiki Page' ? 'bg-indigo-50  text-indigo-600 border border-indigo-100' : 'text-gray-500 hover:text-gray-700'}`}>
                       <BookOpen size={14} /> Wiki Page
                     </button>
                   </div>
@@ -204,7 +204,7 @@ const CreateNotePage = () => {
 
             {/* 2. Link to Registered Email */}
             <div className="bg-white rounded  border border-gray-100 p-6">
-              <h2 className="text-sm font-semibold text-gray-900 mb-4">2. Link to Registered Email</h2>
+              <h2 className="text-sm  text-gray-900 mb-4">2. Link to Registered Email</h2>
 
               <div className="bg-indigo-50/50 border border-indigo-100 rounded p-3 flex items-start gap-2 text-indigo-700 text-xs mb-4">
                 <Mail size={16} className="mt-0.5 shrink-0" />
@@ -215,7 +215,7 @@ const CreateNotePage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Registered Email</label>
                 <div className="relative">
                   <input type="text" readOnly value={user?.email || 'michael.brown@codigix.com'} className="w-full bg-gray-50 border border-gray-200 rounded p-2 text-sm text-gray-700 focus:outline-none" />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1">
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-green-100 text-green-700 text-xs  px-2 py-0.5 rounded flex items-center gap-1">
                     <Check size={12} /> Verified
                   </div>
                 </div>
@@ -230,7 +230,7 @@ const CreateNotePage = () => {
 
             {/* 3. Additional Settings */}
             <div className="bg-white rounded  border border-gray-100 p-6">
-              <h2 className="text-sm font-semibold text-gray-900 mb-5">3. Additional Settings</h2>
+              <h2 className="text-sm  text-gray-900 mb-5">3. Additional Settings</h2>
 
               <div className="space-y-5">
                 {[
@@ -264,7 +264,7 @@ const CreateNotePage = () => {
 
             {/* 4. Team Access */}
             <div className="bg-white rounded  border border-gray-100 p-6">
-              <h2 className="text-sm font-semibold text-gray-900 mb-1">4. Team Access</h2>
+              <h2 className="text-sm  text-gray-900 mb-1">4. Team Access</h2>
               <p className="text-xs text-gray-500 mb-4">Select team members or roles who can access this content</p>
 
               <div className="space-y-4">
@@ -276,7 +276,7 @@ const CreateNotePage = () => {
                 ].map(opt => (
                   <div key={opt.id} onClick={() => handleInputChange('teamAccess', opt.id)} className="flex items-start gap-3 cursor-pointer group">
                     <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${formData.teamAccess === opt.id ? 'border-indigo-600' : 'border-gray-300 group-hover:border-indigo-400'}`}>
-                      {formData.teamAccess === opt.id && <div className="w-2 h-2 bg-indigo-600 rounded-full" />}
+                      {formData.teamAccess === opt.id && <div className="w-2 h-2 bg-red-600 rounded-full" />}
                     </div>
                     <div>
                       <div className={`text-xs font-medium mb-0.5 ${formData.teamAccess === opt.id ? 'text-gray-900' : 'text-gray-700'}`}>{opt.id}</div>
@@ -289,12 +289,12 @@ const CreateNotePage = () => {
 
             {/* 5. Preview */}
             <div className="bg-white rounded  border border-gray-100 p-6">
-              <h2 className="text-sm font-semibold text-gray-900 mb-4">5. Preview</h2>
+              <h2 className="text-sm  text-gray-900 mb-4">5. Preview</h2>
 
               <div className="bg-indigo-50/50 border border-indigo-100 rounded p-4 flex items-start gap-3 text-indigo-600">
                 <BookOpen size={18} className="shrink-0" />
                 <div>
-                  <div className="text-xs font-semibold mb-1">Wiki Page Preview</div>
+                  <div className="text-xs  mb-1">Wiki Page Preview</div>
                   <div className="text-xs text-gray-500">Your content will appear like this to team members.</div>
                 </div>
               </div>
@@ -304,7 +304,7 @@ const CreateNotePage = () => {
             <div className="flex items-center gap-3 pt-2 pb-8">
               <button onClick={() => navigate(-1)} className="flex-1 p-2 bg-white border border-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-gray-50 transition-colors">Cancel</button>
               <button className="flex-1 p-2 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded text-xs font-medium hover:bg-indigo-100 transition-colors">Save as Draft</button>
-              <button onClick={handlePublish} className="flex-1 p-2 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700 transition-colors">Publish</button>
+              <button onClick={handlePublish} className="flex-1 p-2 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition-colors">Publish</button>
             </div>
 
           </div>

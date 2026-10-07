@@ -72,13 +72,13 @@ const ProjectTeamModal = ({ isOpen, onClose, projectId, currentTeam, users, team
           <div className="flex p-1 bg-gray-100 rounded">
             <button
               onClick={() => setAssignType('user')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${assignType === 'user' ? 'bg-white  text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 py-1.5 text-xs font-medium rounded transition-all ${assignType === 'user' ? 'bg-white  text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Single Member
             </button>
             <button
               onClick={() => setAssignType('team')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${assignType === 'team' ? 'bg-white  text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 py-1.5 text-xs font-medium rounded transition-all ${assignType === 'team' ? 'bg-white  text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Whole Team
             </button>
@@ -131,7 +131,7 @@ const ProjectTeamModal = ({ isOpen, onClose, projectId, currentTeam, users, team
                   <h4 className="text-xs  text-blue-800 mb-2  tracking-wider">Team Members to be Added:</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedTeamMembers.map(member => (
-                      <div key={member.id} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-md border border-blue-100 ">
+                      <div key={member.id} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded border border-blue-100 ">
                         <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-700  text-[8px]">
                           {member.first_name?.[0]}{member.last_name?.[0]}
                         </div>
@@ -693,14 +693,14 @@ const Contacts = () => {
           <div className="flex gap-2 bg-white p-1 border border-[#E5E7EB] rounded">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-[#F62416] text-white ' : 'text-gray-400 hover:bg-gray-50'}`}
+              className={`p-1.5 rounded transition-all ${viewMode === 'grid' ? 'bg-[#F62416] text-white ' : 'text-gray-400 hover:bg-gray-50'}`}
               title="Grid View"
             >
               <LayoutGrid size={18} />
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-[#F62416] text-white ' : 'text-gray-400 hover:bg-gray-50'}`}
+              className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-[#F62416] text-white ' : 'text-gray-400 hover:bg-gray-50'}`}
               title="Table View"
             >
               <List size={18} />

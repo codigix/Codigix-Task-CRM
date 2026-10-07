@@ -194,7 +194,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Bug Title <span className="text-red-500">*</span></label>
+                <label className="block text-xs  text-gray-700 mb-1.5">Bug Title <span className="text-red-500">*</span></label>
                 <input
                   value={formData.title}
                   placeholder="Enter bug title..."
@@ -247,7 +247,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Bug ID</label>
+                <label className="block text-xs  text-gray-700 mb-1.5">Bug ID</label>
                 <input
                   type="text"
                   disabled
@@ -291,7 +291,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
           {/* Environment & Build Grid */}
           <div className="grid grid-cols-2 gap-x-8 gap-y-6 mb-8">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Environment <span className="text-red-500">*</span></label>
+              <label className="block text-xs  text-gray-700 mb-1.5">Environment <span className="text-red-500">*</span></label>
               <SearchableSelect
                 placeholder="Select Environment"
                 options={['QA', 'Staging', 'UAT', 'Production']}
@@ -300,7 +300,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Build / Version</label>
+              <label className="block text-xs  text-gray-700 mb-1.5">Build / Version</label>
               <SearchableSelect
                 placeholder="Select Build / Version"
                 options={['v2.4.1 (Build 245)', 'v2.4.0 (Build 240)', 'v2.3.9 (Build 235)']}
@@ -315,7 +315,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
 
             {/* Description (Rich Text area) */}
             <div className="flex flex-col">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Description <span className="text-red-500">*</span></label>
+              <label className="block text-xs  text-gray-700 mb-1.5">Description <span className="text-red-500">*</span></label>
               <div className="flex-1 border border-gray-200 rounded overflow-hidden flex flex-col bg-white">
                 {/* Toolbar */}
                 <div className="flex items-center gap-2 p-2 border-b border-gray-200 bg-gray-50 flex-wrap">
@@ -345,7 +345,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
 
             {/* Steps to Reproduce */}
             <div className="flex flex-col">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Steps to Reproduce <span className="text-red-500">*</span></label>
+              <label className="block text-xs  text-gray-700 mb-1.5">Steps to Reproduce <span className="text-red-500">*</span></label>
               <div className="flex-1 flex flex-col gap-2">
                 {steps.map((step, index) => (
                   <div key={index} className="flex items-center gap-3 group">
@@ -376,7 +376,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
           {/* Results Grid */}
           <div className="grid grid-cols-2 gap-x-8 gap-y-6 mb-8">
             <div className="flex flex-col">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Expected Result <span className="text-red-500">*</span></label>
+              <label className="block text-xs  text-gray-700 mb-1.5">Expected Result <span className="text-red-500">*</span></label>
               <textarea
                 className="flex-1 w-full p-2.5 border border-gray-200 rounded text-sm text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
                 rows="3"
@@ -387,7 +387,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
             </div>
 
             <div className="flex flex-col">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Actual Result <span className="text-red-500">*</span></label>
+              <label className="block text-xs  text-gray-700 mb-1.5">Actual Result <span className="text-red-500">*</span></label>
               <textarea
                 className="flex-1 w-full p-2.5 border border-gray-200 rounded text-sm text-gray-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 resize-none bg-red-50/30"
                 rows="3"
@@ -400,7 +400,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
 
           {/* Attachments Section */}
           <div className="mb-8">
-            <label className="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+            <label className="block text-xs  text-gray-700 mb-2 flex items-center gap-1">
               Attachments <span className="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center text-[10px] text-gray-500  ml-1">i</span>
             </label>
             <div className="flex gap-4 items-stretch">
@@ -441,15 +441,15 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
           {/* Tags and Linked Test Case Grid */}
           <div className="grid grid-cols-2 gap-x-8 gap-y-6">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Tags</label>
+              <label className="block text-xs  text-gray-700 mb-1.5">Tags</label>
               <div className="w-full min-h-[42px] px-2 py-1.5 border border-gray-200 rounded flex flex-wrap gap-2 items-center bg-white">
-                <span className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium">
+                <span className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-medium">
                   Login <button><X size={12} className="text-indigo-400 hover:text-indigo-700" /></button>
                 </span>
-                <span className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium">
+                <span className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-medium">
                   UI <button><X size={12} className="text-indigo-400 hover:text-indigo-700" /></button>
                 </span>
-                <span className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium">
+                <span className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-medium">
                   Safari <button><X size={12} className="text-indigo-400 hover:text-indigo-700" /></button>
                 </span>
                 <input
@@ -461,7 +461,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Linked Test Case (Optional)</label>
+              <label className="block text-xs  text-gray-700 mb-1.5">Linked Test Case (Optional)</label>
               <div className="relative">
                 <select className="w-full pl-3 pr-8 py-2.5 border border-gray-200 rounded text-sm text-gray-900 appearance-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
                   <option>TC-1025 - Verify Login with valid credentials</option>

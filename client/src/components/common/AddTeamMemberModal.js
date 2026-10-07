@@ -51,7 +51,7 @@ const AddTeamMemberModal = ({ isOpen, onClose, projectId, onAdd }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-fade-in">
       <div className="bg-white rounded shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">Add Team Member</h2>
+          <h2 className="text-lg  text-gray-900">Add Team Member</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition"><X size={20} /></button>
         </div>
 
@@ -62,7 +62,7 @@ const AddTeamMemberModal = ({ isOpen, onClose, projectId, onAdd }) => {
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
               required
-              className="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full border border-gray-200 rounded p-2 text-sm focus:border-blue-500 focus:outline-none"
             >
               <option value="">Select a user...</option>
               {users.map(u => (
@@ -78,7 +78,7 @@ const AddTeamMemberModal = ({ isOpen, onClose, projectId, onAdd }) => {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full border border-gray-200 rounded-md p-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full border border-gray-200 rounded p-2 text-sm focus:border-blue-500 focus:outline-none"
             >
               <option value="Member">Member</option>
               <option value="Developer">Developer</option>

@@ -42,7 +42,7 @@ const BoardTabs = ({ department, spaceName }) => {
     <div className="sticky top-0 z-20 border-b border-gray-200 bg-white px-6">
       {spaceName && (
         <div className="pt-4 pb-2 flex items-center gap-2">
-          <span className="w-6 h-6 rounded bg-indigo-600 text-white text-xs  flex items-center justify-center">
+          <span className="w-6 h-6 rounded bg-red-600 text-white text-xs  flex items-center justify-center">
             {dept.charAt(0).toUpperCase()}
           </span>
           <h2 className="text-lg  text-gray-900">{spaceName}</h2>

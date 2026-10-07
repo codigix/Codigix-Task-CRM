@@ -241,10 +241,11 @@ export default function VideoCallPage() {
       try {
         let finalFollowupId = followupData?.id;
         if (!finalFollowupId) {
+          // A direct call isn't about any lead; the server credits it to the signed-in user.
           const newFollowup = await followupsAPI.create({
-            related_type: 'Lead',
-            related_id: 1,
-            type: 'Meeting',
+            related_type: 'Internal',
+            related_id: null,
+            type: 'Internal Video Call',
             subject: 'Direct Video Call Analysis',
             scheduled_date: new Date().toISOString().split('T')[0],
             scheduled_time: new Date().toLocaleTimeString('en-US', { hour12: false }),
@@ -261,8 +262,12 @@ export default function VideoCallPage() {
             method: 'POST',
             body: formData
           });
+        }
+        // Record how long the call lasted even when no audio was captured; the
+        // performance report counts meeting time from this.
+        if (finalFollowupId) {
           await followupsAPI.update(finalFollowupId, {
-            call_duration: Math.floor(callTime / 60).toString(),
+            call_duration: `${Math.max(1, Math.round(callTime / 60))}m`,
             status: 'Completed'
           });
         }
@@ -466,7 +471,7 @@ export default function VideoCallPage() {
                           <Video size={40} className="text-blue-500" />
                         </div>
                       </div>
-                      <div className="absolute -top-2 -right-2 bg-green-500 text-black px-2 py-1 rounded-md text-[9px]   animate-bounce">Live</div>
+                      <div className="absolute -top-2 -right-2 bg-green-500 text-black px-2 py-1 rounded text-[9px]   animate-bounce">Live</div>
                     </div>
 
                     <div className="text-center">
@@ -562,9 +567,9 @@ export default function VideoCallPage() {
           </div>
 
           <div className="flex p-2 gap-1 bg-white/5 m-4 rounded">
-            <button onClick={() => setActiveTab('summary')} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'summary' ? 'bg-[#3b82f6] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Summary</button>
-            <button onClick={() => setActiveTab('notes')} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'notes' ? 'bg-[#3b82f6] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Notes</button>
-            <button onClick={() => setActiveTab('transcript')} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'transcript' ? 'bg-[#3b82f6] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Communication</button>
+            <button onClick={() => setActiveTab('summary')} className={`flex-1 py-1.5 text-xs font-medium rounded transition-all ${activeTab === 'summary' ? 'bg-[#3b82f6] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Summary</button>
+            <button onClick={() => setActiveTab('notes')} className={`flex-1 py-1.5 text-xs font-medium rounded transition-all ${activeTab === 'notes' ? 'bg-[#3b82f6] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Notes</button>
+            <button onClick={() => setActiveTab('transcript')} className={`flex-1 py-1.5 text-xs font-medium rounded transition-all ${activeTab === 'transcript' ? 'bg-[#3b82f6] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Communication</button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-8">
@@ -616,7 +621,7 @@ export default function VideoCallPage() {
 
           <div className="p-4 bg-black/20 flex items-center justify-between text-xs text-gray-500  tracking-widest">
             <div className="flex items-center gap-2">
-              <span className="w-4 h-4 bg-gray-700 rounded-sm flex items-center justify-center text-[8px]  text-gray-400">GMJ</span>
+              <span className="w-4 h-4 bg-gray-700 rounded flex items-center justify-center text-[8px]  text-gray-400">GMJ</span>
               <span>Record</span>
             </div>
             <div className="flex items-center gap-3">

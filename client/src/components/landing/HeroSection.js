@@ -35,7 +35,7 @@ const HeroSection = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 pt-10">
         {/* Premium Badge */}
-        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-[0_4px_20px_rgb(0,0,0,0.05)] text-slate-800 text-xs sm:text-sm font-semibold mb-10 animate-fade-in-up hover:shadow-lg transition-all hover:scale-105 cursor-pointer">
+        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-[0_4px_20px_rgb(0,0,0,0.05)] text-slate-800 text-xs sm:text-sm  mb-10 animate-fade-in-up hover:shadow-lg transition-all hover:scale-105 cursor-pointer">
           <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-tr from-red-600 to-rose-500 shadow-inner">
             <span className="flex h-2 w-2 rounded-full bg-white animate-pulse"></span>
           </div>
@@ -55,7 +55,7 @@ const HeroSection = () => {
 
         {/* Subtitle */}
         <p className="text-lg md:text-2xl text-slate-600 mb-12 max-w-3xl mx-auto leading-relaxed animate-fade-in-up animation-delay-200 font-light">
-          Unify Sales, Marketing, HR, and IT in one powerful, beautifully designed platform. Replace fragmented tools with <strong className="font-semibold text-slate-900">seamless collaboration.</strong>
+          Unify Sales, Marketing, HR, and IT in one powerful, beautifully designed platform. Replace fragmented tools with <strong className=" text-slate-900">seamless collaboration.</strong>
         </p>
 
         {/* Buttons & Social Proof */}

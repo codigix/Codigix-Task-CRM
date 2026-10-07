@@ -60,6 +60,11 @@ temp/
 backup_*.sql
 *.sql.bak
 
+# User uploads are data, not source: never commit them (they hold client documents).
+server/uploads/
+uploads/
+server/.quarantine/
+
 # Testing
 coverage/
 .nyc_output/

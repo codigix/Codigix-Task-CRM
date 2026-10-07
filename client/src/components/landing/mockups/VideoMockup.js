@@ -8,7 +8,7 @@ const VideoMockup = () => {
       <div className="h-12 bg-slate-900/90 border-b border-slate-700 flex items-center justify-between px-6 shrink-0 z-10">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center text-white text-[10px] ">C</div>
-          <span className="font-semibold text-slate-200 text-sm">Weekly Sync</span>
+          <span className=" text-slate-200 text-sm">Weekly Sync</span>
           <span className="bg-red-500/20 text-red-400 text-[9px] px-2 py-0.5 rounded  uppercase tracking-widest border border-red-500/30 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
             REC
@@ -31,7 +31,7 @@ const VideoMockup = () => {
               className="w-full h-full object-cover"
             />
             <div className="absolute bottom-4 left-4 bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded border border-slate-700 flex items-center gap-2">
-              <span className="text-white text-xs font-semibold">Sarah Jenkins</span>
+              <span className="text-white text-xs ">Sarah Jenkins</span>
               <Mic size={12} className="text-emerald-400" />
             </div>
           </div>
@@ -43,10 +43,10 @@ const VideoMockup = () => {
               { name: 'Elena V.', img: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=300', muted: true },
               { name: 'Alex T.', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300', muted: false }
             ].map((person, i) => (
-              <div key={i} className="flex-1 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden relative group">
+              <div key={i} className="flex-1 bg-slate-800 rounded border border-slate-700 overflow-hidden relative group">
                 <img src={person.img} alt={person.name} className="w-full h-full object-cover" />
-                <div className="absolute bottom-2 left-2 bg-slate-900/60 backdrop-blur-md px-2 py-1 rounded-md border border-slate-700 flex items-center gap-1.5">
-                  <span className="text-white text-[10px] font-semibold truncate max-w-[60px]">{person.name}</span>
+                <div className="absolute bottom-2 left-2 bg-slate-900/60 backdrop-blur-md px-2 py-1 rounded border border-slate-700 flex items-center gap-1.5">
+                  <span className="text-white text-[10px]  truncate max-w-[60px]">{person.name}</span>
                   {person.muted ? <MicOff size={10} className="text-red-400" /> : <Mic size={10} className="text-emerald-400" />}
                 </div>
               </div>
@@ -74,7 +74,7 @@ const VideoMockup = () => {
                     {p.name.charAt(0)}
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-slate-200">{p.name}</div>
+                    <div className="text-xs  text-slate-200">{p.name}</div>
                     <div className="text-[10px] text-slate-400">{p.role}</div>
                   </div>
                 </div>
@@ -103,7 +103,7 @@ const VideoMockup = () => {
         <button className="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors">
           <Settings size={18} />
         </button>
-        <button className="w-12 h-10 rounded-xl bg-red-600 hover:bg-red-700 flex items-center justify-center text-white transition-colors ml-2 shadow-lg shadow-red-900/50">
+        <button className="w-12 h-10 rounded bg-red-600 hover:bg-red-700 flex items-center justify-center text-white transition-colors ml-2 shadow-lg shadow-red-900/50">
           <PhoneOff size={18} />
         </button>
       </div>

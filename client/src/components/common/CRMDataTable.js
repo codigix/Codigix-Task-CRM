@@ -117,7 +117,7 @@ const CRMDataTable = ({
         {/* Filter Toolbar */}
         <div className="px-4 py-3 bg-[#F9FAFB] border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-md p-2 shadow-xs cursor-pointer hover:border-red-500 transition-colors">
+            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded p-2 shadow-xs cursor-pointer hover:border-red-500 transition-colors">
               <span className="text-red-500"><RotateCcw size={14} /></span>
               <span className="text-xs  text-gray-700">Sort By</span>
               <ChevronDown size={14} className="text-gray-400" />
@@ -142,7 +142,7 @@ const CRMDataTable = ({
           </div>
 
           {showViewSwitcher && (
-            <div className="flex items-center bg-gray-100 rounded-md p-1 border border-gray-200">
+            <div className="flex items-center bg-gray-100 rounded p-1 border border-gray-200">
               <button
                 onClick={() => setViewMode('list')}
                 className={`p-1.5 rounded transition-all ${viewMode === 'list' ? 'bg-white text-red  ' : 'text-gray-500 hover:text-gray-700'}`}

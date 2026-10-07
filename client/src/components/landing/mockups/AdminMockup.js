@@ -64,10 +64,10 @@ const AdminMockup = () => {
             <h3 className="text-sm  text-slate-800 mb-3">System Health</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Status Card */}
-              <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-xl p-4 text-white shadow-lg shadow-red-600/20 relative overflow-hidden flex flex-col justify-between h-32">
+              <div className="bg-gradient-to-br from-red-600 to-red-700 rounded p-4 text-white shadow-lg shadow-red-600/20 relative overflow-hidden flex flex-col justify-between h-32">
                 <div className="absolute -right-4 -top-4 w-24 h-24 bg-red-500 rounded-full blur-2xl opacity-50"></div>
                 <div className="flex justify-between items-start relative z-10">
-                  <span className="text-xs font-semibold opacity-90">System Status</span>
+                  <span className="text-xs  opacity-90">System Status</span>
                   <span className="text-[9px]  bg-white/20 px-2 py-0.5 rounded-full border border-white/20">Active</span>
                 </div>
                 <div className="relative z-10">
@@ -79,9 +79,9 @@ const AdminMockup = () => {
               </div>
 
               {/* Response Time Card */}
-              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between h-32">
+              <div className="bg-white rounded border border-slate-200 p-4 shadow-sm flex flex-col justify-between h-32">
                 <div className="flex justify-between items-start">
-                  <span className="text-xs font-semibold text-slate-600">Server Response</span>
+                  <span className="text-xs  text-slate-600">Server Response</span>
                   <span className="text-[9px]  text-green-600 bg-green-50 px-1.5 py-0.5 rounded">+2.1%</span>
                 </div>
                 <div className="text-2xl  text-slate-800">184ms <span className="text-xs font-medium text-slate-400">Avg</span></div>
@@ -96,9 +96,9 @@ const AdminMockup = () => {
               </div>
 
               {/* API Health Card */}
-              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between h-32">
+              <div className="bg-white rounded border border-slate-200 p-4 shadow-sm flex flex-col justify-between h-32">
                 <div className="flex justify-between items-start">
-                  <span className="text-xs font-semibold text-slate-600 flex items-center gap-1"><Cpu size={12} /> API Health</span>
+                  <span className="text-xs  text-slate-600 flex items-center gap-1"><Cpu size={12} /> API Health</span>
                   <span className="w-2 h-2 rounded-full bg-green-500"></span>
                 </div>
                 <div>
@@ -108,8 +108,8 @@ const AdminMockup = () => {
                 {/* Fake bar chart */}
                 <div className="w-full h-8 flex items-end gap-1">
                   {[8, 9, 7, 10, 9, 8, 10, 9, 9, 8, 10, 9].map((h, i) => (
-                    <div key={i} className="w-full bg-slate-100 rounded-sm relative">
-                      <div className="absolute bottom-0 w-full bg-slate-800 rounded-sm" style={{ height: `${h * 10}%` }}></div>
+                    <div key={i} className="w-full bg-slate-100 rounded relative">
+                      <div className="absolute bottom-0 w-full bg-slate-800 rounded" style={{ height: `${h * 10}%` }}></div>
                     </div>
                   ))}
                 </div>
@@ -119,9 +119,9 @@ const AdminMockup = () => {
 
           <div className="flex-1 flex flex-col min-h-[200px]">
             <h3 className="text-sm  text-slate-800 mb-3">Global Revenue Analytics</h3>
-            <div className="flex-1 bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col">
+            <div className="flex-1 bg-white rounded border border-slate-200 p-4 shadow-sm flex flex-col">
               <div className="mb-4">
-                <div className="text-xs font-semibold text-slate-600">Monthly Recurring Revenue (MRR)</div>
+                <div className="text-xs  text-slate-600">Monthly Recurring Revenue (MRR)</div>
                 <div className="flex items-end gap-2 mt-1">
                   <div className="text-2xl  text-slate-800">$345,780</div>
                   <div className="text-[10px]  text-green-600 mb-1">+14.5% vs last month</div>

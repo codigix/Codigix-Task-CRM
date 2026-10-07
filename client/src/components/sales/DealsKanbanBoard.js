@@ -240,7 +240,7 @@ const DealsKanbanBoard = ({ onDealClick, onDealUpdate }) => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Deal Pipeline</h1>
+              <h1 className="text-2xl  text-slate-800 tracking-tight">Deal Pipeline</h1>
               <span className="bg-red-100 text-red  px-2.5 py-0.5 rounded-full text-[12px] ">{deals.length}</span>
             </div>
             <div className="flex items-center gap-1 text-xs  mt-1">
@@ -287,13 +287,13 @@ const DealsKanbanBoard = ({ onDealClick, onDealUpdate }) => {
             return (
               <div
                 key={stage}
-                className={`flex-shrink-0 w-80 bg-white/80 backdrop-blur-md border border-white/50 shadow-sm rounded-xl flex flex-col transition-all duration-300 ${dragOverStatus === stage ? 'ring-2 ring-indigo-400 bg-indigo-50/50 scale-[1.02]' : ''}`}
+                className={`flex-shrink-0 w-80 bg-white/80 backdrop-blur-md border border-white/50 shadow-sm rounded flex flex-col transition-all duration-300 ${dragOverStatus === stage ? 'ring-2 ring-indigo-400 bg-indigo-50/50 scale-[1.02]' : ''}`}
                 onDragOver={(e) => handleDragOver(e, stage)}
                 onDrop={(e) => handleDrop(e, stage)}
               >
                 <div className={`${colors.header} px-4 py-4 rounded-t-xl flex items-center justify-between border-b border-white/40`}>
                   <div>
-                    <h3 className={`text-sm font-bold ${colors.text}`}>{stage}</h3>
+                    <h3 className={`text-sm  ${colors.text}`}>{stage}</h3>
                     <p className="text-xs text-gray-600 mt-1">{stageDeals.length} deals</p>
                   </div>
                 </div>
@@ -314,7 +314,7 @@ const DealsKanbanBoard = ({ onDealClick, onDealUpdate }) => {
                       <div className="flex items-start gap-2 mb-3">
                         <GripVertical size={16} className="text-slate-300 flex-shrink-0 mt-0.5 group-hover:text-slate-500 transition-colors" />
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-semibold text-slate-800 hover:text-indigo-600 truncate mb-1 transition-colors">{deal.name}</h4>
+                          <h4 className="text-sm  text-slate-800 hover:text-indigo-600 truncate mb-1 transition-colors">{deal.name}</h4>
                           <p className="text-xs text-gray-500 truncate">{getCompanyName(deal.company_id)}</p>
                           <p className="text-xs text-blue-600  truncate mt-0.5">{deal.service}</p>
                           <p className={`text-[9px] font-[500] mt-1 px-1.5 py-0.5 rounded-full inline-block ${deal.status === 'Qualified' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>

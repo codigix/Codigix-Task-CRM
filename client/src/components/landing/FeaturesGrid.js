@@ -12,7 +12,7 @@ const departments = [
   },
   {
     title: 'HR Management',
-    description: <span>Complete employee lifecycle management via our dedicated <a href="https://hrmsystem.codigixinfotech.com/" target="_blank" rel="noreferrer" className="text-red-600 font-semibold hover:underline relative z-20">Codigix HRM System</a>.</span>,
+    description: <span>Complete employee lifecycle management via our dedicated <a href="https://hrmsystem.codigixinfotech.com/" target="_blank" rel="noreferrer" className="text-red-600  hover:underline relative z-20">Codigix HRM System</a>.</span>,
     icon: <Users className="w-6 h-6 text-rose-600" />,
     bgColor: 'bg-rose-50',
     borderColor: 'border-rose-100',
@@ -76,7 +76,7 @@ const FeaturesGrid = () => {
               <div className={`absolute inset-0 bg-gradient-to-br ${dept.bgColor} to-transparent opacity-0 group-hover:opacity-40 transition-opacity duration-700`}></div>
 
               <div className="relative z-10 flex flex-col h-full">
-                <div className={`w-12 h-12 ${dept.bgColor} ${dept.borderColor} border rounded-xl flex items-center justify-center mb-6 shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3`}>
+                <div className={`w-12 h-12 ${dept.bgColor} ${dept.borderColor} border rounded flex items-center justify-center mb-6 shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3`}>
                   {dept.icon}
                 </div>
 

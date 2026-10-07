@@ -20,6 +20,19 @@ const LoginPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  // Set by setupAuthFetch.js when the server ended the session.
+  useEffect(() => {
+    try {
+      const notice = sessionStorage.getItem('loginNotice');
+      if (notice) {
+        sessionStorage.removeItem('loginNotice');
+        setError(notice === 'ACCOUNT_INACTIVE'
+          ? 'Your account is not active. Contact an administrator.'
+          : 'Your session has expired. Please log in again.');
+      }
+    } catch (e) { /* storage unavailable */ }
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');

@@ -398,7 +398,7 @@ const ITTeamsPage = ({ department }) => {
             <button className="p-2 bg-white border border-gray-200 text-gray-700 rounded text-sm font-medium flex items-center gap-2  hover:bg-gray-50 transition-colors">
               <Download size={14} /> Import Team
             </button>
-            <button onClick={() => { setSelectedTeam(null); setIsAssignProjectModalOpen(true); }} className="p-2 bg-indigo-600 text-white rounded text-sm font-medium flex items-center gap-2  hover:bg-indigo-700 transition-colors">
+            <button onClick={() => { setSelectedTeam(null); setIsAssignProjectModalOpen(true); }} className="p-2 bg-red-600 text-white rounded text-sm font-medium flex items-center gap-2  hover:bg-red-700 transition-colors">
               <Plus size={14} /> Assign Team
             </button>
           </div>
@@ -484,7 +484,7 @@ const ITTeamsPage = ({ department }) => {
                     setManagerRoleSearch('');
                     setIsCreateModalOpen(true);
                   }}
-                  className="px-3 py-1.5 bg-indigo-600 text-white rounded text-xs  flex items-center gap-1.5 hover:bg-indigo-700 transition-colors"
+                  className="px-3 py-1.5 bg-red-600 text-white rounded text-xs  flex items-center gap-1.5 hover:bg-red-700 transition-colors"
                 >
                   <Plus size={14} /> New Team
                 </button>
@@ -750,12 +750,12 @@ const ITTeamsPage = ({ department }) => {
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-200">
+                <div className="text-center py-20 bg-white rounded border border-dashed border-gray-200">
                   <Users size={40} className="mx-auto text-gray-300 mb-3" />
                   <p className="text-sm text-gray-500 font-medium">No active teams found.</p>
                   <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="mt-3 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded  hover:bg-indigo-700 transition-colors"
+                    className="mt-3 text-xs bg-red-600 text-white px-3 py-1.5 rounded  hover:bg-red-700 transition-colors"
                   >
                     Create First Team
                   </button>
@@ -819,7 +819,7 @@ const ITTeamsPage = ({ department }) => {
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-medium text-gray-700 w-6">{p.progress || 0}%</span>
                             <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-indigo-600" style={{ width: `${p.progress || 0}%` }}></div>
+                              <div className="h-full bg-red-600" style={{ width: `${p.progress || 0}%` }}></div>
                             </div>
                           </div>
                         </td>
@@ -848,7 +848,7 @@ const ITTeamsPage = ({ department }) => {
                   <div key={i} className="flex items-center gap-3 text-xs">
                     <span className="text-gray-700 font-medium w-24">{r.role}</span>
                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-600 rounded-full" style={{ width: r.pct }}></div>
+                      <div className="h-full bg-red-600 rounded-full" style={{ width: r.pct }}></div>
                     </div>
                     <div className="w-16 flex justify-between text-gray-500">
                       <span className=" text-gray-900">{r.count}</span>
@@ -1317,7 +1317,7 @@ const ITTeamsPage = ({ department }) => {
                     <button
                       type="button"
                       onClick={addProjectToList}
-                      className="w-full p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs  flex items-center justify-center gap-1 transition-colors h-[34px]"
+                      className="w-full p-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs  flex items-center justify-center gap-1 transition-colors h-[34px]"
                     >
                       <Plus size={14} /> Add Project
                     </button>

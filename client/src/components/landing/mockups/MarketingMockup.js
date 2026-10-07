@@ -74,7 +74,7 @@ const MarketingMockup = () => {
               ].map((camp, i) => (
                 <div key={i} className="grid grid-cols-12 gap-2 p-2 border-b border-slate-50 items-center hover:bg-slate-50 text-xs">
                   <div className="col-span-5 flex flex-col">
-                    <span className="font-semibold text-slate-700 truncate">{camp.name}</span>
+                    <span className=" text-slate-700 truncate">{camp.name}</span>
                     <span className="text-[9px] text-slate-400">{camp.type}</span>
                   </div>
                   <div className="col-span-2 flex justify-center">

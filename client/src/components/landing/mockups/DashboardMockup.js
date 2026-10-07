@@ -18,7 +18,7 @@ const DashboardMockup = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-slate-100 rounded-md px-3 py-1.5 text-xs text-slate-400 flex items-center gap-2 border border-slate-200 w-48">
+          <div className="bg-slate-100 rounded px-3 py-1.5 text-xs text-slate-400 flex items-center gap-2 border border-slate-200 w-48">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             Search...
           </div>
@@ -138,15 +138,15 @@ const DashboardMockup = () => {
         <div className="absolute top-[162px] right-5 w-[24%] bg-white rounded border border-slate-200 shadow-sm p-4 min-h-[220px]">
           <h3 className="text-sm  text-slate-800 mb-4">Upcoming Event</h3>
           <div className="flex flex-col gap-3">
-            <div className="p-2 border border-slate-100 rounded-md bg-slate-50 flex flex-col gap-1">
+            <div className="p-2 border border-slate-100 rounded bg-slate-50 flex flex-col gap-1">
               <span className="text-[10px]  text-slate-700">Client Sync: Acme Corp</span>
               <span className="text-[9px] text-slate-500">Today, 2:30 PM (Zoom)</span>
             </div>
-            <div className="p-2 border border-slate-100 rounded-md bg-slate-50 flex flex-col gap-1">
+            <div className="p-2 border border-slate-100 rounded bg-slate-50 flex flex-col gap-1">
               <span className="text-[10px]  text-slate-700">Q4 Strategy Review</span>
               <span className="text-[9px] text-slate-500">Tomorrow, 10:00 AM (HQ)</span>
             </div>
-            <div className="p-2 border border-slate-100 rounded-md bg-slate-50 flex flex-col gap-1">
+            <div className="p-2 border border-slate-100 rounded bg-slate-50 flex flex-col gap-1">
               <span className="text-[10px]  text-slate-700">Demo with Nexus Inc</span>
               <span className="text-[9px] text-slate-500">Oct 30, 4:00 PM (Meet)</span>
             </div>

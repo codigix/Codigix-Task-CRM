@@ -35,34 +35,34 @@ const HRDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-lg border border-gray-100 shadow-sm flex flex-col justify-between  hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded border border-gray-100 shadow-sm flex flex-col justify-between  hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
             <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">Total Employees</p>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Users size={18} /></div>
+            <div className="p-2 bg-blue-50 text-blue-600 rounded"><Users size={18} /></div>
           </div>
           <h3 className="text-xl  text-gray-900">{loading ? '...' : data?.total_employees || 0}</h3>
         </div>
 
-        <div className="bg-white p-5 rounded-lg border border-gray-100 shadow-sm flex flex-col justify-between  hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded border border-gray-100 shadow-sm flex flex-col justify-between  hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
             <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">On Leave Today</p>
-            <div className="p-2 bg-orange-50 text-orange-600 rounded-lg"><UserX size={18} /></div>
+            <div className="p-2 bg-orange-50 text-orange-600 rounded"><UserX size={18} /></div>
           </div>
           <h3 className="text-xl  text-gray-900">{loading ? '...' : data?.on_leave_today || 0}</h3>
         </div>
 
-        <div className="bg-white p-5 rounded-lg border border-gray-100 shadow-sm flex flex-col justify-between  hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded border border-gray-100 shadow-sm flex flex-col justify-between  hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
             <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">Open Positions</p>
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><Briefcase size={18} /></div>
+            <div className="p-2 bg-purple-50 text-purple-600 rounded"><Briefcase size={18} /></div>
           </div>
           <h3 className="text-xl  text-gray-900">{loading ? '...' : data?.open_positions || 0}</h3>
         </div>
 
-        <div className="bg-white p-5 rounded-lg border border-gray-100 shadow-sm flex flex-col justify-between  hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded border border-gray-100 shadow-sm flex flex-col justify-between  hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
             <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">Pending Approvals</p>
-            <div className="p-2 bg-red-50 text-red-600 rounded-lg"><FileText size={18} /></div>
+            <div className="p-2 bg-red-50 text-red-600 rounded"><FileText size={18} /></div>
           </div>
           <h3 className="text-xl  text-gray-900">{loading ? '...' : data?.pending_approvals || 0}</h3>
         </div>
@@ -70,7 +70,7 @@ const HRDashboard = () => {
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Attendance Widget */}
-        <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="bg-white rounded border border-gray-100 shadow-sm overflow-hidden flex flex-col">
           <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Clock size={18} className="text-blue-600" />
@@ -104,7 +104,7 @@ const HRDashboard = () => {
         </div>
 
         {/* Leaves Widget */}
-        <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="bg-white rounded border border-gray-100 shadow-sm overflow-hidden flex flex-col">
           <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Calendar size={18} className="text-orange-600" />
@@ -138,7 +138,7 @@ const HRDashboard = () => {
         </div>
 
         {/* Performance Widget */}
-        <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="bg-white rounded border border-gray-100 shadow-sm overflow-hidden flex flex-col">
           <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <TrendingUp size={18} className="text-purple-600" />

@@ -10,6 +10,7 @@ import BoardTabs from './BoardTabs';
 import { useAuth } from '../../hooks/useAuth';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE } from '../../utils/access';
 
 // Matches the server's definition of finished work.
 const isDoneStatus = (s) => ['DONE', 'COMPLETED', 'CLOSED'].includes(String(s || '').toUpperCase().trim());
@@ -45,6 +46,8 @@ const PAGE_SIZE = 10;
 
 const TasksPage = ({ department }) => {
   const { user } = useAuth();
+  // Everyone can edit tickets; only managers can delete them.
+  const canDelete = canDeleteTickets(user);
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [selectedIssue, setSelectedIssue] = useState(null);
@@ -185,9 +188,16 @@ const TasksPage = ({ department }) => {
   };
 
   const deleteIssue = async (key) => {
+    if (!canDelete) {
+      showErrorToast(TICKET_DELETE_DENIED_MESSAGE);
+      return;
+    }
     try {
-      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete issue');
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, { method: 'DELETE', headers: ticketDeleteHeaders(user) });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to delete issue');
+      }
       setTasks(prev => prev.filter(t => t.issue_key !== key && t.key !== key));
       if (selectedIssue === key) setSelectedIssue(null);
       showSuccessToast(`Task ${key} deleted successfully`);
@@ -214,7 +224,7 @@ const TasksPage = ({ department }) => {
           const parent = tasks.find(t => (t.issue_key === row.parentKey || t.key === row.parentKey));
           if (parent) {
             let curSt = parent.subtasks;
-            if (typeof curSt === 'string') { try { curSt = JSON.parse(curSt); } catch(e) { curSt = []; } }
+            if (typeof curSt === 'string') { try { curSt = JSON.parse(curSt); } catch (e) { curSt = []; } }
             const updated = (Array.isArray(curSt) ? curSt : []).filter(s => String(s.id) !== String(row.subtaskId));
             updateIssue(row.parentKey, { subtasks: updated });
             showSuccessToast(`Subtask ${rowKey} deleted successfully`);
@@ -299,7 +309,7 @@ const TasksPage = ({ department }) => {
                         Project: {selectedProjectName} <ChevronDown size={14} />
                       </button>
                       {openFilterDropdown === 'project' && (
-                        <div className="absolute left-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs max-h-60 overflow-y-auto">
+                        <div className="absolute left-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded shadow-lg py-1 z-30 text-xs max-h-60 overflow-y-auto">
                           <div
                             onClick={() => { setSelectedProjectId('ALL'); setOpenFilterDropdown(null); }}
                             className={`p-2 hover:bg-gray-50 cursor-pointer font-medium ${selectedProjectId === 'ALL' ? 'text-blue-600 bg-blue-50' : 'text-gray-700'}`}
@@ -332,7 +342,7 @@ const TasksPage = ({ department }) => {
                   <div className="relative interactive-dropdown">
                     <button onClick={() => toggleDropdown('share')} className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 font-medium"><Share2 size={14} /> Share</button>
                     {openFilterDropdown === 'share' && (
-                      <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs">
+                      <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded shadow-lg py-1 z-30 text-xs">
                         <div className="p-2 hover:bg-gray-50 cursor-pointer text-gray-700">Copy link</div>
                         <div className="p-2 hover:bg-gray-50 cursor-pointer text-gray-700">Email</div>
                       </div>
@@ -342,7 +352,7 @@ const TasksPage = ({ department }) => {
                   <div className="relative interactive-dropdown">
                     <button onClick={() => toggleDropdown('export')} className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 font-medium"><Download size={14} /> Export</button>
                     {openFilterDropdown === 'export' && (
-                      <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs">
+                      <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded shadow-lg py-1 z-30 text-xs">
                         <div className="p-2 hover:bg-gray-50 cursor-pointer text-gray-700">Export Excel</div>
                         <div className="p-2 hover:bg-gray-50 cursor-pointer text-gray-700">Export CSV</div>
                       </div>
@@ -352,7 +362,7 @@ const TasksPage = ({ department }) => {
                   <div className="relative interactive-dropdown">
                     <button onClick={() => toggleDropdown('moreOptions')} className="text-gray-400 hover:text-gray-600"><MoreHorizontal size={16} /></button>
                     {openFilterDropdown === 'moreOptions' && (
-                      <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30 text-xs">
+                      <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded shadow-lg py-1 z-30 text-xs">
                         <div className="p-2 hover:bg-gray-50 cursor-pointer text-gray-700">Bulk modify</div>
                         <div className="p-2 hover:bg-gray-50 cursor-pointer text-gray-700">Import issues</div>
                       </div>
@@ -483,13 +493,15 @@ const TasksPage = ({ department }) => {
                             </td>
                             <td className="p-3 text-gray-500 text-xs">{due}</td>
                             <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                onClick={(e) => confirmDeleteTask(e, row)}
-                                className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"
-                                title={row.isSubtask ? "Delete subtask" : "Delete task"}
-                              >
-                                <Trash2 size={14} />
-                              </button>
+                              {canDelete && (
+                                <button
+                                  onClick={(e) => confirmDeleteTask(e, row)}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"
+                                  title={row.isSubtask ? "Delete subtask" : "Delete task"}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
                             </td>
                           </tr>
                         );

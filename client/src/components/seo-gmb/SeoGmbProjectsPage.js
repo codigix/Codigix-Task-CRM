@@ -310,7 +310,7 @@ export default function SeoGmbProjectsPage() {
           {/* Project Header Row */}
           <div className="flex items-center justify-between mb-5 ">
             <div className="flex items-center gap-4">
-              <div className="bg-indigo-600 text-white text-2xl  rounded w-14 h-14 flex items-center justify-center ">
+              <div className="bg-red-600 text-white text-2xl  rounded w-14 h-14 flex items-center justify-center ">
                 {currentProjectName.slice(0, 2).toUpperCase()}
               </div>
               <div>
@@ -539,7 +539,7 @@ export default function SeoGmbProjectsPage() {
                                   </span>
                                 </td>
                                 <td className="py-2.5 px-2.5">
-                                  <span className="text-xs  px-2 py-0.5 rounded-md whitespace-nowrap bg-slate-100 text-slate-700">
+                                  <span className="text-xs  px-2 py-0.5 rounded whitespace-nowrap bg-slate-100 text-slate-700">
                                     {task.status || 'Open'}
                                   </span>
                                 </td>
@@ -738,8 +738,8 @@ export default function SeoGmbProjectsPage() {
                   <p className="text-xs text-slate-400 m-0 mt-0.5">Timeline Gantt representation of major SEO phases.</p>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md  text-slate-900 cursor-pointer">Today</button>
-                  <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 p-1 rounded-md cursor-pointer"><Sliders size={14} /></button>
+                  <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded  text-slate-900 cursor-pointer">Today</button>
+                  <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 p-1 rounded cursor-pointer"><Sliders size={14} /></button>
                 </div>
               </div>
 

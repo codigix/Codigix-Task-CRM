@@ -60,15 +60,15 @@ const RenewSprintModal = ({ isOpen, sprint, onCancel, onRenew }) => {
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-[560px] max-h-[92vh] overflow-y-auto border border-gray-200">
-        
+      <div className="bg-white rounded shadow-2xl w-full max-w-[560px] max-h-[92vh] overflow-y-auto border border-gray-200">
+
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-indigo-50">
           <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
             <RefreshCw size={20} className="animate-spin-slow" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Renew Sprint</h2>
+            <h2 className="text-lg  text-gray-900">Renew Sprint</h2>
             <p className="text-xs text-gray-500">
               Assign new dates to restart this sprint with all remaining tasks.
             </p>
@@ -84,7 +84,7 @@ const RenewSprintModal = ({ isOpen, sprint, onCancel, onRenew }) => {
           )}
 
           {/* Preserved Info Banner */}
-          <div className="p-3 bg-purple-50/60 rounded-lg border border-purple-100 text-xs text-purple-900 flex flex-col gap-1.5">
+          <div className="p-3 bg-purple-50/60 rounded border border-purple-100 text-xs text-purple-900 flex flex-col gap-1.5">
             <div className="flex items-center gap-2 font-medium">
               <FolderKanban size={14} className="text-purple-600" />
               <span>Project: <strong>{sprint.project_name || 'General Project'}</strong></span>
@@ -98,14 +98,14 @@ const RenewSprintModal = ({ isOpen, sprint, onCancel, onRenew }) => {
 
           {/* Sprint Name */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
+            <label className="block text-xs  text-gray-700 mb-1">
               Sprint Name
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
               required
             />
           </div>
@@ -113,7 +113,7 @@ const RenewSprintModal = ({ isOpen, sprint, onCancel, onRenew }) => {
           {/* Date range */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
+              <label className="block text-xs  text-gray-700 mb-1 flex items-center gap-1">
                 <Calendar size={13} className="text-gray-400" />
                 New Start Date
               </label>
@@ -121,12 +121,12 @@ const RenewSprintModal = ({ isOpen, sprint, onCancel, onRenew }) => {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
+              <label className="block text-xs  text-gray-700 mb-1 flex items-center gap-1">
                 <Calendar size={13} className="text-gray-400" />
                 New End Date
               </label>
@@ -134,7 +134,7 @@ const RenewSprintModal = ({ isOpen, sprint, onCancel, onRenew }) => {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                 required
               />
             </div>
@@ -142,7 +142,7 @@ const RenewSprintModal = ({ isOpen, sprint, onCancel, onRenew }) => {
 
           {/* Sprint Goal */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
+            <label className="block text-xs  text-gray-700 mb-1 flex items-center gap-1">
               <Target size={13} className="text-gray-400" />
               Sprint Goal (Optional)
             </label>
@@ -151,7 +151,7 @@ const RenewSprintModal = ({ isOpen, sprint, onCancel, onRenew }) => {
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
               placeholder="What are we aiming to deliver in this sprint extension?"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none"
             />
           </div>
 
@@ -161,14 +161,14 @@ const RenewSprintModal = ({ isOpen, sprint, onCancel, onRenew }) => {
               type="button"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-md transition disabled:opacity-50"
+              className="px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-md transition shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+              className="px-4 py-2 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded transition shadow-sm flex items-center gap-1.5 disabled:opacity-50"
             >
               <RefreshCw size={13} className={isSubmitting ? 'animate-spin' : ''} />
               {isSubmitting ? 'Renewing…' : 'Renew & Start Sprint'}

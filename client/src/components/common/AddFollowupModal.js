@@ -972,7 +972,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null, onCre
                       </div>
                       {existingFiles.filter(file => !['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(file.file_type?.toUpperCase())).length > 0 && (
                         <div className="mt-2 space-y-1 text-left">
-                          <p className="text-[9px] font-semibold text-gray-500">Existing Docs:</p>
+                          <p className="text-[9px]  text-gray-500">Existing Docs:</p>
                           <div className="max-h-24 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                             {existingFiles.filter(file => !['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(file.file_type?.toUpperCase())).map(file => (
                               <a
@@ -1015,7 +1015,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null, onCre
                       </div>
                       {existingFiles.filter(file => ['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(file.file_type?.toUpperCase())).length > 0 && (
                         <div className="mt-2 space-y-1 text-left">
-                          <p className="text-[9px] font-semibold text-gray-500">Existing Images:</p>
+                          <p className="text-[9px]  text-gray-500">Existing Images:</p>
                           <div className="max-h-24 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                             {existingFiles.filter(file => ['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(file.file_type?.toUpperCase())).map(file => (
                               <a

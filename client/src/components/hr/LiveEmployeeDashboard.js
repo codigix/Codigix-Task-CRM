@@ -121,7 +121,7 @@ const LiveEmployeeDashboard = ({ employeeId, onClose, autoDownload }) => {
   if (loading) {
     return createPortal(
       <div className="fixed inset-0 z-[9999] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center">
-        <div className="bg-white p-4 rounded-lg shadow-xl flex flex-col items-center">
+        <div className="bg-white p-4 rounded shadow-xl flex flex-col items-center">
           <div className="w-10 h-10 border-4 border-[#151B2B] border-t-transparent rounded-full animate-spin mb-4"></div>
           <p className="text-slate-600 font-medium">Generating Live Performance Dashboard...</p>
         </div>

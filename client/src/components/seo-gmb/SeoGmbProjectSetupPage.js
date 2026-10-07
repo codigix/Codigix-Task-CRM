@@ -644,7 +644,7 @@ export default function SeoGmbProjectSetupPage() {
                           <button
                             type="button"
                             onClick={() => item.set(s => !s)}
-                            className={`w-10 h-5.5 rounded-full p-0.5 border-none cursor-pointer transition-colors ${item.state ? 'bg-indigo-600' : 'bg-slate-300'
+                            className={`w-10 h-5.5 rounded-full p-0.5 border-none cursor-pointer transition-colors ${item.state ? 'bg-red-600' : 'bg-slate-300'
                               }`}
                           >
                             <div className={`w-4.5 h-4.5 bg-white rounded-full transition-transform ${item.state ? 'translate-x-4.5' : 'translate-x-0'}`} />
@@ -728,7 +728,7 @@ export default function SeoGmbProjectSetupPage() {
                       <p className=" text-slate-700 m-0">Auto Sync Reviews and Posts</p>
                       <p className="text-xs text-slate-400 m-0 mt-0.5">Automatically sync customer ratings and Google posts every 2 hours.</p>
                     </div>
-                    <button type="button" onClick={() => setNewProj(p => ({ ...p, gmbSyncEnabled: !p.gmbSyncEnabled }))} className={`w-10 h-5.5 rounded-full p-0.5 border-none cursor-pointer transition-colors ${newProj.gmbSyncEnabled ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                    <button type="button" onClick={() => setNewProj(p => ({ ...p, gmbSyncEnabled: !p.gmbSyncEnabled }))} className={`w-10 h-5.5 rounded-full p-0.5 border-none cursor-pointer transition-colors ${newProj.gmbSyncEnabled ? 'bg-red-600' : 'bg-slate-300'}`}>
                       <div className={`w-4.5 h-4.5 bg-white rounded-full transition-transform ${newProj.gmbSyncEnabled ? 'translate-x-4.5' : 'translate-x-0'}`} />
                     </button>
                   </div>
@@ -799,7 +799,7 @@ export default function SeoGmbProjectSetupPage() {
                         <p className=" text-slate-700 m-0">Rank Drop Instant Alert</p>
                         <p className="text-xs text-slate-400 m-0 mt-0.5">Send immediate notification if a target keyword drops out of top 10.</p>
                       </div>
-                      <button type="button" onClick={() => setNewProj(p => ({ ...p, notifInstantAlerts: !p.notifInstantAlerts }))} className={`w-10 h-5.5 rounded-full p-0.5 border-none cursor-pointer transition-colors ${newProj.notifInstantAlerts ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                      <button type="button" onClick={() => setNewProj(p => ({ ...p, notifInstantAlerts: !p.notifInstantAlerts }))} className={`w-10 h-5.5 rounded-full p-0.5 border-none cursor-pointer transition-colors ${newProj.notifInstantAlerts ? 'bg-red-600' : 'bg-slate-300'}`}>
                         <div className={`w-4.5 h-4.5 bg-white rounded-full transition-transform ${newProj.notifInstantAlerts ? 'translate-x-4.5' : 'translate-x-0'}`} />
                       </button>
                     </div>
@@ -904,7 +904,7 @@ export default function SeoGmbProjectSetupPage() {
             {/* Project Header Card */}
             <div className="flex items-center justify-between mb-5 ">
               <div className="flex items-center gap-4">
-                <div className="bg-indigo-600 text-white text-2xl  rounded w-14 h-14 flex items-center justify-center">
+                <div className="bg-red-600 text-white text-2xl  rounded w-14 h-14 flex items-center justify-center">
                   {projectName.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
@@ -1288,7 +1288,7 @@ export default function SeoGmbProjectSetupPage() {
                           <td className="py-3 px-3  text-slate-800">{row.focus}</td>
                           <td className="py-3 px-3 text-slate-600">{row.activities}</td>
                           <td className="py-3 px-3">
-                            <span className="bg-blue-50 text-blue-600 text-xs  px-2.5 py-0.5 rounded-md border border-blue-100">
+                            <span className="bg-blue-50 text-blue-600 text-xs  px-2.5 py-0.5 rounded border border-blue-100">
                               Upcoming
                             </span>
                           </td>

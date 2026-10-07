@@ -1,5 +1,6 @@
 const OpenAI = require('openai');
 const nodemailer = require('nodemailer');
+const { workingSecondsBetween, parseDurationToSeconds: parseWorkDuration, formatHours } = require('../services/workTime');
 const { resolvePrefix, nextIssueKey } = require('../utils/issueKeys');
 
 // Matches the definition of finished work used by sprint completion and the UI.
@@ -786,7 +787,11 @@ Acceptance Criteria
       { name: 'parent_id', definition: 'INT' },
       { name: 'contribution_review_status', definition: "VARCHAR(20) DEFAULT 'Pending'" },
       { name: 'contribution_method', definition: "VARCHAR(30) DEFAULT 'WORK_BREAKDOWN'" },
-      { name: 'effort_points', definition: 'INT DEFAULT 0' }
+      { name: 'effort_points', definition: 'INT DEFAULT 0' },
+      // Who the running timer's time will be credited to, and whether it was started by
+      // moving the ticket to In Progress ('auto', working hours only) or with Start ('manual').
+      { name: 'timer_owner', definition: 'VARCHAR(120) NULL' },
+      { name: 'timer_source', definition: 'VARCHAR(10) NULL' }
     ];
     try {
       const [cols] = await pool.query('DESCRIBE it_kanban_issues');
@@ -840,36 +845,38 @@ Acceptance Criteria
   })();
 
   // ── Work-log time helpers ──────────────────────────────────────────────
-  // Jira-style duration strings: "3h 30m", "2d", "45m", "1w 2d".
-  const parseDurationToSeconds = (input) => {
-    if (input === null || input === undefined) return 0;
-    const str = String(input).trim().toLowerCase();
-    if (!str) return 0;
-    if (/^\d+$/.test(str)) return parseInt(str, 10) * 60; // bare number = minutes
-    const units = { w: 144000, d: 28800, h: 3600, m: 60 }; // 1d = 8h, 1w = 5d
-    let total = 0;
-    let matched = false;
-    for (const m of str.matchAll(/(\d+(?:\.\d+)?)\s*([wdhm])/g)) {
-      total += parseFloat(m[1]) * units[m[2]];
-      matched = true;
-    }
-    return matched ? Math.round(total) : 0;
-  };
+  // Durations: "3h 30m", "45m", "1d" (= one working day from WORK_SCHEDULE, e.g. 9h),
+  // "1w" (= one working week). Shown as hours and minutes so planned and actual time
+  // compare directly. Shared with the performance report (services/workTime.js).
+  const parseDurationToSeconds = parseWorkDuration;
+  const formatSecondsToDuration = (seconds) => (Number(seconds) < 0 ? `Overdue ${formatHours(seconds)}` : formatHours(seconds));
 
-  const formatSecondsToDuration = (seconds) => {
-    let s = Math.round(Number(seconds) || 0);
-    const isOverdue = s < 0;
-    if (isOverdue) s = Math.abs(s);
-    if (s === 0) return '0h';
-    if (s > 0 && s < 60) {
-      return isOverdue ? 'Overdue 1m' : '1m';
+  const isPersonName = (n) => n && !['unassigned', 'none', 'system', ''].includes(String(n).trim().toLowerCase());
+  const MAX_MANUAL_SESSION = 12 * 3600; // a forgotten timer can't log days
+
+  /**
+   * Ends a ticket's running timer session and writes it to the work log.
+   * Automatic sessions (ticket sat In Progress) count working hours only; sessions started
+   * with the Start button count real time — including overtime — capped at 12 hours.
+   * Time goes to whoever the session belongs to: the person who started it, else the
+   * assignee, else `fallbackOwner`. Returns the seconds logged.
+   */
+  const closeTimerSession = async (key, cur, fallbackOwner, reason) => {
+    const start = new Date(cur.timer_start_time);
+    if (!cur.is_timer_running || isNaN(start)) return 0;
+    const now = new Date();
+    const seconds = cur.timer_source === 'manual'
+      ? Math.min(Math.max(0, Math.round((now - start) / 1000)), MAX_MANUAL_SESSION)
+      : workingSecondsBetween(start, now);
+    if (seconds > 0) {
+      const owner = cur.timer_owner || (isPersonName(cur.assignee) ? cur.assignee : fallbackOwner);
+      await db.query(
+        'INSERT INTO it_kanban_worklogs (issue_key, author, seconds, description, started_at) VALUES (?, ?, ?, ?, ?)',
+        [key, owner, seconds, reason, start]
+      );
+      await recalcIssueTime(key);
     }
-    const w = Math.floor(s / 144000);
-    const d = Math.floor((s % 144000) / 28800);
-    const h = Math.floor((s % 28800) / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const formatted = [w && `${w}w`, d && `${d}d`, h && `${h}h`, m && `${m}m`].filter(Boolean).join(' ');
-    return isOverdue ? `Overdue ${formatted}` : formatted || '0h';
+    return seconds;
   };
 
   // Recomputes time_spent / remaining_estimate from the issue's logged time.
@@ -980,11 +987,24 @@ app.get('/api/it-kanban/labels', async (req, res) => {
     }
   });
 
+  /**
+   * Effort points.
+   *  - With a planned time: points = planned working hours × priority weight
+   *    (Low 1.0 · Medium 1.2 · High 1.5 · Critical 2.0), at least 1. So points reflect how
+   *    much work was committed to, and are comparable across work types.
+   *  - Without a planned time: the older value-based formula (type, priority, subtasks).
+   */
   app.post('/api/it-kanban/calculate-points', (req, res) => {
     try {
-      const { type, priority, subtasksCount } = req.body;
+      const { type, priority, subtasksCount, estimate } = req.body || {};
+      const plannedHours = parseDurationToSeconds(estimate) / 3600;
+      if (plannedHours > 0) {
+        const p = String(priority || '').toUpperCase();
+        const weight = p.includes('CRITICAL') || p.includes('HIGHEST') ? 2.0 : p.includes('HIGH') ? 1.5 : p.includes('LOW') ? 1.0 : 1.2;
+        return res.json({ points: Math.max(1, Math.round(plannedHours * weight)), basis: 'planned-time', plannedHours, weight });
+      }
       const points = calculateValueBasedPoints(type, priority, subtasksCount);
-      res.json({ points });
+      res.json({ points, basis: 'value' });
     } catch (error) {
       res.status(500).json({ error: 'Failed to calculate points' });
     }
@@ -1105,15 +1125,16 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       const labelsJson = JSON.stringify(Array.isArray(labels) ? labels.filter(Boolean) : []);
       const linkedJson = JSON.stringify(Array.isArray(linked_issues) ? linked_issues.filter(Boolean) : []);
 
-      const dept = department || 'IT';
+      let dept = String(department || 'IT').replace(/\s*department\s*$/i, '').trim();
 
-      // Created into a sprint that owns a project? Then it belongs to that project — the
-      // sprint wins, so a mismatched project on the form cannot contradict the sprint.
-      // With no sprint (or a sprint with no project) the caller's choice stands.
+      // Created into a sprint? Then the sprint decides both the project and the board
+      // (department): a sprint belongs to exactly one board, so a ticket in a Marketing
+      // sprint is a Marketing ticket whichever page it was created from.
       let resolvedProjectId = project_id || null;
       if (sprint_id) {
-        const [[s]] = await db.query('SELECT project_id FROM sprints WHERE id = ?', [sprint_id]);
+        const [[s]] = await db.query('SELECT project_id, department FROM sprints WHERE id = ?', [sprint_id]);
         if (s && s.project_id != null) resolvedProjectId = s.project_id;
+        if (s && s.department) dept = s.department;
       }
 
       // The key's prefix comes from the project the work belongs to — "bakul catering
@@ -1465,8 +1486,10 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       if (Object.prototype.hasOwnProperty.call(updates, 'sprint_id') && updates.project_id === undefined) {
         const joining = updates.sprint_id != null && updates.sprint_id !== '';
         if (joining) {
-          const [[s]] = await db.query('SELECT project_id FROM sprints WHERE id = ?', [updates.sprint_id]);
+          const [[s]] = await db.query('SELECT project_id, department FROM sprints WHERE id = ?', [updates.sprint_id]);
           if (s && s.project_id != null) updates.project_id = s.project_id;
+          // Moving into another board's sprint moves the ticket to that board.
+          if (s && s.department) updates.department = s.department;
         } else {
           updates.project_id = null;
         }
@@ -1480,50 +1503,78 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       // backlog filter on, so the details panel has to be able to write it.
       // 'flagged' and 'story_points' are written by the backlog row menu, which mirrors
       // Jira's Add flag and Story point estimate actions.
-      const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability', 'contribution_review_status', 'contribution_method', 'effort_points', 'timer_start_time', 'is_timer_running'];
+      const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'department', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability', 'contribution_review_status', 'contribution_method', 'effort_points', 'timer_start_time', 'is_timer_running', 'timer_owner', 'timer_source'];
       // 'labels' belongs here, not in allowedFields: it is stored as JSON, and without it
       // labels could be set at creation but never changed afterwards.
       const jsonFields = ['subtasks', 'linked_issues', 'comments', 'labels'];
 
-      // --- Automatic Timer Logic ---
-      if (updates.status) {
+      // --- Automatic time tracking ---
+      // While a ticket is In Progress its timer runs; leaving In Progress (from any screen:
+      // board drag, details panel, list, backlog) logs the elapsed *working* time to the
+      // assignee's work log. Changing the assignee mid-way credits the time so far to the
+      // previous assignee and restarts the clock for the new one. These work logs are what
+      // the performance report's hours and average-task-time figures come from.
+      const statusChanging = updates.status !== undefined;
+      const assigneeChanging = updates.assignee !== undefined;
+      if (statusChanging || assigneeChanging) {
         try {
-          const [[currentState]] = await db.query('SELECT status, timer_start_time, is_timer_running, time_spent FROM it_kanban_issues WHERE issue_key = ?', [key]);
+          const [[cur]] = await db.query(
+            'SELECT status, assignee, timer_start_time, is_timer_running, timer_owner, timer_source FROM it_kanban_issues WHERE issue_key = ?',
+            [key]
+          );
+          if (cur) {
+            const ACTIVE = ['IN PROGRESS', 'IN-PROGRESS', 'IN_PROGRESS'];
+            const isActive = (s) => ACTIVE.includes(String(s || '').trim().toUpperCase());
+            const isPerson = isPersonName;
+            const actor = req.headers['x-user-name'] || 'System';
+            const now = new Date();
+            const nextStatus = statusChanging ? updates.status : cur.status;
+            const nextAssignee = assigneeChanging ? updates.assignee : cur.assignee;
+            const running = Boolean(cur.is_timer_running && cur.timer_start_time);
 
-          if (currentState) {
-            const newStatus = String(updates.status).trim().toUpperCase();
-            const activeStatuses = ['IN PROGRESS', 'IN-PROGRESS'];
+            // 1. Close the running session if the ticket leaves In Progress or changes hands.
+            const leaving = statusChanging && !isActive(nextStatus);
+            const handover = assigneeChanging && String(nextAssignee || '') !== String(cur.assignee || '');
+            if (running && (leaving || handover)) {
+              await closeTimerSession(key, cur, actor, leaving
+                ? `Auto-logged: In Progress → ${String(nextStatus).trim()}`
+                : `Auto-logged: reassigned to ${isPerson(nextAssignee) ? nextAssignee : 'nobody'}`);
+              updates.is_timer_running = false;
+              updates.timer_start_time = null;
+              updates.timer_owner = null;
+              updates.timer_source = null;
+            }
 
-            // Handle stopping timer when moving OUT of an active status
-            if (!activeStatuses.includes(newStatus) && currentState.is_timer_running && currentState.timer_start_time) {
-              const now = new Date();
-              const start = new Date(currentState.timer_start_time);
-              if (!isNaN(start.getTime())) {
-                const diffMs = now - start;
-                const diffSeconds = Math.round(diffMs / 1000);
-                if (diffSeconds > 0) {
-                  try {
-                    await db.query(
-                      'INSERT INTO it_kanban_worklogs (issue_key, author, seconds, description, started_at) VALUES (?, ?, ?, ?, ?)',
-                      [key, 'System', diffSeconds, 'Auto-logged time from IN PROGRESS', start]
-                    );
-                    await recalcIssueTime(key);
-                  } catch (worklogErr) {
-                    console.error('Failed to auto-insert worklog:', worklogErr.message);
-                  }
-                }
-
-                updates.is_timer_running = false;
-                updates.timer_start_time = null;
-                // Optional: log to worklogs? (We rely on time_spent for now)
-              }
+            // 2. (Re)start the clock whenever the ticket is In Progress afterwards and the
+            //    clock isn't already running for the same owner.
+            const stillRunning = running && !leaving && !handover;
+            if (isActive(nextStatus) && !stillRunning) {
+              // The board's "start work" dialog may send the time work actually began;
+              // accept it only if it is in the last 24 hours and not in the future.
+              const asked = updates.timer_start_time ? new Date(updates.timer_start_time) : null;
+              const start = asked && !isNaN(asked) && asked <= now && now - asked < 24 * 3600 * 1000 ? asked : now;
+              updates.is_timer_running = true;
+              updates.timer_start_time = start;
+              updates.timer_owner = isPerson(nextAssignee) ? nextAssignee : actor;
+              updates.timer_source = 'auto';
             }
           }
         } catch (timerErr) {
-          console.error('Failed to process automatic timer logic:', timerErr);
+          console.error('Failed to process automatic time tracking:', timerErr);
         }
       }
-      // --- End Timer Logic ---
+      // --- End time tracking ---
+
+      // Planned time: store it in one normal form ("1d" → "9h") so it compares directly
+      // with logged time; reject text that isn't a duration rather than saving junk.
+      if (updates.original_estimate !== undefined) {
+        const raw = String(updates.original_estimate ?? '').trim();
+        const secs = parseDurationToSeconds(raw);
+        if (raw && raw !== '0' && raw.toLowerCase() !== '0h' && !secs) {
+          return res.status(400).json({ error: 'Planned time must look like 6h, 2h 30m, 45m or 1d' });
+        }
+        updates.original_estimate = secs ? formatSecondsToDuration(secs) : '0h';
+      }
 
       if (updates.timer_start_time) {
         const d = new Date(updates.timer_start_time);
@@ -1846,6 +1897,11 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         return res.status(404).json({ error: 'Issue not found' });
       }
 
+      // A new planned time changes what's remaining.
+      if (updates.original_estimate !== undefined) {
+        await recalcIssueTime(key).catch(e => console.error('Recalc after estimate change failed:', e.message));
+      }
+
       // Log only fields whose value actually changed.
       if (beforeState) {
         const actor = req.headers['x-user-name'] || updates.updated_by || 'System';
@@ -1889,6 +1945,28 @@ app.get('/api/it-kanban/labels', async (req, res) => {
   });
 
   // ── WORK LOG ──────────────────────────────────────────────────────────
+  // ── Work log & time tracking ─────────────────────────────────────────
+  // Planned time = original_estimate. Actual time = sum of work-log entries, which come
+  // from three places: automatic (ticket In Progress, working hours), the Start/Pause
+  // timer (real time), and manual "Log work" entries.
+  const sourceOf = (description) => {
+    const d = String(description || '');
+    if (/^auto-logged/i.test(d)) return 'automatic';
+    if (/^timer/i.test(d)) return 'timer';
+    return 'manual';
+  };
+  const actorOf = (req) => req.headers['x-user-name'] || 'Unknown';
+  const isManagerReq = (req) => Boolean(req.user?.isManager || req.user?.isAdmin);
+
+  /** Planned vs actual for one ticket (seconds) and what that means. */
+  const efficiencyOf = (plannedSeconds, actualSeconds) => {
+    if (!plannedSeconds || !actualSeconds) return { efficiency: null, variance: null, verdict: plannedSeconds ? 'Not started' : 'No plan' };
+    const efficiency = Math.round((plannedSeconds / actualSeconds) * 100); // >100 = faster than planned
+    const variance = actualSeconds - plannedSeconds;
+    const verdict = actualSeconds <= plannedSeconds * 1.1 ? (actualSeconds < plannedSeconds * 0.9 ? 'Under plan' : 'On plan') : 'Over plan';
+    return { efficiency, variance, verdict };
+  };
+
   app.get('/api/it-kanban/issues/:key/worklogs', async (req, res) => {
     try {
       const { key } = req.params;
@@ -1897,43 +1975,124 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         [key]
       );
       const [[issue]] = await db.query(
-        'SELECT original_estimate, remaining_estimate, time_spent FROM it_kanban_issues WHERE issue_key = ?',
+        'SELECT original_estimate, remaining_estimate, time_spent, status, is_timer_running, timer_start_time, timer_owner, timer_source FROM it_kanban_issues WHERE issue_key = ?',
         [key]
       );
+      if (!issue) return res.status(404).json({ error: 'Issue not found' });
+      const me = actorOf(req).toLowerCase();
       const totalSeconds = rows.reduce((sum, r) => sum + (Number(r.seconds) || 0), 0);
+      const plannedSeconds = parseDurationToSeconds(issue.original_estimate);
+
+      // Who spent the time.
+      const byPerson = new Map();
+      rows.forEach(r => byPerson.set(r.author, (byPerson.get(r.author) || 0) + (Number(r.seconds) || 0)));
+
       res.json({
-        worklogs: rows.map(r => ({ ...r, timeSpent: formatSecondsToDuration(r.seconds) })),
+        worklogs: rows.map(r => ({
+          ...r,
+          timeSpent: formatSecondsToDuration(r.seconds),
+          source: sourceOf(r.description),
+          canDelete: isManagerReq(req) || String(r.author || '').toLowerCase() === me
+        })),
         totalSeconds,
         totalSpent: formatSecondsToDuration(totalSeconds),
-        originalEstimate: issue?.original_estimate || '0h',
-        remainingEstimate: issue?.remaining_estimate || '0h'
+        plannedSeconds,
+        originalEstimate: plannedSeconds ? formatSecondsToDuration(plannedSeconds) : '0h',
+        remainingEstimate: issue.remaining_estimate || '0h',
+        ...efficiencyOf(plannedSeconds, totalSeconds),
+        byPerson: [...byPerson.entries()].map(([author, seconds]) => ({ author, seconds, time: formatSecondsToDuration(seconds) }))
+          .sort((a, b) => b.seconds - a.seconds),
+        timer: issue.is_timer_running && issue.timer_start_time ? {
+          running: true,
+          startedAt: issue.timer_start_time,
+          owner: issue.timer_owner,
+          source: issue.timer_source || 'auto'
+        } : { running: false }
       });
     } catch (error) {
       responseError(res, 500, 'Failed to fetch work logs', error);
     }
   });
 
+  // Start the timer by hand ("I'm working on this now"). Moves a To Do ticket to In Progress.
+  app.post('/api/it-kanban/issues/:key/timer/start', async (req, res) => {
+    try {
+      const { key } = req.params;
+      const actor = actorOf(req);
+      const [[cur]] = await db.query('SELECT status, is_timer_running, timer_owner FROM it_kanban_issues WHERE issue_key = ?', [key]);
+      if (!cur) return res.status(404).json({ error: 'Issue not found' });
+      if (cur.is_timer_running) {
+        return res.status(409).json({ error: `The timer is already running for ${cur.timer_owner || 'someone'}` });
+      }
+      const status = String(cur.status || '').toUpperCase();
+      const moveToProgress = !['IN PROGRESS', 'IN-PROGRESS', 'IN_PROGRESS'].includes(status) && !['DONE', 'COMPLETED', 'CLOSED'].includes(status);
+      await db.query(
+        `UPDATE it_kanban_issues SET is_timer_running = 1, timer_start_time = ?, timer_owner = ?, timer_source = 'manual'${moveToProgress ? ", status = 'IN PROGRESS'" : ''} WHERE issue_key = ?`,
+        [new Date(), actor, key]
+      );
+      if (moveToProgress) {
+        await db.query('INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
+          [key, 'status', cur.status || '', 'IN PROGRESS', actor]).catch(() => { });
+      }
+      res.json({ success: true, movedToInProgress: moveToProgress });
+    } catch (error) {
+      responseError(res, 500, 'Failed to start the timer', error);
+    }
+  });
+
+  // Pause/stop the running timer and log the session. The ticket keeps its status.
+  app.post('/api/it-kanban/issues/:key/timer/stop', async (req, res) => {
+    try {
+      const { key } = req.params;
+      const actor = actorOf(req);
+      const [[cur]] = await db.query(
+        'SELECT status, assignee, timer_start_time, is_timer_running, timer_owner, timer_source FROM it_kanban_issues WHERE issue_key = ?',
+        [key]
+      );
+      if (!cur) return res.status(404).json({ error: 'Issue not found' });
+      if (!cur.is_timer_running) return res.status(409).json({ error: 'The timer is not running' });
+      const ownsIt = String(cur.timer_owner || cur.assignee || '').toLowerCase() === actor.toLowerCase();
+      if (!ownsIt && !isManagerReq(req)) {
+        return res.status(403).json({ error: `Only ${cur.timer_owner || 'the person tracking time'} or a manager can stop this timer` });
+      }
+      const note = String(req.body?.note || '').trim().slice(0, 500);
+      const seconds = await closeTimerSession(key, cur, actor, `Timer${cur.timer_source === 'auto' ? ' (In Progress)' : ''}${note ? `: ${note}` : ''}`);
+      await db.query(
+        'UPDATE it_kanban_issues SET is_timer_running = 0, timer_start_time = NULL, timer_owner = NULL, timer_source = NULL WHERE issue_key = ?',
+        [key]
+      );
+      res.json({ success: true, logged: formatSecondsToDuration(seconds), seconds });
+    } catch (error) {
+      responseError(res, 500, 'Failed to stop the timer', error);
+    }
+  });
+
+  // Manual entry: "I spent 2h on this yesterday afternoon".
   app.post('/api/it-kanban/issues/:key/worklogs', async (req, res) => {
     try {
       const { key } = req.params;
-      const { timeSpent, description, author, startedAt, originalEstimate } = req.body;
-
+      const { timeSpent, description, startedAt, originalEstimate } = req.body || {};
       const seconds = parseDurationToSeconds(timeSpent);
-      if (!seconds) {
-        return res.status(400).json({ error: 'Enter time as 3h, 30m, 1d 4h, etc.' });
-      }
+      if (!seconds) return res.status(400).json({ error: 'Enter time as 3h, 30m, 2h 15m or 1d' });
+      if (seconds > 16 * 3600) return res.status(400).json({ error: 'One entry can be at most 16 hours; add separate entries per day' });
+      const started = startedAt ? new Date(startedAt) : new Date(Date.now() - seconds * 1000);
+      if (isNaN(started)) return res.status(400).json({ error: 'The date and time are not valid' });
+      if (started > new Date(Date.now() + 5 * 60000)) return res.status(400).json({ error: 'Work cannot be logged in the future' });
 
-      // Allow setting the original estimate alongside the first log entry.
+      const [[issue]] = await db.query('SELECT issue_key FROM it_kanban_issues WHERE issue_key = ?', [key]);
+      if (!issue) return res.status(404).json({ error: 'Issue not found' });
+
+      // Managers may log for someone else (e.g. time reported verbally); everyone else logs for themselves.
+      const author = isManagerReq(req) && req.body?.author ? String(req.body.author).slice(0, 120) : actorOf(req);
+
       if (originalEstimate) {
-        await db.query('UPDATE it_kanban_issues SET original_estimate = ? WHERE issue_key = ?',
-          [formatSecondsToDuration(parseDurationToSeconds(originalEstimate)), key]);
+        const planned = parseDurationToSeconds(originalEstimate);
+        if (planned) await db.query('UPDATE it_kanban_issues SET original_estimate = ? WHERE issue_key = ?', [formatSecondsToDuration(planned), key]);
       }
-
       await db.query(
         'INSERT INTO it_kanban_worklogs (issue_key, author, seconds, description, started_at) VALUES (?, ?, ?, ?, ?)',
-        [key, author || 'Unassigned', seconds, description || null, startedAt ? new Date(startedAt) : null]
+        [key, author, seconds, String(description || '').trim().slice(0, 2000) || null, started]
       );
-
       const totals = await recalcIssueTime(key);
       res.status(201).json({
         success: true,
@@ -1948,8 +2107,11 @@ app.get('/api/it-kanban/labels', async (req, res) => {
   app.delete('/api/it-kanban/issues/:key/worklogs/:id', async (req, res) => {
     try {
       const { key, id } = req.params;
-      const [result] = await db.query('DELETE FROM it_kanban_worklogs WHERE id = ? AND issue_key = ?', [id, key]);
-      if (result.affectedRows === 0) return res.status(404).json({ error: 'Work log not found' });
+      const [[row]] = await db.query('SELECT author FROM it_kanban_worklogs WHERE id = ? AND issue_key = ?', [id, key]);
+      if (!row) return res.status(404).json({ error: 'Work log not found' });
+      const mine = String(row.author || '').toLowerCase() === actorOf(req).toLowerCase();
+      if (!mine && !isManagerReq(req)) return res.status(403).json({ error: 'You can only delete your own work log entries' });
+      await db.query('DELETE FROM it_kanban_worklogs WHERE id = ? AND issue_key = ?', [id, key]);
       const totals = await recalcIssueTime(key);
       res.json({
         success: true,
@@ -1962,9 +2124,25 @@ app.get('/api/it-kanban/labels', async (req, res) => {
   });
 
   // DELETE an issue by key
+  // Everyone can edit tickets; only managers/admins can delete them. The role is read from
+  // the users table rather than trusted from a header the browser could set.
   app.delete('/api/it-kanban/issues/:key', async (req, res) => {
     try {
       const { key } = req.params;
+
+      const userId = req.headers['x-user-id'];
+      if (!userId) {
+        return res.status(401).json({ error: 'Only managers can delete tickets.', code: 'DELETE_NOT_ALLOWED' });
+      }
+      const [requesters] = await db.query(
+        'SELECT r.name AS role_name FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.id = ?',
+        [userId]
+      );
+      const role = String(requesters[0]?.role_name || '').toLowerCase();
+      if (!role.includes('manager') && !role.includes('admin')) {
+        return res.status(403).json({ error: 'Only managers can delete tickets.', code: 'DELETE_NOT_ALLOWED' });
+      }
+
       const [result] = await db.query('DELETE FROM it_kanban_issues WHERE issue_key = ?', [key]);
 
       if (result.affectedRows === 0) {

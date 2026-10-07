@@ -219,36 +219,72 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
    * 4. CONTRIBUTION ENGINE
    */
 
+  // Board tickets (it_kanban_issues) and general tasks share numeric ids (1..10 exist in
+  // both), so a numeric id alone cannot say which one is meant. Board tickets are addressed
+  // by issue key (e.g. MK-101) or with ?source=it_kanban, and their ledger rows use the
+  // issue key as task_id so they can never be mistaken for a general task's.
+  const resolveContributionTask = async (taskId, source) => {
+    const isBoardTicket = source === 'it_kanban' || !/^\d+$/.test(String(taskId));
+    if (isBoardTicket) {
+      const [rows] = /^\d+$/.test(String(taskId))
+        ? await db.query('SELECT * FROM it_kanban_issues WHERE id = ? LIMIT 1', [taskId])
+        : await db.query('SELECT * FROM it_kanban_issues WHERE issue_key = ? LIMIT 1', [taskId]);
+      if (!rows.length) return null;
+      return { kind: 'it_kanban', task: rows[0], ledgerId: rows[0].issue_key };
+    }
+    const [gTasks] = await db.query('SELECT * FROM general_tasks WHERE id = ?', [taskId]);
+    if (gTasks.length) return { kind: 'general_tasks', task: gTasks[0], ledgerId: String(gTasks[0].id) };
+    return null;
+  };
+
+  // Board tickets store people by display name; the ledger needs user ids.
+  const loadUserDirectory = async () => {
+    const [users] = await db.query('SELECT id, first_name, last_name, username FROM users');
+    const byName = new Map();
+    const byId = new Map();
+    users.forEach(u => {
+      const full = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+      const display = full || u.username || `User #${u.id}`;
+      byId.set(String(u.id), display);
+      [full, u.username].filter(Boolean).forEach(n => byName.set(n.toLowerCase(), u.id));
+    });
+    return {
+      idFor: (name) => byName.get(String(name || '').trim().toLowerCase()) || null,
+      nameFor: (id) => byId.get(String(id)) || String(id)
+    };
+  };
+
+  const isUnassigned = (name) => !name || ['unassigned', 'none'].includes(String(name).trim().toLowerCase());
+
+  const isManagerUser = async (userId) => {
+    if (!userId) return false;
+    const [rows] = await db.query(
+      'SELECT r.name AS role_name FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.id = ?',
+      [userId]
+    );
+    const role = String(rows[0]?.role_name || '').toLowerCase();
+    return role.includes('manager') || role.includes('admin');
+  };
+
   router.post('/tasks/:taskId/contribution/recalculate', async (req, res) => {
     const { taskId } = req.params;
-    
+
     try {
-      let task = null;
-      let effortPoints = 0;
-      let contributionMethod = 'WORK_BREAKDOWN';
-      let taskType = 'general_tasks';
+      const resolved = await resolveContributionTask(taskId, req.query.source);
+      if (!resolved) return res.status(404).json({ success: false, error: 'Task not found' });
+      const { kind, task, ledgerId } = resolved;
 
-      const [gTasks] = await db.query('SELECT * FROM general_tasks WHERE id = ?', [taskId]);
-      if (gTasks.length) {
-        task = gTasks[0];
-        effortPoints = task.effort_points || 0;
-        contributionMethod = task.contribution_method || 'WORK_BREAKDOWN';
-      } else {
-        const [iTasks] = await db.query('SELECT * FROM it_kanban_issues WHERE id = ?', [taskId]);
-        if (iTasks.length) {
-          task = iTasks[0];
-          effortPoints = parseInt(task.effort_points, 10) || parseInt(task.story_points, 10) || 0;
-          contributionMethod = task.contribution_method || 'WORK_BREAKDOWN';
-          taskType = 'it_kanban_issues';
-        } else {
-          return res.status(404).json({ success: false, message: 'Task not found' });
-        }
-      }
-      
+      const contributionMethod = task.contribution_method || 'WORK_BREAKDOWN';
+      const effortPoints = kind === 'it_kanban'
+        ? (parseInt(task.effort_points, 10) || parseInt(task.story_points, 10) || 0)
+        : (task.effort_points || 0);
+      const directory = await loadUserDirectory();
+
       let proposedContributions = [];
+      const notes = [];
 
-      if (contributionMethod === 'WORK_BREAKDOWN') {
-        if (taskType === 'general_tasks') {
+      if (kind === 'general_tasks') {
+        if (contributionMethod === 'WORK_BREAKDOWN') {
           const [subtasks] = await db.query('SELECT * FROM task_subtasks WHERE task_id = ? AND status = "Completed"', [taskId]);
           if (subtasks.length === 0 && task.assigned_to_user_id) {
             proposedContributions.push({
@@ -271,103 +307,168 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
               }
             });
           }
-        } else {
-          // IT Kanban subtasks are stored as JSON on the issue
-          let subtasks = [];
-          try { subtasks = typeof task.subtasks === 'string' ? JSON.parse(task.subtasks) : (task.subtasks || []); } catch(e){}
-          
-          if (subtasks.length === 0 && task.assignee && task.assignee !== 'Unassigned') {
-            proposedContributions.push({
-              user_id: task.assignee, 
+        } else if (contributionMethod === 'TIME_BASED' && effortPoints > 0) {
+          const [logs] = await db.query('SELECT user_id, SUM(hours) as total_hours FROM task_time_logs WHERE task_id = ? AND status = "Approved" GROUP BY user_id', [taskId]);
+          const totalTaskHours = logs.reduce((sum, log) => sum + Number(log.total_hours), 0);
+          if (totalTaskHours > 0) {
+            logs.forEach(log => {
+              const percentage = Number(log.total_hours) / totalTaskHours;
+              proposedContributions.push({
+                user_id: log.user_id,
+                effort_points: Math.round(effortPoints * percentage),
+                contribution_percentage: (percentage * 100).toFixed(2),
+                contribution_source: 'Time Log Fallback',
+                role: 'Contributor'
+              });
+            });
+          }
+        }
+      } else {
+        // Board ticket: subtasks are JSON on the issue, people are stored by name.
+        let subtasks = [];
+        try { subtasks = typeof task.subtasks === 'string' ? JSON.parse(task.subtasks) : (task.subtasks || []); } catch (e) { subtasks = []; }
+        if (!Array.isArray(subtasks)) subtasks = [];
+
+        const pushPerson = (name, entry) => {
+          const userId = directory.idFor(name);
+          if (!userId) {
+            notes.push(`"${name}" is not a user in the system, so they were left out.`);
+            return;
+          }
+          proposedContributions.push({ user_id: userId, ...entry });
+        };
+
+        if (contributionMethod === 'WORK_BREAKDOWN') {
+          if (subtasks.length === 0) {
+            if (isUnassigned(task.assignee)) notes.push('The ticket has no assignee to credit.');
+            else pushPerson(task.assignee, {
               subtask_id: null,
               effort_points: effortPoints,
               contribution_source: 'Parent Task Completion (No Subtasks)',
               role: 'Owner'
             });
           } else {
-            subtasks.forEach(st => {
-              if (st.completed && st.assignee && st.assignee !== 'Unassigned') {
-                // We'll use the assignee string as the user identifier for display purposes
-                proposedContributions.push({
-                  user_id: st.assignee, 
-                  subtask_id: st.id || null,
-                  effort_points: effortPoints > 0 ? Math.round(effortPoints / Math.max(1, subtasks.filter(s => s.completed).length)) : 0,
-                  contribution_source: 'Subtask Completion',
-                  role: 'Executor'
-                });
-              }
+            // Points are split across completed subtasks; the last one absorbs the
+            // rounding remainder so the total always equals the ticket's points.
+            const done = subtasks.filter(st => st.completed && !isUnassigned(st.assignee));
+            const skipped = subtasks.filter(st => st.completed && isUnassigned(st.assignee)).length;
+            if (skipped) notes.push(`${skipped} completed subtask(s) have no assignee and earn no points.`);
+            if (done.length === 0) notes.push('No completed subtask has an assignee yet.');
+            const base = done.length ? Math.floor(effortPoints / done.length) : 0;
+            done.forEach((st, idx) => {
+              const pts = idx === done.length - 1 ? effortPoints - base * (done.length - 1) : base;
+              pushPerson(st.assignee, {
+                subtask_id: st.id != null ? String(st.id) : null,
+                effort_points: pts,
+                contribution_source: `Subtask Completion: ${st.title || st.id}`,
+                role: 'Executor'
+              });
             });
           }
-        }
-      } 
-      else if (contributionMethod === 'TIME_BASED' && effortPoints > 0) {
-        const [logs] = await db.query('SELECT user_id, SUM(hours) as total_hours FROM task_time_logs WHERE task_id = ? AND status = "Approved" GROUP BY user_id', [taskId]);
-        
-        const totalTaskHours = logs.reduce((sum, log) => sum + Number(log.total_hours), 0);
-        
-        if (totalTaskHours > 0) {
-          logs.forEach(log => {
-            const percentage = (Number(log.total_hours) / totalTaskHours);
-            const points = Math.round(effortPoints * percentage);
-            proposedContributions.push({
-              user_id: log.user_id,
-              effort_points: points,
-              contribution_percentage: (percentage * 100).toFixed(2),
-              contribution_source: 'Time Log Fallback',
+        } else if (contributionMethod === 'TIME_BASED') {
+          const [logs] = await db.query(
+            'SELECT author, SUM(seconds) AS total_seconds FROM it_kanban_worklogs WHERE issue_key = ? GROUP BY author',
+            [task.issue_key]
+          );
+          const total = logs.reduce((sum, l) => sum + Number(l.total_seconds || 0), 0);
+          if (total === 0) notes.push('No time has been logged on this ticket yet.');
+          logs.forEach(l => {
+            const share = Number(l.total_seconds || 0) / (total || 1);
+            pushPerson(l.author, {
+              subtask_id: null,
+              effort_points: Math.round(effortPoints * share),
+              contribution_percentage: (share * 100).toFixed(2),
+              contribution_source: 'Time Log',
               role: 'Contributor'
             });
+          });
+        } else if (contributionMethod === 'MANAGER_ALLOCATED') {
+          // A starting point for the manager to edit, not a calculation.
+          if (isUnassigned(task.assignee)) notes.push('Add people and points manually: the ticket has no assignee.');
+          else pushPerson(task.assignee, {
+            subtask_id: null,
+            effort_points: effortPoints,
+            contribution_source: 'Manager Allocation',
+            role: 'Owner'
           });
         }
       }
 
-      res.json({ success: true, proposedContributions });
+      // Names for display; the ledger itself stores ids.
+      proposedContributions = proposedContributions.map(p => ({ ...p, user_name: directory.nameFor(p.user_id) }));
+
+      res.json({
+        success: true,
+        taskKey: ledgerId,
+        effortPoints,
+        contributionMethod,
+        reviewStatus: task.contribution_review_status || 'Pending',
+        proposedContributions,
+        notes
+      });
     } catch (error) {
       console.error('Recalculation error:', error);
-      res.status(500).json({ success: false, message: 'Server error' });
+      res.status(500).json({ success: false, error: 'Server error while calculating contributions' });
     }
   });
 
   router.post('/tasks/:taskId/contribution/approve', async (req, res) => {
     const { taskId } = req.params;
-    const { contributions } = req.body;
+    const { contributions } = req.body || {};
     const managerId = req.headers['x-user-id'];
+
+    if (!(await isManagerUser(managerId).catch(() => false))) {
+      return res.status(403).json({ success: false, error: 'Only managers can approve performance points.' });
+    }
+    if (!Array.isArray(contributions) || contributions.length === 0) {
+      return res.status(400).json({ success: false, error: 'There are no contributions to approve.' });
+    }
+    const invalid = contributions.find(c => !c.user_id || !(Number(c.effort_points) >= 0));
+    if (invalid) {
+      return res.status(400).json({ success: false, error: 'Every contribution needs a person and a points value of 0 or more.' });
+    }
 
     let connection;
     try {
+      const resolved = await resolveContributionTask(taskId, req.query.source);
+      if (!resolved) return res.status(404).json({ success: false, error: 'Task not found' });
+      const { kind, task, ledgerId } = resolved;
+
+      if (kind === 'it_kanban' && !['DONE', 'COMPLETED', 'CLOSED'].includes(String(task.status || '').toUpperCase().trim())) {
+        return res.status(400).json({ success: false, error: 'The ticket must be Done before its points can be approved.' });
+      }
+
       connection = await pool.getConnection();
       await connection.query('BEGIN');
 
-      const [gTasks] = await connection.query('SELECT id FROM general_tasks WHERE id = ?', [taskId]);
-      const isGeneralTask = gTasks.length > 0;
-
-      await connection.query('DELETE FROM task_contributions WHERE task_id = ?', [taskId]);
+      // Re-approving replaces the earlier distribution rather than adding to it.
+      await connection.query('DELETE FROM task_contributions WHERE task_id = ?', [ledgerId]);
 
       for (const comp of contributions) {
         await connection.query(
           `INSERT INTO task_contributions (task_id, subtask_id, user_id, role, effort_points, contribution_percentage, contribution_source, approval_status, approved_by, approved_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved', ?, NOW())`,
-          [taskId, comp.subtask_id || null, comp.user_id, comp.role || 'Contributor', comp.effort_points, comp.contribution_percentage || null, comp.contribution_source || 'Manual Override', managerId]
+          [ledgerId, comp.subtask_id || null, String(comp.user_id), comp.role || 'Contributor', Number(comp.effort_points), comp.contribution_percentage || null, comp.contribution_source || 'Manual Override', managerId]
         );
       }
 
-      if (isGeneralTask) {
-        await connection.query("UPDATE general_tasks SET contribution_review_status = 'Approved', status = 'Completed' WHERE id = ?", [taskId]);
+      if (kind === 'general_tasks') {
+        await connection.query("UPDATE general_tasks SET contribution_review_status = 'Approved', status = 'Completed' WHERE id = ?", [task.id]);
       } else {
-        // Also support IT Kanban status updates or marker
-        await connection.query("UPDATE it_kanban_issues SET status = 'Done' WHERE id = ?", [taskId]);
+        await connection.query("UPDATE it_kanban_issues SET contribution_review_status = 'Approved' WHERE id = ?", [task.id]);
       }
 
       await connection.query(
         `INSERT INTO task_history (task_id, changed_by_user_id, action_type, field_name, old_value, new_value, reason) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [taskId, managerId, 'Manager Approval', 'contribution_review_status', 'Pending', 'Approved', 'Manager reviewed and finalized all performance points']
+        [ledgerId, managerId, 'Manager Approval', 'contribution_review_status', task.contribution_review_status || 'Pending', 'Approved', 'Manager reviewed and finalized all performance points']
       );
 
       await connection.query('COMMIT');
-      res.json({ success: true, message: 'Contributions finalized and task closed.' });
+      res.json({ success: true, message: 'Contributions approved.' });
     } catch (error) {
       if (connection) await connection.query('ROLLBACK');
       console.error('Contribution approval error:', error);
-      res.status(500).json({ success: false, message: 'Server error' });
+      res.status(500).json({ success: false, error: 'Server error while approving contributions' });
     } finally {
       if (connection) connection.release();
     }

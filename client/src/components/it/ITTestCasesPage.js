@@ -23,7 +23,7 @@ const PriorityBadge = ({ priority }) => {
 
 const TypeBadge = ({ type }) => {
   let colors = 'text-blue-600 bg-blue-50 border-blue-100';
-  return <span className={`text-xs font-semibold tracking-wide  px-2 py-1 rounded-sm border ${colors}`}>{type}</span>;
+  return <span className={`text-xs  tracking-wide  px-2 py-1 rounded border ${colors}`}>{type}</span>;
 };
 
 const StatusBadge = ({ status }) => {
@@ -213,7 +213,7 @@ const ITTestCasesPage = () => {
           <div className="flex justify-between items-center mb-6">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold text-gray-900">Test Cases</h1>
+                <h1 className="text-2xl  text-gray-900">Test Cases</h1>
               </div>
               <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                 <span>Dashboard</span> <span className="text-gray-400">&gt;</span> <span>Test Cases</span>

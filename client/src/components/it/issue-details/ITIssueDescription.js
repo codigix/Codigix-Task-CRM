@@ -90,7 +90,7 @@ const renderFormattedDescription = (text) => {
           const content = trimmed.replace(/^[•\-\*]\s*/, '');
           return (
             <div key={idx} className="flex items-start gap-2.5 ml-2 my-1 text-gray-800">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-900 shrink-0 mt-1.5 inline-block" />
+              <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0 mt-1.5 inline-block" />
               <span className="font-medium text-gray-800 text-xs">{content}</span>
             </div>
           );
@@ -276,7 +276,7 @@ const ITIssueDescription = ({
                   type="button"
                   onClick={handleRovoAiWrite}
                   disabled={isAiWriting}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-indigo-700 font-semibold bg-indigo-50/80 hover:bg-indigo-100 rounded border border-indigo-200 transition disabled:opacity-50 cursor-pointer mr-1"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-indigo-700  bg-indigo-50/80 hover:bg-indigo-100 rounded border border-indigo-200 transition disabled:opacity-50 cursor-pointer mr-1"
                   title="Improve description with AI"
                 >
                   <Sparkles size={13} className="text-indigo-600 fill-indigo-100 animate-pulse" />
@@ -396,7 +396,7 @@ const ITIssueDescription = ({
             {isAiWriting && (
               <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded text-white text-xs shadow-lg animate-pulse my-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-                <span className="font-semibold flex-1">✨ AI is writing description...</span>
+                <span className=" flex-1">✨ AI is writing description...</span>
               </div>
             )}
 
@@ -405,7 +405,7 @@ const ITIssueDescription = ({
               <button
                 type="button"
                 onClick={handleSave}
-                className="px-3.5 py-1.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-blue-700 cursor-pointer transition shadow-xs"
+                className="px-3.5 py-1.5 bg-red-600 text-white rounded text-xs  hover:bg-blue-700 cursor-pointer transition shadow-xs"
               >
                 Save
               </button>
@@ -444,13 +444,13 @@ const ITIssueDescription = ({
       {/* Attachments Section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold text-gray-700 tracking-wide block">
+          <label className="text-xs  text-gray-700 tracking-wide block">
             Attachments ({attachments.length})
           </label>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 text-xs text-blue-600 font-semibold hover:underline bg-transparent cursor-pointer"
+            className="flex items-center gap-1 text-xs text-blue-600  hover:underline bg-transparent cursor-pointer"
           >
             <Paperclip size={13} /> Add Attachment
           </button>
@@ -482,15 +482,15 @@ const ITIssueDescription = ({
             }
           }}
           className={`rounded border-2 border-dashed transition-all p-3 text-center cursor-pointer ${isDraggingAttachments
-              ? 'border-blue-500 bg-blue-50/70 shadow-inner'
-              : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50/60'
+            ? 'border-blue-500 bg-blue-50/70 shadow-inner'
+            : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50/60'
             }`}
           onClick={() => fileInputRef.current?.click()}
         >
           <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
             <UploadCloud size={16} className={isDraggingAttachments ? 'text-blue-600 animate-bounce' : 'text-gray-400'} />
             <span>
-              Drop files/images here, paste screenshots (<kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">Ctrl+V</kbd>), or <strong className="text-blue-600 font-semibold hover:underline">Browse</strong>
+              Drop files/images here, paste screenshots (<kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">Ctrl+V</kbd>), or <strong className="text-blue-600  hover:underline">Browse</strong>
             </span>
           </div>
         </div>
@@ -544,7 +544,7 @@ const ITIssueDescription = ({
                         <ImageIcon size={16} className="text-indigo-500 hidden img-fallback-icon shrink-0" />
                       </div>
                     ) : isPdf ? (
-                      <div className="w-9 h-9 rounded bg-red-50 text-red-600 flex items-center justify-center text-[11px] font-bold shrink-0 border border-red-100">
+                      <div className="w-9 h-9 rounded bg-red-50 text-red-600 flex items-center justify-center text-[11px]  shrink-0 border border-red-100">
                         PDF
                       </div>
                     ) : (
@@ -553,7 +553,7 @@ const ITIssueDescription = ({
                       </div>
                     )}
                     <div className="truncate flex-1 min-w-0">
-                      <div className="text-xs font-semibold text-gray-800 truncate" title={file.name}>
+                      <div className="text-xs  text-gray-800 truncate" title={file.name}>
                         {file.name}
                       </div>
                       <div className="text-[10px] text-gray-400 font-medium">
@@ -599,13 +599,13 @@ const ITIssueDescription = ({
           onClick={() => setSelectedImage(null)}
         >
           <div
-            className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white rounded max-w-4xl max-h-[90vh] w-full flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-3 bg-gray-100 border-b flex justify-between items-center gap-3">
               <div className="flex items-center gap-2 truncate">
                 <ImageIcon size={16} className="text-indigo-600 shrink-0" />
-                <span className="text-xs font-semibold text-gray-800 truncate" title={selectedImage.name}>
+                <span className="text-xs  text-gray-800 truncate" title={selectedImage.name}>
                   {selectedImage.name}
                 </span>
               </div>
@@ -628,7 +628,7 @@ const ITIssueDescription = ({
                 </button>
               </div>
             </div>
-            <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-gray-900/5 min-h-[300px]">
+            <div className="p-4 flex-1 overflow-auto flex items-center justify-center bg-red-600/5 min-h-[300px]">
               <img
                 src={selectedImage.url}
                 alt={selectedImage.name}
@@ -644,7 +644,7 @@ const ITIssueDescription = ({
         <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden shadow-2xl">
             <div className="p-3 bg-gray-100 border-b flex justify-between items-center">
-              <span className="text-xs font-semibold text-gray-700">PDF Viewer</span>
+              <span className="text-xs  text-gray-700">PDF Viewer</span>
               <button
                 type="button"
                 onClick={() => setSelectedPdfUrl(null)}
@@ -661,11 +661,11 @@ const ITIssueDescription = ({
       {/* AI SIDE-BY-SIDE DESCRIPTION MODAL */}
       {isImprovingSideBySide && (
         <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+          <div className="bg-white rounded w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
             <div className="p-4 border-b bg-gradient-to-r from-indigo-50 to-blue-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles size={16} className="text-indigo-600 fill-indigo-100" />
-                <h3 className="text-sm font-semibold text-gray-900">AI Description Improver</h3>
+                <h3 className="text-sm  text-gray-900">AI Description Improver</h3>
               </div>
               <button onClick={() => setIsImprovingSideBySide(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
                 <X size={16} />
@@ -673,13 +673,13 @@ const ITIssueDescription = ({
             </div>
             <div className="p-4 grid grid-cols-2 gap-4 flex-1 overflow-y-auto text-xs">
               <div className="space-y-1.5">
-                <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px]">Original Description</span>
+                <span className=" text-gray-500 uppercase tracking-wider text-[10px]">Original Description</span>
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded text-gray-700 min-h-[150px] leading-relaxed">
                   {description ? renderFormattedDescription(description) : 'No description'}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <span className="font-semibold text-indigo-600 uppercase tracking-wider text-[10px]">AI Enhanced Description</span>
+                <span className=" text-indigo-600 uppercase tracking-wider text-[10px]">AI Enhanced Description</span>
                 <textarea
                   value={stripHtmlTags(improvedDescription)}
                   onChange={(e) => setImprovedDescription(e.target.value)}
@@ -703,7 +703,7 @@ const ITIssueDescription = ({
                   handleSaveDescription(cleanImp);
                   setIsImprovingSideBySide(false);
                 }}
-                className="px-3.5 py-1.5 bg-indigo-600 text-white rounded font-semibold hover:bg-indigo-700 flex items-center gap-1 cursor-pointer"
+                className="px-3.5 py-1.5 bg-red-600 text-white rounded  hover:bg-red-700 flex items-center gap-1 cursor-pointer"
               >
                 <Check size={13} /> Accept & Apply
               </button>

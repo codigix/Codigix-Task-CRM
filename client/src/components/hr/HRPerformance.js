@@ -1,1707 +1,1232 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Users, TrendingUp, Target, Clock, CheckCircle, FileText, ChevronDown, ChevronRight, Download,
-  BarChart2, Shield, Settings, AlertCircle, Search, Eye, X, Filter, MoreVertical,
-  Activity, Award, Star, List, Trophy
+  Users, CheckCircle2, Clock, Timer, AlertTriangle, Trophy, Award, Zap, Target,
+  Download, Printer, ArrowLeft, Search, ChevronUp, ChevronDown, Info, Star, TrendingUp, X,
+  ListChecks, MessageSquare, Video, FileText, Flame, CircleSlash
 } from 'lucide-react';
-import {
-  LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, ComposedChart, Legend,
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import Swal from 'sweetalert2';
-import EmployeeMonthlyReport from '../common/EmployeeMonthlyReport';
-import LiveEmployeeDashboard from './LiveEmployeeDashboard';
+import { API_BASE_URL } from '../../config/environment';
+import { useAuth } from '../../hooks/useAuth';
+import PerformanceReviewReport from './PerformanceReviewReport';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const PerformanceContext = React.createContext();
+/* ───────────────────────── constants & helpers ───────────────────────── */
 
-// --- HELPERS ---
-const getStatusColor = (status) => {
-  if (status === 'Excellent') return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-  if (status === 'Good') return 'bg-blue-50 text-blue-600 border-blue-100';
-  if (status === 'Needs Improvement') return 'bg-orange-50 text-orange-600 border-orange-100';
-  return 'bg-gray-50 text-gray-600 border-gray-100';
+const SERIES = '#2a78d6';           // single-series colour (reference palette slot 1)
+const GRID = '#e8e7e3';
+const AXIS = '#77766f';
+const GRADE_STYLE = {
+  Excellent: { cls: 'bg-green-50 text-green-800 border-green-200', icon: Trophy },
+  Good: { cls: 'bg-blue-50 text-blue-800 border-blue-200', icon: CheckCircle2 },
+  Fair: { cls: 'bg-amber-50 text-amber-800 border-amber-200', icon: Info },
+  'Needs attention': { cls: 'bg-red-50 text-red-800 border-red-200', icon: AlertTriangle },
+  'Not enough data': { cls: 'bg-gray-50 text-gray-600 border-gray-200', icon: CircleSlash }
+};
+const COMPONENT_LABELS = {
+  completion: 'Completion rate',
+  onTime: 'On-time delivery',
+  output: 'Output (points vs. busiest peer)',
+  logging: 'Time logged on finished tasks',
+  review: 'Manager review score'
 };
 
-const getStatusBadge = (score) => {
-  if (score >= 90) return 'Excellent';
-  if (score >= 80) return 'Good';
-  return 'Needs Improvement';
+const fmtNum = (v, suffix = '') => (v == null ? '—' : `${v}${suffix}`);
+const fmtDate = (v) => (v ? new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
+const fmtDateTime = (v) => (v ? new Date(v).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
+const monthLabel = (key) => {
+  if (!key) return '—';
+  const [y, m] = key.split('-').map(Number);
+  return new Date(y, m - 1, 1).toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+};
+const initials = (name) => String(name || '?').trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+
+const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+const currentQuarter = () => { const d = new Date(); return `${d.getFullYear()}-Q${Math.floor(d.getMonth() / 3) + 1}`; };
+const recentQuarters = () => {
+  const out = []; const d = new Date(); let y = d.getFullYear(); let q = Math.floor(d.getMonth() / 3) + 1;
+  for (let i = 0; i < 8; i++) { out.push(`${y}-Q${q}`); q -= 1; if (q === 0) { q = 4; y -= 1; } }
+  return out;
 };
 
-// --- SUB-COMPONENTS ---
+const buildQuery = (p) => {
+  const params = new URLSearchParams({ period: p.period });
+  if (p.period === 'custom') { params.set('from', p.from); params.set('to', p.to); } else params.set('value', p.value);
+  if (p.department && p.department !== 'All') params.set('department', p.department);
+  if (p.includeAdmins) params.set('includeAdmins', 'true');
+  return params.toString();
+};
 
-const KpiCard = ({ title, value, subtitle, subtitleType, icon: Icon, iconColor, iconBg }) => (
-  <div className="bg-white rounded border border-gray-200 p-2 shadow-sm flex items-start gap-2">
-    <div className={`p-3 rounded ${iconBg} ${iconColor} shrink-0`}>
-      <Icon size={15} />
+const downloadCsv = (filename, header, rows) => {
+  const esc = (v) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = [header, ...rows].map(r => r.map(esc).join(',')).join('\n');
+  const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+const useReport = (url) => {
+  const [state, setState] = useState({ loading: true, error: '', data: null, status: 0 });
+  const load = useCallback(async () => {
+    if (!url) return;
+    setState(s => ({ ...s, loading: true, error: '' }));
+    try {
+      const res = await fetch(url);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setState({ loading: false, error: data.error || 'Failed to load report', data: null, status: res.status }); return; }
+      setState({ loading: false, error: '', data, status: res.status });
+    } catch (e) {
+      setState({ loading: false, error: 'Network error — is the server running?', data: null, status: 0 });
+    }
+  }, [url]);
+  useEffect(() => { load(); }, [load]);
+  return { ...state, reload: load };
+};
+
+/* ───────────────────────── small building blocks ───────────────────────── */
+
+const GradeBadge = ({ grade, score }) => {
+  const g = GRADE_STYLE[grade] || GRADE_STYLE['Not enough data'];
+  const Icon = g.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px]  px-2 py-0.5 rounded-full border ${g.cls}`}>
+      <Icon size={12} aria-hidden="true" />
+      {score != null ? `${score} · ` : ''}{grade}
+    </span>
+  );
+};
+
+const StatTile = ({ icon: Icon, label, value, hint, tone = 'default' }) => (
+  <div className="bg-white border border-gray-200 rounded p-4 flex flex-col gap-1 min-w-0">
+    <div className="flex items-center gap-2 text-gray-500 text-xs font-medium">
+      <Icon size={14} className={tone === 'warn' ? 'text-red-600' : 'text-gray-400'} aria-hidden="true" />
+      <span className="truncate">{label}</span>
     </div>
-    <div className="flex-1">
-      <p className="text-xs font-medium text-gray-500">{title}</p>
-      <h3 className="text-xl  text-gray-800 mt-1">{value}</h3>
-      <p className={`text-xs font-medium mt-1 ${subtitleType === 'positive' ? 'text-emerald-500' :
-        subtitleType === 'warning' ? 'text-red-500' : 'text-gray-400'
-        }`}>
-        {subtitle}
-      </p>
-    </div>
+    <div className={`text-2xl  tabular-nums ${tone === 'warn' && value && value !== '—' && value !== 0 ? 'text-red-700' : 'text-gray-900'}`}>{value}</div>
+    {hint && <div className="text-[11px] text-gray-500 leading-snug">{hint}</div>}
   </div>
 );
 
-const Drawer = ({ isOpen, onClose, employee }) => {
-  const { fetchEmployeeDetails, submitReview } = React.useContext(PerformanceContext);
-  const [empDetails, setEmpDetails] = React.useState(null);
-  const recentReviews = employee?.history || [];
+const Section = ({ title, subtitle, right, children, className = '' }) => (
+  <section className={`bg-white border border-gray-200 rounded ${className}`}>
+    <div className="px-4 py-3 border-b border-gray-100 flex items-start justify-between gap-3 flex-wrap">
+      <div>
+        <h3 className="text-sm  text-gray-900">{title}</h3>
+        {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+      </div>
+      {right}
+    </div>
+    <div className="p-4">{children}</div>
+  </section>
+);
 
-  React.useEffect(() => {
-    if (isOpen && employee) {
-      setEmpDetails(null);
-      fetchEmployeeDetails(employee.id).then(setEmpDetails);
-    }
-  }, [isOpen, employee]);
+const Empty = ({ children }) => (
+  <div className="text-center text-sm text-gray-500 py-8 border border-dashed border-gray-200 rounded">{children}</div>
+);
 
-  const [activeTab, setActiveTab] = useState('Overview');
-  const mockTasks = empDetails?.tasks || [];
-  const mockTimeLogs = empDetails?.timeLogs || [];
-  const mockPastReviews = empDetails?.reviews || [];
-  const qualityMetrics = empDetails?.qualityMetrics || { avgQuality: 0, avgOnTime: 0, avgEfficiency: 0 };
-  const { overview } = React.useContext(PerformanceContext);
-  const { trendData = [], scoreBreakdown = [] } = overview || {};
-  const [activeOverviewTab, setActiveOverviewTab] = useState('Recent Contributions');
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [reviewForm, setReviewForm] = useState({
-    taskCompletion: 0,
-    quality: 0,
-    onTime: 0,
-    efficiency: 0,
-    reviewGatePoints: 0,
-    pointsDistribution: 0,
-    feedback: ''
-  });
-
-  React.useEffect(() => {
-    if (isReviewModalOpen && empDetails) {
-      const tasks = empDetails.tasks || [];
-      const completedTasks = tasks.filter(t => t.status === 'Done' || t.status === 'Completed').length;
-      const totalTasks = tasks.length;
-      const taskCompletion = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-      
-      const totalPointsAssigned = tasks.reduce((sum, t) => sum + (t.points || 0), 0);
-      const earnedPoints = tasks.filter(t => t.status === 'Done' || t.status === 'Completed').reduce((sum, t) => sum + (t.points || 0), 0);
-      const pointsDistribution = totalPointsAssigned > 0 ? Math.round((earnedPoints / totalPointsAssigned) * 100) : 0;
-
-      const qMetrics = empDetails.qualityMetrics || {};
-      
-      setReviewForm({
-        taskCompletion: taskCompletion,
-        quality: qMetrics.avgQuality || 0,
-        onTime: qMetrics.avgOnTime || 0,
-        efficiency: qMetrics.avgEfficiency || 0,
-        reviewGatePoints: qMetrics.avgQuality || 0,
-        pointsDistribution: pointsDistribution,
-        feedback: ''
-      });
-    }
-  }, [isReviewModalOpen, empDetails]);
-
-  const [trendsData, setTrendsData] = useState([]);
-  const [isTrendsLoading, setIsTrendsLoading] = useState(false);
-
-  React.useEffect(() => {
-    if (activeTab === 'Trends' && employee) {
-      setIsTrendsLoading(true);
-      fetch(`${API_BASE_URL}/hr/performance/employees/${employee.id}/trends?months=6`)
-        .then(res => res.json())
-        .then(data => {
-          // data.trends is in descending order (most recent first), reverse it for charts
-          if (data && data.trends) {
-            setTrendsData(data.trends.reverse());
-          }
-        })
-        .catch(err => console.error("Error fetching trends:", err))
-        .finally(() => setIsTrendsLoading(false));
-    }
-  }, [activeTab, employee]);
-
-  if (!isOpen || !employee) return null;
-
-  const overallScore = Math.round(
-    (Number(reviewForm.taskCompletion) +
-      Number(reviewForm.quality) +
-      Number(reviewForm.onTime) +
-      Number(reviewForm.efficiency) +
-      Number(reviewForm.reviewGatePoints) +
-      Number(reviewForm.pointsDistribution)) / 6
-  ) || 0;
-
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    const success = await submitReview(employee.id, reviewForm);
-    if (success) {
-      setIsReviewModalOpen(false);
-      // optionally refetch emp details
-      fetchEmployeeDetails(employee.id).then(setEmpDetails);
-    }
-  };
-
+const ChartTooltip = ({ active, payload, label, unit }) => {
+  if (!active || !payload || !payload.length) return null;
   return (
-    <>
-      <div className="fixed inset-0 bg-black/20 z-40 transition-opacity" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out border-l border-gray-200 overflow-hidden">
-
-        {/* Drawer Header */}
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-          <h2 className="text-lg  text-gray-800">Employee Performance Details</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto bg-slate-50">
-
-          {/* Profile Header */}
-          <div className="bg-white p-2 border-b border-gray-100">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <img src={employee.avatar} alt={employee.name} className="w-8 h-8 rounded-full shadow-sm" />
-                <div>
-                  <h1 className="text-xl  text-gray-800">{employee.name}</h1>
-                  <p className="text-gray-500 text-sm mt-1">{employee.role}</p>
-                  <p className="text-gray-400 text-xs">{employee.department} Department</p>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <button
-                  onClick={() => setIsReviewModalOpen(true)}
-                  className="bg-red-600 hover:bg-blue-700 text-white p-2 rounded text-xs  transition-colors flex items-center gap-2 shadow-sm"
-                >
-                  <FileText size={15} /> Start Review
-                </button>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs  bg-emerald-50 text-emerald-600 border border-emerald-100">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  Active
-                </span>
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex items-center gap-6 mt-8 border-b border-gray-100">
-              {['Overview', 'Contributions', 'Tasks', 'Time Logs', 'Quality', 'Reviews', 'Trends'].map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`pb-3 text-sm font-medium transition-colors border-b-2 ${activeTab === tab ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-700'}`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-6 space-y-3">
-
-            {activeTab === 'Overview' && (
-              <>
-                {/* Context Filters */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <select className="border border-gray-200 rounded text-sm px-3 py-1.5 bg-white text-gray-700 outline-none focus:border-blue-500">
-                      <option>This Month (August 2026)</option>
-                      <option>Last Month (July 2026)</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="p-1.5 border border-gray-200 rounded bg-white text-gray-400 hover:text-gray-600"><ChevronDown className="rotate-90" size={15} /></button>
-                    <button className="p-1.5 border border-gray-200 rounded bg-white text-gray-400 hover:text-gray-600"><ChevronDown className="-rotate-90" size={15} /></button>
-                  </div>
-                </div>
-
-                {/* Micro KPIs */}
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-white rounded border border-gray-200 p-4 shadow-sm flex items-start gap-3">
-                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded"><TrendingUp size={20} /></div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-500">Overall Performance</p>
-                      <h3 className="text-xl  text-gray-800">{employee.overall}%</h3>
-                      <p className="text-xs text-emerald-500 font-medium mt-1">↑ 5% from last month</p>
-                      <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs  border ${getStatusColor(getStatusBadge(employee.overall))}`}>
-                        {getStatusBadge(employee.overall)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded border border-gray-200 p-4 shadow-sm flex items-start gap-3">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded"><Trophy size={20} /></div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-500">Points Earned</p>
-                      <h3 className="text-xl  text-gray-800">{employee.earned} / {employee.assigned}</h3>
-                      <p className="text-xs text-gray-400 font-medium mt-1">{Math.round((employee.earned / employee.assigned) * 100)}% delivery rate</p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded border border-gray-200 p-4 shadow-sm flex items-start gap-3">
-                    <div className="p-2 bg-purple-50 text-purple-600 rounded"><Clock size={20} /></div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-500">Approved Hours</p>
-                      <h3 className="text-xl  text-gray-800">22.5h</h3>
-                      <p className="text-xs text-gray-400 font-medium mt-1">Efficiency: {employee.efficiency} pts/hr</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Secondary KPIs */}
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-white rounded border border-gray-200 p-4 shadow-sm flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 text-blue-500 rounded-full"><Clock size={15} /></div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-500">On-Time Delivery</p>
-                      <h3 className="text-lg  text-gray-800">{employee.onTime}%</h3>
-                      <p className="text-xs text-gray-400">31 on time / 3 late</p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded border border-gray-200 p-4 shadow-sm flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 text-blue-500 rounded-full"><Shield size={15} /></div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-500">Quality Score</p>
-                      <h3 className="text-lg  text-gray-800">{employee.quality}%</h3>
-                      <p className="text-xs text-gray-400">42 passed / 3 failed</p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded border border-gray-200 p-4 shadow-sm flex items-center gap-3">
-                    <div className="p-2 bg-red-50 text-red-500 rounded-full"><AlertCircle size={15} /></div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-500">Rework Rate</p>
-                      <h3 className="text-lg  text-gray-800">4%</h3>
-                      <p className="text-xs text-gray-400">2 rework items</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Charts Row */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
-                    <h3 className="text-sm  text-gray-800 mb-4">Performance Trend <span className="font-normal text-gray-400">(Last 6 Months)</span></h3>
-                    <div className="h-48">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={trendData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                          <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
-                          <Tooltip
-                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            itemStyle={{ color: '#0f172a', fontWeight: 600, fontSize: 12 }}
-                          />
-                          <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
-                    <h3 className="text-sm  text-gray-800 mb-4">Score Breakdown</h3>
-                    <div className="space-y-4">
-                      {scoreBreakdown.map((item, i) => (
-                        <div key={i}>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-gray-600 font-medium">{item.name}</span>
-                            <span className="text-gray-800 ">{Math.round((item.value / 30) * 100 - (i * 2))}%</span>
-                          </div>
-                          <div className="w-full bg-gray-100 rounded-full h-2">
-                            <div className="h-2 rounded-full" style={{ width: `${Math.round((item.value / 30) * 100 - (i * 2))}%`, backgroundColor: item.color }}></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dynamic Table inside Drawer Overview */}
-                <div className="">
-                  <div className="flex items-center gap-2 px-5 pt-4 border-b border-gray-100">
-                    {['Recent Contributions', 'Assigned Tasks', 'Time Logs', 'Quality', 'History'].map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveOverviewTab(tab)}
-                        className={`pb-3 text-xs  ${activeOverviewTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
-                      >
-                        {tab}
-                      </button>
-                    ))}
-                  </div>
-
-                  {activeOverviewTab === 'Recent Contributions' && (
-                    <table className="w-full bg-white text-left border-collapse">
-                      <thead>
-                        <tr className=" border-b border-slate-100 text-xs  text-gray-500  tracking-wider">
-                          <th className="p-2 ">#</th>
-                          <th className="p-2 ">Task / Subtask</th>
-                          <th className="p-2 ">Type</th>
-                          <th className="p-2 ">Points</th>
-                          <th className="p-2  text-center">Status</th>
-                          <th className="p-2  text-center">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-xs text-gray-700 divide-y divide-gray-50">
-                        <tr className="hover:bg-slate-50">
-                          <td className="p-2 text-gray-400">1</td>
-                          <td className="p-2 font-medium text-gray-800">Payment Gateway API</td>
-                          <td className="p-2"><span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-xs  border border-emerald-100">TASK</span></td>
-                          <td className="p-2 font-medium">25</td>
-                          <td className="p-2 text-center"><span className="text-emerald-500">Approved</span></td>
-                          <td className="p-2 text-center"><button className="text-blue-600 font-medium hover:underline">View</button></td>
-                        </tr>
-                        <tr className="hover:bg-slate-50">
-                          <td className="p-2 text-gray-400">2</td>
-                          <td className="p-2 font-medium text-gray-800">Authentication Service</td>
-                          <td className="p-2"><span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs  border border-blue-100">SUBTASK</span></td>
-                          <td className="p-2 font-medium">15</td>
-                          <td className="p-2 text-center"><span className="text-emerald-500">Approved</span></td>
-                          <td className="p-2 text-center"><button className="text-blue-600 font-medium hover:underline">View</button></td>
-                        </tr>
-                        <tr className="hover:bg-slate-50">
-                          <td className="p-2 text-gray-400">3</td>
-                          <td className="p-2 font-medium text-gray-800">Payment UI</td>
-                          <td className="p-2"><span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-xs  border border-blue-100">SUBTASK</span></td>
-                          <td className="p-2 font-medium">12</td>
-                          <td className="p-2 text-center"><span className="text-emerald-500">Approved</span></td>
-                          <td className="p-2 text-center"><button className="text-blue-600 font-medium hover:underline">View</button></td>
-                        </tr>
-                        <tr className="hover:bg-slate-50">
-                          <td className="p-2 text-gray-400">4</td>
-                          <td className="p-2 font-medium text-gray-800">Bug Fix #102</td>
-                          <td className="p-2"><span className="px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-xs  border border-red-100">REWORK</span></td>
-                          <td className="p-2 font-medium">5</td>
-                          <td className="p-2 text-center"><span className="text-emerald-500">Approved</span></td>
-                          <td className="p-2 text-center"><button className="text-blue-600 font-medium hover:underline">View</button></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  )}
-
-                  {activeOverviewTab === 'Assigned Tasks' && (
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-100 text-xs  text-gray-500 ">
-                          <th className="p-2">Task ID</th>
-                          <th className="p-2">Name</th>
-                          <th className="p-2">Status</th>
-                          <th className="p-2 text-center">Time Spent</th>
-                          <th className="p-2 text-right">Points</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-sm divide-y divide-gray-50">
-                        {mockTasks.map(task => (
-                          <tr key={task.id} className="hover:bg-slate-50">
-                            <td className="p-2 text-xs font-medium text-gray-500">{task.id}</td>
-                            <td className="p-2  text-gray-800">{task.name}</td>
-                            <td className="p-2">
-                              <span className={`text-xs  px-2 py-0.5 rounded border ${task.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                task.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                  'bg-gray-100 text-gray-600 border-gray-200'
-                                }`}>
-                                {task.status}
-                              </span>
-                            </td>
-                            <td className="p-2 text-center text-gray-600 text-xs font-medium">{task.time}</td>
-                            <td className="p-2 text-right  text-gray-800">{task.points}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-
-                  {activeOverviewTab === 'Time Logs' && (
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-100 text-xs  text-gray-500 ">
-                          <th className="p-2">Date</th>
-                          <th className="p-2">Task</th>
-                          <th className="p-2">Type</th>
-                          <th className="p-2 text-right">Hours</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-sm divide-y divide-gray-50">
-                        {mockTimeLogs.map((log, i) => (
-                          <tr key={i} className="hover:bg-slate-50">
-                            <td className="p-2 text-xs font-medium text-gray-500">{log.date}</td>
-                            <td className="p-2  text-gray-800">{log.task}</td>
-                            <td className="p-2 text-xs text-gray-500">{log.type}</td>
-                            <td className="p-2 text-right  text-gray-800">{log.hours}h</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-
-                  {activeOverviewTab === 'Quality' && (
-                    <div className="p-4">
-                      <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">First-pass Acceptance</span><span className=" text-gray-800">92%</span></div>
-                      <div className="w-full bg-gray-100 h-2 rounded-full mb-4"><div className="bg-emerald-500 h-2 rounded-full w-[92%]"></div></div>
-                      <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Peer Review Score</span><span className=" text-gray-800">96%</span></div>
-                      <div className="w-full bg-gray-100 h-2 rounded-full mb-4"><div className="bg-blue-500 h-2 rounded-full w-[96%]"></div></div>
-                      <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Bug Free Release Rate</span><span className=" text-gray-800">88%</span></div>
-                      <div className="w-full bg-gray-100 h-2 rounded-full mb-4"><div className="bg-purple-500 h-2 rounded-full w-[88%]"></div></div>
-                    </div>
-                  )}
-
-                  {activeOverviewTab === 'History' && (
-                    <div className=" space-y-2">
-                      {mockPastReviews.map((rev, i) => (
-                        <div key={i} className="flex justify-between items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                          <div>
-                            <h4 className=" text-gray-800">{rev.date} Review</h4>
-                            <p className="text-xs text-gray-500 mt-0.5">By {rev.reviewer}</p>
-                          </div>
-                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600  rounded border border-emerald-100 text-xs">
-                            {rev.score}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="p-3 text-center border-t border-gray-100 bg-slate-50">
-                    <button className="text-xs  text-blue-600 hover:text-blue-700">View All &rarr;</button>
-                  </div>
-                </div>
-
-                {/* Bottom Split Row */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
-                    <h3 className="text-sm  text-gray-800 mb-4">Time Log Summary</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500 w-24">Development</span>
-                        <div className="flex-1 mx-2 h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-blue-500 w-[60%]"></div></div>
-                        <span className=" text-gray-800 w-10 text-right">12.5h</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500 w-24">Testing</span>
-                        <div className="flex-1 mx-2 h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-blue-500 w-[20%]"></div></div>
-                        <span className=" text-gray-800 w-10 text-right">4.0h</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500 w-24">Code Review</span>
-                        <div className="flex-1 mx-2 h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-blue-500 w-[10%]"></div></div>
-                        <span className=" text-gray-800 w-10 text-right">2.0h</span>
-                      </div>
-                      <div className="pt-2 mt-2 border-t border-gray-100 flex justify-between text-xs  text-gray-800">
-                        <span>Total</span>
-                        <span>22.5h</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
-                    <h3 className="text-sm  text-gray-800 mb-4">Quality Details</h3>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">QA Passed</span>
-                        <span className=" text-gray-800">42</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">QA Failed</span>
-                        <span className=" text-gray-800">3</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">Rework Items</span>
-                        <span className=" text-gray-800">2</span>
-                      </div>
-                    </div>
-                    <div className="bg-emerald-50 rounded p-3 text-center border border-emerald-100">
-                      <p className="text-xs  text-emerald-600 uppercase tracking-wide">Quality Score</p>
-                      <p className="text-2xl  text-emerald-700 mt-0.5">{employee.quality}%</p>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {activeTab === 'Contributions' && (
-              <div className="">
-                <div className=" border-b border-gray-100 bg-slate-50 flex items-center justify-between">
-                  <h3 className=" text-gray-800">Recent Contributions</h3>
-                </div>
-                <div className="divide-y divide-gray-100">
-                  {recentReviews.map(review => (
-                    <div key={review.id} className="p-2 flex gap-2 bg-white hover:bg-white transition-colors">
-                      <div className="mt-1 p-2 bg-blue-50 text-blue-600 rounded shrink-0">
-                        <FileText size={15} />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-sm text-gray-800">{review.title}</h4>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                          <span className="font-medium text-gray-700">{review.project}</span>
-                          <span>•</span>
-                          <span>{review.time}</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className=" text-gray-800 block">+{review.points} pts</span>
-                        <span className={`text-xs  px-1.5 py-0.5 rounded border mt-1 inline-block ${review.status === 'Pending Review' ? 'bg-orange-50 text-orange-600 border-orange-100' :
-                          review.status === 'Under Review' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                            'bg-emerald-50 text-emerald-600 border-emerald-100'
-                          }`}>
-                          {review.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'Tasks' && (
-              <div className="">
-                <div className="p-2 border-b border-gray-100 bg-slate-50">
-                  <h3 className=" text-gray-800">Assigned Tasks</h3>
-                </div>
-                <table className="w-full bg-white text-left border-collapse">
-                  <thead>
-                    <tr className="bg-white border-b border-gray-100 text-xs  text-gray-500 uppercase">
-                      <th className="p-2">Task ID</th>
-                      <th className="p-2">Name</th>
-                      <th className="p-2">Status</th>
-                      <th className="p-2 text-center">Time Spent</th>
-                      <th className="p-2 text-right">Points</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm divide-y divide-gray-50">
-                    {mockTasks.map(task => (
-                      <tr key={task.id} className="hover:bg-slate-50">
-                        <td className="p-2 text-xs font-medium text-gray-500">{task.id}</td>
-                        <td className="p-2  text-gray-800">{task.name}</td>
-                        <td className="p-2">
-                          <span className={`text-xs  px-2 py-0.5 rounded border ${task.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            task.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                              'bg-gray-100 text-gray-600 border-gray-200'
-                            }`}>
-                            {task.status}
-                          </span>
-                        </td>
-                        <td className="p-2 text-center text-gray-600 text-xs font-medium">{task.time}</td>
-                        <td className="p-2 text-right  text-gray-800">{task.points}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {activeTab === 'Time Logs' && (
-              <div className="">
-                <div className="p-2 border-b border-gray-100 bg-slate-50">
-                  <h3 className=" text-gray-800">Time Logs (Last 7 Days)</h3>
-                </div>
-                <table className="w-full text-left bg-white border-collapse">
-                  <thead>
-                    <tr className="bg-white border-b border-gray-100 text-xs  text-gray-500 uppercase">
-                      <th className="p-2">Date</th>
-                      <th className="p-2">Task</th>
-                      <th className="p-2">Type</th>
-                      <th className="p-2 text-right">Hours</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm divide-y divide-gray-50">
-                    {mockTimeLogs.map((log, i) => (
-                      <tr key={i} className="bg-white hover:bg-slate-50">
-                        <td className="p-2 text-xs font-medium text-gray-500">{log.date}</td>
-                        <td className="p-2  text-gray-800">{log.task}</td>
-                        <td className="p-2 text-xs text-gray-500">{log.type}</td>
-                        <td className="p-2 text-right  text-gray-800">{log.hours}h</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {activeTab === 'Quality' && (() => {
-              const qScore = qualityMetrics.avgQuality || employee.quality || 0;
-              const firstPass = Math.min(100, qualityMetrics.avgQuality > 0 ? qualityMetrics.avgQuality + 2 : 0);
-              const peerReview = qualityMetrics.avgEfficiency > 0 ? qualityMetrics.avgEfficiency : 0;
-              const bugFree = Math.min(100, qualityMetrics.avgOnTime > 0 ? qualityMetrics.avgOnTime : 0);
-
-              let rankingText = "Not enough data";
-              let rankingColor = "text-gray-400";
-              let rankingBg = "bg-gray-50";
-
-              if (qScore >= 90) {
-                rankingText = "↑ Top 10% of department";
-                rankingColor = "text-emerald-600";
-                rankingBg = "bg-emerald-50";
-              } else if (qScore >= 75) {
-                rankingText = "↑ Above Average";
-                rankingColor = "text-blue-600";
-                rankingBg = "bg-blue-50";
-              } else if (qScore > 0) {
-                rankingText = "↓ Needs Improvement";
-                rankingColor = "text-orange-600";
-                rankingBg = "bg-orange-50";
-              }
-
-              return (
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-white rounded border border-gray-200 p-8 shadow-sm flex flex-col items-center justify-center text-center col-span-3 md:col-span-1">
-                    <div className={`p-4 rounded-full ${qScore > 0 ? 'bg-emerald-50' : 'bg-gray-50'} mb-4`}>
-                      <Shield size={48} className={qScore > 0 ? 'text-emerald-500' : 'text-gray-400'} />
-                    </div>
-                    <h3 className="text-4xl font-semibold text-gray-800">{qScore}%</h3>
-                    <p className="text-sm font-medium text-gray-500 mt-2">Average Quality Score</p>
-                    <div className={`mt-4 px-3 py-1.5 rounded-full text-xs font-medium border ${rankingBg} ${rankingColor} ${qScore > 0 ? 'border-transparent' : 'border-gray-200'}`}>
-                      {rankingText}
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded border border-gray-200 p-8 shadow-sm flex flex-col justify-center col-span-3 md:col-span-2 space-y-6">
-                    <h4 className="text-sm font-semibold text-gray-800 mb-2 border-b border-gray-100 pb-3">Quality Breakdown</h4>
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="font-medium text-gray-600">First-pass Acceptance</span>
-                        <span className="font-semibold text-gray-800">{firstPass}%</span>
-                      </div>
-                      <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                        <div className="bg-emerald-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${firstPass}%` }}></div>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1.5">Work accepted without rework</p>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="font-medium text-gray-600">Peer Review Score</span>
-                        <span className="font-semibold text-gray-800">{peerReview}%</span>
-                      </div>
-                      <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                        <div className="bg-blue-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${peerReview}%` }}></div>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1.5">Average score given by peers</p>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="font-medium text-gray-600">Bug Free Release Rate</span>
-                        <span className="font-semibold text-gray-800">{bugFree}%</span>
-                      </div>
-                      <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                        <div className="bg-purple-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${bugFree}%` }}></div>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1.5">Deliverables without critical bugs</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {activeTab === 'Reviews' && (
-              <div className="space-y-4">
-                {mockPastReviews.length > 0 ? (
-                  mockPastReviews.map((rev, i) => (
-                    <div key={i} className="bg-white rounded border border-gray-200 p-4 shadow-sm">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-medium text-gray-800">{rev.date} Review</h4>
-                          <p className="text-xs text-gray-500 mt-0.5">By {rev.reviewer}</p>
-                        </div>
-                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded border border-emerald-100 text-sm font-medium">
-                          Score: {rev.score}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded border border-gray-100">{rev.notes}</p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center p-10 bg-white rounded border border-gray-100">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-50 text-gray-400 mb-3">
-                      <FileText size={24} />
-                    </div>
-                    <h3 className="text-gray-800 font-medium">No Reviews Yet</h3>
-                    <p className="text-sm text-gray-500 mt-1">There are no past performance reviews for this employee.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'Trends' && (
-              <div className="space-y-6">
-                <div className="p-2 border-b border-gray-100 bg-slate-50">
-                  <h3 className=" text-gray-800">Month-wise Performance Comparison (Last 6 Months)</h3>
-                </div>
-
-                {isTrendsLoading ? (
-                  <div className="flex justify-center p-10">
-                    <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                ) : trendsData.length > 0 ? (
-                  <>
-                    <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
-                      <h4 className="text-sm font-medium text-gray-800 mb-4">Overall Score & Quality Trends</h4>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={trendsData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} domain={[0, 100]} />
-                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                            <Legend wrapperStyle={{ fontSize: '12px' }} />
-                            <Line type="monotone" name="Overall Score" dataKey="overallScore" stroke="#2563eb" strokeWidth={3} activeDot={{ r: 6 }} />
-                            <Line type="monotone" name="Quality Score" dataKey="qualityRate" stroke="#10b981" strokeWidth={3} activeDot={{ r: 6 }} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
-                      <h4 className="text-sm font-medium text-gray-800 mb-4">Effort Points Earned</h4>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={trendsData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                            <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                            <Legend wrapperStyle={{ fontSize: '12px' }} />
-                            <Bar name="Earned Points" dataKey="effortPoints" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded border border-gray-200 overflow-hidden mt-4">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                            <th className="p-3 font-semibold">Month</th>
-                            <th className="p-3 font-semibold text-center">Score</th>
-                            <th className="p-3 font-semibold text-center">Quality</th>
-                            <th className="p-3 font-semibold text-center">Task Completion</th>
-                            <th className="p-3 font-semibold text-right">Points Earned</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-sm divide-y divide-gray-100">
-                          {trendsData.map((data, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                              <td className="p-3 font-medium text-gray-800">{data.month} {data.year}</td>
-                              <td className="p-3 text-center">
-                                <span className={`px-2 py-1 rounded text-xs border ${getStatusColor(getStatusBadge(data.overallScore))}`}>
-                                  {data.overallScore}%
-                                </span>
-                              </td>
-                              <td className="p-3 text-center text-gray-700">{data.qualityRate}%</td>
-                              <td className="p-3 text-center text-gray-700">{data.taskCompletion}% ({data.tasksCompleted}/{data.tasksAssigned})</td>
-                              <td className="p-3 text-right font-medium text-gray-800">{data.effortPoints}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-12 bg-slate-50/50 rounded-xl border border-dashed border-gray-200 mt-4">
-                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 mb-4 text-gray-400">
-                      <BarChart3 size={24} />
-                    </div>
-                    <h3 className="text-gray-900 font-semibold mb-1">No Analytics Available</h3>
-                    <p className="text-gray-500 text-sm text-center max-w-sm">
-                      There is no historical performance trend data available for this employee yet. Submit reviews to generate analytics.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-          </div>
-        </div>
-      </div>
-
-      {/* Review Modal */}
-      {isReviewModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setIsReviewModalOpen(false)}></div>
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col transform transition-all animate-in zoom-in-95 duration-200 border border-gray-100">
-            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
-                  <Star size={18} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900 tracking-tight">Performance Review</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Submit evaluation scores and feedback</p>
-                </div>
-              </div>
-              <button onClick={() => setIsReviewModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleReviewSubmit} className="p-6 flex-1 overflow-y-auto">
-
-              <div className="bg-gradient-to-br from-indigo-50 to-blue-50/30 p-5 rounded-xl border border-indigo-100/50 mb-8 flex items-center justify-between shadow-sm">
-                <div>
-                  <h3 className="text-sm font-bold text-indigo-900 mb-1">Calculated Overall Score</h3>
-                  <p className="text-xs text-indigo-700/70">Average of all performance metrics below</p>
-                </div>
-                <div className={`px-4 py-2 rounded-lg text-lg font-bold border shadow-sm ${overallScore >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                  overallScore >= 80 ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                    'bg-orange-50 text-orange-700 border-orange-200'
-                  }`}>
-                  {overallScore}%
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <Activity size={16} className="text-blue-500" />
-                  Performance Metrics
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
-                  {[
-                    { label: 'Task Completion', field: 'taskCompletion' },
-                    { label: 'Quality of Work', field: 'quality' },
-                    { label: 'On-Time Delivery', field: 'onTime' },
-                    { label: 'Efficiency', field: 'efficiency' },
-                    { label: 'Review Gate Points', field: 'reviewGatePoints' },
-                    { label: 'Points Distribution', field: 'pointsDistribution' }
-                  ].map((metric) => (
-                    <div key={metric.field} className="relative group">
-                      <label className="block text-xs font-medium text-gray-600 mb-1.5">{metric.label} (%)</label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          value={reviewForm[metric.field]}
-                          onChange={e => setReviewForm({ ...reviewForm, [metric.field]: e.target.value })}
-                          className="w-full bg-slate-50 border border-gray-200 rounded-lg py-2.5 pl-3 pr-8 text-sm text-gray-800 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all hover:border-gray-300"
-                          min="0" max="100" required
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-2">
-                <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <FileText size={16} className="text-blue-500" />
-                  Manager Notes & Feedback
-                </label>
-                <textarea
-                  value={reviewForm.feedback}
-                  onChange={e => setReviewForm({ ...reviewForm, feedback: e.target.value })}
-                  className="w-full bg-slate-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-800 outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 h-32 resize-none transition-all hover:border-gray-300"
-                  placeholder="Enter detailed feedback, justification for scores, and areas of improvement..." required
-                ></textarea>
-              </div>
-              
-              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100">
-                <button type="button" onClick={() => setIsReviewModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 shadow-sm transition-colors">
-                  Cancel
-                </button>
-                <button type="submit" className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm shadow-blue-600/20 transition-colors flex items-center gap-2">
-                  <CheckCircle size={16} /> 
-                  Submit Review
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </>
-  );
-};
-
-
-// --- MAIN PAGE TABS ---
-
-const OverviewTab = ({ handleGenerateReport }) => {
-  const { overview, employees } = React.useContext(PerformanceContext);
-  const { trendData = [], deptData = [], scoreBreakdown = [], perfDistribution = [], averageScore = 0, totalReviews = 0, recentReviews = [] } = overview || {};
-  const safeEmployees = Array.isArray(employees) ? employees : [];
-  const topEmployees = safeEmployees.filter(e => typeof e.overall === 'number').sort((a, b) => b.overall - a.overall).slice(0, 5);
-  const [liveDashboardEmployeeId, setLiveDashboardEmployeeId] = useState(null);
-
-  return (
-    <div className="space-y-6">
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Performance Trend */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col col-span-1 md:col-span-1">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="text-base font-semibold text-gray-800">Performance Trend</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Average score last 6 months</p>
-            </div>
-          </div>
-          <div className="flex-1 min-h-[220px]">
-            {trendData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={v => `${v}%`} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px -2px rgb(0 0 0 / 0.1)', padding: '8px 12px' }}
-                    itemStyle={{ color: '#0f172a', fontWeight: 600, fontSize: 13 }}
-                    labelStyle={{ color: '#64748b', fontSize: 11, marginBottom: '4px' }}
-                    formatter={(value) => [`${value}%`, 'Average Score']}
-                  />
-                  <Area type="monotone" dataKey="value" stroke="none" fillOpacity={1} fill="url(#colorValue)" />
-                  <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Not enough data available</div>
-            )}
-          </div>
-        </div>
-
-        {/* Department Performance */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col col-span-1 md:col-span-1">
-          <div className="mb-6">
-            <h3 className="text-base font-semibold text-gray-800">Department Performance</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Average overall score by team</p>
-          </div>
-          <div className="flex-1 flex flex-col justify-center space-y-5">
-            {deptData.length > 0 ? (
-              deptData.map((dept, i) => {
-                const colors = ['bg-indigo-500', 'bg-blue-500', 'bg-sky-500', 'bg-cyan-500', 'bg-teal-500'];
-                const color = colors[i % colors.length];
-                return (
-                  <div key={dept.name} className="flex flex-col gap-1.5">
-                    <div className="flex justify-between items-end text-sm">
-                      <span className="font-medium text-gray-700 truncate">{dept.name}</span>
-                      <span className="font-semibold text-gray-800">{dept.score}%</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${color} transition-all duration-1000`} style={{ width: `${dept.score}%` }}></div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Not enough data available</div>
-            )}
-          </div>
-        </div>
-
-        {/* Score Breakdown */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col col-span-1 md:col-span-1">
-          <div className="mb-4">
-            <h3 className="text-base font-semibold text-gray-800">Performance Score Breakdown</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Distribution of all active reviews</p>
-          </div>
-          <div className="flex-1 flex items-center min-h-[200px]">
-            {scoreBreakdown.some(s => s.value > 0) ? (
-              <>
-                <div className="w-[55%] h-full relative">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={scoreBreakdown}
-                        cx="50%" cy="50%"
-                        innerRadius={55} outerRadius={75}
-                        paddingAngle={3}
-                        dataKey="value"
-                        stroke="none"
-                        cornerRadius={4}
-                      >
-                        {scoreBreakdown.map((entry, index) => {
-                          const colors = { 'Excellent': '#10b981', 'Good': '#3b82f6', 'Needs Improvement': '#f59e0b' };
-                          return <Cell key={`cell-${index}`} fill={colors[entry.name] || '#cbd5e1'} />;
-                        })}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value) => [value, 'Reviews']}
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px -2px rgb(0 0 0 / 0.1)' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-2xl font-bold text-gray-800">{averageScore || 0}%</span>
-                    <span className="text-xs font-medium text-gray-400 uppercase tracking-wider mt-0.5">Average</span>
-                  </div>
-                </div>
-                <div className="w-[45%] flex flex-col justify-center space-y-4 pl-4 border-l border-gray-50">
-                  {scoreBreakdown.map((item, index) => {
-                    const colors = { 'Excellent': '#10b981', 'Good': '#3b82f6', 'Needs Improvement': '#f59e0b' };
-                    const bgColors = { 'Excellent': 'bg-emerald-500', 'Good': 'bg-blue-500', 'Needs Improvement': 'bg-amber-500' };
-                    return (
-                      <div key={item.name} className="flex flex-col">
-                        <div className="flex items-center gap-2 mb-1 text-sm font-medium text-gray-700">
-                          <span className={`w-2.5 h-2.5 rounded-full ${bgColors[item.name] || 'bg-gray-400'} shadow-sm`}></span>
-                          {item.value}
-                        </div>
-                        <span className="text-[11px] text-gray-500 pl-4.5 leading-tight">{item.name}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">No reviews recorded yet</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Top Employees Table */}
-      <div className="">
-        <div className="py-4 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="text-base  text-gray-800">Top Performing Employees</h3>
-          <button className="text-sm  text-blue-600 flex items-center hover:underline">
-            View All Employees <ChevronRight size={15} />
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left bg-white border-collapse min-w-max">
-            <thead>
-              <tr className=" border-b border-slate-100 text-xs  text-gray-500 ">
-                <th className="p-2 w-10">#</th>
-                <th className="p-2">Employee</th>
-                <th className="p-2">Department</th>
-                <th className="p-2 text-center">Assigned</th>
-                <th className="p-2 text-center">Points Earned</th>
-                <th className="p-2 text-center">On-Time</th>
-                <th className="p-2 text-center">Quality</th>
-                <th className="p-2 text-center">Efficiency</th>
-                <th className="p-2 text-center">Overall</th>
-                <th className="p-2 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm divide-y divide-slate-100">
-              {topEmployees.map((emp, idx) => (
-                <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-2 text-gray-400 text-xs ">{idx + 1}</td>
-                  <td className="p-2">
-                    <div className="flex items-center gap-3">
-                      <img src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-full border border-gray-200" />
-                      <span className=" text-gray-800">{emp.name}</span>
-                    </div>
-                  </td>
-                  <td className="p-2 text-gray-500 text-xs">{emp.department}</td>
-                  <td className="p-2 text-center text-gray-600 font-medium">{emp.assigned}</td>
-                  <td className="p-2 text-center  text-gray-800">{emp.earned}</td>
-                  <td className="p-2 text-center text-gray-600 font-medium">{emp.onTime}%</td>
-                  <td className="p-2 text-center text-gray-600 font-medium">{emp.quality}%</td>
-                  <td className="p-2 text-center text-gray-600 font-medium">{emp.efficiency}</td>
-                  <td className="p-2 text-center">
-                    <span className="px-2 py-1 bg-emerald-50 text-emerald-600  rounded text-xs border border-emerald-100">
-                      {emp.overall}%
-                    </span>
-                  </td>
-                  <td className="p-2 text-center">
-                    <button 
-                      onClick={() => setLiveDashboardEmployeeId(emp.id)}
-                      className="px-3 py-1.5 border border-blue-200 text-blue-600  rounded text-xs hover:bg-blue-50 transition-colors flex items-center gap-1.5 mx-auto"
-                    >
-                      <Eye size={14} /> View Performance
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Bottom Widgets Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        {/* Recent Contribution Reviews */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col col-span-1 md:col-span-1">
-          <div className="p-5 border-b border-gray-50 flex justify-between items-center shrink-0">
-            <div>
-              <h3 className="text-base font-semibold text-gray-800">Recent Contribution Reviews</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Latest project evaluations</p>
-            </div>
-            <button className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center transition-colors">
-              View All <ChevronRight size={14} className="ml-0.5" />
-            </button>
-          </div>
-          <div className="divide-y divide-gray-50 flex-1 overflow-y-auto max-h-[350px] p-2">
-            {recentReviews.length > 0 ? recentReviews.map(review => (
-              <div key={review.id} className="p-3 bg-white mb-1 rounded-lg flex gap-3 hover:bg-slate-50 transition-colors border border-transparent hover:border-gray-100">
-                <div className="mt-1 p-2 bg-blue-50 rounded-full text-blue-500 shrink-0 self-start shadow-sm">
-                  <FileText size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start mb-1.5">
-                    <h4 className="text-sm font-semibold text-gray-800 truncate pr-3">{review.title}</h4>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap uppercase tracking-wider ${review.status === 'Pending Review' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
-                      review.status === 'Under Review' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
-                        'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                      }`}>
-                      {review.status}
-                    </span>
-                  </div>
-                  <p className="text-xs font-medium text-gray-500 mb-2 truncate">{review.project}</p>
-                  <div className="flex justify-between items-center text-xs text-gray-400">
-                    <span className="flex items-center gap-1"><Users size={12} /> {review.contributors} contributors</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-indigo-600 bg-indigo-50 px-1.5 rounded">{review.points} pts</span>
-                      <span className="text-gray-300">•</span>
-                      <span>{review.time}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )) : (
-              <div className="w-full h-full min-h-[200px] flex items-center justify-center text-sm text-gray-400">No recent reviews</div>
-            )}
-          </div>
-        </div>
-
-        {/* Performance Distribution */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm col-span-1 md:col-span-1 flex flex-col">
-          <div className="mb-6">
-            <h3 className="text-base font-semibold text-gray-800">Performance Distribution</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Score frequency across all teams</p>
-          </div>
-          <div className="flex-1 min-h-[250px]">
-            {perfDistribution.some(p => p.count > 0) ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={perfDistribution} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
-                  <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
-                  <Tooltip
-                    cursor={{ fill: '#f1f5f9' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px -2px rgb(0 0 0 / 0.1)', padding: '8px 12px' }}
-                    itemStyle={{ color: '#0f172a', fontWeight: 600, fontSize: 13 }}
-                    labelStyle={{ color: '#64748b', fontSize: 11, marginBottom: '4px' }}
-                    formatter={(value) => [value, 'Employees']}
-                  />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={40}>
-                    {perfDistribution.map((entry, index) => {
-                      const colors = ['#10b981', '#3b82f6', '#6366f1', '#f59e0b', '#ef4444'];
-                      return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                    })}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Not enough data available</div>
-            )}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
-          <h3 className="text-sm  text-gray-800 mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-3 rounded border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 text-blue-600 rounded"><Users size={18} /></div>
-                <div>
-                  <p className="text-xs  text-gray-800">View All Employees</p>
-                  <p className="text-xs text-gray-500">Browse and analyze employee performance</p>
-                </div>
-              </div>
-            </button>
-            <button className="w-full flex items-center justify-between p-3 rounded border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 text-blue-600 rounded"><Target size={18} /></div>
-                <div>
-                  <p className="text-xs  text-gray-800">Pending Reviews</p>
-                  <p className="text-xs text-gray-500">Review and approve contributions</p>
-                </div>
-              </div>
-              <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs  flex items-center justify-center">6</span>
-            </button>
-            <button
-              onClick={handleGenerateReport}
-              className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><FileText size={18} /></div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">Generate Report</p>
-                  <p className="text-xs text-gray-500 font-medium">Export performance data</p>
-                </div>
-              </div>
-            </button>
-            <button className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Award size={18} /></div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">Manage Goals & KPIs</p>
-                  <p className="text-xs text-gray-500 font-medium">Configure employee goals</p>
-                </div>
-              </div>
-            </button>
-            <button className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-slate-50 hover:bg-slate-100 hover:border-gray-200 transition-colors text-left group">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Settings size={18} /></div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">Performance Settings</p>
-                  <p className="text-xs text-gray-500 font-medium">Adjust scoring weights and criteria</p>
-                </div>
-              </div>
-            </button>
-          </div>
-        </div>
-
-      </div>
-      {liveDashboardEmployeeId && (
-        <LiveEmployeeDashboard 
-          employeeId={liveDashboardEmployeeId} 
-          onClose={() => setLiveDashboardEmployeeId(null)} 
-        />
-      )}
+    <div className="bg-white border border-gray-200 rounded shadow-sm px-3 py-2 text-xs">
+      <div className=" text-gray-800 mb-0.5">{label}</div>
+      <div className="text-gray-600 tabular-nums">{payload[0].value ?? 0}{unit}</div>
     </div>
   );
 };
 
-const AllEmployeesTab = ({ onSelectEmployee, handleGenerateReport }) => {
-  const { employees, overview } = React.useContext(PerformanceContext);
-  const { deptData = [], perfDistribution = [] } = overview || {};
-  const allEmployees = Array.isArray(employees) ? employees : [];
+/** Single-series monthly bar chart; one measure per chart (never two axes). */
+const TrendChart = ({ data, dataKey, unit = '', height = 190 }) => {
+  const hasData = (data || []).some(d => Number(d[dataKey]) > 0);
+  if (!hasData) return <Empty>Nothing recorded in these 12 months yet.</Empty>;
+  return (
+    <div style={{ height }} role="img" aria-label={`Monthly ${dataKey}`}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 16, right: 8, left: -18, bottom: 0 }}>
+          <CartesianGrid vertical={false} stroke={GRID} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={{ stroke: GRID }} interval={0} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={false} />
+          <Tooltip content={<ChartTooltip unit={unit} />} cursor={{ fill: 'rgba(42,120,214,0.06)' }} />
+          <Bar dataKey={dataKey} fill={SERIES} radius={[4, 4, 0, 0]} maxBarSize={26}>
+            <LabelList dataKey={dataKey} position="top" style={{ fontSize: 10, fill: AXIS }} formatter={(v) => (v ? v : '')} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+const QuarterTable = ({ rows }) => (
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+          <th className="py-2 pr-3 font-medium">Quarter</th>
+          <th className="py-2 px-3 font-medium text-right">Tasks done</th>
+          <th className="py-2 px-3 font-medium text-right">Hours logged</th>
+          <th className="py-2 px-3 font-medium text-right">Points</th>
+          <th className="py-2 px-3 font-medium text-right">On-time</th>
+          <th className="py-2 px-3 font-medium text-right">Avg days / task</th>
+          <th className="py-2 pl-3 font-medium text-right">Meetings</th>
+        </tr>
+      </thead>
+      <tbody>
+        {(rows || []).map(q => (
+          <tr key={q.key} className="border-b border-gray-100 last:border-0">
+            <td className="py-2 pr-3 font-medium text-gray-800">{q.label}</td>
+            <td className="py-2 px-3 text-right tabular-nums">{q.tasksCompleted}</td>
+            <td className="py-2 px-3 text-right tabular-nums">{q.hoursLogged || 0}</td>
+            <td className="py-2 px-3 text-right tabular-nums">{q.pointsEarned}</td>
+            <td className="py-2 px-3 text-right tabular-nums">{fmtNum(q.onTimeRate, '%')}</td>
+            <td className="py-2 px-3 text-right tabular-nums">{fmtNum(q.avgCycleDays)}</td>
+            <td className="py-2 pl-3 text-right tabular-nums">{q.meetings}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
 
-  const filteredEmployees = allEmployees.filter(emp => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (emp.name && emp.name.toLowerCase().includes(term)) ||
-           (emp.department && emp.department.toLowerCase().includes(term)) ||
-           (emp.role && emp.role.toLowerCase().includes(term));
-  });
+const ScoreExplainer = ({ weights }) => (
+  <details className="text-xs text-gray-600 mt-2">
+    <summary className="cursor-pointer text-blue-700 font-medium select-none">How is the score calculated?</summary>
+    <div className="mt-2 space-y-1 leading-relaxed">
+      <p>The score (0–100) combines only what was recorded in the selected period:</p>
+      <ul className="list-disc pl-5 space-y-0.5">
+        {Object.entries(weights || {}).map(([k, w]) => (
+          <li key={k}><strong>{COMPONENT_LABELS[k]}</strong> — weight {w}</li>
+        ))}
+      </ul>
+      <p>Parts with no data (for example no due dates, or no review) are left out and the rest are re-weighted.
+        With no finished task and no review, the grade is <em>Not enough data</em> rather than a guess.
+        Grades: 85+ Excellent · 70+ Good · 50+ Fair · below 50 Needs attention.</p>
+    </div>
+  </details>
+);
 
-  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / itemsPerPage));
-  const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+/* ───────────────────────── insights, comparisons, scorecards ───────────────────────── */
 
+const InsightsCard = ({ insights }) => {
+  const s = insights?.strengths || [];
+  const a = insights?.attention || [];
+  return (
+    <Section title="Summary" subtitle="Observations from the recorded numbers">
+      {s.length === 0 && a.length === 0 ? (
+        <Empty>Not enough recorded work in this period to draw conclusions.</Empty>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h4 className="text-xs  text-green-800 mb-2 flex items-center gap-1"><CheckCircle2 size={13} aria-hidden="true" /> Strengths</h4>
+            {s.length ? (
+              <ul className="space-y-1.5">{s.map((t, i) => <li key={i} className="text-sm text-gray-800 pl-3 border-l-2 border-green-300">{t}</li>)}</ul>
+            ) : <p className="text-xs text-gray-500">None stand out yet.</p>}
+          </div>
+          <div>
+            <h4 className="text-xs  text-red-800 mb-2 flex items-center gap-1"><AlertTriangle size={13} aria-hidden="true" /> Needs attention</h4>
+            {a.length ? (
+              <ul className="space-y-1.5">{a.map((t, i) => <li key={i} className="text-sm text-gray-800 pl-3 border-l-2 border-red-300">{t}</li>)}</ul>
+            ) : <p className="text-xs text-gray-500">Nothing flagged.</p>}
+          </div>
+        </div>
+      )}
+    </Section>
+  );
+};
+
+// "Better" direction per measure, so the comparison can say ahead/behind correctly.
+const COMPARE_ROWS = [
+  ['score', 'Score', '', 'up'],
+  ['tasksCompleted', 'Tasks completed', '', 'up'],
+  ['onTimeRate', 'On-time delivery', '%', 'up'],
+  ['avgHoursPerTask', 'Avg hours per task', ' h', 'down'],
+  ['avgCycleDays', 'Avg days start → done', ' d', 'down'],
+  ['hoursLogged', 'Hours logged', ' h', 'up'],
+  ['activeDays', 'Active days', '', 'up'],
+  ['meetings', 'Meetings', '', 'neutral']
+];
+
+const CompareTable = ({ me, team }) => (
+  <table className="w-full text-sm">
+    <thead>
+      <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+        <th className="py-2 pr-3 font-medium">Measure</th>
+        <th className="py-2 px-3 font-medium text-right">This person</th>
+        <th className="py-2 px-3 font-medium text-right">Department average</th>
+        <th className="py-2 pl-3 font-medium text-right">vs average</th>
+      </tr>
+    </thead>
+    <tbody>
+      {COMPARE_ROWS.map(([k, label, unit, better]) => {
+        const v = me[k]; const t = team[k];
+        let verdict = <span className="text-gray-400">—</span>;
+        if (v != null && t != null && better !== 'neutral' && t !== 0) {
+          const ahead = better === 'up' ? v > t : v < t;
+          const same = Math.abs(v - t) / Math.abs(t) < 0.05;
+          verdict = same
+            ? <span className="text-gray-600">On par</span>
+            : <span className={ahead ? 'text-green-700 font-medium' : 'text-red-700 font-medium'}>{ahead ? 'Ahead' : 'Behind'}</span>;
+        }
+        return (
+          <tr key={k} className="border-b border-gray-100 last:border-0">
+            <td className="py-2 pr-3 text-gray-700">{label}</td>
+            <td className="py-2 px-3 text-right tabular-nums  text-gray-900">{fmtNum(v, unit)}</td>
+            <td className="py-2 px-3 text-right tabular-nums text-gray-600">{fmtNum(t, unit)}</td>
+            <td className="py-2 pl-3 text-right text-xs">{verdict}</td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+);
+
+const WorkTypeTable = ({ rows, team = false }) => {
+  if (!rows || !rows.length) return <Empty>No finished work to group yet.</Empty>;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm min-w-[560px]">
+        <thead>
+          <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+            <th className="py-2 pr-3 font-medium">Work type</th>
+            <th className="py-2 px-3 font-medium text-right">Finished</th>
+            {team && <th className="py-2 px-3 font-medium text-right">People</th>}
+            <th className="py-2 px-3 font-medium text-right">Avg hours / task</th>
+            {!team && <th className="py-2 px-3 font-medium text-right">Team avg hours</th>}
+            <th className="py-2 px-3 font-medium text-right">{team ? 'Avg days start → done' : 'On-time'}</th>
+            {team && <th className="py-2 pl-3 font-medium text-right">Tasks with time</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => {
+            const faster = !team && r.avgHours != null && r.teamAvgHours != null && r.avgHours < r.teamAvgHours * 0.95;
+            const slower = !team && r.avgHours != null && r.teamAvgHours != null && r.avgHours > r.teamAvgHours * 1.05;
+            return (
+              <tr key={r.workType} className="border-b border-gray-100 last:border-0">
+                <td className="py-2 pr-3 font-medium text-gray-800">{r.workType}</td>
+                <td className="py-2 px-3 text-right tabular-nums">{r.completed}</td>
+                {team && <td className="py-2 px-3 text-right tabular-nums">{r.people}</td>}
+                <td className={`py-2 px-3 text-right tabular-nums ${faster ? 'text-green-700 ' : slower ? 'text-red-700 ' : ''}`}>{fmtNum(r.avgHours, ' h')}</td>
+                {!team && <td className="py-2 px-3 text-right tabular-nums text-gray-600">{fmtNum(r.teamAvgHours, ' h')}</td>}
+                <td className="py-2 px-3 text-right tabular-nums">{team ? fmtNum(r.avgDays, ' d') : fmtNum(r.onTimeRate, '%')}</td>
+                {team && <td className="py-2 pl-3 text-right tabular-nums text-gray-600">{r.tasksWithTime}</td>}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="text-[11px] text-gray-500 mt-2">
+        Work type is the ticket's label (e.g. GMB Graphics, Content Writing), or its type when it has none.
+        {team ? ' Averages use all recorded history so they are stable enough to compare against.' : ' Green: faster than the team average; red: slower.'}
+      </p>
+    </div>
+  );
+};
+
+const ScorecardTable = ({ rows, quarter = false }) => (
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm min-w-[820px]">
+      <thead>
+        <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+          <th className="py-2 pr-3 font-medium">{quarter ? 'Quarter' : 'Month'}</th>
+          <th className="py-2 px-3 font-medium">Score</th>
+          <th className="py-2 px-3 font-medium text-right">Rank</th>
+          <th className="py-2 px-3 font-medium text-right">Tasks</th>
+          <th className="py-2 px-3 font-medium text-right">Hours</th>
+          <th className="py-2 px-3 font-medium text-right">Avg h / task</th>
+          <th className="py-2 px-3 font-medium text-right">On-time</th>
+          <th className="py-2 px-3 font-medium text-right">Avg days</th>
+          {!quarter && <th className="py-2 px-3 font-medium text-right">Active days</th>}
+          <th className="py-2 pl-3 font-medium text-right">Meetings</th>
+        </tr>
+      </thead>
+      <tbody>
+        {(rows || []).map(r => {
+          const empty = !r.tasksCompleted && !r.hoursLogged && !r.meetings && r.score == null;
+          return (
+            <tr key={r.key} className={`border-b border-gray-100 last:border-0 ${empty ? 'text-gray-400' : ''}`}>
+              <td className="py-2 pr-3 font-medium whitespace-nowrap">{r.label}</td>
+              <td className="py-2 px-3">{r.score != null ? <GradeBadge grade={r.grade} score={r.score} /> : <span className="text-xs">—</span>}</td>
+              <td className="py-2 px-3 text-right tabular-nums">{r.rank ? `#${r.rank} / ${r.rankedOutOf}` : '—'}</td>
+              <td className="py-2 px-3 text-right tabular-nums">{r.tasksCompleted}</td>
+              <td className="py-2 px-3 text-right tabular-nums">{r.hoursLogged || 0}</td>
+              <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.avgHoursPerTask)}</td>
+              <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.onTimeRate, '%')}</td>
+              <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.avgCycleDays)}</td>
+              {!quarter && <td className="py-2 px-3 text-right tabular-nums">{r.activeDays}</td>}
+              <td className="py-2 pl-3 text-right tabular-nums">{r.meetings}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+);
+
+const DataQualityCard = ({ dq }) => {
+  if (!dq) return null;
+  const items = [
+    [`${dq.unassignedTickets} of ${dq.ticketsInPeriod}`, 'tickets have no assignee', dq.unassignedTickets > 0, 'Unassigned work counts for nobody.'],
+    [fmtNum(dq.completedWithTimeLogged, '%'), 'of finished tasks have time recorded', dq.completedWithTimeLogged != null && dq.completedWithTimeLogged < 70, 'Time is recorded automatically while a ticket is In Progress.'],
+    [fmtNum(dq.completedWithDueDate, '%'), 'of finished tasks had a due date', dq.completedWithDueDate != null && dq.completedWithDueDate < 70, 'On-time delivery can only be judged with a due date.'],
+    [dq.peopleWithNoActivity.length, 'people with no recorded activity', dq.peopleWithNoActivity.length > 0, dq.peopleWithNoActivity.map(p => p.name).join(', ')]
+  ];
+  return (
+    <Section title="How complete the data is" subtitle="Low coverage means the figures above understate real work">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        {items.map(([value, label, warn, hint], i) => (
+          <div key={i} className={`rounded border p-3 ${warn ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white'}`}>
+            <div className={`text-lg  tabular-nums ${warn ? 'text-amber-900' : 'text-gray-900'}`}>{value}</div>
+            <div className="text-xs text-gray-700">{label}</div>
+            {hint && <div className="text-[11px] text-gray-500 mt-1 line-clamp-2" title={hint}>{hint}</div>}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+};
+
+/* ───────────────────────── champions & records ───────────────────────── */
+
+const PersonCell = ({ p, unit = '', onOpen }) => p ? (
+  <button onClick={() => onOpen(p.id)} className="text-left hover:text-blue-700 cursor-pointer">
+    <div className="text-sm font-medium text-gray-900 truncate max-w-[170px]">{p.name}</div>
+    <div className="text-[11px] text-gray-500 tabular-nums">{p.score != null ? `Score ${p.score}` : `${p.value}${unit}`}</div>
+  </button>
+) : <span className="text-xs text-gray-400">—</span>;
+
+const ChampionsTable = ({ rows, onOpen, quarter }) => (
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm min-w-[880px]">
+      <thead>
+        <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+          <th className="py-2 pr-3 font-medium">{quarter ? 'Quarter' : 'Month'}</th>
+          <th className="py-2 px-3 font-medium">Top performer</th>
+          <th className="py-2 px-3 font-medium">Most tasks</th>
+          <th className="py-2 px-3 font-medium">Most hours</th>
+          <th className="py-2 px-3 font-medium">Best on-time</th>
+          <th className="py-2 px-3 font-medium">Most meetings</th>
+          <th className="py-2 pl-3 font-medium text-right">Team tasks / hours</th>
+        </tr>
+      </thead>
+      <tbody>
+        {(rows || []).map(r => (
+          <tr key={r.key} className="border-b border-gray-100 last:border-0 align-top">
+            <td className="py-2 pr-3 font-medium text-gray-800 whitespace-nowrap">{r.label}</td>
+            <td className="py-2 px-3">
+              {r.topPerformer ? (
+                <div className="flex items-start gap-1.5"><Trophy size={14} className="text-amber-500 mt-0.5 shrink-0" aria-hidden="true" /><PersonCell p={r.topPerformer} onOpen={onOpen} /></div>
+              ) : <span className="text-xs text-gray-400">No one scored</span>}
+            </td>
+            <td className="py-2 px-3"><PersonCell p={r.mostCompleted} unit=" tasks" onOpen={onOpen} /></td>
+            <td className="py-2 px-3"><PersonCell p={r.mostHours} unit=" h" onOpen={onOpen} /></td>
+            <td className="py-2 px-3"><PersonCell p={r.bestOnTime} unit="%" onOpen={onOpen} /></td>
+            <td className="py-2 px-3"><PersonCell p={r.mostMeetings} onOpen={onOpen} /></td>
+            <td className="py-2 pl-3 text-right tabular-nums text-gray-700">{r.tasksCompleted} / {r.hoursLogged || 0} h</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+const ChampionsView = ({ data, onOpenEmployee }) => {
+  const rec = data.records || {};
   return (
     <div className="space-y-4">
-      {/* Filters Row */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
-        <div className="flex items-center gap-3 flex-wrap">
-          <select className="border border-gray-200 rounded text-xs p-2 bg-white text-gray-700 outline-none focus:border-blue-500 shadow-sm min-w-[140px]">
-            <option>This Month</option>
-            <option>Last Month</option>
-          </select>
-          <select className="border border-gray-200 rounded text-xs p-2 bg-white text-gray-700 outline-none focus:border-blue-500 shadow-sm min-w-[140px]">
-            <option>All Departments</option>
-            <option>Development</option>
-            <option>QA</option>
-          </select>
-          <select className="border border-gray-200 rounded text-xs p-2 bg-white text-gray-700 outline-none focus:border-blue-500 shadow-sm min-w-[140px]">
-            <option>All Roles</option>
-          </select>
-          <select className="border border-gray-200 rounded text-xs p-2 bg-white text-gray-700 outline-none focus:border-blue-500 shadow-sm min-w-[140px]">
-            <option>All Status</option>
-            <option>Excellent</option>
-            <option>Good</option>
-          </select>
-          <button className="bg-red-600 text-white p-2 rounded text-sm  hover:bg-blue-700 shadow-sm">
-            Apply
-          </button>
-          <button className="text-gray-5xs p-2 rounded text-sm  hover:bg-gray-100">
-            Reset
-          </button>
+      <Section title="All-time team records" subtitle="Best ever, across everyone in this view">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+          <BestTile icon={Trophy} label="Most tasks in a month" value={rec.mostTasksInAMonth ? `${rec.mostTasksInAMonth.value} tasks` : null}
+            detail={rec.mostTasksInAMonth ? `${rec.mostTasksInAMonth.name} · ${monthLabel(rec.mostTasksInAMonth.month)}` : 'No finished tasks yet'} />
+          <BestTile icon={Clock} label="Most hours in a month" value={rec.mostHoursInAMonth ? `${rec.mostHoursInAMonth.value} h` : null}
+            detail={rec.mostHoursInAMonth ? `${rec.mostHoursInAMonth.name} · ${monthLabel(rec.mostHoursInAMonth.month)}` : 'No time recorded yet'} />
+          <BestTile icon={Flame} label="Longest on-time run" value={rec.longestOnTimeStreak ? `${rec.longestOnTimeStreak.value} in a row` : null}
+            detail={rec.longestOnTimeStreak ? rec.longestOnTimeStreak.name : 'Needs tasks with due dates'} />
+          <BestTile icon={Zap} label="Fastest task" value={rec.fastestTask ? `${rec.fastestTask.days} days` : null}
+            detail={rec.fastestTask ? `${rec.fastestTask.name} · ${rec.fastestTask.key}` : undefined} />
+          <BestTile icon={TrendingUp} label="Team's best month" value={rec.teamBestMonth ? `${rec.teamBestMonth.value} tasks` : null}
+            detail={rec.teamBestMonth ? monthLabel(rec.teamBestMonth.month) : undefined} />
         </div>
-        <button
-          onClick={handleGenerateReport}
-          className="flex items-center gap-2 border border-gray-200 bg-white text-gray-700 p-2 rounded text-sm font-medium hover:bg-gray-50 shadow-sm"
-        >
-          <Download size={15} /> Export
-        </button>
-      </div>
-
-      {/* Large Table */}
-      <div className="">
-        <div className="py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-          <h2 className="text-lg  text-gray-800">All Employees ({filteredEmployees.length})</h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-            <input
-              type="text"
-              placeholder="Search employee..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-1.5 border border-gray-200 rounded text-sm w-full sm:w-64 focus:outline-none focus:border-blue-500 bg-slate-50 focus:bg-white transition-colors"
-            />
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full bg-white text-left border-collapse min-w-max">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-xs  text-gray-500  tracking-wider">
-                <th className="p-2 w-10 text-center">#</th>
-                <th className="p-2">Employee</th>
-                <th className="p-2">Department</th>
-                <th className="p-2 text-center">Assigned<br /><span className="text-xs font-normal">(Points)</span></th>
-                <th className="p-2 text-center">Earned<br /><span className="text-xs font-normal">(Points)</span></th>
-                <th className="p-2 text-center">On-Time</th>
-                <th className="p-2 text-center">Quality</th>
-                <th className="p-2 text-center">Efficiency<br /><span className="text-xs font-normal">(pts/hr)</span></th>
-                <th className="p-2 text-center">Overall<br />Score</th>
-                <th className="p-2 text-center">Status</th>
-                <th className="p-2 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm divide-y divide-slate-100">
-              {paginatedEmployees.map((emp, idx) => (
-                <tr key={emp.id} className="hover:bg-slate-50/80 transition-colors text-xs">
-                  <td className="p-2 text-gray-400 text-xs  text-center">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                  <td className="p-2">
-                    <div className="flex items-center gap-3">
-                      <img src={emp.avatar} alt={emp.name} className="w-9 h-9 rounded-full border border-gray-200 shadow-sm" />
-                      <div>
-                        <div className=" text-gray-800 text-sm leading-tight">{emp.name}</div>
-                        <div className="text-[11px] text-gray-400 font-medium mt-0.5">{emp.role}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-2 text-gray-500 text-xs font-medium">{emp.department}</td>
-                  <td className="p-2 text-center text-gray-600 font-medium">{emp.assigned}</td>
-                  <td className="p-2 text-center  text-gray-800">{emp.earned}</td>
-                  <td className="p-2 text-center text-gray-600 font-medium">{emp.onTime}%</td>
-                  <td className="p-2 text-center text-gray-600 font-medium">{emp.quality}%</td>
-                  <td className="p-2 text-center text-gray-600 font-medium">{emp.efficiency}</td>
-                  <td className="p-2 text-center">
-                    <span className={`px-2 py-1 bg-gray-50  rounded text-xs border ${emp.overall >= 90 ? 'text-emerald-600 border-emerald-100 bg-emerald-50' :
-                      emp.overall >= 80 ? 'text-blue-600 border-blue-100 bg-blue-50' :
-                        'text-orange-600 border-orange-100 bg-orange-50'
-                      }`}>
-                      {emp.overall}%
-                    </span>
-                  </td>
-                  <td className="p-2 text-center">
-                    <span className={`inline-block px-2.5 py-1 text-xs  rounded-full border ${getStatusColor(getStatusBadge(emp.overall))}`}>
-                      {getStatusBadge(emp.overall)}
-                    </span>
-                  </td>
-                  <td className="p-2">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => onSelectEmployee(emp)}
-                        className="px-3 py-1.5 border border-blue-200 text-blue-600  rounded text-xs hover:bg-blue-50 transition-colors flex items-center gap-1.5 bg-white"
-                      >
-                        <Eye size={14} /> Review
-                      </button>
-                      <button className="p-1.5 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors">
-                        <MoreVertical size={15} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="p-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 bg-slate-50">
-          <span>
-            Showing {filteredEmployees.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to{' '}
-            {Math.min(currentPage * itemsPerPage, filteredEmployees.length)} of {filteredEmployees.length} employees
-          </span>
-          <div className="flex items-center gap-1">
-            <button 
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              className="px-2 py-1 border border-gray-200 rounded bg-white hover:bg-gray-50 text-gray-400 disabled:opacity-50"
-            >
-              &lt;
-            </button>
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button 
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`px-2.5 py-1 border rounded font-medium ${
-                  currentPage === i + 1 
-                    ? 'border-red-600 bg-red-600 text-white' 
-                    : 'border-gray-200 bg-white hover:bg-gray-50'
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button 
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              className="px-2 py-1 border border-gray-200 rounded bg-white hover:bg-gray-50 text-gray-400 disabled:opacity-50"
-            >
-              &gt;
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Charts for All Employees View */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <div className="bg-white rounded border border-gray-200 p-5 shadow-sm">
-          <h3 className="text-sm  text-gray-800 mb-4">Department Performance</h3>
-          <p className="text-xs text-gray-500 mb-4">Average Performance by Department</p>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={deptData} margin={{ top: 20, right: 0, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} interval={0} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={v => `${v}%`} />
-                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={32}>
-                  {deptData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white rounded border border-gray-200 p-5 shadow-sm flex flex-col">
-          <h3 className="text-sm  text-gray-800 mb-4">Performance Distribution</h3>
-          <div className="flex-1 flex items-center">
-            <div className="w-1/2 h-48 relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={[
-                    { name: 'Excellent', value: 12, color: '#22c55e' },
-                    { name: 'Good', value: 20, color: '#3b82f6' },
-                    { name: 'Needs Impr', value: 7, color: '#eab308' },
-                    { name: 'Poor', value: 3, color: '#ef4444' }
-                  ]} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={2} dataKey="value" stroke="none">
-                    {[
-                      { name: 'Excellent', value: 12, color: '#22c55e' },
-                      { name: 'Good', value: 20, color: '#3b82f6' },
-                      { name: 'Needs Impr', value: 7, color: '#eab308' },
-                      { name: 'Poor', value: 3, color: '#ef4444' }
-                    ].map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xl  text-gray-800">87.4%</span>
-                <span className="text-xs text-gray-400">Average</span>
-              </div>
-            </div>
-            <div className="w-1/2 space-y-4">
-              <div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                  <span className="text-gray-600 font-medium">Excellent (≥ 90%)</span>
-                  <span className="ml-auto  text-gray-800">12</span>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                  <span className="text-gray-600 font-medium">Good (75% - 89%)</span>
-                  <span className="ml-auto  text-gray-800">20</span>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
-                  <span className="text-gray-600 font-medium">Needs Improvement<br /><span className="text-xs font-normal text-gray-400 leading-tight">(60% - 74%)</span></span>
-                  <span className="ml-auto  text-gray-800">7</span>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                  <span className="text-gray-600 font-medium">Poor (&lt; 60%)</span>
-                  <span className="ml-auto  text-gray-800">3</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      </Section>
+      <Section title="Monthly champions" subtitle="Last 12 months, newest first. Click a name for their report.">
+        <ChampionsTable rows={data.champions?.monthly} onOpen={onOpenEmployee} />
+        <p className="text-[11px] text-gray-500 mt-2">Top performer = highest score that month. Best on-time needs at least 3 finished tasks with due dates.</p>
+      </Section>
+      <Section title="Quarterly champions" subtitle="Last 4 quarters">
+        <ChampionsTable rows={data.champions?.quarterly} onOpen={onOpenEmployee} quarter />
+      </Section>
     </div>
   );
 };
 
+/* ───────────────────────── period & filter bar ───────────────────────── */
 
-// --- MAIN PAGE COMPONENT ---
+const PeriodBar = ({ params, setParams, departments, onExport, onPrint, showDepartment = true }) => (
+  <div className="flex flex-wrap items-end gap-2 no-print">
+    <div className="inline-flex rounded border border-gray-300 overflow-hidden" role="tablist" aria-label="Report period">
+      {[['month', 'Monthly'], ['quarter', 'Quarterly'], ['year', 'Yearly'], ['custom', 'Custom']].map(([p, label]) => (
+        <button
+          key={p}
+          role="tab"
+          aria-selected={params.period === p}
+          onClick={() => setParams(prev => ({
+            ...prev,
+            period: p,
+            value: p === 'month' ? currentMonth() : p === 'quarter' ? currentQuarter() : p === 'year' ? String(new Date().getFullYear()) : prev.value
+          }))}
+          className={`px-3 py-1.5 text-xs font-medium border-r border-gray-300 last:border-r-0 cursor-pointer ${params.period === p ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
 
-const HRPerformance = () => {
-  const [activeTab, setActiveTab] = useState('Overview');
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+    {params.period === 'month' && (
+      <input type="month" value={params.value} max={currentMonth()} onChange={e => setParams(p => ({ ...p, value: e.target.value }))}
+        className="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white" aria-label="Month" />
+    )}
+    {params.period === 'quarter' && (
+      <select value={params.value} onChange={e => setParams(p => ({ ...p, value: e.target.value }))}
+        className="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white" aria-label="Quarter">
+        {recentQuarters().map(q => <option key={q} value={q}>{q.replace('-', ' ')}</option>)}
+      </select>
+    )}
+    {params.period === 'year' && (
+      <select value={params.value} onChange={e => setParams(p => ({ ...p, value: e.target.value }))}
+        className="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white" aria-label="Year">
+        {[0, 1, 2, 3].map(i => String(new Date().getFullYear() - i)).map(y => <option key={y} value={y}>{y}</option>)}
+      </select>
+    )}
+    {params.period === 'custom' && (
+      <>
+        <input type="date" value={params.from} max={params.to} onChange={e => setParams(p => ({ ...p, from: e.target.value }))}
+          className="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white" aria-label="From" />
+        <span className="text-xs text-gray-500 pb-1.5">to</span>
+        <input type="date" value={params.to} min={params.from} onChange={e => setParams(p => ({ ...p, to: e.target.value }))}
+          className="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white" aria-label="To" />
+      </>
+    )}
 
-  const [employees, setEmployees] = useState([]);
-  const [overview, setOverview] = useState({
-    averageScore: 0,
-    totalReviews: 0,
-    trendData: [],
-    deptData: [],
-    scoreBreakdown: [],
-    perfDistribution: []
-  });
-  const [loading, setLoading] = useState(true);
+    {showDepartment && departments && departments.length > 0 && (
+      <select value={params.department} onChange={e => setParams(p => ({ ...p, department: e.target.value }))}
+        className="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white" aria-label="Department">
+        <option value="All">All departments</option>
+        {departments.map(d => <option key={d} value={d}>{d}</option>)}
+      </select>
+    )}
+    {showDepartment && (
+      <label className="inline-flex items-center gap-1.5 text-xs text-gray-700 pb-1.5 cursor-pointer select-none">
+        <input type="checkbox" checked={Boolean(params.includeAdmins)} onChange={e => setParams(p => ({ ...p, includeAdmins: e.target.checked }))} />
+        Include admins
+      </label>
+    )}
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+    <div className="flex-1" />
+    {onExport && (
+      <button onClick={onExport} className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 cursor-pointer">
+        <Download size={13} /> Export CSV
+      </button>
+    )}
+    {onPrint && (
+      <button onClick={onPrint} className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 cursor-pointer">
+        <Printer size={13} /> Print / PDF
+      </button>
+    )}
+  </div>
+);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [overviewRes, employeesRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/hr/performance/overview`),
-        fetch(`${API_BASE_URL}/hr/performance/employees`)
-      ]);
-      const overviewData = await overviewRes.json();
-      const employeesData = await employeesRes.json();
+/* ───────────────────────── team overview ───────────────────────── */
 
-      setOverview(overviewData);
-      setEmployees(employeesData);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-  };
+const LeaderCard = ({ icon: Icon, label, leader, unit, onOpen }) => (
+  <button
+    disabled={!leader}
+    onClick={() => leader && onOpen(leader.id)}
+    className="text-left bg-white border border-gray-200 rounded p-3 hover:border-blue-300 hover:shadow-sm transition disabled:cursor-default disabled:hover:border-gray-200 disabled:hover:shadow-none cursor-pointer"
+  >
+    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium"><Icon size={13} className="text-amber-600" aria-hidden="true" />{label}</div>
+    {leader ? (
+      <>
+        <div className="text-sm  text-gray-900 mt-1 truncate">{leader.name}</div>
+        <div className="text-xs text-gray-600 tabular-nums">{leader.value}{unit}</div>
+      </>
+    ) : (
+      <div className="text-xs text-gray-400 mt-1">No one qualifies yet</div>
+    )}
+  </button>
+);
 
-  const fetchEmployeeDetails = async (id) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/hr/performance/employees/${id}`);
-      return await res.json();
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
-  };
+const TeamOverview = ({ data, onOpenEmployee }) => {
+  const t = data.team;
+  const noTime = !t.hoursLogged;
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+        <StatTile icon={CheckCircle2} label="Tasks completed" value={t.tasksCompleted} hint={`of ${t.tasksAssigned} in the period`} />
+        <StatTile icon={Clock} label="Hours logged" value={t.hoursLogged || 0} hint={noTime ? 'No time was logged' : 'Working hours, all sources'} />
+        <StatTile icon={Timer} label="Avg hours / task" value={t.avgHoursPerTask != null ? `${t.avgHoursPerTask} h` : '—'} hint="Recorded time per finished task" />
+        <StatTile icon={Target} label="On-time delivery" value={fmtNum(t.onTimeRate, '%')} hint="Finished tasks that had a due date" />
+        <StatTile icon={Timer} label="Avg completion time" value={t.avgCycleDays != null ? `${t.avgCycleDays} d` : '—'} hint="Start → done, per task" />
+        <StatTile icon={Video} label="Meetings" value={t.meetings} hint={t.meetingHours ? `${t.meetingHours} h in meetings` : 'Meetings & calls'} />
+        <StatTile icon={AlertTriangle} label="Overdue now" value={t.overdueOpen} tone="warn" hint="Past due date, not finished" />
+      </div>
 
-  const submitReview = async (id, reviewData) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/hr/performance/employees/${id}/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reviewData)
+      {(noTime || t.tasksCompleted === 0) && (
+        <div className="flex gap-2 text-xs bg-amber-50 border border-amber-200 text-amber-900 rounded p-3">
+          <Info size={15} className="shrink-0 mt-0.5" aria-hidden="true" />
+          <div>
+            {t.tasksCompleted === 0 && <p>No task was marked Done in this period, so completion and timing figures are empty.</p>}
+            {noTime && <p>No time was recorded in this period. Time is now recorded automatically while a ticket is In Progress (working hours only), and people can also add entries in a ticket's Work log tab.</p>}
+          </div>
+        </div>
+      )}
+
+      <DataQualityCard dq={data.dataQuality} />
+
+      <Section title="Best records this period" subtitle="Click a name to open their report">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <LeaderCard icon={Trophy} label="Most tasks completed" leader={data.leaders.mostCompleted} unit=" tasks" onOpen={onOpenEmployee} />
+          <LeaderCard icon={Star} label="Most points earned" leader={data.leaders.mostPoints} unit=" pts" onOpen={onOpenEmployee} />
+          <LeaderCard icon={Clock} label="Most hours logged" leader={data.leaders.mostHours} unit=" h" onOpen={onOpenEmployee} />
+          <LeaderCard icon={Target} label="Best on-time rate" leader={data.leaders.bestOnTime} unit="%" onOpen={onOpenEmployee} />
+          <LeaderCard icon={Zap} label="Fastest avg completion" leader={data.leaders.fastestCycle} unit=" days" onOpen={onOpenEmployee} />
+          <LeaderCard icon={Video} label="Most meetings" leader={data.leaders.mostMeetings} unit="" onOpen={onOpenEmployee} />
+        </div>
+        <p className="text-[11px] text-gray-500 mt-2">On-time and speed records need at least 3 finished tasks, so one quick task doesn't top the list.</p>
+      </Section>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <Section title="Tasks completed per month" subtitle="Last 12 months">
+          <TrendChart data={data.monthly} dataKey="tasksCompleted" unit=" tasks" />
+        </Section>
+        <Section title="Hours logged per month" subtitle="Last 12 months">
+          <TrendChart data={data.monthly} dataKey="hoursLogged" unit=" h" />
+        </Section>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <Section title="Quarter by quarter" subtitle="Last 4 quarters" className="xl:col-span-2">
+          <QuarterTable rows={data.quarterly} />
+        </Section>
+        <Section title="Grade spread" subtitle={t.avgScore != null ? `Team average score ${t.avgScore}` : 'No one has a score yet'}>
+          <ul className="space-y-2">
+            {t.gradeCounts.map(g => (
+              <li key={g.grade} className="flex items-center justify-between gap-2">
+                <GradeBadge grade={g.grade} />
+                <span className="text-sm  tabular-nums text-gray-800">{g.count}</span>
+              </li>
+            ))}
+          </ul>
+          <ScoreExplainer weights={data.scoreWeights} />
+        </Section>
+      </div>
+    </div>
+  );
+};
+
+/* ───────────────────────── employees table ───────────────────────── */
+
+const COLUMNS = [
+  { key: 'rank', label: 'Rank', get: r => -(r.rank ?? 9999) },
+  { key: 'name', label: 'Employee', get: r => r.name, align: 'left' },
+  { key: 'score', label: 'Score', get: r => r.score ?? -1 },
+  { key: 'completed', label: 'Done / assigned', get: r => r.metrics.tasksCompleted },
+  { key: 'onTime', label: 'On-time', get: r => r.metrics.onTimeRate ?? -1 },
+  { key: 'cycle', label: 'Avg days', get: r => r.metrics.avgCycleDays ?? 9999 },
+  { key: 'hours', label: 'Hours', get: r => r.metrics.hoursLogged ?? 0 },
+  { key: 'perTask', label: 'Avg h / task', get: r => r.metrics.avgHoursPerTask ?? -1 },
+  { key: 'points', label: 'Points', get: r => r.metrics.pointsEarned },
+  { key: 'meetings', label: 'Meetings', get: r => r.metrics.meetings },
+  { key: 'activeDays', label: 'Active days', get: r => r.metrics.activeDays },
+  { key: 'overdue', label: 'Overdue', get: r => r.metrics.overdueOpen }
+];
+
+const EmployeesTable = ({ data, onOpenEmployee }) => {
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState({ key: 'rank', dir: 'desc' });
+  const maxDone = Math.max(1, ...data.employees.map(e => e.metrics.tasksCompleted));
+
+  const rows = useMemo(() => {
+    const col = COLUMNS.find(c => c.key === sort.key) || COLUMNS[1];
+    const q = search.trim().toLowerCase();
+    return data.employees
+      .filter(e => !q || e.name.toLowerCase().includes(q) || String(e.role).toLowerCase().includes(q) || String(e.department).toLowerCase().includes(q))
+      .sort((a, b) => {
+        const va = col.get(a); const vb = col.get(b);
+        const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb;
+        return sort.dir === 'asc' ? cmp : -cmp;
       });
-      if (res.ok) {
-        Swal.fire('Success', 'Review submitted successfully', 'success');
-        fetchData(); // refresh overview
-        return true;
-      }
-    } catch (e) {
-      console.error(e);
-      Swal.fire('Error', 'Failed to submit review', 'error');
-      return false;
-    }
-  };
+  }, [data.employees, search, sort]);
 
-
-
-  const handleGenerateReport = () => {
-    // Mock downloading a report file
-    const content = "Employee Name,Department,Points,Quality,Overall Score\nAmit Sharma,Development,108,96%,93%\n";
-    const blob = new Blob([content], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Performance_Report_Codigix.csv`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  };
-
-  // Close drawer handler
-  const closeDrawer = () => setSelectedEmployee(null);
+  const toggleSort = (key) => setSort(s => ({ key, dir: s.key === key && s.dir === 'desc' ? 'asc' : 'desc' }));
 
   return (
-    <PerformanceContext.Provider value={{ employees, overview, fetchEmployeeDetails, submitReview }}>
-      <div className="min-h-screen bg-slate-100 p-4 md:p-6 pb-20 font-sans">
-        <div className="max-w-[1600px] mx-auto space-y-5">
+    <Section
+      title={`Employees (${rows.length})`}
+      subtitle="Click a row for the full report. Click a column to sort."
+      right={(
+        <div className="relative no-print">
+          <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, role, department"
+            className="pl-7 pr-2 py-1.5 text-xs border border-gray-300 rounded w-60 max-w-full" />
+        </div>
+      )}
+    >
+      <div className="overflow-x-auto -mx-4">
+        <table className="w-full text-sm min-w-[1100px]">
+          <thead>
+            <tr className="text-xs text-gray-500 border-b border-gray-200">
+              {COLUMNS.map(c => (
+                <th key={c.key} className={`py-2 px-3 font-medium ${c.align === 'left' ? 'text-left pl-4' : 'text-right'}`}>
+                  <button onClick={() => toggleSort(c.key)} className="inline-flex items-center gap-0.5 hover:text-gray-900 cursor-pointer">
+                    {c.label}
+                    {sort.key === c.key && (sort.dir === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />)}
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.id} onClick={() => onOpenEmployee(r.id)} className="border-b border-gray-100 last:border-0 hover:bg-blue-50/40 cursor-pointer">
+                <td className="py-2.5 px-3 text-right tabular-nums  text-gray-700">{r.rank ? `#${r.rank}` : '—'}</td>
+                <td className="py-2.5 px-3 pl-4">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-[11px]  shrink-0">{initials(r.name)}</div>
+                    <div className="min-w-0">
+                      <div className="font-medium text-gray-900 truncate">{r.name}</div>
+                      <div className="text-[11px] text-gray-500 truncate">{r.role} · {r.department}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-2.5 px-3 text-right"><GradeBadge grade={r.grade} score={r.score} /></td>
+                <td className="py-2.5 px-3 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden hidden md:block" aria-hidden="true">
+                      <div className="h-full rounded-full" style={{ width: `${(r.metrics.tasksCompleted / maxDone) * 100}%`, background: SERIES }} />
+                    </div>
+                    <span className="tabular-nums">{r.metrics.tasksCompleted}<span className="text-gray-400"> / {r.metrics.tasksAssigned}</span></span>
+                  </div>
+                </td>
+                <td className="py-2.5 px-3 text-right tabular-nums">{fmtNum(r.metrics.onTimeRate, '%')}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums">{fmtNum(r.metrics.avgCycleDays)}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.hoursLogged || 0}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums">{fmtNum(r.metrics.avgHoursPerTask)}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.pointsEarned}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.meetings}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.activeDays}</td>
+                <td className={`py-2.5 px-3 pr-4 text-right tabular-nums ${r.metrics.overdueOpen > 0 ? 'text-red-700 ' : ''}`}>{r.metrics.overdueOpen}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {rows.length === 0 && <Empty>No employees match.</Empty>}
+      </div>
+    </Section>
+  );
+};
 
-          {/* Dynamic Header based on active tab */}
-          {activeTab === 'Overview' ? (
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-2">
-              <div className="flex gap-2 items-start">
-                <div className="p-2 bg-red-600 text-white rounded shadow-sm"><BarChart2 size={15} /></div>
-                <div>
-                  <h1 className="text-xl  text-gray-800">Performance Management</h1>
-                  <p className="text-xs text-gray-500 mt-1 max-w-lg leading-relaxed">
-                    Monitor employee contribution, productivity, quality, timeliness and performance trends.
-                  </p>
-                </div>
-              </div>
+/* ───────────────────────── review modal ───────────────────────── */
 
-              <div className="flex items-center gap-3">
-                <select className="border border-gray-200 rounded text-xs p-2 bg-white text-gray-700 outline-none focus:border-blue-500 shadow-sm">
-                  <option>This Month</option>
-                  <option>Last Month</option>
-                </select>
-                <select className="border border-gray-200 rounded text-xs p-2 bg-white text-gray-700 outline-none focus:border-blue-500 shadow-sm hidden sm:block">
-                  <option>All Departments</option>
-                </select>
-                <select className="border border-gray-200 rounded text-xs p-2 bg-white text-gray-700 outline-none focus:border-blue-500 shadow-sm hidden sm:block">
-                  <option>All Roles</option>
-                </select>
-                <button
-                  onClick={handleGenerateReport}
-                  className="bg-red-600 text-white p-2 rounded text-xs  flex items-center gap-2 hover:bg-blue-700 shadow-sm"
-                >
-                  <Download size={15} /> Export Report
-                </button>
+const ReviewModal = ({ employee, metrics, onClose, onSaved }) => {
+  // Pre-fill from the recorded numbers so a review starts from evidence, not a blank form.
+  const [form, setForm] = useState({
+    taskCompletion: metrics?.completionRate ?? 0,
+    quality: 0,
+    onTime: metrics?.onTimeRate ?? 0,
+    efficiency: 0,
+    feedback: ''
+  });
+  const [saving, setSaving] = useState(false);
+  const fields = [
+    ['taskCompletion', 'Task completion', 'Pre-filled from the completion rate'],
+    ['quality', 'Quality of work', 'Your judgement: accuracy, rework, standards'],
+    ['onTime', 'On-time delivery', 'Pre-filled from the on-time rate'],
+    ['efficiency', 'Efficiency', 'Your judgement: speed vs. estimates, focus']
+  ];
+  const overall = Math.round((Number(form.taskCompletion) + Number(form.quality) + Number(form.onTime) + Number(form.efficiency)) / 4);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/hr/performance/employees/${employee.id}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to save the review');
+      Swal.fire({ icon: 'success', title: 'Review saved', timer: 1500, showConfirmButton: false });
+      onSaved();
+    } catch (e) {
+      Swal.fire('Could not save', e.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[10000] bg-black/40 flex items-center justify-center p-4" onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="px-5 py-3 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-base  text-gray-900">Review — {employee.name}</h2>
+          <button onClick={onClose} className="p-1 text-gray-500 hover:bg-gray-100 rounded cursor-pointer"><X size={16} /></button>
+        </div>
+        <div className="p-5 space-y-4 overflow-y-auto">
+          {fields.map(([k, label, hint]) => (
+            <div key={k}>
+              <div className="flex items-center justify-between text-sm">
+                <label htmlFor={`rv-${k}`} className="font-medium text-gray-800">{label}</label>
+                <span className="tabular-nums  text-gray-900">{form[k]}</span>
               </div>
+              <input id={`rv-${k}`} type="range" min="0" max="100" value={form[k]} onChange={e => setForm(f => ({ ...f, [k]: Number(e.target.value) }))} className="w-full accent-blue-600" />
+              <p className="text-[11px] text-gray-500">{hint}</p>
             </div>
-          ) : (
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-2">
-              <div className="flex gap-2 items-start">
-                <div className="p-3 bg-red-600 text-white rounded shadow-sm"><Users size={15} /></div>
-                <div>
-                  <h1 className="text-2xl  text-gray-800">Employee Performance</h1>
-                  <p className="text-sm text-gray-500 mt-1 max-w-lg leading-relaxed">
-                    Review, analyze and manage employee performance across the organization.
-                  </p>
-                </div>
-              </div>
+          ))}
+          <div>
+            <label htmlFor="rv-feedback" className="text-sm font-medium text-gray-800">Feedback</label>
+            <textarea id="rv-feedback" rows={4} value={form.feedback} onChange={e => setForm(f => ({ ...f, feedback: e.target.value }))}
+              placeholder="Strengths, areas to improve, agreed goals for next period"
+              className="mt-1 w-full text-sm border border-gray-300 rounded p-2 outline-none focus:border-blue-500" />
+          </div>
+        </div>
+        <div className="px-5 py-3 border-t border-gray-200 flex items-center justify-between">
+          <span className="text-sm text-gray-600">Overall: <strong className="tabular-nums text-gray-900">{overall}</strong>/100</span>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer">Cancel</button>
+            <button onClick={save} disabled={saving} className="px-4 py-1.5 text-sm font-medium bg-red-600 text-white rounded hover:bg-gray-800 disabled:opacity-50 cursor-pointer">
+              {saving ? 'Saving…' : 'Save review'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ───────────────────────── employee report ───────────────────────── */
+
+const DETAIL_TABS = [
+  ['completed', 'Completed tasks', ListChecks],
+  ['open', 'Open tasks', FileText],
+  ['time', 'Time log', Clock],
+  ['meetings', 'Meetings', Video],
+  ['activity', 'Activity', MessageSquare],
+  ['reviews', 'Reviews', Star]
+];
+
+const TaskTable = ({ rows, open }) => {
+  if (!rows.length) return <Empty>{open ? 'No open tasks.' : 'No task finished in this period.'}</Empty>;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm min-w-[760px]">
+        <thead>
+          <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+            <th className="py-2 pr-3 font-medium">Task</th>
+            <th className="py-2 px-3 font-medium">Status</th>
+            <th className="py-2 px-3 font-medium">Due</th>
+            {!open && <th className="py-2 px-3 font-medium">Finished</th>}
+            {!open && <th className="py-2 px-3 font-medium text-right">Days</th>}
+            <th className="py-2 px-3 font-medium text-right">Hours</th>
+            <th className="py-2 pl-3 font-medium text-right">Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(t => (
+            <tr key={`${t.source}-${t.key}`} className="border-b border-gray-100 last:border-0 align-top">
+              <td className="py-2 pr-3 max-w-[360px]">
+                <div className="text-[11px] text-gray-500">{t.key} · {t.source}</div>
+                <div className="text-gray-900 line-clamp-2" title={t.title}>{t.title}</div>
+              </td>
+              <td className="py-2 px-3 text-xs">
+                {open
+                  ? (t.overdue
+                    ? <span className="inline-flex items-center gap-1 text-red-700 "><AlertTriangle size={12} aria-hidden="true" />Overdue</span>
+                    : <span className="text-gray-700">{t.status}</span>)
+                  : (t.onTime == null
+                    ? <span className="text-gray-500">No due date</span>
+                    : t.onTime
+                      ? <span className="inline-flex items-center gap-1 text-green-700 font-medium"><CheckCircle2 size={12} aria-hidden="true" />On time</span>
+                      : <span className="inline-flex items-center gap-1 text-red-700 font-medium"><AlertTriangle size={12} aria-hidden="true" />Late</span>)}
+              </td>
+              <td className="py-2 px-3 text-xs text-gray-700 whitespace-nowrap">{fmtDate(t.dueAt)}</td>
+              {!open && (
+                <td className="py-2 px-3 text-xs text-gray-700 whitespace-nowrap">
+                  {fmtDate(t.completedAt)}
+                  {t.completionEstimated && <span className="text-gray-400" title="No status history; date taken from the last update"> *</span>}
+                </td>
+              )}
+              {!open && <td className="py-2 px-3 text-right tabular-nums">{fmtNum(t.cycleDays)}</td>}
+              <td className="py-2 px-3 text-right tabular-nums">{t.hoursLogged || '—'}{t.estimateHours ? <span className="text-gray-400"> / {Math.round(t.estimateHours * 10) / 10}</span> : ''}</td>
+              <td className="py-2 pl-3 text-right tabular-nums">{t.points || 0}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {!open && rows.some(t => t.completionEstimated) && (
+        <p className="text-[11px] text-gray-500 mt-2">* No status history for this task, so its finish date is the date it was last updated.</p>
+      )}
+      <p className="text-[11px] text-gray-500 mt-1">Hours = this person's logged time on the task{rows.some(t => t.estimateHours) ? ' / original estimate' : ''}.</p>
+    </div>
+  );
+};
+
+const BestTile = ({ icon: Icon, label, value, detail }) => (
+  <div className="border border-gray-200 rounded p-3 bg-white min-w-0">
+    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium"><Icon size={13} className="text-amber-600" aria-hidden="true" />{label}</div>
+    <div className="text-base  text-gray-900 mt-1 tabular-nums">{value ?? '—'}</div>
+    {detail && <div className="text-[11px] text-gray-500 truncate" title={detail}>{detail}</div>}
+  </div>
+);
+
+const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSelf }) => {
+  const url = `${API_BASE_URL}/hr/performance/report/employee/${employeeId}?${buildQuery(params)}`;
+  const { loading, error, data, reload } = useReport(url);
+  const [tab, setTab] = useState('completed');
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [meetingReportOpen, setMeetingReportOpen] = useState(false);
+
+  if (loading && !data) return <div className="py-20 text-center text-sm text-gray-500">Loading report…</div>;
+  if (error) return <div className="py-20 text-center text-sm text-red-700">{error}</div>;
+  if (!data) return null;
+
+  const { employee: e, metrics: m, bests: b } = data;
+
+  const exportCsv = () => downloadCsv(
+    `performance-${e.name.replace(/\s+/g, '-')}-${data.range.label.replace(/\s+/g, '-')}.csv`,
+    ['Key', 'Title', 'Source', 'Status', 'Due', 'Finished', 'Days', 'On time', 'Hours logged', 'Points'],
+    [...data.tasks.completed, ...data.tasks.open].map(t => [
+      t.key, t.title, t.source, t.status, fmtDate(t.dueAt), fmtDate(t.completedAt), t.cycleDays ?? '',
+      t.onTime == null ? '' : (t.onTime ? 'Yes' : 'No'), t.hoursLogged || 0, t.points || 0
+    ])
+  );
+
+  return (
+    <div className="space-y-4 print-area">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        {!isSelf ? (
+          <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-gray-700 hover:text-gray-900 no-print cursor-pointer">
+            <ArrowLeft size={15} /> All employees
+          </button>
+        ) : <span />}
+        <div className="flex items-end gap-2 flex-wrap">
+          <button onClick={() => setMeetingReportOpen(true)}
+            className="no-print inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 cursor-pointer">
+            <FileText size={13} /> Review meeting report (PDF)
+          </button>
+          <PeriodBar params={params} setParams={setParams} showDepartment={false} onExport={exportCsv} onPrint={() => window.print()} />
+        </div>
+      </div>
+
+      <div className="hidden print:block">
+        <h1 className="text-xl ">Performance report</h1>
+        <p className="text-xs text-gray-600">Generated {fmtDate(new Date())} from recorded work in the CRM.</p>
+      </div>
+
+      {/* Header */}
+      <div className="bg-white border border-gray-200 rounded p-4 flex flex-wrap items-center gap-4">
+        <div className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center text-lg  shrink-0">{initials(e.name)}</div>
+        <div className="flex-1 min-w-[200px]">
+          <h2 className="text-lg  text-gray-900">{e.name}</h2>
+          <p className="text-sm text-gray-600">{e.role} · {e.department}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Report for <strong>{data.range.label}</strong> · joined {fmtDate(e.joinedAt)}</p>
+        </div>
+        <div className="text-right">
+          <GradeBadge grade={data.grade} score={data.score} />
+          <div className="text-xs text-gray-600 mt-1">
+            {data.rank ? <>Rank <strong className="text-gray-900">#{data.rank}</strong> of {data.rankedOutOf} in {e.department}</> : 'Not ranked this period'}
+          </div>
+          {canReview && !isSelf && (
+            <div className="mt-2 no-print">
+              <button onClick={() => setReviewOpen(true)} className="text-xs font-medium px-3 py-1.5 bg-red-600 text-white rounded hover:bg-gray-800 cursor-pointer">
+                Add review
+              </button>
             </div>
           )}
-
-          {/* Top KPI Cards (Shared across both tabs) */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            <KpiCard title="Total Employees" value="42" subtitle="↑ +4 this month" subtitleType="positive" icon={Users} iconColor="text-blue-600" iconBg="bg-blue-50" />
-            <KpiCard title="Avg Performance" value="87.4%" subtitle="↑ 3.2%" subtitleType="positive" icon={Target} iconColor="text-emerald-600" iconBg="bg-emerald-50" />
-            <KpiCard title="Points Delivered" value="8,420" subtitle="↑ 8.6%" subtitleType="positive" icon={Award} iconColor="text-purple-600" iconBg="bg-purple-50" />
-            <KpiCard title="On-Time Delivery" value="91.2%" subtitle="↑ 2.4%" subtitleType="positive" icon={Clock} iconColor="text-emerald-600" iconBg="bg-emerald-50" />
-            <KpiCard title="Quality Score" value="94.1%" subtitle="↑ 1.8%" subtitleType="positive" icon={Shield} iconColor="text-blue-600" iconBg="bg-blue-50" />
-            <KpiCard title="Review Pending" value="6" subtitle="Need attention" subtitleType="warning" icon={FileText} iconColor="text-red-600" iconBg="bg-red-50" />
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab('Overview')}
-              className={`p-2 rounded text-sm  transition-colors flex items-center gap-2 ${activeTab === 'Overview' ? 'bg-red-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
-            >
-              <Activity size={15} /> Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('All Employees')}
-              className={`p-2 rounded text-sm  transition-colors flex items-center gap-2 ${activeTab === 'All Employees' ? 'bg-red-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
-            >
-              <Users size={15} /> All Employees
-            </button>
-            <button
-              onClick={() => setActiveTab('Monthly Report')}
-              className={`p-2 rounded text-sm  transition-colors flex items-center gap-2 ${activeTab === 'Monthly Report' ? 'bg-red-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
-            >
-              <FileText size={15} /> Monthly Report
-            </button>
-          </div>
-
-          {/* Tab Content */}
-          <div className="mt-4">
-            {activeTab === 'Overview' && <OverviewTab handleGenerateReport={handleGenerateReport} />}
-            {activeTab === 'All Employees' && <AllEmployeesTab onSelectEmployee={setSelectedEmployee} handleGenerateReport={handleGenerateReport} />}
-            {activeTab === 'Monthly Report' && <EmployeeMonthlyReport />}
-          </div>
-
         </div>
-
-        {/* Slide-out Drawer for Employee Details */}
-        <Drawer isOpen={!!selectedEmployee} onClose={closeDrawer} employee={selectedEmployee} />
       </div>
-    </PerformanceContext.Provider>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <StatTile icon={CheckCircle2} label="Completed" value={m.tasksCompleted} hint={`of ${m.tasksAssigned} assigned`} />
+        <StatTile icon={ListChecks} label="Subtasks done" value={m.subtasksCompleted} />
+        <StatTile icon={Target} label="On-time" value={fmtNum(m.onTimeRate, '%')} hint={`${m.onTimeCompleted} on time · ${m.lateCompleted} late`} />
+        <StatTile icon={Timer} label="Avg days / task" value={fmtNum(m.avgCycleDays)} hint={m.fastestCycleDays != null ? `Fastest ${m.fastestCycleDays} d` : 'Start → done'} />
+        <StatTile icon={Clock} label="Hours logged" value={m.hoursLogged || 0} hint="Working hours recorded" />
+        <StatTile icon={Timer} label="Avg hours / task" value={m.avgHoursPerTask != null ? `${m.avgHoursPerTask} h` : '—'} hint={m.tasksWithTimeLogged ? `From ${m.tasksWithTimeLogged} finished task${m.tasksWithTimeLogged > 1 ? 's' : ''}` : 'No time on finished tasks'} />
+        <StatTile icon={Users} label="Active days" value={m.activeDays} hint="Days with any recorded work" />
+        <StatTile icon={Star} label="Points" value={m.pointsEarned} hint={m.pointsApproved ? `${m.pointsApproved} approved` : 'From finished tasks'} />
+        <StatTile icon={Video} label="Meetings" value={m.meetings} hint={m.meetingHours ? `${m.meetingHours} h${m.avgMeetingMinutes ? ` · avg ${m.avgMeetingMinutes} min` : ''}` : undefined} />
+        <StatTile icon={AlertTriangle} label="Overdue now" value={m.overdueOpen} tone="warn" />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <InsightsCard insights={data.insights} />
+        <Section title={`Compared with the ${e.department} average`} subtitle={data.range.label}>
+          <CompareTable me={{ ...m, score: data.score }} team={data.teamAverage || {}} />
+        </Section>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        {/* Score breakdown */}
+        <Section title="Score breakdown" subtitle="What the score is made of">
+          {data.breakdown.length === 0 ? (
+            <Empty>No finished task or review in this period, so there is nothing to score.</Empty>
+          ) : (
+            <ul className="space-y-3">
+              {data.breakdown.map(part => (
+                <li key={part.component}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-700">{COMPONENT_LABELS[part.component]} <span className="text-gray-400">· weight {part.weight}%</span></span>
+                    <span className=" tabular-nums text-gray-900">{part.value}</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden" aria-hidden="true">
+                    <div className="h-full rounded-full" style={{ width: `${part.value}%`, background: SERIES }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <ScoreExplainer weights={data.scoreWeights} />
+          {(m.estimateAccuracy != null || m.reopened > 0 || m.updates + m.comments > 0) && (
+            <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-3 gap-2 text-center">
+              <div><div className="text-sm  tabular-nums">{fmtNum(m.estimateAccuracy, '%')}</div><div className="text-[10px] text-gray-500">of estimate used</div></div>
+              <div><div className="text-sm  tabular-nums">{m.reopened}</div><div className="text-[10px] text-gray-500">reopened after done</div></div>
+              <div><div className="text-sm  tabular-nums">{m.updates + m.comments}</div><div className="text-[10px] text-gray-500">ticket updates & comments</div></div>
+            </div>
+          )}
+        </Section>
+
+        {/* Personal bests */}
+        <Section title="Personal best records" subtitle="Across all recorded history" className="xl:col-span-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <BestTile icon={Trophy} label="Best month (tasks)" value={b.bestMonthTasks ? `${b.bestMonthTasks.value} tasks` : null} detail={b.bestMonthTasks ? monthLabel(b.bestMonthTasks.month) : 'No finished tasks yet'} />
+            <BestTile icon={Clock} label="Best month (hours)" value={b.bestMonthHours ? `${b.bestMonthHours.value} h` : null} detail={b.bestMonthHours ? monthLabel(b.bestMonthHours.month) : 'No time logged yet'} />
+            <BestTile icon={Zap} label="Fastest task" value={b.fastestTask ? `${b.fastestTask.days} days` : null} detail={b.fastestTask ? `${b.fastestTask.key} · ${b.fastestTask.title}` : undefined} />
+            <BestTile icon={Award} label="Biggest task" value={b.biggestTask ? `${b.biggestTask.points} pts` : null} detail={b.biggestTask ? `${b.biggestTask.key} · ${b.biggestTask.title}` : undefined} />
+            <BestTile icon={Flame} label="Longest on-time run" value={b.longestOnTimeStreak ? `${b.longestOnTimeStreak} in a row` : null} detail="Consecutive tasks finished by their due date" />
+            <BestTile icon={TrendingUp} label="Total tasks completed" value={b.totalCompleted} detail="All time" />
+          </div>
+        </Section>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <Section title="Tasks completed per month" subtitle="Last 12 months"><TrendChart data={data.monthly} dataKey="tasksCompleted" unit=" tasks" /></Section>
+        <Section title="Hours logged per month" subtitle="Last 12 months"><TrendChart data={data.monthly} dataKey="hoursLogged" unit=" h" /></Section>
+      </div>
+
+      <Section title="Work by type" subtitle={`${data.range.label} · compared with the department's average time for the same kind of work`}>
+        <WorkTypeTable rows={data.workTypes} />
+      </Section>
+
+      <Section title="Monthly scorecard" subtitle="Last 12 months, newest first. Score and rank are within the department for that month.">
+        <ScorecardTable rows={data.scorecard} />
+      </Section>
+
+      <Section title="Quarterly scorecard" subtitle="Last 4 quarters">
+        <ScorecardTable rows={data.quarterCard} quarter />
+      </Section>
+
+      {/* Detail tabs */}
+      <section className="bg-white border border-gray-200 rounded">
+        <div className="flex gap-1 px-2 pt-2 border-b border-gray-200 overflow-x-auto no-print" role="tablist">
+          {DETAIL_TABS.map(([k, label, Icon]) => {
+            const count = k === 'completed' ? data.tasks.completed.length : k === 'open' ? data.tasks.open.length
+              : k === 'time' ? data.timeLog.length : k === 'meetings' ? data.meetings.length
+                : k === 'activity' ? data.activity.length : data.reviews.length;
+            return (
+              <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 -mb-px whitespace-nowrap cursor-pointer ${tab === k ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+                <Icon size={13} /> {label} <span className="text-gray-400 tabular-nums">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="p-4">
+          {tab === 'completed' && <TaskTable rows={data.tasks.completed} />}
+          {tab === 'open' && <TaskTable rows={data.tasks.open} open />}
+          {tab === 'time' && (data.timeLog.length === 0 ? <Empty>No time logged in this period.</Empty> : (
+            <table className="w-full text-sm">
+              <thead><tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+                <th className="py-2 pr-3 font-medium">When</th><th className="py-2 px-3 font-medium">Task</th><th className="py-2 px-3 font-medium">Source</th><th className="py-2 px-3 font-medium">Note</th><th className="py-2 pl-3 font-medium text-right">Hours</th>
+              </tr></thead>
+              <tbody>{data.timeLog.map((t, i) => (
+                <tr key={i} className="border-b border-gray-100 last:border-0">
+                  <td className="py-2 pr-3 text-xs text-gray-700">{fmtDateTime(t.at)}</td>
+                  <td className="py-2 px-3 text-xs">{t.taskKey || '—'}</td>
+                  <td className="py-2 px-3 text-xs text-gray-600">{t.source}</td>
+                  <td className="py-2 px-3 text-xs text-gray-600 max-w-[280px] truncate" title={t.note || ''}>{t.note || '—'}</td>
+                  <td className="py-2 pl-3 text-right tabular-nums">{t.hours}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          ))}
+          {tab === 'meetings' && (data.meetings.length === 0 ? <Empty>No meetings or calls recorded in this period.</Empty> : (
+            <table className="w-full text-sm">
+              <thead><tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+                <th className="py-2 pr-3 font-medium">When</th><th className="py-2 px-3 font-medium">Meeting</th><th className="py-2 px-3 font-medium">Type</th><th className="py-2 px-3 font-medium">Status</th><th className="py-2 pl-3 font-medium text-right">Minutes</th>
+              </tr></thead>
+              <tbody>{data.meetings.map((mt, i) => (
+                <tr key={i} className="border-b border-gray-100 last:border-0">
+                  <td className="py-2 pr-3 text-xs text-gray-700">{fmtDateTime(mt.at)}</td>
+                  <td className="py-2 px-3">{mt.title}</td>
+                  <td className="py-2 px-3 text-xs text-gray-600">{mt.source}</td>
+                  <td className="py-2 px-3 text-xs">{mt.status}</td>
+                  <td className="py-2 pl-3 text-right tabular-nums">{mt.minutes ?? '—'}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          ))}
+          {tab === 'activity' && (data.activity.length === 0 ? <Empty>No ticket updates or comments in this period.</Empty> : (
+            <ol className="relative border-l border-gray-200 ml-2 space-y-3">
+              {data.activity.map((a, i) => (
+                <li key={i} className="ml-4">
+                  <span className="absolute -left-1.5 mt-1.5 w-3 h-3 rounded-full border-2 border-white" style={{ background: a.kind === 'comment' ? '#77766f' : SERIES }} aria-hidden="true" />
+                  <div className="text-[11px] text-gray-500">{fmtDateTime(a.at)} · {a.kind === 'comment' ? 'Comment' : 'Update'}</div>
+                  <div className="text-sm text-gray-800 break-words">{a.detail}</div>
+                </li>
+              ))}
+            </ol>
+          ))}
+          {tab === 'reviews' && (data.reviews.length === 0 ? <Empty>No reviews yet.{canReview && !isSelf ? ' Use “Add review” above.' : ''}</Empty> : (
+            <ul className="space-y-3">
+              {data.reviews.map(r => (
+                <li key={r.id} className="border border-gray-200 rounded p-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="text-sm  text-gray-900">Score {r.score}/100</div>
+                    <div className="text-xs text-gray-500">{fmtDate(r.at)}{r.reviewer ? ` · by ${r.reviewer}` : ''}</div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-xs text-gray-600">
+                    <span>Completion {fmtNum(r.taskCompletion)}</span><span>Quality {fmtNum(r.quality)}</span>
+                    <span>On-time {fmtNum(r.onTime)}</span><span>Efficiency {fmtNum(r.efficiency)}</span>
+                  </div>
+                  {r.feedback && <p className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">{r.feedback}</p>}
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </section>
+
+      {/* Sign-off for printed copies used in review meetings */}
+      <div className="hidden print:grid grid-cols-3 gap-8 pt-10 text-xs text-gray-700">
+        {['Employee', 'Reviewed by (manager)', 'HR'].map(l => (
+          <div key={l}><div className="border-t border-gray-400 pt-1">{l} — signature &amp; date</div></div>
+        ))}
+      </div>
+
+      {meetingReportOpen && (
+        <PerformanceReviewReport employeeId={e.id} query={buildQuery(params)} onClose={() => setMeetingReportOpen(false)} />
+      )}
+
+      {reviewOpen && (
+        <ReviewModal employee={e} metrics={m} onClose={() => setReviewOpen(false)} onSaved={() => { setReviewOpen(false); reload(); }} />
+      )}
+    </div>
+  );
+};
+
+/* ───────────────────────── page ───────────────────────── */
+
+const HRPerformance = () => {
+  const { user } = useAuth();
+  const [params, setParams] = useState(() => {
+    const d = new Date();
+    const from = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+    return { period: 'month', value: currentMonth(), from, to: d.toISOString().slice(0, 10), department: 'All' };
+  });
+  const [tab, setTab] = useState('overview');
+  const [openEmployee, setOpenEmployee] = useState(null);
+
+  const teamUrl = `${API_BASE_URL}/hr/performance/report?${buildQuery(params)}`;
+  const { loading, error, data, status } = useReport(teamUrl);
+
+  // People without HR/manager access get their own report instead of the team view.
+  const selfOnly = status === 403;
+  const canReview = !selfOnly;
+
+  const exportTeamCsv = () => {
+    if (!data) return;
+    downloadCsv(
+      `team-performance-${data.range.label.replace(/\s+/g, '-')}.csv`,
+      ['Rank', 'Employee', 'Role', 'Department', 'Score', 'Grade', 'Tasks assigned', 'Tasks completed', 'Completion %', 'Subtasks done',
+        'On-time %', 'Late', 'Overdue now', 'Avg days per task', 'Hours logged', 'Avg hours per task', 'Points earned',
+        'Points approved', 'Meetings', 'Meeting hours', 'Ticket updates', 'Comments', 'Review score', 'Active days'],
+      data.employees.map(r => [r.rank ?? '', r.name, r.role, r.department, r.score ?? '', r.grade, r.metrics.tasksAssigned, r.metrics.tasksCompleted,
+      r.metrics.completionRate ?? '', r.metrics.subtasksCompleted, r.metrics.onTimeRate ?? '', r.metrics.lateCompleted,
+      r.metrics.overdueOpen, r.metrics.avgCycleDays ?? '', r.metrics.hoursLogged || 0, r.metrics.avgHoursPerTask ?? '',
+      r.metrics.pointsEarned, r.metrics.pointsApproved, r.metrics.meetings, r.metrics.meetingHours || 0,
+      r.metrics.updates, r.metrics.comments, r.metrics.reviewScore ?? '', r.metrics.activeDays])
+    );
+  };
+
+  const printStyles = (
+    <style>{`
+      @media print {
+        body * { visibility: hidden !important; }
+        .perf-root, .perf-root * { visibility: visible !important; }
+        .perf-root { position: absolute; left: 0; top: 0; width: 100%; padding: 0 !important; }
+        .no-print { display: none !important; }
+        section, .bg-white { break-inside: avoid; box-shadow: none !important; }
+      }
+    `}</style>
+  );
+
+  if (selfOnly || (openEmployee != null)) {
+    return (
+      <div className="perf-root p-4 md:p-6 bg-gray-50 min-h-screen">
+        {printStyles}
+        <EmployeeReport
+          employeeId={selfOnly ? user?.id : openEmployee}
+          params={params}
+          setParams={setParams}
+          onBack={() => setOpenEmployee(null)}
+          canReview={canReview}
+          isSelf={selfOnly}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="perf-root p-4 md:p-6 bg-gray-50 min-h-screen space-y-4">
+      {printStyles}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl  text-gray-900">Performance reports</h1>
+          <p className="text-sm text-gray-600">
+            Built only from recorded work — tasks, status history, time tracked while tickets are In Progress, work logs, meetings and reviews.
+            {data && <> Showing <strong>{data.range.label}</strong>.</>}
+          </p>
+        </div>
+        <div className="inline-flex rounded border border-gray-300 overflow-hidden no-print" role="tablist" aria-label="Report view">
+          {[['overview', 'Team overview', Users], ['employees', 'Employees', ListChecks], ['champions', 'Champions & records', Trophy], ['worktypes', 'Work types', Award]].map(([k, label, Icon]) => (
+            <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-r border-gray-300 last:border-r-0 cursor-pointer ${tab === k ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+              <Icon size={13} /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <PeriodBar params={params} setParams={setParams} departments={data?.departments} onExport={exportTeamCsv} onPrint={() => window.print()} />
+
+      {loading && !data && <div className="py-20 text-center text-sm text-gray-500">Loading report…</div>}
+      {error && !selfOnly && <div className="py-10 text-center text-sm text-red-700">{error}</div>}
+      {data && (
+        <div className={loading ? 'opacity-60 transition-opacity' : ''}>
+          {tab === 'overview' && <TeamOverview data={data} onOpenEmployee={setOpenEmployee} />}
+          {tab === 'employees' && <EmployeesTable data={data} onOpenEmployee={setOpenEmployee} />}
+          {tab === 'champions' && <ChampionsView data={data} onOpenEmployee={setOpenEmployee} />}
+          {tab === 'worktypes' && (
+            <Section title="Average time by kind of work" subtitle="Team benchmarks from all recorded history. Use them to set realistic estimates and spot outliers.">
+              <WorkTypeTable rows={data.workTypes} team />
+            </Section>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 

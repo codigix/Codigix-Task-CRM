@@ -190,7 +190,7 @@ const NewTestCaseModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Test Case ID <span className="text-red-500">*</span></label>
+                <label className="block text-xs  text-gray-700 mb-1.5">Test Case ID <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value="TC-2024-001"
@@ -201,7 +201,7 @@ const NewTestCaseModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex justify-between">
+                <label className="block text-xs  text-gray-700 mb-1.5 flex justify-between">
                   <span>Test Case Title <span className="text-red-500">*</span></span>
                   <span className="text-gray-400 font-normal">{formData.title?.length || 0} / 255</span>
                 </label>
@@ -275,10 +275,10 @@ const NewTestCaseModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Tags</label>
+                <label className="block text-xs  text-gray-700 mb-1.5">Tags</label>
                 <div className="w-full min-h-[42px] px-2 py-1.5 border border-gray-200 rounded flex flex-wrap gap-2 items-center bg-white">
                   {formData.tags.map((tag, idx) => (
-                    <span key={idx} className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-medium">
+                    <span key={idx} className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs font-medium">
                       {tag}
                       <button
                         type="button"
@@ -366,7 +366,7 @@ const NewTestCaseModal = ({ isOpen, onClose, onSuccess }) => {
               </h3>
               <div className="border border-gray-200 rounded overflow-hidden bg-white">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-50 text-gray-900 font-semibold border-b border-gray-200">
+                  <thead className="bg-gray-50 text-gray-900  border-b border-gray-200">
                     <tr>
                       <th className="py-2 px-3">Data Set</th>
                       <th className="py-2 px-3">Username / Email</th>
@@ -403,7 +403,7 @@ const NewTestCaseModal = ({ isOpen, onClose, onSuccess }) => {
             </h3>
             <div className="border border-gray-200 rounded overflow-hidden bg-white">
               <table className="w-full text-left text-xs">
-                <thead className="bg-gray-50 text-gray-900 font-semibold border-b border-gray-200">
+                <thead className="bg-gray-50 text-gray-900  border-b border-gray-200">
                   <tr>
                     <th className="py-2 px-3 w-16">Step No.</th>
                     <th className="py-2 px-3 w-1/3">Steps</th>

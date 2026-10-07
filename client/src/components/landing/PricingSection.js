@@ -76,7 +76,7 @@ const PricingSection = () => {
 
           {/* Billing Toggle */}
           <div className="flex items-center justify-center gap-4">
-            <span className={`text-sm font-semibold transition-colors ${!isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>Monthly</span>
+            <span className={`text-sm  transition-colors ${!isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>Monthly</span>
             <button
               className="relative inline-flex h-8 w-16 items-center rounded-full bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               onClick={() => setIsAnnual(!isAnnual)}
@@ -84,7 +84,7 @@ const PricingSection = () => {
               <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${isAnnual ? 'translate-x-9' : 'translate-x-1'}`} />
             </button>
             <div className="flex items-center gap-2">
-              <span className={`text-sm font-semibold transition-colors ${isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>Annually</span>
+              <span className={`text-sm  transition-colors ${isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>Annually</span>
               <span className="bg-red-100 text-red-700 text-[10px]  px-2 py-0.5 rounded-full">SAVE 20%</span>
             </div>
           </div>
@@ -116,7 +116,7 @@ const PricingSection = () => {
                   </div>
                 </div>
 
-                <button className={`w-full py-3.5 rounded-xl  transition-all ${plan.popular ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'}`}>
+                <button className={`w-full py-3.5 rounded  transition-all ${plan.popular ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'}`}>
                   Get Started
                 </button>
               </div>

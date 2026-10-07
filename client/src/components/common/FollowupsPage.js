@@ -573,16 +573,17 @@ const FollowupsPage = () => {
                 await dealsAPI.update(formData.related_id, { deal_stage: 'Quotation' });
                 console.log(`Auto-updated deal ${formData.related_id} to Quotation stage`);
               }
-            } else if (formData.outcome === 'Converted to Deal' && formData.related_type === 'Lead') {
-              // Optional: trigger conversion logic if needed, or just status update
-              await leadsAPI.update(formData.related_id, { lead_status: 'Converted to Deal' });
-            } else if (formData.outcome === 'Quotation Accepted & Converted to Deal' && formData.related_type === 'Lead') {
+            } else if (
+              (formData.outcome === 'Converted to Deal' || formData.outcome === 'Quotation Accepted & Converted to Deal')
+              && formData.related_type === 'Lead'
+            ) {
+              // Creates the deal (name and value default to the lead's). Never fall back to
+              // only relabelling the lead: that left "converted" leads with no deal.
               try {
                 await leadsAPI.convertToDeal(formData.related_id, {});
-                console.log(`Auto-converted lead ${formData.related_id} to Deal`);
               } catch (convErr) {
-                console.warn('Failed to convert to deal via API, updating status only:', convErr);
-                await leadsAPI.update(formData.related_id, { lead_status: 'Converted to Deal' });
+                console.error('Failed to convert lead to deal:', convErr);
+                showErrorToast(`Follow-up saved, but the lead could not be converted to a deal: ${convErr.message}`);
               }
             }
           } catch (autoErr) {
@@ -866,7 +867,7 @@ const FollowupsPage = () => {
       label: 'Type',
       render: (type, row) => (
         <div className="flex items-center gap-2">
-          <div className={`p-1.5 rounded-md ${getStatusStyle(row.status)}`}>
+          <div className={`p-1.5 rounded ${getStatusStyle(row.status)}`}>
             {getTypeIcon(type)}
           </div>
           <span className="text-xs  text-gray-700">{type}</span>
@@ -955,7 +956,7 @@ const FollowupsPage = () => {
       key: 'status',
       label: 'Status',
       render: (status) => (
-        <span className={`px-2 py-0.5 rounded-md text-xs  ${status === 'Scheduled' ? 'bg-blue-50 text-blue-600' :
+        <span className={`px-2 py-0.5 rounded text-xs  ${status === 'Scheduled' ? 'bg-blue-50 text-blue-600' :
           status === 'Completed' ? 'bg-green-50 text-green-600' :
             status === 'Pending' ? 'bg-orange-50 text-orange-600' :
               status === 'Overdue' ? 'bg-red-50 text-red-600' :
@@ -1095,7 +1096,7 @@ const FollowupsPage = () => {
                   <button
                     onClick={(e) => { e.stopPropagation(); handleComplete(row); }}
                     title="Mark Completed"
-                    className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                    className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
                   >
                     <CheckCircle2 size={15} />
                   </button>
@@ -1104,7 +1105,7 @@ const FollowupsPage = () => {
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditingFollowup(row); setIsAddModalOpen(true); }}
                     title="Edit Follow-up"
-                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                   >
                     <Edit2 size={15} />
                   </button>
@@ -1133,7 +1134,7 @@ const FollowupsPage = () => {
                       setIsAddModalOpen(true);
                     }}
                     title="Create Next Follow-up"
-                    className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                    className="p-1.5 text-purple-600 hover:bg-purple-50 rounded transition-colors"
                   >
                     <RotateCcw size={15} />
                   </button>
@@ -1142,7 +1143,7 @@ const FollowupsPage = () => {
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }}
                     title="Delete"
-                    className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
                   >
                     <Trash2 size={15} />
                   </button>
@@ -1557,7 +1558,7 @@ const FollowupsPage = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`p-2 rounded-md text-xs  transition-all ${activeTab === tab
+                className={`p-2 rounded text-xs  transition-all ${activeTab === tab
                   ? 'bg-white text-red-600  border border-gray-200'
                   : 'text-gray-500 hover:text-gray-700'
                   }`}
@@ -1774,7 +1775,7 @@ const FollowupsPage = () => {
                                             const propFollowup = client.followups.find(f => (f.outcome && f.outcome.toLowerCase().includes('proposal'))) || client.last_followup;
                                             openProposalModalForFollowup(propFollowup);
                                           }}
-                                          className="mt-1 px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-semibold flex items-center gap-1 w-fit transition-all shadow-sm"
+                                          className="mt-1 px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded text-[10px]  flex items-center gap-1 w-fit transition-all shadow-sm"
                                           title="Create Proposal for this client"
                                         >
                                           <FileText size={10} /> CREATE PROPOSAL
@@ -2161,7 +2162,7 @@ const FollowupsPage = () => {
 
       {viewingProposalId && (
         <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in">
-          <div className="bg-white w-full max-w-5xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+          <div className="bg-white w-full max-w-5xl rounded shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               <ProposalDetailsPage
                 proposalId={viewingProposalId}

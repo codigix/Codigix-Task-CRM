@@ -147,7 +147,7 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
       <div className="bg-white rounded shadow-2xl w-full max-w-[960px] max-h-[90vh] flex flex-col">
         <div className="flex items-start justify-between px-6 pt-5 pb-3 shrink-0">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Import calendar tasks</h2>
+            <h2 className="text-xl  text-gray-900">Import calendar tasks</h2>
             <p className="text-[12px] text-gray-500 mt-0.5">
               Review and create tasks automatically from your calendar spreadsheet.
             </p>
@@ -194,7 +194,7 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
               {availableSheets.length > 0 && (
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-3 bg-blue-50/70 p-2.5 rounded border border-blue-200">
                   <div className="flex items-center gap-2 flex-1 min-w-[240px]">
-                    <label className="text-[12px] font-semibold text-blue-950 whitespace-nowrap">
+                    <label className="text-[12px]  text-blue-950 whitespace-nowrap">
                       Client Worksheet:
                     </label>
                     <select
@@ -223,7 +223,7 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
 
               {/* Project name prefix input */}
               <div className="flex items-center gap-2 mb-3 bg-slate-50 p-2.5 rounded border border-gray-200">
-                <label className="text-[12px] font-semibold text-gray-700 whitespace-nowrap">Project Name Prefix:</label>
+                <label className="text-[12px]  text-gray-700 whitespace-nowrap">Project Name Prefix:</label>
                 <input
                   type="text"
                   value={customProjectName}

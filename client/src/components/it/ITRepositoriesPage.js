@@ -45,7 +45,7 @@ const CustomSelect = ({ value, onChange, options, className = "" }) => {
         <ChevronDown size={14} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto py-1 text-left">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-60 overflow-y-auto py-1 text-left">
           {options.map((option, idx) => (
             <div
               key={idx}
@@ -279,19 +279,19 @@ export default function ITRepositoriesPage() {
           <button
             onClick={handleSync}
             disabled={syncing}
-            className={`flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md  text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors ${syncing ? 'opacity-70 cursor-not-allowed' : ''}`}
+            className={`flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded  text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors ${syncing ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             <RefreshCw size={14} className={syncing ? "animate-spin" : ""} /> {syncing ? 'Syncing...' : 'Sync Now'}
           </button>
           <button
             onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md  text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded  text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors"
           >
             <Download size={14} /> Import Repository
           </button>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-3 py-2 bg-[#4F46E5] text-white rounded-md  hover:bg-indigo-600 text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-red-700 text-white rounded  hover:bg-red-600 text-sm font-medium transition-colors"
           >
             <Plus size={14} /> Add Repository
           </button>
@@ -307,7 +307,7 @@ export default function ITRepositoriesPage() {
               <Github size={15} className="text-gray-900" />
               <div>
                 <div className='flex gap-2'>
-                  <p className="text-sm font-semibold text-gray-900">GitHub </p><div className="flex items-center gap-2">
+                  <p className="text-sm  text-gray-900">GitHub </p><div className="flex items-center gap-2">
                     <span className="text-emerald-700 text-xs">● Connected</span>
                   </div>
                 </div>
@@ -317,7 +317,7 @@ export default function ITRepositoriesPage() {
             </div>
             <button
               onClick={() => setShowConnectionModal(true)}
-              className="mt-3 w-full py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md transition-colors"
+              className="mt-3 w-full py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded transition-colors"
             >
               Manage Connection
             </button>
@@ -438,11 +438,11 @@ export default function ITRepositoriesPage() {
             className=""
           />
 
-          <button className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-md  text-[#4F46E5] hover:bg-gray-50 text-sm font-medium transition-colors">
+          <button className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded  text-[#4F46E5] hover:bg-gray-50 text-sm font-medium transition-colors">
             <Filter size={14} /> More Filters
           </button>
 
-          <button onClick={handleSync} className="p-2 bg-white border border-gray-200 rounded-md  text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors">
+          <button onClick={handleSync} className="p-2 bg-white border border-gray-200 rounded  text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors">
             <RefreshCw size={16} className={syncing ? "animate-spin" : ""} />
           </button>
         </div>
@@ -493,7 +493,7 @@ export default function ITRepositoriesPage() {
                           <div className="flex items-start gap-3">
                             <Github size={18} className="text-gray-900 mt-0.5 flex-shrink-0" />
                             <div>
-                              <p className="font-semibold text-[#4F46E5] text-sm hover:underline">{repo.name}</p>
+                              <p className=" text-[#4F46E5] text-sm hover:underline">{repo.name}</p>
                               <p className="text-xs text-gray-500 line-clamp-1">{repo.description}</p>
                             </div>
                           </div>
@@ -568,7 +568,7 @@ export default function ITRepositoriesPage() {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-7 h-7 rounded text-xs font-medium ${currentPage === pageNum ? 'bg-[#4F46E5] text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                          className={`w-7 h-7 rounded text-xs font-medium ${currentPage === pageNum ? 'bg-red-700 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                         >
                           {pageNum}
                         </button>
@@ -608,7 +608,7 @@ export default function ITRepositoriesPage() {
                 <div className="space-y-4">
                   {RECENT_ACTIVITY.map(act => (
                     <div key={act.id} className="flex items-start gap-3">
-                      <div className={`w-6 h-6 rounded-md ${act.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                      <div className={`w-6 h-6 rounded ${act.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
                         <act.icon size={12} className={act.color} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -691,7 +691,7 @@ export default function ITRepositoriesPage() {
                     </div>
                   </div>
                 </div>
-                <button className="mt-auto w-full py-2 text-xs font-semibold text-[#4F46E5] bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors">
+                <button className="mt-auto w-full py-2 text-xs  text-[#4F46E5] bg-indigo-50 hover:bg-indigo-100 rounded transition-colors">
                   View Full Report
                 </button>
               </div>
@@ -721,7 +721,7 @@ export default function ITRepositoriesPage() {
                 </div>
 
                 <div className="mb-5">
-                  <p className="text-xs text-gray-900 font-semibold mb-1">Description</p>
+                  <p className="text-xs text-gray-900  mb-1">Description</p>
                   <p className="text-xs text-gray-600 leading-relaxed">
                     {selectedRepo.description || 'No description provided.'}
                   </p>
@@ -785,7 +785,7 @@ export default function ITRepositoriesPage() {
 
                 <div className="mb-6">
                   <div className="flex justify-between items-center mb-2">
-                    <p className="text-xs text-gray-900 font-semibold">Contributors</p>
+                    <p className="text-xs text-gray-900 ">Contributors</p>
                     {selectedRepo.contributors?.length > 0 && (
                       <button onClick={() => setShowContributorsModal(true)} className="text-[10px] text-[#4F46E5] hover:underline font-medium">View All</button>
                     )}
@@ -811,10 +811,10 @@ export default function ITRepositoriesPage() {
                 </div>
 
                 <div className="mb-6">
-                  <p className="text-xs text-gray-900 font-semibold mb-2">Topics</p>
+                  <p className="text-xs text-gray-900  mb-2">Topics</p>
                   <div className="flex flex-wrap gap-1.5">
                     {Array.isArray(selectedRepo.topics) && selectedRepo.topics.map(topic => (
-                      <span key={topic} className="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-100 text-[10px] rounded-md font-medium">
+                      <span key={topic} className="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-100 text-[10px] rounded font-medium">
                         {topic}
                       </span>
                     ))}
@@ -825,15 +825,15 @@ export default function ITRepositoriesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <button onClick={openInGitHub} className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-[#4F46E5] hover:bg-indigo-50 rounded-md transition-colors border border-transparent hover:border-indigo-100 group">
+                  <button onClick={openInGitHub} className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-[#4F46E5] hover:bg-indigo-50 rounded transition-colors border border-transparent hover:border-indigo-100 group">
                     <div className="flex items-center gap-2"><ExternalLink size={14} /> Open in GitHub</div>
                     <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
-                  <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-[#4F46E5] hover:bg-indigo-50 rounded-md transition-colors border border-transparent hover:border-indigo-100 group">
+                  <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-[#4F46E5] hover:bg-indigo-50 rounded transition-colors border border-transparent hover:border-indigo-100 group">
                     <div className="flex items-center gap-2"><Settings size={14} /> Repository Settings</div>
                     <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
-                  <button onClick={() => setShowWebhookModal(true)} className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-[#4F46E5] hover:bg-indigo-50 rounded-md transition-colors border border-transparent hover:border-indigo-100 group">
+                  <button onClick={() => setShowWebhookModal(true)} className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-[#4F46E5] hover:bg-indigo-50 rounded transition-colors border border-transparent hover:border-indigo-100 group">
                     <div className="flex items-center gap-2"><Webhook size={14} /> Webhook Setup</div>
                     <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
@@ -850,7 +850,7 @@ export default function ITRepositoriesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded shadow-xl w-full max-w-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-gray-900 font-semibold text-lg">
+              <div className="flex items-center gap-2 text-gray-900  text-lg">
                 Create a new repository
               </div>
               <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors">
@@ -866,7 +866,7 @@ export default function ITRepositoriesPage() {
               <div className="flex items-end gap-2 pb-4 border-b border-gray-200">
                 <div className="flex-1 max-w-[200px]">
                   <label className="block text-sm font-medium text-gray-900 mb-1">Owner <span className="text-red-500">*</span></label>
-                  <select className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm font-medium text-gray-700">
+                  <select className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm font-medium text-gray-700">
                     <option>codigix-infotech</option>
                     <option>your-username</option>
                   </select>
@@ -874,17 +874,17 @@ export default function ITRepositoriesPage() {
                 <div className="text-gray-400 text-xl font-light px-1 pb-1.5">/</div>
                 <div className="flex-[2]">
                   <label className="block text-sm font-medium text-gray-900 mb-1">Repository name <span className="text-red-500">*</span></label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm font-medium" />
+                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm font-medium" />
                 </div>
               </div>
 
               <div className="text-[13px] text-gray-500 mt-[-16px]">
-                Great repository names are short and memorable. Need inspiration? How about <span className="font-semibold text-gray-700">scaling-octo-broccoli</span>?
+                Great repository names are short and memorable. Need inspiration? How about <span className=" text-gray-700">scaling-octo-broccoli</span>?
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Description <span className="text-gray-400 font-normal">(optional)</span></label>
-                <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm" />
+                <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm" />
               </div>
 
               <div className="pt-2 pb-4 border-b border-gray-200">
@@ -892,14 +892,14 @@ export default function ITRepositoriesPage() {
                   <label className="flex items-start gap-3 cursor-pointer group">
                     <input type="radio" name="visibility" className="mt-1 h-4 w-4 text-[#4F46E5] border-gray-300 focus:ring-[#4F46E5]" defaultChecked />
                     <div>
-                      <span className="block text-sm font-semibold text-gray-900 flex items-center gap-1.5"><Globe size={16} className="text-gray-400 group-hover:text-emerald-600 transition-colors" /> Public</span>
+                      <span className="block text-sm  text-gray-900 flex items-center gap-1.5"><Globe size={16} className="text-gray-400 group-hover:text-emerald-600 transition-colors" /> Public</span>
                       <span className="block text-xs text-gray-500 mt-1">Anyone on the internet can see this repository. You choose who can commit.</span>
                     </div>
                   </label>
                   <label className="flex items-start gap-3 cursor-pointer group">
                     <input type="radio" name="visibility" className="mt-1 h-4 w-4 text-[#4F46E5] border-gray-300 focus:ring-[#4F46E5]" />
                     <div>
-                      <span className="block text-sm font-semibold text-gray-900 flex items-center gap-1.5"><Lock size={16} className="text-gray-400 group-hover:text-amber-600 transition-colors" /> Private</span>
+                      <span className="block text-sm  text-gray-900 flex items-center gap-1.5"><Lock size={16} className="text-gray-400 group-hover:text-amber-600 transition-colors" /> Private</span>
                       <span className="block text-xs text-gray-500 mt-1">You choose who can see and commit to this repository.</span>
                     </div>
                   </label>
@@ -907,23 +907,23 @@ export default function ITRepositoriesPage() {
               </div>
 
               <div className="pt-2 pb-2">
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">Initialize this repository with:</h3>
+                <h3 className="text-sm  text-gray-900 mb-1">Initialize this repository with:</h3>
                 <p className="text-xs text-gray-500 mb-4">Skip this step if you're importing an existing repository.</p>
 
                 <div className="space-y-4">
                   <label className="flex items-start gap-2 cursor-pointer">
                     <input type="checkbox" className="mt-0.5 h-4 w-4 text-[#4F46E5] border-gray-300 rounded focus:ring-[#4F46E5]" defaultChecked />
                     <div>
-                      <span className="text-sm font-semibold text-gray-900 block">Add a README file</span>
+                      <span className="text-sm  text-gray-900 block">Add a README file</span>
                       <span className="text-xs text-gray-500 block">This is where you can write a long description for your project. <a href="#" className="text-[#4F46E5] hover:underline">Learn more.</a></span>
                     </div>
                   </label>
 
                   <div className="pl-6 space-y-4">
                     <div>
-                      <label className="text-sm font-semibold text-gray-900 block mb-1">Add .gitignore</label>
+                      <label className="text-sm  text-gray-900 block mb-1">Add .gitignore</label>
                       <p className="text-xs text-gray-500 mb-2">Choose which files not to track from a list of templates. <a href="#" className="text-[#4F46E5] hover:underline">Learn more.</a></p>
-                      <select className="w-full max-w-[300px] px-3 py-2 bg-gray-50 border border-gray-300 rounded-md  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm text-gray-700">
+                      <select className="w-full max-w-[300px] px-3 py-2 bg-gray-50 border border-gray-300 rounded  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm text-gray-700">
                         <option>None</option>
                         <option>Node</option>
                         <option>React</option>
@@ -932,9 +932,9 @@ export default function ITRepositoriesPage() {
                     </div>
 
                     <div>
-                      <label className="text-sm font-semibold text-gray-900 block mb-1">Choose a license</label>
+                      <label className="text-sm  text-gray-900 block mb-1">Choose a license</label>
                       <p className="text-xs text-gray-500 mb-2">A license tells others what they can and can't do with your code. <a href="#" className="text-[#4F46E5] hover:underline">Learn more.</a></p>
-                      <select className="w-full max-w-[300px] px-3 py-2 bg-gray-50 border border-gray-300 rounded-md  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm text-gray-700">
+                      <select className="w-full max-w-[300px] px-3 py-2 bg-gray-50 border border-gray-300 rounded  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm text-gray-700">
                         <option>None</option>
                         <option>MIT License</option>
                         <option>Apache License 2.0</option>
@@ -954,8 +954,8 @@ export default function ITRepositoriesPage() {
             </div>
 
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-              <button onClick={() => setShowAddModal(false)} className="p-2 border border-gray-300 rounded-md  text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">Cancel</button>
-              <button className="p-2 border border-transparent rounded-md  text-sm font-semibold text-white bg-[#1F883D] hover:bg-[#1a7032] transition-colors flex items-center gap-2">
+              <button onClick={() => setShowAddModal(false)} className="p-2 border border-gray-300 rounded  text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">Cancel</button>
+              <button className="p-2 border border-transparent rounded  text-sm  text-white bg-[#1F883D] hover:bg-[#1a7032] transition-colors flex items-center gap-2">
                 Create repository
               </button>
             </div>
@@ -968,7 +968,7 @@ export default function ITRepositoriesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded shadow-xl w-full max-w-lg border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <div className="flex items-center gap-2 text-gray-900 font-semibold">
+              <div className="flex items-center gap-2 text-gray-900 ">
                 <Download size={18} className="text-[#4F46E5]" />
                 Import Repository from GitHub
               </div>
@@ -978,7 +978,7 @@ export default function ITRepositoriesPage() {
             </div>
 
             <div className="p-6 overflow-y-auto space-y-5">
-              <div className="bg-blue-50 border border-blue-100 p-3 rounded-md flex items-start gap-3 text-blue-800 text-sm">
+              <div className="bg-blue-50 border border-blue-100 p-3 rounded flex items-start gap-3 text-blue-800 text-sm">
                 <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
                 <p>Importing will create a local reference to an existing GitHub repository, allowing you to sync commits, PRs, and issues directly to this dashboard.</p>
               </div>
@@ -992,7 +992,7 @@ export default function ITRepositoriesPage() {
                     value={importUrl}
                     onChange={(e) => setImportUrl(e.target.value)}
                     placeholder="https://github.com/username/repository.git"
-                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm"
+                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm"
                   />
                 </div>
               </div>
@@ -1025,18 +1025,18 @@ export default function ITRepositoriesPage() {
                   value={importToken}
                   onChange={(e) => setImportToken(e.target.value)}
                   placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded  focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-1">Leave blank if the repository is public or if global GitHub App auth is enabled.</p>
               </div>
             </div>
 
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-              <button onClick={() => setShowImportModal(false)} className="p-2 border border-gray-300 rounded-md  text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</button>
+              <button onClick={() => setShowImportModal(false)} className="p-2 border border-gray-300 rounded  text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</button>
               <button
                 onClick={handleImport}
                 disabled={importing}
-                className={`p-2 border border-transparent rounded-md text-sm font-medium text-white bg-[#4F46E5] hover:bg-indigo-600 transition-colors flex items-center gap-2 ${importing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`p-2 border border-transparent rounded text-sm font-medium text-white bg-red-700 hover:bg-red-600 transition-colors flex items-center gap-2 ${importing ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 {importing && <RefreshCw size={14} className="animate-spin" />}
                 {importing ? 'Importing...' : 'Begin Import'}
@@ -1051,7 +1051,7 @@ export default function ITRepositoriesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded shadow-xl w-full max-w-xl border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-              <div className="flex items-center gap-2 text-gray-900 font-semibold">
+              <div className="flex items-center gap-2 text-gray-900 ">
                 <Settings size={18} className="text-[#4F46E5]" />
                 {selectedRepo.name} Settings
               </div>
@@ -1062,7 +1062,7 @@ export default function ITRepositoriesPage() {
             <div className="p-6 space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Repository Name</label>
-                <input type="text" defaultValue={selectedRepo.name} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm" />
+                <input type="text" defaultValue={selectedRepo.name} className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Default Branch</label>
@@ -1074,22 +1074,22 @@ export default function ITRepositoriesPage() {
                 />
               </div>
               <div className="pt-4 border-t border-gray-200">
-                <h4 className="text-sm font-semibold text-red-600 mb-2">Danger Zone</h4>
+                <h4 className="text-sm  text-red-600 mb-2">Danger Zone</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-4 border border-red-200 rounded bg-red-50/50">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">Archive this repository</p>
+                      <p className="text-sm  text-gray-900">Archive this repository</p>
                       <p className="text-xs text-gray-500">Mark this repository as archived and read-only.</p>
                     </div>
-                    <button className="px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors">Archive</button>
+                    <button className="px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded text-sm font-medium transition-colors">Archive</button>
                   </div>
 
                   <div className="flex items-center justify-between p-4 border border-red-200 rounded bg-red-50/50">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">Delete this repository</p>
+                      <p className="text-sm  text-gray-900">Delete this repository</p>
                       <p className="text-xs text-gray-500">Permanently remove this repository from the dashboard.</p>
                     </div>
-                    <button onClick={() => handleDeleteRepo(selectedRepo.id)} disabled={deleting} className="px-3 py-1.5 bg-red-600 border border-transparent text-white hover:bg-red-700 disabled:bg-red-400 rounded-md text-sm font-medium transition-colors">
+                    <button onClick={() => handleDeleteRepo(selectedRepo.id)} disabled={deleting} className="px-3 py-1.5 bg-red-600 border border-transparent text-white hover:bg-red-700 disabled:bg-red-400 rounded text-sm font-medium transition-colors">
                       {deleting ? 'Deleting...' : 'Delete'}
                     </button>
                   </div>
@@ -1097,8 +1097,8 @@ export default function ITRepositoriesPage() {
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-              <button onClick={() => setShowSettingsModal(false)} className="p-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</button>
-              <button onClick={() => setShowSettingsModal(false)} className="p-2 border border-transparent rounded-md text-sm font-medium text-white bg-[#4F46E5] hover:bg-indigo-600">Save Changes</button>
+              <button onClick={() => setShowSettingsModal(false)} className="p-2 border border-gray-300 rounded text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</button>
+              <button onClick={() => setShowSettingsModal(false)} className="p-2 border border-transparent rounded text-sm font-medium text-white bg-red-700 hover:bg-red-600">Save Changes</button>
             </div>
           </div>
         </div>
@@ -1109,7 +1109,7 @@ export default function ITRepositoriesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded shadow-xl w-full max-w-xl border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-              <div className="flex items-center gap-2 text-gray-900 font-semibold">
+              <div className="flex items-center gap-2 text-gray-900 ">
                 <Webhook size={18} className="text-[#4F46E5]" />
                 Webhook Integration
               </div>
@@ -1124,13 +1124,13 @@ export default function ITRepositoriesPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Payload URL</label>
                 <div className="flex gap-2">
-                  <input type="text" readOnly value={`https://dashboard.codigix.com/api/webhooks/github/${selectedRepo.id || 1}`} className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 text-sm font-mono" />
-                  <button className="px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Copy</button>
+                  <input type="text" readOnly value={`https://dashboard.codigix.com/api/webhooks/github/${selectedRepo.id || 1}`} className="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-500 text-sm font-mono" />
+                  <button className="px-3 py-2 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Copy</button>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Secret Token</label>
-                <input type="password" placeholder="Enter a secret token..." className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm" />
+                <input type="password" placeholder="Enter a secret token..." className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] text-sm" />
                 <p className="text-xs text-gray-500 mt-1">Used to validate incoming webhook payloads.</p>
               </div>
               <div>
@@ -1145,8 +1145,8 @@ export default function ITRepositoriesPage() {
             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
               <span className="text-xs text-green-600 font-medium flex items-center gap-1"><CheckCircle size={12} /> Webhook is active</span>
               <div className="flex gap-3">
-                <button onClick={() => setShowWebhookModal(false)} className="p-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Close</button>
-                <button onClick={() => setShowWebhookModal(false)} className="p-2 border border-transparent rounded-md text-sm font-medium text-white bg-[#4F46E5] hover:bg-indigo-600">Update Webhook</button>
+                <button onClick={() => setShowWebhookModal(false)} className="p-2 border border-gray-300 rounded text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Close</button>
+                <button onClick={() => setShowWebhookModal(false)} className="p-2 border border-transparent rounded text-sm font-medium text-white bg-red-700 hover:bg-red-600">Update Webhook</button>
               </div>
             </div>
           </div>
@@ -1158,7 +1158,7 @@ export default function ITRepositoriesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded shadow-xl w-full max-w-sm border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-gray-900 font-semibold">
+              <div className="flex items-center gap-2 text-gray-900 ">
                 Contributors
               </div>
               <button onClick={() => setShowContributorsModal(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors">
@@ -1216,7 +1216,7 @@ export default function ITRepositoriesPage() {
                 onClick={() => {
                   window.location.href = API_BASE_URL + '/github/connect';
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#24292F] text-white rounded-md hover:bg-[#1f2328] text-sm font-medium transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#24292F] text-white rounded hover:bg-[#1f2328] text-sm font-medium transition-colors"
               >
                 <Github size={16} /> Connect via GitHub App
               </button>

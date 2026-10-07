@@ -113,10 +113,10 @@ const ProposalWorkflow = ({ proposal, onStatusChange, onApprove, onReject, onSen
                 <div className="flex flex-col items-center flex-1">
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center  text-xs  transition-all ${isActive
-                        ? getStageColor(stage.color)
-                        : isCompleted
-                          ? 'bg-green-100 text-green-700 border border-green-300'
-                          : 'bg-gray-100 text-[#1F2020]'
+                      ? getStageColor(stage.color)
+                      : isCompleted
+                        ? 'bg-green-100 text-green-700 border border-green-300'
+                        : 'bg-gray-100 text-[#1F2020]'
                       }`}
                   >
                     <Icon size={20} />
@@ -199,7 +199,7 @@ const ProposalWorkflow = ({ proposal, onStatusChange, onApprove, onReject, onSen
             {proposal.status === 'Approved' && (
               <button
                 onClick={() => onSend && onSend()}
-                className="w-full p-2 bg-indigo-600 text-white text-xs  rounded hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                className="w-full p-2 bg-red-600 text-white text-xs  rounded hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
               >
                 <Send size={16} /> Send to Client
               </button>

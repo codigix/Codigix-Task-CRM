@@ -226,7 +226,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
         <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4 font-medium">
           <ArrowLeft size={18} /> Back to Estimations
         </button>
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded">
           {error || 'Estimation not found'}
         </div>
       </div>
@@ -261,10 +261,10 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs  bg-amber-50 text-amber-800 border border-amber-300">
                   <Lock size={11} className="text-amber-700" /> INTERNAL DOCUMENT
                 </span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <span className="text-xs  px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                   v{estimation.version || 1}
                 </span>
-                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${getStatusColor(estimation.status)}`}>
+                <span className={`text-xs  px-2.5 py-0.5 rounded-full border ${getStatusColor(estimation.status)}`}>
                   {estimation.status}
                 </span>
                 {expiryStatus && (
@@ -274,7 +274,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                 )}
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Client: <span className="font-semibold text-slate-700">{estimation.client_name || 'Client Unassigned'}</span>
+                Client: <span className=" text-slate-700">{estimation.client_name || 'Client Unassigned'}</span>
               </p>
             </div>
           </div>
@@ -337,21 +337,21 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-6 border-t border-slate-100 overflow-x-auto">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800'
+            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'border-blue-600 text-blue-600 ' : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
           >
             Overview & Scope
           </button>
           <button
             onClick={() => setActiveTab('revisions')}
-            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'revisions' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800'
+            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'revisions' ? 'border-blue-600 text-blue-600 ' : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
           >
             <History size={14} /> Revision History ({revisions.length || 1})
           </button>
           <button
             onClick={() => setActiveTab('timeline')}
-            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'timeline' ? 'border-blue-600 text-blue-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800'
+            className={`py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'timeline' ? 'border-blue-600 text-blue-600 ' : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
           >
             <Clock size={14} /> Activity Timeline
@@ -364,9 +364,9 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
 
         {/* Conversion Workflow Banner for Accepted Estimations */}
         {estimation.status === 'Accepted' && (
-          <div className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+          <div className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-4 rounded flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
+              <div className="w-10 h-10 rounded bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
                 <CheckCircle size={22} />
               </div>
               <div>
@@ -395,12 +395,12 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
             <div className="lg:col-span-2 space-y-6">
 
               {/* Itemized Table */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="text-sm  text-slate-800 flex items-center gap-2">
                     <Layers size={16} className="text-blue-600" /> Estimate Line Items
                   </h3>
-                  <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                  <span className="text-xs  bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
                     {items.length} {items.length === 1 ? 'item' : 'items'}
                   </span>
                 </div>
@@ -473,13 +473,13 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                   {discountAmount > 0 && (
                     <div className="flex justify-between w-full max-w-xs text-amber-600">
                       <span>Discount ({estimation.discount_percentage || 0}%):</span>
-                      <span className="font-semibold">-{currency} {discountAmount.toLocaleString()}</span>
+                      <span className="">-{currency} {discountAmount.toLocaleString()}</span>
                     </div>
                   )}
                   {taxAmount > 0 && (
                     <div className="flex justify-between w-full max-w-xs text-slate-600">
                       <span>Tax ({estimation.tax_percentage || 0}% GST/VAT):</span>
-                      <span className="font-semibold">{currency} {taxAmount.toLocaleString()}</span>
+                      <span className="">{currency} {taxAmount.toLocaleString()}</span>
                     </div>
                   )}
                   <div className="flex justify-between w-full max-w-xs pt-2 border-t border-slate-300 text-sm  text-slate-900">
@@ -491,7 +491,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
 
               {/* Notes & Scope Description */}
               {estimation.description && (
-                <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <div className="bg-white rounded border border-slate-200 p-5 shadow-sm">
                   <h3 className="text-sm  text-slate-800 mb-2 flex items-center gap-2">
                     <FileText size={16} className="text-blue-600" /> Scope & Description
                   </h3>
@@ -506,7 +506,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
             <div className="space-y-6">
 
               {/* Client Info Card */}
-              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              <div className="bg-white rounded border border-slate-200 p-5 shadow-sm">
                 <h3 className="text-sm  text-slate-800 mb-3 flex items-center gap-2">
                   <Building2 size={16} className="text-blue-600" /> Client Information
                 </h3>
@@ -531,7 +531,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
               </div>
 
               {/* Deal Info Card */}
-              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              <div className="bg-white rounded border border-slate-200 p-5 shadow-sm">
                 <h3 className="text-sm  text-slate-800 mb-3 flex items-center gap-2">
                   <Briefcase size={16} className="text-blue-600" /> Deal Information
                 </h3>
@@ -556,7 +556,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
               </div>
 
               {/* Validity & Expiry Card */}
-              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              <div className="bg-white rounded border border-slate-200 p-5 shadow-sm">
                 <h3 className="text-sm  text-slate-800 mb-3 flex items-center gap-2">
                   <Calendar size={16} className="text-blue-600" /> Estimation Dates
                 </h3>
@@ -582,7 +582,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
 
         {/* Tab 2: Revision History Inspector */}
         {activeTab === 'revisions' && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div className="bg-white rounded border border-slate-200 p-6 shadow-sm">
             <h3 className="text-base  text-slate-800 mb-4 flex items-center gap-2">
               <History size={18} className="text-blue-600" /> Revision Audit Log ({revisions.length})
             </h3>
@@ -591,7 +591,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
               {revisions.map((rev) => (
                 <div
                   key={rev.id}
-                  className={`p-4 rounded-xl border transition-all ${rev.id === estimation.id ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'
+                  className={`p-4 rounded border transition-all ${rev.id === estimation.id ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -600,7 +600,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                         v{rev.version || 1}
                       </span>
                       <div>
-                        <h4 className="font-semibold text-slate-900 text-sm">{rev.estimation_number}</h4>
+                        <h4 className=" text-slate-900 text-sm">{rev.estimation_number}</h4>
                         <p className="text-xs text-slate-500 mt-0.5">
                           Created: {new Date(rev.created_at).toLocaleDateString()} by {rev.creator_first_name || 'Estimator'}
                         </p>
@@ -608,7 +608,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${getStatusColor(rev.status)}`}>
+                      <span className={`text-xs  px-2.5 py-0.5 rounded-full border ${getStatusColor(rev.status)}`}>
                         {rev.status}
                       </span>
                       <span className=" text-slate-900 text-sm">
@@ -633,7 +633,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
 
         {/* Tab 3: Activity Timeline */}
         {activeTab === 'timeline' && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div className="bg-white rounded border border-slate-200 p-6 shadow-sm">
             <h3 className="text-base  text-slate-800 mb-4 flex items-center gap-2">
               <Clock size={18} className="text-blue-600" /> Lifecycle Activity Timeline
             </h3>
@@ -644,8 +644,8 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                   <div className="absolute left-0 top-1 w-7 h-7 rounded-full bg-blue-100 text-blue-600 border border-blue-300 flex items-center justify-center text-xs ">
                     ✓
                   </div>
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex-1">
-                    <p className="font-semibold text-slate-900 text-xs">{act.title}</p>
+                  <div className="bg-slate-50 border border-slate-200 rounded p-3.5 flex-1">
+                    <p className=" text-slate-900 text-xs">{act.title}</p>
                     <p className="text-[11px] text-slate-500 mt-1">
                       {new Date(act.created_at).toLocaleString()} • {act.user_name || 'System User'}
                     </p>
