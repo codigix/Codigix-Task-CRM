@@ -3,9 +3,10 @@ import {
   ChevronDown, ChevronRight, Check, Zap, Sparkles, Settings,
   FileEdit, FileText, AlignLeft, Network, CopyCheck,
   Clock, Github, LinkIcon, CheckSquare, GitBranch, GitPullRequest,
-  RefreshCw, CheckCircle, ExternalLink, X, Copy, Terminal, User, Search
+  RefreshCw, CheckCircle, ExternalLink, X, Copy, Terminal, User, Search, Lock
 } from 'lucide-react';
 import { normalizeLabel } from '../../../utils/labels';
+import { hasWorkStarted } from '../../../utils/access';
 import { API_BASE_URL } from '../../../config/environment';
 
 // Read-only timestamp, shown in local time.
@@ -74,9 +75,44 @@ const ITIssueDetailsSidebar = ({
   setEstimatedHours,
   contributionMethod,
   setContributionMethod,
-  contributionReviewStatus
+  contributionReviewStatus,
+  canManage = true,
+  onRefresh
 }) => {
   const [loadingPoints, setLoadingPoints] = useState(false);
+
+  // Fair-play locks (the server enforces the same rules): once work has started only a
+  // manager can change what decides the task's worth; set dates and the owner of a
+  // finished task are manager-only too.
+  const workStarted = hasWorkStarted(currentStatus);
+  const lockSize = !canManage && workStarted;
+  const lockOwner = !canManage && ['DONE', 'COMPLETED', 'CLOSED'].includes(String(currentStatus || '').toUpperCase());
+  const lockStart = !canManage && Boolean(issue?.start_date);
+  const lockDue = !canManage && Boolean(issue?.due_date);
+  const lockedTitle = 'Only a manager can change this once work has started';
+  const lockedCls = 'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
+
+  // Date boxes save once the date is finished (on leaving the box, or shortly after the
+  // last change), never a half-typed one like year 0002. Every saved due-date change is a
+  // reschedule in the History and the performance report, so partial saves would inflate it.
+  const dateTimers = React.useRef({});
+  const isFullDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v || '') && Number(v.slice(0, 4)) >= 2000 && Number(v.slice(0, 4)) <= 2100;
+  const saveDate = (field, value) => {
+    clearTimeout(dateTimers.current[field]);
+    delete dateTimers.current[field];
+    if (value === '') { handleUpdate({ [field]: null }); return; }
+    if (!isFullDate(value)) return;
+    const updates = { [field]: value };
+    // Keep start ≤ due: a due date moved before the start pulls the start with it.
+    if (field === 'due_date' && startDate && startDate > value) { updates.start_date = value; setStartDate(value); }
+    if (field === 'start_date' && dueDate && dueDate < value) { updates.due_date = value; setDueDate(value); }
+    handleUpdate(updates);
+  };
+  const scheduleDateSave = (field, value) => {
+    clearTimeout(dateTimers.current[field]);
+    dateTimers.current[field] = setTimeout(() => saveDate(field, value), 1200);
+  };
+  React.useEffect(() => () => Object.values(dateTimers.current).forEach(clearTimeout), []);
   const [isEditingLabels, setIsEditingLabels] = useState(false);
   const [labelDraft, setLabelDraft] = useState('');
 
@@ -125,6 +161,7 @@ const ITIssueDetailsSidebar = ({
     const prev = pointsBasisRef.current;
     pointsBasisRef.current = basis;
     if (prev === null || !prev.startsWith(`${issue.id}|`) || prev === basis) return;
+    if (!canManage) return; // points are manager-only; the server ignores them from others
     handleAutoCalculatePoints();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [issue?.id, issue?.type, issue?.priority, subtaskCount, issue?.original_estimate]);
@@ -135,10 +172,57 @@ const ITIssueDetailsSidebar = ({
   React.useEffect(() => { setEstimateDraft(issue?.original_estimate || ''); }, [issue?.id, issue?.original_estimate]);
   React.useEffect(() => { setPointsDraft(String(effortPoints || 0)); }, [issue?.id, effortPoints]);
 
-  const commitEstimate = () => {
+  // Standard size for this kind of work: the norm plans are compared with. An employee's
+  // plan above the limit (1.5× standard) goes to a manager for approval.
+  const [standard, setStandard] = useState(null);
+  const issueKeyForStd = issue?.issue_key || issue?.key;
+  React.useEffect(() => {
+    if (!issueKeyForStd) return undefined;
+    let cancelled = false;
+    fetch(`${API_BASE_URL}/it-kanban/issues/${issueKeyForStd}/standard-size`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled) setStandard(d && d.hours ? d : null); })
+      .catch(() => { });
+    return () => { cancelled = true; };
+  }, [issueKeyForStd, issue?.labels, issue?.type]);
+
+  const toHours = (v) => {
+    const str = String(v || '').trim().toLowerCase();
+    if (!str) return 0;
+    if (/^\d+(\.\d+)?$/.test(str)) return parseFloat(str) / 60;
+    let h = 0;
+    for (const m of str.matchAll(/(\d+(?:\.\d+)?)\s*(w|d|h|m)/g)) {
+      const n = parseFloat(m[1]);
+      h += m[2] === 'w' ? n * 52 : m[2] === 'd' ? n * 9 : m[2] === 'h' ? n : n / 60;
+    }
+    return h;
+  };
+
+  const commitEstimate = async () => {
     const v = estimateDraft.trim();
     if (v === (issue?.original_estimate || '')) return;
+    const hours = toHours(v);
+    if (!canManage && standard?.limitHours && hours > standard.limitHours) {
+      const ok = window.confirm(
+        `${v} is more than ${standard.limitFactor}× the standard for ${standard.workType} (${standard.hours} h).\n\n` +
+        'It will be sent to your manager for approval and the planned time stays as it is until then. Send the request?'
+      );
+      if (!ok) { setEstimateDraft(issue?.original_estimate || ''); return; }
+    }
     handleUpdate({ original_estimate: v });
+  };
+
+  const reviewEstimate = async (decision) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKeyForStd}/estimate/review`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not save the decision');
+      if (onRefresh) onRefresh();
+    } catch (e) {
+      window.alert(e.message);
+    }
   };
   const commitPoints = () => {
     const n = Math.max(0, Math.round(Number(pointsDraft) || 0));
@@ -330,6 +414,15 @@ const ITIssueDetailsSidebar = ({
 
         {!collapsedSections.details && (
           <div className="p-3 space-y-3 text-xs bg-white">
+            {(lockSize || lockDue || lockOwner) && (
+              <div className="flex gap-1.5 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded p-2">
+                <Lock size={12} className="shrink-0 mt-0.5 text-gray-400" />
+                <span>
+                  {lockOwner ? 'This task is finished; only a manager can change who it belongs to. '
+                    : ''}{lockSize ? 'Work has started: planned time, priority, type and labels are set by your manager. ' : ''}{lockDue ? 'To move the dates, ask your manager to reschedule.' : ''}
+                </span>
+              </div>
+            )}
             {/* Project */}
             <div className="flex items-center min-h-[32px] gap-2">
               <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Project</span>
@@ -364,6 +457,7 @@ const ITIssueDetailsSidebar = ({
                 <div className="flex items-center justify-between gap-1 min-w-0">
                   <div
                     onClick={() => {
+                      if (lockOwner) return;
                       setAssigneeSearch('');
                       toggleDropdown('details-assignee');
                     }}
@@ -376,7 +470,7 @@ const ITIssueDetailsSidebar = ({
                     <span className="text-xs text-gray-700 font-medium truncate">{assignee?.name || 'Unassigned'}</span>
                     <ChevronDown size={12} className={`text-gray-400 shrink-0 transition-transform duration-150 ${openDropdown === 'details-assignee' ? 'rotate-180 text-blue-500' : ''}`} />
                   </div>
-                  <button onClick={handleAssignToMe} className="text-xs text-blue-600 hover:underline font-medium cursor-pointer shrink-0 whitespace-nowrap">
+                  <button onClick={handleAssignToMe} hidden={lockOwner} className="text-xs text-blue-600 hover:underline font-medium cursor-pointer shrink-0 whitespace-nowrap">
                     Assign to me
                   </button>
                 </div>
@@ -634,12 +728,14 @@ const ITIssueDetailsSidebar = ({
                 <input
                   type="date"
                   value={startDate || ''}
-                  max={dueDate || undefined}
+                  disabled={lockStart}
+                  title={lockStart ? 'Only a manager can move a date once it is set' : undefined}
                   onChange={(e) => {
                     setStartDate(e.target.value);
-                    handleUpdate({ start_date: e.target.value });
+                    scheduleDateSave('start_date', e.target.value);
                   }}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full"
+                  onBlur={(e) => { if (dateTimers.current.start_date) saveDate('start_date', e.target.value); }}
+                  className={`text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full ${lockedCls}`}
                 />
               </div>
             </div>
@@ -651,12 +747,14 @@ const ITIssueDetailsSidebar = ({
                 <input
                   type="date"
                   value={dueDate || ''}
-                  min={startDate || undefined}
+                  disabled={lockDue}
+                  title={lockDue ? 'Only a manager can move a date once it is set' : undefined}
                   onChange={(e) => {
                     setDueDate(e.target.value);
-                    handleUpdate({ due_date: e.target.value });
+                    scheduleDateSave('due_date', e.target.value);
                   }}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full"
+                  onBlur={(e) => { if (dateTimers.current.due_date) saveDate('due_date', e.target.value); }}
+                  className={`text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full ${lockedCls}`}
                 />
               </div>
             </div>
@@ -667,11 +765,13 @@ const ITIssueDetailsSidebar = ({
               <div className="flex-1 min-w-0">
                 <select
                   value={priority || 'Medium'}
+                  disabled={lockSize}
+                  title={lockSize ? lockedTitle : undefined}
                   onChange={(e) => {
                     if (setPriority) setPriority(e.target.value);
                     handleUpdate({ priority: e.target.value });
                   }}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full"
+                  className={`text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full ${lockedCls}`}
                 >
                   {['Critical', 'High', 'Medium', 'Low'].map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
@@ -685,11 +785,33 @@ const ITIssueDetailsSidebar = ({
                   type="text"
                   placeholder="e.g. 6h, 2h 30m, 1d"
                   value={estimateDraft}
+                  disabled={lockSize}
+                  title={lockSize ? lockedTitle : undefined}
                   onChange={(e) => setEstimateDraft(e.target.value)}
                   onBlur={commitEstimate}
                   onKeyDown={commitOnEnter(commitEstimate)}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium w-full"
+                  className={`text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium w-full ${lockedCls}`}
                 />
+                {standard && (
+                  <div className="text-[10px] text-gray-500 mt-1 leading-snug">
+                    Standard for {standard.workType}: {standard.hours} h
+                    {!canManage && <> · up to {Math.round(standard.limitHours * 100) / 100} h without approval</>}
+                    {issue?.original_estimate && !Number(issue?.estimate_approved) && toHours(issue.original_estimate) > 0 && (
+                      <> · scored on the standard until a manager sets the plan</>
+                    )}
+                  </div>
+                )}
+                {issue?.requested_estimate && (
+                  <div className="mt-1.5 p-1.5 rounded border border-amber-200 bg-amber-50 text-[11px] text-amber-900">
+                    {issue.estimate_requested_by || 'Someone'} asked for <strong>{issue.requested_estimate}</strong>. Waiting for a manager.
+                    {canManage && (
+                      <div className="flex gap-1.5 mt-1">
+                        <button type="button" onClick={() => reviewEstimate('approved')} className="px-2 py-0.5 rounded bg-green-600 text-white text-[10px] font-semibold hover:bg-green-700 cursor-pointer">Approve</button>
+                        <button type="button" onClick={() => reviewEstimate('rejected')} className="px-2 py-0.5 rounded border border-red-300 text-red-700 text-[10px] font-semibold hover:bg-red-50 cursor-pointer">Reject</button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -715,7 +837,7 @@ const ITIssueDetailsSidebar = ({
                 Effort Points
                 <button
                   onClick={handleAutoCalculatePoints}
-                  disabled={loadingPoints}
+                  disabled={loadingPoints || !canManage}
                   title="Auto-calculate points based on Task Type, Priority, and Subtasks"
                   className="p-1 text-emerald-500 hover:bg-emerald-50 rounded transition disabled:opacity-50"
                 >
@@ -727,10 +849,12 @@ const ITIssueDetailsSidebar = ({
                   type="number"
                   min="0"
                   value={pointsDraft}
+                  disabled={!canManage}
+                  title={!canManage ? 'Set by your manager' : undefined}
                   onChange={(e) => setPointsDraft(e.target.value)}
                   onBlur={commitPoints}
                   onKeyDown={commitOnEnter(commitPoints)}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full max-w-[80px]"
+                  className={`text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full max-w-[80px] ${lockedCls}`}
                 />
                 <span className="text-xs text-gray-400">pts</span>
               </div>
@@ -774,8 +898,10 @@ const ITIssueDetailsSidebar = ({
               <div className="flex-1 min-w-0">
                 <select
                   value={issue?.type || 'Task'}
+                  disabled={lockSize}
+                  title={lockSize ? lockedTitle : undefined}
                   onChange={(e) => handleUpdate({ type: e.target.value })}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full"
+                  className={`text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full ${lockedCls}`}
                 >
                   {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -793,14 +919,16 @@ const ITIssueDetailsSidebar = ({
                   {labels.map(l => (
                     <span key={l} className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 w-fit">
                       <span className="truncate">{l}</span>
-                      <X
-                        size={9}
-                        className="cursor-pointer text-indigo-400 hover:text-indigo-800 shrink-0"
-                        onClick={() => handleUpdate({ labels: labels.filter(x => x !== l) })}
-                      />
+                      {!lockSize && (
+                        <X
+                          size={9}
+                          className="cursor-pointer text-indigo-400 hover:text-indigo-800 shrink-0"
+                          onClick={() => handleUpdate({ labels: labels.filter(x => x !== l) })}
+                        />
+                      )}
                     </span>
                   ))}
-                  {!isEditingLabels && (
+                  {!isEditingLabels && !lockSize && (
                     <button
                       onClick={() => setIsEditingLabels(true)}
                       className="text-[10px] px-1.5 py-0.5 rounded border border-dashed border-gray-300 text-gray-500 hover:bg-gray-50 transition shrink-0 cursor-pointer"
@@ -840,8 +968,10 @@ const ITIssueDetailsSidebar = ({
               <div className="flex-1 min-w-0">
                 <select
                   value={issue?.story_points ?? ''}
+                  disabled={!canManage}
+                  title={!canManage ? 'Set by your manager' : undefined}
                   onChange={(e) => handleUpdate({ story_points: e.target.value === '' ? null : Number(e.target.value) })}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full"
+                  className={`text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full ${lockedCls}`}
                 >
                   <option value="">None</option>
                   {[1, 2, 3, 5, 8, 13, 21].map(p => <option key={p} value={p}>{p}</option>)}

@@ -16,7 +16,7 @@
  *   Activity     it_kanban_history changes and ticket comments made by the person
  */
 
-const { parseDurationToSeconds: parseWorkDuration } = require('./workTime');
+const { parseDurationToSeconds: parseWorkDuration, workingSecondsBetween, workingDaysBetween } = require('./workTime');
 
 const DAY = 24 * 60 * 60 * 1000;
 const DONE = new Set(['DONE', 'COMPLETED', 'CLOSED', 'RESOLVED']);
@@ -27,7 +27,30 @@ const SYSTEM_USERNAMES = new Set(['admin', 'leads', 'deals', 'sales', 'marketing
 
 // Score weights. Components without data are dropped and the rest re-weighted.
 // efficiency = planned time ÷ actual time on finished tasks that had a plan (capped at 100).
-const SCORE_WEIGHTS = { completion: 25, onTime: 20, efficiency: 15, output: 15, logging: 10, review: 15 };
+// The score measures work, not ticket counts:
+//   output      effort delivered (each finished task is worth its size in standard hours)
+//               as a share of the working hours the person had available
+//   utilisation hours actually recorded vs working hours available
+//   onTime      finished by the due date
+//   engagement  days with recorded activity vs working days available
+//   efficiency  planned ÷ actual time on tasks that had a plan
+//   review      manager review score
+// Parts without data are left out and the rest re-weighted.
+const SCORE_WEIGHTS = { output: 35, utilisation: 20, onTime: 15, engagement: 10, efficiency: 10, review: 10 };
+
+// Standard size of each kind of work, in hours, when a ticket has no planned time of its
+// own. HR/managers edit these on the performance page (stored in work_type_sizes); these
+// are only the starting values.
+const DEFAULT_WORK_SIZES = {
+  'GMB': 0.5, 'GMB Graphics': 1, 'Social Media Graphics': 1.5, 'sm-creative': 1.5,
+  'Blogs': 1, 'Blogs Graphics': 1.5, 'Content Writing': 2.5, 'SEO': 2, 'Video': 4,
+  'Task': 2, 'Story': 4, 'Bug': 3, 'Test': 1.5,
+  'Campaign': 4, 'Design': 2, 'Content': 2.5, 'Search': 2, 'Social': 1,
+  'Project task': 2, 'General task': 2
+};
+const FALLBACK_SIZE = 1;
+// Harder priorities count for a little more of the same work.
+const PRIORITY_WEIGHT = { low: 1, medium: 1, high: 1.25, highest: 1.5, critical: 1.5 };
 
 const isDone = (s) => DONE.has(String(s || '').toUpperCase().trim());
 const isActive = (s) => IN_PROGRESS.has(String(s || '').toUpperCase().trim());
@@ -51,7 +74,9 @@ const parseJson = (v, fallback) => {
 // What kind of work a ticket is: its first meaningful label (e.g. "GMB Graphics",
 // "Content Writing"), else its type (Task, Bug, Design, ...). Labels that only say where a
 // ticket came from or which board it is on are skipped.
-const NON_WORK_LABELS = new Set(['content-calendar', 'it', 'marketing', 'ai-added']);
+// Marker for tickets that must not count in performance (see buildFacts).
+const EXCLUDE_LABEL = 'not-in-performance';
+const NON_WORK_LABELS = new Set(['content-calendar', 'it', 'marketing', 'ai-added', EXCLUDE_LABEL]);
 const workTypeOf = (labels, type) => {
   const list = Array.isArray(labels) ? labels : [];
   const label = list.map(l => String(l || '').trim()).find(l => l && !NON_WORK_LABELS.has(l.toLowerCase()));
@@ -116,15 +141,19 @@ const loadDataset = async (pool) => {
   };
 
   const [users, issues, history, worklogs, timeLogs, timesheets, projectTasks, generalTasks,
-    activities, followups, calls, contributions, reviews, calendarEvents] = await Promise.all([
+    activities, followups, calls, contributions, reviews, calendarEvents, workSizes] = await Promise.all([
     q(`SELECT u.id, u.first_name, u.last_name, u.username, u.email, u.department, u.status, u.created_at, u.avatar,
               r.name AS role_name
          FROM users u LEFT JOIN roles r ON r.id = u.role_id`),
-    q(`SELECT id, issue_key, title, type, priority, status, assignee, due_date, start_date, created_at, updated_at,
-              effort_points, story_points, original_estimate, subtasks, comments, project_id, department, labels
-         FROM it_kanban_issues`),
+    // estimate_approved / requested_estimate say whether a plan is trusted for scoring.
+    pool.query(`SELECT id, issue_key, title, type, priority, status, assignee, due_date, start_date, created_at, updated_at, effort_points, story_points, original_estimate, subtasks, comments, project_id, department, labels, estimate_approved, requested_estimate FROM it_kanban_issues`)
+      .then(r => r[0])
+      .catch(e => (e.code === 'ER_BAD_FIELD_ERROR' ? q(`SELECT id, issue_key, title, type, priority, status, assignee, due_date, start_date, created_at, updated_at, effort_points, story_points, original_estimate, subtasks, comments, project_id, department, labels FROM it_kanban_issues`) : Promise.reject(e))),
     q(`SELECT issue_key, field, old_value, new_value, changed_by, created_at FROM it_kanban_history ORDER BY created_at ASC`),
-    q(`SELECT issue_key, author, seconds, description, started_at, created_at FROM it_kanban_worklogs`),
+    pool.query(`SELECT issue_key, author, seconds, description, started_at, created_at FROM it_kanban_worklogs
+                WHERE COALESCE(approval, 'approved') = 'approved'`)
+      .then(r => r[0])
+      .catch(e => (e.code === 'ER_BAD_FIELD_ERROR' ? q(`SELECT issue_key, author, seconds, description, started_at, created_at FROM it_kanban_worklogs`) : Promise.reject(e))),
     q(`SELECT user_id, hours, started_at, created_at, task_id FROM task_time_logs`),
     q(`SELECT user_id, hours_worked, work_date FROM project_timesheets`),
     q(`SELECT id, task_key, title, status, assigned_to, start_date, due_date, completed_date, created_at, updated_at,
@@ -142,11 +171,15 @@ const loadDataset = async (pool) => {
               TRIM(CONCAT(COALESCE(ru.first_name,''),' ',COALESCE(ru.last_name,''))) AS reviewer_name
          FROM performance_reviews pr LEFT JOIN users ru ON ru.id = pr.reviewer_id
         ORDER BY pr.created_at DESC`),
-    q(`SELECT id, title, category, start_at, end_at, attendee_ids, created_by, status FROM calendar_events
-         WHERE category IN ('Meeting', 'Online meeting', 'Client call', 'Review', 'Training') AND status <> 'Cancelled' AND start_at <= NOW()`)
+    q(`SELECT e.id, e.title, e.category, e.start_at, e.end_at, e.attendee_ids, e.created_by, e.status, e.created_at,
+              r.name AS creator_role
+         FROM calendar_events e
+         LEFT JOIN users u ON u.id = e.created_by LEFT JOIN roles r ON r.id = u.role_id
+         WHERE e.category IN ('Meeting', 'Online meeting', 'Client call', 'Review', 'Training') AND e.status <> 'Cancelled' AND e.start_at <= NOW()`),
+    q(`SELECT work_type, hours FROM work_type_sizes`)
   ]);
 
-  return { users, issues, history, worklogs, timeLogs, timesheets, projectTasks, generalTasks, activities, followups, calls, contributions, reviews, calendarEvents };
+  return { users, issues, history, worklogs, timeLogs, timesheets, projectTasks, generalTasks, activities, followups, calls, contributions, reviews, calendarEvents, workSizes };
 };
 
 /** Turns raw rows into per-person facts with dates, attributed to user ids. */
@@ -173,6 +206,20 @@ const buildFacts = (data) => {
   });
   const idForName = (name) => byName.get(normName(name)) || null;
 
+  // Assignee changes per ticket, oldest first: who held a ticket at any moment.
+  const assigneeEvents = new Map();
+  data.history.filter(h => h.field === 'assignee').forEach(h => {
+    if (!assigneeEvents.has(h.issue_key)) assigneeEvents.set(h.issue_key, []);
+    assigneeEvents.get(h.issue_key).push({ from: h.old_value, to: h.new_value, at: toDate(h.created_at) });
+  });
+  const assigneeAt = (issue, when) => {
+    const ev = assigneeEvents.get(issue.issue_key);
+    if (!ev || !ev.length || !when) return issue.assignee;
+    const before = ev.filter(e => e.at && e.at <= when);
+    if (before.length) return before[before.length - 1].to;
+    return ev[0].from; // before the first recorded change
+  };
+
   // Status transitions per ticket.
   const statusEvents = new Map();
   data.history.filter(h => h.field === 'status').forEach(h => {
@@ -183,6 +230,18 @@ const buildFacts = (data) => {
   const tasks = []; // unified task facts
   const subtaskFacts = [];
 
+  // Tickets labelled 'not-in-performance' (e.g. old work closed in bulk) are left out of
+  // every figure: not assigned work, not completed work, no time, no activity.
+  const excludedKeys = new Set(data.issues
+    .filter(i => (parseJson(i.labels, []) || []).map(l => String(l).toLowerCase()).includes(EXCLUDE_LABEL))
+    .map(i => i.issue_key));
+  if (excludedKeys.size) {
+    data.issues = data.issues.filter(i => !excludedKeys.has(i.issue_key));
+    data.history = data.history.filter(h => !excludedKeys.has(h.issue_key));
+    data.worklogs = data.worklogs.filter(w => !excludedKeys.has(w.issue_key));
+    data.contributions = data.contributions.filter(c => !excludedKeys.has(String(c.task_id)));
+  }
+
   data.issues.forEach(i => {
     const events = statusEvents.get(i.issue_key) || [];
     const lastDone = [...events].reverse().find(e => isDone(e.to));
@@ -191,7 +250,9 @@ const buildFacts = (data) => {
     const done = isDone(i.status);
     const completedAt = done ? (lastDone?.at || toDate(i.updated_at)) : null;
     const startedAt = firstActive?.at || toDate(i.start_date) || toDate(i.created_at);
-    const userId = idForName(i.assignee);
+    // Finished work belongs to whoever held it when it was finished, so reassigning a Done
+    // ticket afterwards doesn't move the credit.
+    const userId = idForName(done && lastDone ? assigneeAt(i, lastDone.at) : i.assignee);
 
     tasks.push({
       source: 'Ticket',
@@ -208,6 +269,9 @@ const buildFacts = (data) => {
       completionEstimated: done && !lastDone, // no history row: date taken from last update
       points: Number(i.effort_points) || Number(i.story_points) || 0,
       estimateHours: parseDurationHours(i.original_estimate),
+      // A plan set or approved by a manager is trusted; an employee's own plan isn't.
+      estimateApproved: Number(i.estimate_approved) === 1,
+      requestedHours: parseDurationHours(i.requested_estimate),
       reopened,
       labels: parseJson(i.labels, []) || [],
       workType: workTypeOf(parseJson(i.labels, []), i.type)
@@ -239,6 +303,7 @@ const buildFacts = (data) => {
       completionEstimated: done && !t.completed_date,
       points: Number(t.effort_points) || 0,
       estimateHours: t.estimated_hours != null ? Number(t.estimated_hours) : null,
+      estimateApproved: true,
       reopened: 0,
       labels: [],
       workType: 'Project task'
@@ -262,10 +327,30 @@ const buildFacts = (data) => {
       completionEstimated: done,
       points: Number(t.effort_points) || 0,
       estimateHours: t.estimated_hours != null ? Number(t.estimated_hours) : null,
+      estimateApproved: true,
       reopened: 0,
       labels: [],
       workType: 'General task'
     });
+  });
+
+  // Effort: what each task is worth in standard hours. Its own planned time wins; otherwise
+  // the standard size for its kind of work; otherwise 1 hour. Then a priority weight.
+  const sizeMap = new Map(Object.entries(DEFAULT_WORK_SIZES).map(([k, v]) => [k.toLowerCase(), v]));
+  (data.workSizes || []).forEach(r => { if (Number(r.hours) > 0) sizeMap.set(String(r.work_type).toLowerCase(), Number(r.hours)); });
+  tasks.forEach(t => {
+    const std = sizeMap.get(String(t.workType || '').toLowerCase());
+    // Trusted plan = a manager-approved planned time, else the standard size. Effort and
+    // efficiency both use it, so padding one's own planned time gains nothing.
+    const approved = t.estimateApproved && t.estimateHours > 0;
+    t.planHours = approved ? t.estimateHours : (std != null ? std : null);
+    t.planBasis = approved ? 'approved plan' : (std != null ? 'standard size' : null);
+    const base = t.planHours != null ? t.planHours : FALLBACK_SIZE;
+    t.effortBasis = approved ? 'approved' : (std != null ? 'standard' : 'default');
+    // How the employee's own plan (or pending request) compares with the standard.
+    const own = !t.estimateApproved && t.estimateHours > 0 ? t.estimateHours : (t.requestedHours > 0 ? t.requestedHours : null);
+    t.planVsStandard = own != null && std ? own / std : null;
+    t.effortHours = round(base * (PRIORITY_WEIGHT[String(t.priority || 'medium').toLowerCase()] || 1), 2);
   });
 
   // Time entries (hours), each attributed to a user id with a date and optionally a task key.
@@ -312,10 +397,44 @@ const buildFacts = (data) => {
 
   // Calendar meetings that have happened: the organiser and every staff attendee.
   (data.calendarEvents || []).forEach(ev => {
+    // A meeting added after it supposedly happened only counts if a manager/admin added it;
+    // otherwise anyone could create "yesterday's meeting" to pad their record.
+    const createdAt = toDate(ev.created_at); const startAt = toDate(ev.start_at);
+    const addedLate = createdAt && startAt && createdAt - startAt > 15 * 60 * 1000;
+    const byManager = /manager|admin/i.test(String(ev.creator_role || ''));
+    if (addedLate && !byManager) return;
     const ids = [...new Set([ev.created_by, ...(parseJson(ev.attendee_ids, []) || [])].filter(Boolean).map(Number))];
     const start = toDate(ev.start_at); const end = toDate(ev.end_at);
     const minutes = start && end && end > start ? Math.round((end - start) / 60000) : null;
     ids.forEach(uid => meetings.push({ userId: uid, title: ev.title, at: start, minutes, status: ev.status, source: 'Calendar: ' + ev.category }));
+  });
+
+  // Reschedules: every change of a ticket's due date (from the History), credited to the
+  // ticket's assignee. Not part of the score; shown so managers can see who keeps moving
+  // deadlines, and whether they moved them themselves or someone else did.
+  const assigneeOf = new Map(data.issues.map(i => [i.issue_key, idForName(i.assignee)]));
+  const titleOf = new Map(data.issues.map(i => [i.issue_key, i.title]));
+  const reschedules = [];
+  // Subtask moves are recorded on the parent as "subtask_due_date:<id>" and belong to
+  // the subtask's own assignee.
+  const subtaskOf = new Map();
+  data.issues.forEach(i => (parseJson(i.subtasks, []) || []).forEach(st => {
+    if (st && st.id != null) subtaskOf.set(`${i.issue_key}|${st.id}`, st);
+  }));
+  data.history.filter(h => (h.field === 'due_date' || String(h.field).startsWith('subtask_due_date:'))
+    && h.old_value && h.new_value && h.old_value !== h.new_value).forEach(h => {
+    const isSub = h.field !== 'due_date';
+    const st = isSub ? subtaskOf.get(`${h.issue_key}|${String(h.field).split(':')[1]}`) : null;
+    if (isSub && !st) return;
+    const uid = isSub ? idForName(st.assignee) : assigneeOf.get(h.issue_key);
+    if (!uid) return;
+    const from = toDate(h.old_value); const to = toDate(h.new_value);
+    const shiftDays = from && to ? Math.round((to - from) / DAY) : null;
+    reschedules.push({
+      userId: uid, key: isSub ? `${h.issue_key} › subtask` : h.issue_key, title: isSub ? (st.title || '') : (titleOf.get(h.issue_key) || ''), at: toDate(h.created_at),
+      from: h.old_value, to: h.new_value, shiftDays,
+      by: h.changed_by || 'Unknown', bySelf: idForName(h.changed_by) === uid
+    });
   });
 
   // Activity: changes made on tickets, and comments written.
@@ -323,7 +442,7 @@ const buildFacts = (data) => {
   data.history.forEach(h => {
     const uid = idForName(h.changed_by);
     if (!uid) return;
-    activity.push({ userId: uid, at: toDate(h.created_at), kind: 'update', detail: `${h.issue_key}: ${h.field} → ${String(h.new_value ?? '').slice(0, 60)}`, key: h.issue_key });
+    activity.push({ userId: uid, at: toDate(h.created_at), kind: 'update', field: h.field, detail: `${h.issue_key}: ${h.field} → ${String(h.new_value ?? '').slice(0, 60)}`, key: h.issue_key });
   });
   data.issues.forEach(i => {
     (parseJson(i.comments, []) || []).forEach(c => {
@@ -343,7 +462,7 @@ const buildFacts = (data) => {
     taskCompletion: r.task_completion, quality: r.quality_of_work, onTime: r.on_time_delivery, efficiency: r.efficiency
   }));
 
-  return { employees, tasks, subtaskFacts, time, meetings, activity, points, reviews };
+  return { employees, tasks, subtaskFacts, time, meetings, activity, points, reviews, sizeMap, reschedules };
 };
 
 /** All metrics for one person over one date range. */
@@ -376,16 +495,16 @@ const computeMetrics = (facts, userId, from, to) => {
   });
   const completedWithLogs = completed.filter(t => myTimeByTask.get(t.key) > 0);
   const hoursOnCompleted = completedWithLogs.reduce((s, t) => s + myTimeByTask.get(t.key), 0);
-  const estimated = completedWithLogs.filter(t => t.estimateHours > 0);
+  const estimated = completedWithLogs.filter(t => t.planHours > 0);
   const estimateAccuracy = estimated.length
-    ? estimated.reduce((s, t) => s + myTimeByTask.get(t.key) / t.estimateHours, 0) / estimated.length
+    ? estimated.reduce((s, t) => s + myTimeByTask.get(t.key) / t.planHours, 0) / estimated.length
     : null;
 
   // Planned vs actual on finished tasks that had both a plan and recorded time.
   // Efficiency = total planned ÷ total actual (100% = exactly on plan, above = faster).
-  const plannedHours = estimated.reduce((s, t) => s + t.estimateHours, 0);
+  const plannedHours = estimated.reduce((s, t) => s + t.planHours, 0);
   const actualOnPlanned = estimated.reduce((s, t) => s + myTimeByTask.get(t.key), 0);
-  const withinPlan = estimated.filter(t => myTimeByTask.get(t.key) <= t.estimateHours * 1.1).length;
+  const withinPlan = estimated.filter(t => myTimeByTask.get(t.key) <= t.planHours * 1.1).length;
 
   const meetings = facts.meetings.filter(m => Number(m.userId) === uid && inRange(m.at, from, to) && m.status !== 'Cancelled');
   const meetingMinutes = meetings.reduce((s, m) => s + (m.minutes || 0), 0);
@@ -398,7 +517,10 @@ const computeMetrics = (facts, userId, from, to) => {
   // or commented on a ticket, or attended a meeting.
   const dayKey = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
   const activeDays = new Set([
-    ...timeInRange.map(e => e.at), ...completed.map(t => t.completedAt), ...activity.map(a => a.at), ...meetings.map(m => m.at)
+    // Only real work marks a day as active: time recorded, a task finished, a status move,
+    // a meeting. Comments and small edits don't, so they can't be used to pad the count.
+    ...timeInRange.map(e => e.at), ...completed.map(t => t.completedAt),
+    ...activity.filter(a => a.kind === 'update' && a.field === 'status').map(a => a.at), ...meetings.map(m => m.at)
   ].filter(Boolean).map(dayKey));
 
   // Per kind of work: how many finished, hours spent, average hours per finished task.
@@ -426,7 +548,46 @@ const computeMetrics = (facts, userId, from, to) => {
   meetings.forEach(m => meetingTypes.set(m.source, (meetingTypes.get(m.source) || 0) + 1));
   const timedMeetings = meetings.filter(m => m.minutes);
 
+  // Capacity: working time in the range, up to now for a period still running.
+  const emp = facts.employees.find(e => Number(e.id) === uid);
+  const joined = emp && emp.joinedAt ? new Date(emp.joinedAt) : null;
+  // From the start of the period. The account creation date is not a joining date (staff
+  // were added on 3–5 Oct but had work from 1 Oct), so it is not used to shorten capacity.
+  const capStart = from;
+  void joined;
+  const capEnd = to < now ? to : now;
+  const availableHours = capEnd > capStart ? workingSecondsBetween(capStart, capEnd) / 3600 : 0;
+  const workingDays = capEnd > capStart ? workingDaysBetween(capStart, capEnd) : 0;
+  const effortHours = completed.reduce((s, t) => s + (t.effortHours || 0), 0);
+  const effortByBasis = { approved: 0, standard: 0, default: 0 };
+  // Own plans vs the standard, on tasks the person had in the period.
+  const ownPlans = assigned.filter(t => t.planVsStandard != null);
+  const planVsStandard = ownPlans.length ? round((ownPlans.reduce((sum, t) => sum + t.planVsStandard, 0) / ownPlans.length) * 100, 0) : null;
+  completed.forEach(t => { effortByBasis[t.effortBasis || 'default'] += 1; });
+  const groundActivity = activity.length + meetings.length + subtasks.length;
+  const moved = (facts.reschedules || []).filter(r => Number(r.userId) === uid && inRange(r.at, from, to));
+  const postponed = moved.filter(r => r.shiftDays > 0);
+
   return {
+    effortHours: round(effortHours),
+    effortPerDay: workingDays ? round(effortHours / workingDays, 2) : null,
+    // Effort delivered vs time available. Over ~110% is not physically possible and means
+    // sizes are set too high or work was closed in bulk without being done in this period.
+    productivity: availableHours > 0 ? round((effortHours / availableHours) * 100, 0) : null,
+    effortExceedsCapacity: availableHours > 0 && effortHours > availableHours * 1.1,
+    avgEffortPerTask: completed.length ? round(effortHours / completed.length, 2) : null,
+    effortByBasis,
+    availableHours: round(availableHours),
+    workingDays,
+    utilisation: availableHours > 0 ? round((hoursLogged / availableHours) * 100, 0) : null,
+    activeDayRate: workingDays ? Math.min(100, round((Math.min(activeDays.size, workingDays) / workingDays) * 100, 0)) : null,
+    groundActivity,
+    planVsStandard,
+    ownPlansCount: ownPlans.length,
+    reschedules: moved.length,
+    rescheduledTasks: new Set(moved.map(r => r.key)).size,
+    reschedulesBySelf: moved.filter(r => r.bySelf).length,
+    postponedDays: postponed.reduce((sum, r) => sum + r.shiftDays, 0),
     activeDays: activeDays.size,
     byWorkType,
     meetingsByType: [...meetingTypes.entries()].map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count),
@@ -455,7 +616,7 @@ const computeMetrics = (facts, userId, from, to) => {
     tasksWithPlan: estimated.length,
     tasksWithinPlan: withinPlan,
     tasksOverPlan: estimated.length - withinPlan,
-    planCoverage: pct(completed.filter(t => t.estimateHours > 0).length, completed.length),
+    planCoverage: pct(completed.filter(t => t.planHours > 0).length, completed.length),
     meetings: meetings.length,
     meetingHours: round(meetingMinutes / 60),
     updates: activity.filter(a => a.kind === 'update').length,
@@ -467,16 +628,17 @@ const computeMetrics = (facts, userId, from, to) => {
 };
 
 /** 0–100 score from the components that have data; null when there is nothing to judge. */
-const scoreMetrics = (m, teamMaxPoints) => {
+const scoreMetrics = (m, ctx = {}) => {
   const parts = [];
-  if (m.tasksAssigned > 0 && m.completionRate != null) parts.push(['completion', m.completionRate]);
+  const enough = m.effortHours > 0 || m.hoursLogged > 0 || m.reviewScore != null;
+  if (enough && m.productivity != null) parts.push(['output', Math.min(100, m.productivity)]);
+  // Only once the team records time at all; otherwise everyone would score 0 here.
+  if (enough && ctx.teamHasTime && m.utilisation != null) parts.push(['utilisation', Math.min(100, m.utilisation)]);
   if (m.onTimeRate != null) parts.push(['onTime', m.onTimeRate]);
-  if (m.tasksCompleted > 0 && teamMaxPoints > 0) parts.push(['output', Math.min(100, (m.pointsEarned / teamMaxPoints) * 100)]);
-  if (m.tasksCompleted > 0 && m.loggingRate != null) parts.push(['logging', m.loggingRate]);
+  if (enough && m.activeDayRate != null) parts.push(['engagement', m.activeDayRate]);
   if (m.efficiency != null && m.tasksWithPlan > 0) parts.push(['efficiency', Math.min(100, m.efficiency)]);
   if (m.reviewScore != null) parts.push(['review', m.reviewScore]);
 
-  const enough = m.tasksCompleted > 0 || m.reviewScore != null;
   if (!enough || parts.length === 0) return { score: null, grade: 'Not enough data', breakdown: [] };
 
   const totalWeight = parts.reduce((s, [k]) => s + SCORE_WEIGHTS[k], 0);
@@ -524,6 +686,7 @@ const seriesFor = (facts, userIds, buckets) => buckets.map(b => {
     tasksCompleted: sum('tasksCompleted'),
     hoursLogged: round(sum('hoursLogged')),
     pointsEarned: sum('pointsEarned'),
+    effortHours: round(sum('effortHours')),
     meetings: sum('meetings'),
     onTimeRate: pct(sum('onTimeCompleted'), withDue),
     avgCycleDays: cycles.length ? round(cycles.reduce((s, m) => s + m.avgCycleDays * m.tasksCompleted, 0) / cycles.reduce((s, m) => s + m.tasksCompleted, 0)) : null
@@ -575,11 +738,20 @@ const filterEmployees = (facts, { department, includeInactive, includeAdmins } =
 /** Metrics + score for each person over one range (score's output part is relative to the busiest). */
 const scoreRows = (facts, people, from, to) => {
   const rows = people.map(e => ({ ...e, metrics: computeMetrics(facts, e.id, from, to) }));
-  const maxPoints = Math.max(0, ...rows.map(r => r.metrics.pointsEarned));
-  rows.forEach(r => Object.assign(r, scoreMetrics(r.metrics, maxPoints)));
-  // Rank by score, then output; people with no score are unranked.
+  // Pace to score against: the team's top-quartile effort per working day, so one outlier
+  // doesn't push everyone else down.
+  const paces = rows.map(r => r.metrics.effortPerDay).filter(v => v > 0).sort((a, b) => a - b);
+  const targetEffortPerDay = paces.length ? paces[Math.min(paces.length - 1, Math.floor(paces.length * 0.75))] : 0;
+  // Hours recorded only counts once the team really tracks time (at least 25% of its available
+  // hours recorded in the period). Otherwise one person starting to track would drag
+  // everyone else's score down for a period in which nobody tracked time.
+  const teamLogged = rows.reduce((sum, r) => sum + (r.metrics.hoursLogged || 0), 0);
+  const teamAvailable = rows.reduce((sum, r) => sum + (r.metrics.effortHours > 0 || r.metrics.hoursLogged > 0 ? (r.metrics.availableHours || 0) : 0), 0);
+  const teamHasTime = teamAvailable > 0 && teamLogged / teamAvailable >= 0.25;
+  rows.forEach(r => Object.assign(r, scoreMetrics(r.metrics, { targetEffortPerDay, teamHasTime })));
+  // Rank by score, then effort delivered; people with no score are unranked.
   const ranked = rows.filter(r => r.score != null)
-    .sort((a, b) => b.score - a.score || b.metrics.tasksCompleted - a.metrics.tasksCompleted);
+    .sort((a, b) => b.score - a.score || b.metrics.effortHours - a.metrics.effortHours);
   ranked.forEach((r, i) => { r.rank = i + 1; });
   rows.forEach(r => { if (r.rank == null) r.rank = null; r.rankedOutOf = ranked.length; });
   return rows;
@@ -614,7 +786,8 @@ const workTypeBenchmarks = (facts, userIds) => {
     people: r.people.size,
     avgHours: r.withTime ? round(r.hours / r.withTime) : null,
     avgDays: r.withDays ? round(r.days / r.withDays) : null,
-    tasksWithTime: r.withTime
+    tasksWithTime: r.withTime,
+    standardHours: facts.sizeMap ? (facts.sizeMap.get(String(r.workType).toLowerCase()) ?? null) : null
   })).sort((a, b) => b.completed - a.completed);
 };
 
@@ -632,6 +805,7 @@ const championsFor = (facts, people, buckets) => buckets.map(b => {
     key: b.key,
     label: b.label,
     topPerformer: top ? { id: top.id, name: top.name, score: top.score, grade: top.grade } : null,
+    mostEffort: pickTop(rows, 'effortHours'),
     mostCompleted: pickTop(rows, 'tasksCompleted'),
     mostHours: pickTop(rows, 'hoursLogged'),
     bestOnTime: pickTop(rows, 'onTimeRate', { minCompleted: 3 }),
@@ -707,8 +881,9 @@ const dataQualityFor = (facts, people, from, to, rows) => {
 };
 
 /** Factual, number-backed observations about one person. */
-const insightsFor = (m, { rank, rankedOutOf, benchmarks = [] } = {}) => {
+const insightsFor = (m, { rank, rankedOutOf, benchmarks = [], pace = 0 } = {}) => {
   const strengths = []; const attention = [];
+  const ctxPace = pace;
   if (rank && rankedOutOf > 1 && rank <= Math.max(1, Math.ceil(rankedOutOf / 3))) {
     strengths.push(`Ranked #${rank} of ${rankedOutOf} in the team this period.`);
   }
@@ -716,9 +891,25 @@ const insightsFor = (m, { rank, rankedOutOf, benchmarks = [] } = {}) => {
     if (m.onTimeRate >= 90) strengths.push(`${m.onTimeRate}% of tasks finished on or before the due date.`);
     else if (m.onTimeRate < 60) attention.push(`Only ${m.onTimeRate}% of tasks were finished by their due date (${m.lateCompleted} late).`);
   }
-  if (m.completionRate != null && m.tasksAssigned >= 3) {
-    if (m.completionRate >= 80) strengths.push(`Finished ${m.tasksCompleted} of ${m.tasksAssigned} tasks in the period (${m.completionRate}%).`);
-    else if (m.completionRate < 40) attention.push(`Finished ${m.tasksCompleted} of ${m.tasksAssigned} tasks in the period (${m.completionRate}%).`);
+  if (m.effortHours > 0) {
+    const line = `Delivered ${m.effortHours} effort hours across ${m.tasksCompleted} task${m.tasksCompleted === 1 ? '' : 's'} (about ${m.avgEffortPerTask} h each)${m.effortPerDay != null ? `, ${m.effortPerDay} h per working day` : ''}.`;
+    if (ctxPace && m.effortPerDay >= ctxPace) strengths.push(line);
+    else if (ctxPace && m.effortPerDay < ctxPace * 0.5) attention.push(line + ' That is under half the team\'s pace.');
+    else strengths.push(line);
+  } else if (m.workingDays >= 3 && m.tasksAssigned > 0) {
+    attention.push(`No task finished in ${m.workingDays} working days (${m.tasksAssigned} assigned).`);
+  }
+  if (m.utilisation != null && m.hoursLogged > 0) {
+    if (m.utilisation >= 75) strengths.push(`Recorded ${m.hoursLogged} h of ${m.availableHours} h available (${m.utilisation}%).`);
+    else if (m.utilisation < 40) attention.push(`Recorded only ${m.hoursLogged} h of ${m.availableHours} h available (${m.utilisation}%).`);
+  }
+  if (m.effortExceedsCapacity) {
+    attention.push(`Credited with ${m.effortHours} effort hours but only ${m.availableHours} working hours were available. Check the standard sizes, or whether these tasks were closed in bulk.`);
+  }
+  if (m.activeDayRate != null && m.workingDays >= 5) {
+    const days = Math.min(m.activeDays, m.workingDays);
+    if (m.activeDayRate < 50) attention.push(`Activity recorded on ${days} of ${m.workingDays} working days.`);
+    else if (m.activeDayRate >= 90) strengths.push(`Active on ${days} of ${m.workingDays} working days.`);
   }
   (m.byWorkType || []).forEach(w => {
     const b = benchmarks.find(x => x.workType === w.workType);
@@ -727,6 +918,12 @@ const insightsFor = (m, { rank, rankedOutOf, benchmarks = [] } = {}) => {
     if (diff <= -0.2) strengths.push(`${w.workType}: ${w.avgHours} h per task vs team average ${b.avgHours} h.`);
     else if (diff >= 0.5) attention.push(`${w.workType}: ${w.avgHours} h per task vs team average ${b.avgHours} h.`);
   });
+  if (m.planVsStandard != null && m.ownPlansCount >= 3 && m.planVsStandard >= 150) {
+    attention.push(`Own planned times average ${m.planVsStandard}% of the standard for the same work (${m.ownPlansCount} tasks). Scores use the standard or manager-approved plans, so this doesn't raise the score, but it's worth discussing.`);
+  }
+  if (m.reschedules >= 3) {
+    attention.push(`Due dates moved ${m.reschedules} time${m.reschedules > 1 ? 's' : ''} on ${m.rescheduledTasks} task${m.rescheduledTasks > 1 ? 's' : ''}${m.postponedDays > 0 ? ` (pushed back ${m.postponedDays} days in total)` : ''}; ${m.reschedulesBySelf} by the person themselves.`);
+  }
   if (m.overdueOpen > 0) attention.push(`${m.overdueOpen} open task${m.overdueOpen > 1 ? 's are' : ' is'} past the due date.`);
   if (m.reopened > 0) attention.push(`${m.reopened} task${m.reopened > 1 ? 's were' : ' was'} reopened after being marked done.`);
   if (m.tasksCompleted >= 3 && m.loggingRate != null && m.loggingRate < 50) {
@@ -759,7 +956,9 @@ const buildTeamReport = async (pool, query = {}) => {
   const timedRows = rows.filter(r => r.metrics.avgHoursPerTask != null);
   const benchmarks = workTypeBenchmarks(facts, ids);
 
-  rows.forEach(r => { r.insights = insightsFor(r.metrics, { rank: r.rank, rankedOutOf: r.rankedOutOf, benchmarks }); });
+  const paces = rows.map(r => r.metrics.effortPerDay).filter(v => v > 0).sort((a, b) => a - b);
+  const pace = paces.length ? paces[Math.min(paces.length - 1, Math.floor(paces.length * 0.75))] : 0;
+  rows.forEach(r => { r.insights = insightsFor(r.metrics, { rank: r.rank, rankedOutOf: r.rankedOutOf, benchmarks, pace }); });
 
   return {
     range: { period: range.period, label: range.label, from: range.from, to: range.to },
@@ -769,6 +968,11 @@ const buildTeamReport = async (pool, query = {}) => {
       activeContributors: rows.filter(r => r.metrics.activeDays > 0).length,
       tasksCompleted: sum('tasksCompleted'),
       tasksAssigned: sum('tasksAssigned'),
+      effortHours: round(sum('effortHours')),
+      reschedules: sum('reschedules'),
+      availableHours: round(sum('availableHours')),
+      utilisation: sum('availableHours') > 0 ? round((sum('hoursLogged') / sum('availableHours')) * 100, 0) : null,
+      targetEffortPerDay: pace || null,
       hoursLogged: round(sum('hoursLogged')),
       avgHoursPerTask: timedRows.length
         ? round(timedRows.reduce((s, r) => s + r.metrics.avgHoursPerTask * r.metrics.tasksWithTimeLogged, 0) / timedRows.reduce((s, r) => s + r.metrics.tasksWithTimeLogged, 0))
@@ -788,6 +992,9 @@ const buildTeamReport = async (pool, query = {}) => {
       gradeCounts: ['Excellent', 'Good', 'Fair', 'Needs attention', 'Not enough data'].map(g => ({ grade: g, count: rows.filter(r => r.grade === g).length }))
     },
     leaders: {
+      mostEffort: pickTop(rows, 'effortHours'),
+      bestUtilisation: pickTop(rows, 'utilisation'),
+      mostActiveDays: pickTop(rows, 'activeDays'),
       mostCompleted: pickTop(rows, 'tasksCompleted'),
       mostHours: pickTop(rows, 'hoursLogged'),
       mostPoints: pickTop(rows, 'pointsEarned'),
@@ -838,6 +1045,10 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
     avgHoursPerTask: avgOf('avgHoursPerTask'),
     meetings: avgOf('meetings'),
     activeDays: avgOf('activeDays'),
+    effortHours: avgOf('effortHours'),
+    effortPerDay: avgOf('effortPerDay'),
+    utilisation: avgOf('utilisation'),
+    activeDayRate: avgOf('activeDayRate'),
     efficiency: avgOf('efficiency'),
     score: avgOf('score') // not in metrics; filled below
   };
@@ -851,6 +1062,7 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
     return {
       key: b.key, label: b.label,
       tasksCompleted: r.metrics.tasksCompleted, hoursLogged: r.metrics.hoursLogged || 0,
+      effortHours: r.metrics.effortHours, utilisation: r.metrics.utilisation,
       avgHoursPerTask: r.metrics.avgHoursPerTask, onTimeRate: r.metrics.onTimeRate,
       avgCycleDays: r.metrics.avgCycleDays, meetings: r.metrics.meetings, activeDays: r.metrics.activeDays,
       pointsEarned: r.metrics.pointsEarned, efficiency: r.metrics.efficiency, plannedHours: r.metrics.plannedHours, actualHoursOnPlanned: r.metrics.actualHoursOnPlanned,
@@ -864,6 +1076,7 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
     return {
       key: b.key, label: b.label,
       tasksCompleted: r.metrics.tasksCompleted, hoursLogged: r.metrics.hoursLogged || 0,
+      effortHours: r.metrics.effortHours, utilisation: r.metrics.utilisation,
       avgHoursPerTask: r.metrics.avgHoursPerTask, pointsEarned: r.metrics.pointsEarned,
       onTimeRate: r.metrics.onTimeRate, avgCycleDays: r.metrics.avgCycleDays, meetings: r.metrics.meetings,
       score: r.score, grade: r.grade, rank: r.rank, rankedOutOf: r.rankedOutOf
@@ -879,13 +1092,19 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
     onTime: t.completedAt && t.dueAt ? t.completedAt <= new Date(t.dueAt.getFullYear(), t.dueAt.getMonth(), t.dueAt.getDate(), 23, 59, 59, 999) : null,
     hoursLogged: round(facts.time.filter(e => Number(e.userId) === uid && e.taskKey === t.key).reduce((s, e) => s + e.hours, 0)) || 0,
     estimateHours: t.estimateHours,
+    estimateApproved: Boolean(t.estimateApproved),
+    planHours: t.planHours,
+    planBasis: t.planBasis,
+    planVsStandard: t.planVsStandard != null ? round(t.planVsStandard * 100, 0) : null,
+    effortHours: t.effortHours,
+    effortBasis: t.effortBasis,
     ...(() => {
       const actual = facts.time.filter(e => Number(e.userId) === uid && e.taskKey === t.key).reduce((s, e) => s + e.hours, 0);
-      if (!t.estimateHours || !actual) return { varianceHours: null, efficiency: null, planVerdict: t.estimateHours ? 'No time recorded' : 'No plan' };
+      if (!t.planHours || !actual) return { varianceHours: null, efficiency: null, planVerdict: t.planHours ? 'No time recorded' : 'No plan' };
       return {
-        varianceHours: round(actual - t.estimateHours),
-        efficiency: round((t.estimateHours / actual) * 100, 0),
-        planVerdict: actual <= t.estimateHours * 1.1 ? (actual < t.estimateHours * 0.9 ? 'Under plan' : 'On plan') : 'Over plan'
+        varianceHours: round(actual - t.planHours),
+        efficiency: round((t.planHours / actual) * 100, 0),
+        planVerdict: actual <= t.planHours * 1.1 ? (actual < t.planHours * 0.9 ? 'Under plan' : 'On plan') : 'Over plan'
       };
     })()
   });
@@ -903,7 +1122,10 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
     rank: me.rank,
     rankedOutOf: me.rankedOutOf,
     teamAverage,
-    insights: insightsFor(metrics, { rank: me.rank, rankedOutOf: me.rankedOutOf, benchmarks }),
+    insights: insightsFor(metrics, {
+      rank: me.rank, rankedOutOf: me.rankedOutOf, benchmarks,
+      pace: (() => { const p = peerRows.map(r => r.metrics.effortPerDay).filter(v => v > 0).sort((a, b) => a - b); return p.length ? p[Math.min(p.length - 1, Math.floor(p.length * 0.75))] : 0; })()
+    }),
     workTypes: metrics.byWorkType.map(w => {
       const b = benchmarks.find(x => x.workType === w.workType);
       return { ...w, teamAvgHours: b ? b.avgHours : null, teamAvgDays: b ? b.avgDays : null };
@@ -922,10 +1144,12 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
       .sort((a, b) => b.at - a.at).map(e => ({ at: e.at, hours: round(e.hours, 2), taskKey: e.taskKey, source: e.source, note: e.note || null })),
     meetings: facts.meetings.filter(m => Number(m.userId) === uid && inRange(m.at, range.from, range.to))
       .sort((a, b) => b.at - a.at),
+    rescheduleLog: (facts.reschedules || []).filter(r => Number(r.userId) === uid && inRange(r.at, range.from, range.to))
+      .sort((a, b) => b.at - a.at),
     activity: facts.activity.filter(a => Number(a.userId) === uid && inRange(a.at, range.from, range.to))
       .sort((a, b) => b.at - a.at).slice(0, 200),
     reviews: facts.reviews.filter(r => r.userId === uid)
   };
 };
 
-module.exports = { buildTeamReport, buildEmployeeReport, resolveRange, parseDurationHours, SCORE_WEIGHTS };
+module.exports = { buildTeamReport, buildEmployeeReport, resolveRange, parseDurationHours, SCORE_WEIGHTS, DEFAULT_WORK_SIZES };

@@ -279,6 +279,11 @@ function EventModal({ initial, editing, users, meId, onClose, onSaved }) {
             <GuestEmails emails={form.guestEmails} onChange={v => set('guestEmails', v)} />
             <p className="text-[11px] text-gray-500 mt-1">Guests are added to the invite when you use “Add to Google Calendar”.</p>
           </div>
+          {!editing && new Date(`${form.date}T${form.allDay ? '00:00' : form.startTime}:00`) < new Date(Date.now() - 15 * 60 * 1000) && ['Meeting', 'Online meeting', 'Client call', 'Review', 'Training'].includes(form.category) && (
+            <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">
+              This meeting is in the past. Meetings added after they happened only count in performance reports when a manager adds them.
+            </p>
+          )}
           <div>
             <label className={label} htmlFor="ev-desc">Notes / agenda</label>
             <textarea id="ev-desc" rows={3} className={`${input} resize-none`} value={form.description} onChange={e => set('description', e.target.value)} />

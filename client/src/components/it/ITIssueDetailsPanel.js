@@ -5,6 +5,7 @@ import {
   FileText, Globe, Users
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { isManagerUser } from '../../utils/access';
 import { API_BASE_URL } from '../../config/environment';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
 import { uploadDescriptionFile, formatFileSize } from '../../utils/descriptionFiles';
@@ -223,7 +224,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
 
     // Real sprints for this board, so the Sprint field offers what actually exists rather
     // than a hardcoded "Sprint 1/2/3" list.
-    fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(issueDepartment || 'IT')}`)
+    fetch(`${API_BASE_URL}/sprints?lite=true&department=${encodeURIComponent(issueDepartment || 'IT')}`)
       .then(res => res.json())
       .then(data => setSprintsList(Array.isArray(data?.sprints) ? data.sprints : []))
       .catch(err => console.error('Error fetching sprints:', err));
@@ -905,9 +906,28 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to log work');
+      if (data.pending) {
+        Swal.fire({ icon: 'info', title: 'Sent for approval', text: 'Time for work more than 2 days ago counts once your manager approves it.' });
+      }
       loadWorklogs();
     } catch (err) {
       Swal.fire('Could not log work', err.message, 'error');
+    }
+  };
+
+  // Managers approve or reject backdated time entries.
+  const handleReviewWorklog = async (id, decision) => {
+    if (!issueKey) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/worklogs/${id}/review`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not save the decision');
+      showSuccessToast(decision === 'approved' ? 'Time approved' : 'Time rejected');
+      loadWorklogs();
+    } catch (err) {
+      showErrorToast(err.message);
     }
   };
 
@@ -924,7 +944,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Timer action failed');
       if (action === 'start') {
-        showSuccessToast(data.movedToInProgress ? 'Timer started · ticket moved to In Progress' : 'Timer started');
+        const paused = (data.pausedTimers || []).length ? ` · paused ${data.pausedTimers.join(', ')}` : '';
+        showSuccessToast(`${data.movedToInProgress ? 'Timer started · ticket moved to In Progress' : 'Timer started'}${paused}`);
         if (data.movedToInProgress) setCurrentStatus('IN PROGRESS');
       } else {
         showSuccessToast(data.seconds ? `Logged ${data.logged}` : 'Timer stopped (no working time to log)');
@@ -1162,6 +1183,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
 
             {/* Activity Tabs, Comments & AI Docs */}
             <ITIssueActivityTabs
+              subtasks={subtasks}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               comments={comments}
@@ -1179,6 +1201,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               handleLogWork={handleLogWork}
               handleDeleteWorklog={handleDeleteWorklog}
               onTimerAction={handleTimerAction}
+              onReviewWorklog={handleReviewWorklog}
               handleGenerateDocs={handleGenerateDocs}
               aiDocsLoading={aiDocsLoading}
               githubData={githubData}
@@ -1193,6 +1216,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
 
           {/* Right Column (Jira Details Sidebar) */}
           <ITIssueDetailsSidebar
+            canManage={isManagerUser(user)}
+            onRefresh={onIssueCreated}
             currentStatus={currentSubtask ? (currentSubtask.status || 'To Do') : currentStatus}
             setCurrentStatus={(st) => {
               if (currentSubtask) {

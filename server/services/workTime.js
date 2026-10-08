@@ -124,4 +124,19 @@ const formatHours = (seconds) => {
   return [h && `${h}h`, m && `${m}m`].filter(Boolean).join(' ');
 };
 
-module.exports = { workingSecondsBetween, weeklyWorkingHours, workingDayHours, parseDurationToSeconds, formatHours, parseSchedule };
+/** Number of scheduled working days that overlap [from, to). */
+const workingDaysBetween = (from, to) => {
+  const a = from instanceof Date ? from : new Date(from);
+  const b = to instanceof Date ? to : new Date(to);
+  if (isNaN(a) || isNaN(b) || b <= a) return 0;
+  const hours = schedule();
+  let n = 0;
+  const day = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+  for (let i = 0; day < b && i < 800; i++) {
+    if (hours.has(day.getDay())) n += 1;
+    day.setDate(day.getDate() + 1);
+  }
+  return n;
+};
+
+module.exports = { workingSecondsBetween, workingDaysBetween, weeklyWorkingHours, workingDayHours, parseDurationToSeconds, formatHours, parseSchedule };

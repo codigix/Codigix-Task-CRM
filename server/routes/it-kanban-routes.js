@@ -788,6 +788,11 @@ Acceptance Criteria
       { name: 'contribution_review_status', definition: "VARCHAR(20) DEFAULT 'Pending'" },
       { name: 'contribution_method', definition: "VARCHAR(30) DEFAULT 'WORK_BREAKDOWN'" },
       { name: 'effort_points', definition: 'INT DEFAULT 0' },
+      // Planned time trust: 1 = set or approved by a manager (used for scoring).
+      { name: 'estimate_approved', definition: 'TINYINT(1) NOT NULL DEFAULT 0' },
+      // A plan above 1.5× the standard size waits here for a manager's approval.
+      { name: 'requested_estimate', definition: 'VARCHAR(20) NULL' },
+      { name: 'estimate_requested_by', definition: 'VARCHAR(120) NULL' },
       // Who the running timer's time will be credited to, and whether it was started by
       // moving the ticket to In Progress ('auto', working hours only) or with Start ('manual').
       { name: 'timer_owner', definition: 'VARCHAR(120) NULL' },
@@ -842,6 +847,16 @@ Acceptance Criteria
     } catch (e) {
       console.error('Error creating it_kanban_worklogs:', e.message);
     }
+    // Backdated manual entries wait for a manager: 'pending' | 'approved' | 'rejected'.
+    try {
+      const [cols] = await pool.query("SHOW COLUMNS FROM it_kanban_worklogs LIKE 'approval'");
+      if (!cols.length) {
+        await pool.query("ALTER TABLE it_kanban_worklogs ADD COLUMN approval VARCHAR(10) NOT NULL DEFAULT 'approved', ADD COLUMN reviewed_by VARCHAR(120) NULL");
+        console.log("Added 'approval' to it_kanban_worklogs.");
+      }
+    } catch (e) {
+      console.error('Error adding worklog approval column:', e.message);
+    }
   })();
 
   // ── Work-log time helpers ──────────────────────────────────────────────
@@ -879,10 +894,87 @@ Acceptance Criteria
     return seconds;
   };
 
+  // ── Fair-play rules ─────────────────────────────────────────────────
+  // Managers/admins can change anything. Everyone else:
+  //  • can't change who a finished task belongs to (credit stays with whoever finished it)
+  //  • can't change planned time, priority, work type or labels once work has started
+  //    (they decide how much the task is worth); effort/story points are manager-only
+  //  • can't move a due/start date that is already set (ask a manager to reschedule)
+  const isManagerReq = (req) => Boolean(req.user?.isManager || req.user?.isAdmin);
+  const NOT_STARTED = ['', 'TO DO', 'TODO', 'BACKLOG', 'OPEN', 'NEW'];
+
+  // Planned time an employee may set without approval: up to this × the work type's standard size.
+  const PLAN_LIMIT_FACTOR = 1.5;
+  const NON_WORK_LABELS = new Set(['content-calendar', 'it', 'marketing', 'ai-added', 'not-in-performance']);
+  /** Work type of a ticket (first meaningful label, else its type) and its standard size in hours. */
+  const standardSizeFor = async (key) => {
+    const [[row]] = await db.query('SELECT type, labels FROM it_kanban_issues WHERE issue_key = ?', [key]);
+    if (!row) return { workType: null, hours: null };
+    let l = row.labels; if (typeof l === 'string') { try { l = JSON.parse(l); } catch (e) { l = []; } }
+    const workType = (Array.isArray(l) ? l : []).map(x => String(x || '').trim()).find(x => x && !NON_WORK_LABELS.has(x.toLowerCase())) || row.type || 'Task';
+    let hours = null;
+    try {
+      const [[sz]] = await db.query('SELECT hours FROM work_type_sizes WHERE work_type = ?', [workType]);
+      if (sz && Number(sz.hours) > 0) hours = Number(sz.hours);
+    } catch (e) { /* table not created yet */ }
+    if (hours == null) {
+      const { DEFAULT_WORK_SIZES } = require('../services/performanceReport');
+      const hit = Object.entries(DEFAULT_WORK_SIZES).find(([k]) => k.toLowerCase() === String(workType).toLowerCase());
+      hours = hit ? hit[1] : null;
+    }
+    return { workType, hours };
+  };
+  const notifyManagersOf = async (req, issueKey, title, message) => {
+    const notify = req.app.locals.createNotification;
+    if (typeof notify !== 'function') return;
+    const [[iss]] = await db.query('SELECT department FROM it_kanban_issues WHERE issue_key = ?', [issueKey]);
+    const dept = String(iss?.department || '').replace(/\s*department\s*$/i, '');
+    const [mgrs] = await db.query(
+      `SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
+        WHERE u.status = 'Active' AND r.name LIKE '%Manager%' AND u.department LIKE ?`,
+      [`%${dept}%`]
+    );
+    await notify({ userIds: mgrs.map(m => m.id), type: 'approval', title, message, entityType: 'issue', entityKey: issueKey, excludeUserId: req.headers['x-user-id'] });
+  };
+  const hasStarted = (status) => !NOT_STARTED.includes(String(status || '').trim().toUpperCase());
+  const ymdOf = (v) => {
+    if (!v) return '';
+    const d = v instanceof Date ? v : new Date(String(v).length === 10 ? `${v}T00:00:00` : v);
+    if (isNaN(d)) return String(v).slice(0, 10);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const labelSet = (v) => {
+    let l = v; if (typeof l === 'string') { try { l = JSON.parse(l); } catch (e) { l = []; } }
+    return (Array.isArray(l) ? l : []).map(x => String(x).trim().toLowerCase()).filter(Boolean).sort().join('|');
+  };
+
+  /**
+   * One running timer per person: starting work on one ticket pauses (and logs) any other
+   * ticket whose timer is running for the same person. Returns the keys that were paused.
+   */
+  const pauseOtherTimers = async (owner, exceptKey) => {
+    if (!isPersonName(owner)) return [];
+    const [rows] = await db.query(
+      `SELECT issue_key, status, assignee, timer_start_time, is_timer_running, timer_owner, timer_source
+         FROM it_kanban_issues
+        WHERE is_timer_running = 1 AND issue_key <> ?
+          AND (timer_owner = ? OR (timer_owner IS NULL AND assignee = ?))`,
+      [exceptKey, owner, owner]
+    );
+    for (const row of rows) {
+      await closeTimerSession(row.issue_key, row, owner, `Auto-paused: started work on ${exceptKey}`);
+      await db.query(
+        'UPDATE it_kanban_issues SET is_timer_running = 0, timer_start_time = NULL, timer_owner = NULL, timer_source = NULL WHERE issue_key = ?',
+        [row.issue_key]
+      );
+    }
+    return rows.map(r => r.issue_key);
+  };
+
   // Recomputes time_spent / remaining_estimate from the issue's logged time.
   const recalcIssueTime = async (key) => {
     const [[totals]] = await db.query(
-      'SELECT COALESCE(SUM(seconds),0) AS total FROM it_kanban_worklogs WHERE issue_key = ?',
+      "SELECT COALESCE(SUM(seconds),0) AS total FROM it_kanban_worklogs WHERE issue_key = ? AND COALESCE(approval, 'approved') = 'approved'",
       [key]
     );
     const [[issue]] = await db.query(
@@ -1440,6 +1532,46 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         return res.status(400).json({ error: 'No fields to update' });
       }
 
+      // ── Fair-play rules (see isManagerReq above) ──
+      const isMgr = isManagerReq(req);
+      const [[curRow]] = await db.query(
+        'SELECT status, assignee, due_date, start_date, original_estimate, priority, type, labels FROM it_kanban_issues WHERE issue_key = ?',
+        [key]
+      );
+      if (!curRow) return res.status(404).json({ error: 'Issue not found' });
+      // Timer bookkeeping is the server's job, never the browser's.
+      delete updates.is_timer_running; delete updates.timer_owner; delete updates.timer_source;
+      delete updates.estimate_approved; delete updates.requested_estimate; delete updates.estimate_requested_by;
+      if (updates.timer_start_time !== undefined && !isMgr) {
+        // The "started at" in the start-work dialog may go back at most 1 hour.
+        const t = new Date(updates.timer_start_time);
+        if (isNaN(t) || Date.now() - t > 3600 * 1000) delete updates.timer_start_time;
+      }
+      if (!isMgr) {
+        delete updates.effort_points; delete updates.story_points;
+        if (isDoneStatus(curRow.status) && updates.assignee !== undefined
+          && String(updates.assignee || '').trim() !== String(curRow.assignee || '').trim()) {
+          return res.status(403).json({ error: 'Only a manager can change who a finished task belongs to.', code: 'LOCKED' });
+        }
+        if (hasStarted(curRow.status)) {
+          const changed = {
+            'planned time': updates.original_estimate !== undefined && parseDurationToSeconds(updates.original_estimate) !== parseDurationToSeconds(curRow.original_estimate),
+            priority: updates.priority !== undefined && String(updates.priority) !== String(curRow.priority || ''),
+            'work type': updates.type !== undefined && String(updates.type) !== String(curRow.type || ''),
+            labels: updates.labels !== undefined && labelSet(updates.labels) !== labelSet(curRow.labels)
+          };
+          const what = Object.keys(changed).filter(k => changed[k]);
+          if (what.length) {
+            return res.status(403).json({ error: `Only a manager can change the ${what.join(', ')} once work has started.`, code: 'LOCKED' });
+          }
+        }
+        for (const [field, label] of [['due_date', 'due date'], ['start_date', 'start date']]) {
+          if (updates[field] !== undefined && curRow[field] && ymdOf(updates[field]) !== ymdOf(curRow[field])) {
+            return res.status(403).json({ error: `Only a manager can move the ${label} once it is set. Ask your manager to reschedule.`, code: 'LOCKED' });
+          }
+        }
+      }
+
       // Jira's "all sub-tasks must be resolved" workflow validator. A parent is the unit of
       // commitment, so it must not reach Done while its checklist is unfinished — otherwise
       // a sprint closes with the parent counted complete and open subtasks riding along.
@@ -1503,7 +1635,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       // backlog filter on, so the details panel has to be able to write it.
       // 'flagged' and 'story_points' are written by the backlog row menu, which mirrors
       // Jira's Add flag and Story point estimate actions.
-      const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'department', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability', 'contribution_review_status', 'contribution_method', 'effort_points', 'timer_start_time', 'is_timer_running', 'timer_owner', 'timer_source'];
+      const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'department', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability', 'contribution_review_status', 'contribution_method', 'effort_points', 'timer_start_time', 'is_timer_running', 'timer_owner', 'timer_source', 'estimate_approved', 'requested_estimate', 'estimate_requested_by'];
       // 'labels' belongs here, not in allowedFields: it is stored as JSON, and without it
       // labels could be set at creation but never changed afterwards.
       const jsonFields = ['subtasks', 'linked_issues', 'comments', 'labels'];
@@ -1516,6 +1648,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       // the performance report's hours and average-task-time figures come from.
       const statusChanging = updates.status !== undefined;
       const assigneeChanging = updates.assignee !== undefined;
+      let pausedTimers = [];
+      let pendingEstimate = null;
       if (statusChanging || assigneeChanging) {
         try {
           const [[cur]] = await db.query(
@@ -1557,6 +1691,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
               updates.timer_start_time = start;
               updates.timer_owner = isPerson(nextAssignee) ? nextAssignee : actor;
               updates.timer_source = 'auto';
+              pausedTimers = await pauseOtherTimers(updates.timer_owner, key);
             }
           }
         } catch (timerErr) {
@@ -1574,6 +1709,27 @@ app.get('/api/it-kanban/labels', async (req, res) => {
           return res.status(400).json({ error: 'Planned time must look like 6h, 2h 30m, 45m or 1d' });
         }
         updates.original_estimate = secs ? formatSecondsToDuration(secs) : '0h';
+
+        // Who set the plan decides whether it's trusted for scoring. A manager's plan is.
+        // An employee's plan is kept for reference; above 1.5× the standard size it becomes
+        // a request that waits for a manager instead of changing the ticket.
+        if (isMgr) {
+          updates.estimate_approved = 1;
+          updates.requested_estimate = null;
+          updates.estimate_requested_by = null;
+        } else {
+          const std = await standardSizeFor(key);
+          if (secs && std.hours && secs > std.hours * PLAN_LIMIT_FACTOR * 3600) {
+            pendingEstimate = { requested: updates.original_estimate, workType: std.workType, standardHours: std.hours, limitHours: std.hours * PLAN_LIMIT_FACTOR };
+            delete updates.original_estimate;
+            updates.requested_estimate = pendingEstimate.requested;
+            updates.estimate_requested_by = req.headers['x-user-name'] || 'Unknown';
+          } else {
+            updates.estimate_approved = 0;
+            updates.requested_estimate = null;
+            updates.estimate_requested_by = null;
+          }
+        }
       }
 
       if (updates.timer_start_time) {
@@ -1887,6 +2043,29 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         }
       }
 
+      // Subtask due dates live inside the parent's subtasks JSON, so their changes are
+      // diffed here and written to the parent's History as "subtask_due_date:<id>". The
+      // performance report counts them as reschedules for the subtask's assignee.
+      let subtaskDateChanges = [];
+      if (updates.subtasks !== undefined) {
+        try {
+          const parse = (v) => { if (Array.isArray(v)) return v; try { const p = JSON.parse(v || '[]'); return Array.isArray(p) ? p : []; } catch (e) { return []; } };
+          const [[cur]] = await db.query('SELECT subtasks FROM it_kanban_issues WHERE issue_key = ?', [key]);
+          const before = new Map(parse(cur?.subtasks).map(st => [String(st.id), st]));
+          const day = (v) => (v ? String(v).slice(0, 10) : '');
+          subtaskDateChanges = parse(updates.subtasks)
+            .filter(st => st && st.id != null && before.has(String(st.id)))
+            .map(st => ({ id: String(st.id), from: day(before.get(String(st.id)).due_date), to: day(st.due_date) }))
+            .filter(c => c.from !== c.to);
+        } catch (e) {
+          console.error('Could not diff subtask dates:', e.message);
+        }
+      }
+
+      if (!isMgr && subtaskDateChanges.some(c => c.from)) {
+        return res.status(403).json({ error: 'Only a manager can move a subtask date once it is set. Ask your manager to reschedule.', code: 'LOCKED' });
+      }
+
       const [result] = await db.query(`
         UPDATE it_kanban_issues
         SET ${updateFields.join(', ')}
@@ -1895,6 +2074,13 @@ app.get('/api/it-kanban/labels', async (req, res) => {
 
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Issue not found' });
+      }
+
+      for (const c of subtaskDateChanges) {
+        await db.query(
+          'INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
+          [key, `subtask_due_date:${c.id}`.slice(0, 64), c.from, c.to, req.headers['x-user-name'] || 'System']
+        ).catch(e => console.error('Failed to record subtask date change:', e.message));
       }
 
       // A new planned time changes what's remaining.
@@ -1925,7 +2111,13 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         }
       }
 
-      res.json({ message: 'Issue updated successfully' });
+      if (pendingEstimate) {
+        notifyManagersOf(req, key,
+          `${req.headers['x-user-name'] || 'Someone'} asks for ${pendingEstimate.requested} on ${key}`,
+          `Standard for ${pendingEstimate.workType} is ${pendingEstimate.standardHours} h. Approve or reject in the ticket's Details.`
+        ).catch(() => { });
+      }
+      res.json({ message: 'Issue updated successfully', pausedTimers, pendingEstimate });
     } catch (error) {
       responseError(res, 500, 'Failed to update IT Kanban issue', error);
     }
@@ -1956,7 +2148,6 @@ app.get('/api/it-kanban/labels', async (req, res) => {
     return 'manual';
   };
   const actorOf = (req) => req.headers['x-user-name'] || 'Unknown';
-  const isManagerReq = (req) => Boolean(req.user?.isManager || req.user?.isAdmin);
 
   /** Planned vs actual for one ticket (seconds) and what that means. */
   const efficiencyOf = (plannedSeconds, actualSeconds) => {
@@ -1971,7 +2162,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
     try {
       const { key } = req.params;
       const [rows] = await db.query(
-        'SELECT id, author, seconds, description, started_at, created_at FROM it_kanban_worklogs WHERE issue_key = ? ORDER BY COALESCE(started_at, created_at) DESC, id DESC',
+        "SELECT id, author, seconds, description, started_at, created_at, COALESCE(approval, 'approved') AS approval, reviewed_by FROM it_kanban_worklogs WHERE issue_key = ? ORDER BY COALESCE(started_at, created_at) DESC, id DESC",
         [key]
       );
       const [[issue]] = await db.query(
@@ -1980,7 +2171,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       );
       if (!issue) return res.status(404).json({ error: 'Issue not found' });
       const me = actorOf(req).toLowerCase();
-      const totalSeconds = rows.reduce((sum, r) => sum + (Number(r.seconds) || 0), 0);
+      const totalSeconds = rows.filter(r => r.approval === 'approved').reduce((sum, r) => sum + (Number(r.seconds) || 0), 0);
       const plannedSeconds = parseDurationToSeconds(issue.original_estimate);
 
       // Who spent the time.
@@ -1994,6 +2185,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
           source: sourceOf(r.description),
           canDelete: isManagerReq(req) || String(r.author || '').toLowerCase() === me
         })),
+        pendingCount: rows.filter(r => r.approval === 'pending').length,
+        canApprove: isManagerReq(req),
         totalSeconds,
         totalSpent: formatSecondsToDuration(totalSeconds),
         plannedSeconds,
@@ -2026,6 +2219,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       }
       const status = String(cur.status || '').toUpperCase();
       const moveToProgress = !['IN PROGRESS', 'IN-PROGRESS', 'IN_PROGRESS'].includes(status) && !['DONE', 'COMPLETED', 'CLOSED'].includes(status);
+      const pausedTimers = await pauseOtherTimers(actor, key);
       await db.query(
         `UPDATE it_kanban_issues SET is_timer_running = 1, timer_start_time = ?, timer_owner = ?, timer_source = 'manual'${moveToProgress ? ", status = 'IN PROGRESS'" : ''} WHERE issue_key = ?`,
         [new Date(), actor, key]
@@ -2034,7 +2228,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         await db.query('INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
           [key, 'status', cur.status || '', 'IN PROGRESS', actor]).catch(() => { });
       }
-      res.json({ success: true, movedToInProgress: moveToProgress });
+      res.json({ success: true, movedToInProgress: moveToProgress, pausedTimers });
     } catch (error) {
       responseError(res, 500, 'Failed to start the timer', error);
     }
@@ -2079,28 +2273,98 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       if (isNaN(started)) return res.status(400).json({ error: 'The date and time are not valid' });
       if (started > new Date(Date.now() + 5 * 60000)) return res.status(400).json({ error: 'Work cannot be logged in the future' });
 
-      const [[issue]] = await db.query('SELECT issue_key FROM it_kanban_issues WHERE issue_key = ?', [key]);
+      const [[issue]] = await db.query('SELECT issue_key, status, department FROM it_kanban_issues WHERE issue_key = ?', [key]);
       if (!issue) return res.status(404).json({ error: 'Issue not found' });
 
       // Managers may log for someone else (e.g. time reported verbally); everyone else logs for themselves.
-      const author = isManagerReq(req) && req.body?.author ? String(req.body.author).slice(0, 120) : actorOf(req);
+      const isMgr = isManagerReq(req);
+      const author = isMgr && req.body?.author ? String(req.body.author).slice(0, 120) : actorOf(req);
 
-      if (originalEstimate) {
+      // Fair-play limits for everyone but managers:
+      //  • a day's total (all tickets, timers included) can't exceed that day's working hours
+      //  • entries for work more than 2 days ago wait for a manager's approval
+      let approval = 'approved';
+      if (!isMgr) {
+        const dayStart = new Date(started.getFullYear(), started.getMonth(), started.getDate());
+        const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+        const capacity = workingSecondsBetween(dayStart, dayEnd);
+        const dayLabel = dayStart.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+        if (!capacity) {
+          return res.status(400).json({ error: `${dayLabel} is not a working day. Ask your manager to log overtime.` });
+        }
+        const [[used]] = await db.query(
+          `SELECT COALESCE(SUM(seconds), 0) AS s FROM it_kanban_worklogs
+            WHERE author = ? AND started_at >= ? AND started_at < ? AND COALESCE(approval, 'approved') <> 'rejected'`,
+          [author, dayStart, dayEnd]
+        );
+        const left = capacity - Number(used.s || 0);
+        if (seconds > left) {
+          return res.status(400).json({
+            error: left > 59
+              ? `You already have ${formatHours(Number(used.s))} recorded on ${dayLabel}; at most ${formatHours(left)} more fits in that ${formatHours(capacity)} working day.`
+              : `${dayLabel} is already full (${formatHours(Number(used.s))} recorded in a ${formatHours(capacity)} working day).`
+          });
+        }
+        if (Date.now() - started.getTime() > 2 * 24 * 3600 * 1000) approval = 'pending';
+      }
+
+      if (originalEstimate && (isMgr || !hasStarted(issue.status))) {
         const planned = parseDurationToSeconds(originalEstimate);
-        if (planned) await db.query('UPDATE it_kanban_issues SET original_estimate = ? WHERE issue_key = ?', [formatSecondsToDuration(planned), key]);
+        const std = isMgr ? null : await standardSizeFor(key);
+        const withinLimit = isMgr || !std.hours || planned <= std.hours * PLAN_LIMIT_FACTOR * 3600;
+        if (planned && withinLimit) {
+          await db.query('UPDATE it_kanban_issues SET original_estimate = ?, estimate_approved = ? WHERE issue_key = ?', [formatSecondsToDuration(planned), isMgr ? 1 : 0, key]);
+        }
       }
       await db.query(
-        'INSERT INTO it_kanban_worklogs (issue_key, author, seconds, description, started_at) VALUES (?, ?, ?, ?, ?)',
-        [key, author, seconds, String(description || '').trim().slice(0, 2000) || null, started]
+        'INSERT INTO it_kanban_worklogs (issue_key, author, seconds, description, started_at, approval) VALUES (?, ?, ?, ?, ?, ?)',
+        [key, author, seconds, String(description || '').trim().slice(0, 2000) || null, started, approval]
       );
+      if (approval === 'pending') {
+        // Tell the board's managers there is time waiting for them.
+        const notify = req.app.locals.createNotification;
+        if (typeof notify === 'function') {
+          const dept = String(issue.department || '').replace(/\s*department\s*$/i, '');
+          const [mgrs] = await db.query(
+            `SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
+              WHERE u.status = 'Active' AND r.name LIKE '%Manager%' AND u.department LIKE ?`,
+            [`%${dept}%`]
+          );
+          notify({
+            userIds: mgrs.map(m => m.id), type: 'approval',
+            title: `${author} logged ${formatHours(seconds)} on ${key} for ${started.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`,
+            message: 'Backdated time entry waiting for your approval (Work log tab).',
+            actorName: author, entityType: 'issue', entityKey: key, excludeUserId: req.headers['x-user-id']
+          }).catch(() => { });
+        }
+      }
       const totals = await recalcIssueTime(key);
       res.status(201).json({
         success: true,
+        pending: approval === 'pending',
         totalSpent: formatSecondsToDuration(totals.spentSeconds),
         remainingEstimate: formatSecondsToDuration(totals.remainingSeconds)
       });
     } catch (error) {
       responseError(res, 500, 'Failed to log work', error);
+    }
+  });
+
+  // Managers approve or reject backdated entries. Only approved time counts anywhere.
+  app.post('/api/it-kanban/issues/:key/worklogs/:id/review', async (req, res) => {
+    try {
+      if (!isManagerReq(req)) return res.status(403).json({ error: 'Only managers can approve time entries' });
+      const { key, id } = req.params;
+      const decision = req.body?.decision === 'rejected' ? 'rejected' : 'approved';
+      const [r] = await db.query(
+        'UPDATE it_kanban_worklogs SET approval = ?, reviewed_by = ? WHERE id = ? AND issue_key = ?',
+        [decision, actorOf(req), id, key]
+      );
+      if (!r.affectedRows) return res.status(404).json({ error: 'Work log not found' });
+      const totals = await recalcIssueTime(key);
+      res.json({ success: true, decision, totalSpent: formatSecondsToDuration(totals.spentSeconds) });
+    } catch (error) {
+      responseError(res, 500, 'Failed to review the time entry', error);
     }
   });
 
@@ -2120,6 +2384,45 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       });
     } catch (error) {
       responseError(res, 500, 'Failed to delete work log', error);
+    }
+  });
+
+  // Standard size of this ticket's kind of work, so the Details panel can show the norm.
+  app.get('/api/it-kanban/issues/:key/standard-size', async (req, res) => {
+    try {
+      const std = await standardSizeFor(req.params.key);
+      res.json({ ...std, limitHours: std.hours ? std.hours * PLAN_LIMIT_FACTOR : null, limitFactor: PLAN_LIMIT_FACTOR });
+    } catch (error) {
+      responseError(res, 500, 'Failed to load the standard size', error);
+    }
+  });
+
+  // A manager approves or rejects a planned time above the limit.
+  app.post('/api/it-kanban/issues/:key/estimate/review', async (req, res) => {
+    try {
+      if (!isManagerReq(req)) return res.status(403).json({ error: 'Only managers can approve planned time' });
+      const { key } = req.params;
+      const actor = req.headers['x-user-name'] || 'Manager';
+      const [[row]] = await db.query('SELECT original_estimate, requested_estimate, estimate_requested_by FROM it_kanban_issues WHERE issue_key = ?', [key]);
+      if (!row) return res.status(404).json({ error: 'Issue not found' });
+      if (!row.requested_estimate) return res.status(409).json({ error: 'There is no planned time waiting for approval' });
+      const approve = req.body?.decision !== 'rejected';
+      if (approve) {
+        await db.query(
+          'UPDATE it_kanban_issues SET original_estimate = ?, estimate_approved = 1, requested_estimate = NULL, estimate_requested_by = NULL WHERE issue_key = ?',
+          [row.requested_estimate, key]
+        );
+        await db.query('INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
+          [key, 'original_estimate', row.original_estimate || '', row.requested_estimate, `${actor} (approved request from ${row.estimate_requested_by || 'employee'})`]);
+        await recalcIssueTime(key);
+      } else {
+        await db.query('UPDATE it_kanban_issues SET requested_estimate = NULL, estimate_requested_by = NULL WHERE issue_key = ?', [key]);
+        await db.query('INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
+          [key, 'requested_estimate', row.requested_estimate, 'rejected', actor]);
+      }
+      res.json({ success: true, decision: approve ? 'approved' : 'rejected' });
+    } catch (error) {
+      responseError(res, 500, 'Failed to review the planned time', error);
     }
   });
 

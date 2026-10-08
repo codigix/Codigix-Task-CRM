@@ -67,5 +67,19 @@ export const ticketDeleteHeaders = (user) => {
 
 export const TICKET_DELETE_DENIED_MESSAGE = 'Only managers can delete tickets.';
 
+/**
+ * Managers and admins may change what decides a task's worth and timing once work has
+ * started (planned time, priority, type, labels, points, dates, owner of a finished task).
+ * Matches the server's rule (middleware/session.js roleIsManager), which is what enforces it.
+ */
+export const isManagerUser = (user) => {
+  const role = String(user?.role || user?.role_name || '').toLowerCase();
+  return role.includes('manager') || role.includes('admin');
+};
+
+// Statuses in which work hasn't started yet; after these, size fields lock for non-managers.
+export const NOT_STARTED_STATUSES = ['', 'TO DO', 'TODO', 'BACKLOG', 'OPEN', 'NEW'];
+export const hasWorkStarted = (status) => !NOT_STARTED_STATUSES.includes(String(status || '').trim().toUpperCase());
+
 export default isManagerDesignation;
 

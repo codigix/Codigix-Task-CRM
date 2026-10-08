@@ -303,7 +303,7 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
 
         <H2 sub="Recorded in the system for the review period">Key results</H2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-          <Kpi label="Tasks completed" value={m.tasksCompleted} hint={`of ${m.tasksAssigned} assigned (${fmt(m.completionRate, '%')})`} />
+          <Kpi label="Effort delivered" value={`${m.effortHours || 0} h`} hint={`${m.tasksCompleted} tasks · ${fmt(m.productivity, '%')} of hours available`} tone={m.effortExceedsCapacity ? AMBER : undefined} />
           <Kpi label="On-time delivery" value={fmt(m.onTimeRate, '%')} hint={`${m.onTimeCompleted} on time · ${m.lateCompleted} late`} tone={m.onTimeRate != null && m.onTimeRate < 60 ? RED : undefined} />
           <Kpi label="Hours worked" value={fmt(m.hoursLogged || 0, ' h')} hint="Recorded working hours" />
           <Kpi label="Avg time per task" value={fmt(m.avgHoursPerTask, ' h')} hint={m.avgCycleDays != null ? `${m.avgCycleDays} days start → done` : 'No timed tasks'} />
@@ -311,6 +311,10 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
           <Kpi label="Meetings" value={m.meetings} hint={m.meetingHours ? `${m.meetingHours} h total` : '—'} />
           <Kpi label="Points earned" value={m.pointsEarned} hint={m.pointsApproved ? `${m.pointsApproved} approved` : 'From finished tasks'} />
           <Kpi label="Overdue now" value={m.overdueOpen} tone={m.overdueOpen > 0 ? RED : undefined} hint={m.reopened ? `${m.reopened} reopened` : 'Open past due date'} />
+          <Kpi label="Rescheduled" value={m.reschedules || 0} tone={m.reschedules >= 3 ? AMBER : undefined}
+            hint={m.reschedules ? `${m.rescheduledTasks} tasks · ${m.reschedulesBySelf} by self · +${m.postponedDays} d` : 'No due dates moved'} />
+          <Kpi label="Own plans vs standard" value={fmt(m.planVsStandard, '%')} tone={m.planVsStandard >= 150 ? AMBER : undefined}
+            hint={m.ownPlansCount ? `${m.ownPlansCount} tasks · 100% = normal · not scored` : 'No own planned times'} />
           <Kpi label="Efficiency" value={fmt(m.efficiency, '%')} tone={m.efficiency != null && m.efficiency < 75 ? RED : undefined} hint={m.plannedHours ? `Planned ${m.plannedHours} h · took ${m.actualHoursOnPlanned} h` : 'No planned time on tasks'} />
           <Kpi label="Within plan" value={m.tasksWithPlan ? `${m.tasksWithinPlan} / ${m.tasksWithPlan}` : '—'} hint="Tasks within 10% of plan" />
         </div>
@@ -334,7 +338,7 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
         <H2 sub="Parts without data are left out and the rest re-weighted">How the score is made up</H2>
         {(data.breakdown || []).length === 0 ? <div style={{ color: MUTED }}>Not enough recorded work to score this period.</div> : data.breakdown.map(p => (
           <div key={p.component} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <div style={{ width: 210, fontSize: 11 }}>{({ completion: 'Completion rate', onTime: 'On-time delivery', efficiency: 'Efficiency (planned ÷ actual)', output: 'Output vs busiest peer', logging: 'Time recorded on tasks', review: 'Manager review' })[p.component]} <span style={{ color: MUTED }}>({p.weight}%)</span></div>
+            <div style={{ width: 210, fontSize: 11 }}>{({ output: 'Effort vs hours available', utilisation: 'Hours recorded vs available', onTime: 'On-time delivery', engagement: 'Days active', efficiency: 'Efficiency (planned ÷ actual)', review: 'Manager review', completion: 'Completion rate', logging: 'Time recorded on tasks' })[p.component]} <span style={{ color: MUTED }}>({p.weight}%)</span></div>
             <div style={{ flex: 1, height: 8, background: '#f3f4f6', borderRadius: 4 }}>
               <div style={{ width: `${p.value}%`, height: 8, background: BLUE, borderRadius: 4 }} />
             </div>
@@ -348,7 +352,9 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
           align={['left', 'right', 'right', 'right']}
           rows={[
             ['Score', fmt(data.score), fmt(team.score), pctDiff(data.score, team.score)],
-            ['Tasks completed', m.tasksCompleted, fmt(team.tasksCompleted), pctDiff(m.tasksCompleted, team.tasksCompleted)],
+            ['Effort delivered', fmt(m.effortHours, ' h'), fmt(team.effortHours, ' h'), pctDiff(m.effortHours, team.effortHours)],
+            ['Hours recorded vs available', fmt(m.utilisation, '%'), fmt(team.utilisation, '%'), pctDiff(m.utilisation, team.utilisation)],
+            ['Tasks completed (count only)', m.tasksCompleted, fmt(team.tasksCompleted), <span style={{ color: MUTED }}>not scored</span>],
             ['On-time delivery', fmt(m.onTimeRate, '%'), fmt(team.onTimeRate, '%'), pctDiff(m.onTimeRate, team.onTimeRate)],
             ['Avg hours per task', fmt(m.avgHoursPerTask, ' h'), fmt(team.avgHoursPerTask, ' h'), pctDiff(m.avgHoursPerTask, team.avgHoursPerTask, 'down')],
             ['Efficiency', fmt(m.efficiency, '%'), fmt(team.efficiency, '%'), pctDiff(m.efficiency, team.efficiency)],
@@ -444,13 +450,13 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
           ])}
         />
 
-        <H2 sub="Finished tasks with a planned time · efficiency = planned ÷ actual">Planned vs actual time</H2>
+        <H2 sub="Plan used = manager-approved plan, else the standard size · efficiency = plan ÷ actual">Planned vs actual time</H2>
         <Table
           head={['Task', 'Planned', 'Actual', 'Difference', 'Efficiency', 'Result']}
           align={['left', 'right', 'right', 'right', 'right', 'left']}
-          rows={completed.filter(t => t.estimateHours).slice(0, 12).map(t => [
+          rows={completed.filter(t => t.planHours).slice(0, 12).map(t => [
             <span><strong>{t.key}</strong> {String(t.title).slice(0, 48)}</span>,
-            `${Math.round(t.estimateHours * 10) / 10} h`, t.hoursLogged ? `${t.hoursLogged} h` : '—',
+            `${Math.round(t.planHours * 10) / 10} h`, t.hoursLogged ? `${t.hoursLogged} h` : '—',
             t.varianceHours == null ? '—' : <span style={{ color: t.varianceHours > 0 ? RED : t.varianceHours < 0 ? GREEN : INK }}>{t.varianceHours > 0 ? '+' : ''}{t.varianceHours} h</span>,
             fmt(t.efficiency, '%'),
             <span style={{ color: t.planVerdict === 'Over plan' ? RED : t.planVerdict === 'No time recorded' ? MUTED : GREEN, fontWeight: 600 }}>{t.planVerdict}</span>

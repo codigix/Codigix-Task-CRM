@@ -299,7 +299,7 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
         .catch(err => console.error('Error fetching projects:', err));
 
       // Real sprints for this board, so work can be created straight into one.
-      fetch(`${API_BASE_URL}/sprints?department=Marketing`)
+      fetch(`${API_BASE_URL}/sprints?lite=true&department=Marketing`)
         .then(res => res.json())
         .then(data => setSprints(Array.isArray(data?.sprints) ? data.sprints : []))
         .catch(err => console.error('Error fetching sprints:', err));

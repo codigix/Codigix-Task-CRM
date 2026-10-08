@@ -19,7 +19,19 @@ const FIELD_LABELS = {
   status: 'Status', priority: 'Priority', assignee: 'Assignee', reporter: 'Reporter',
   title: 'Summary', description: 'Description', type: 'Work type', team: 'Team',
   sprint: 'Sprint', due_date: 'Due date', start_date: 'Start date', progress: 'Progress',
-  original_estimate: 'Original estimate', remaining_estimate: 'Remaining estimate', time_spent: 'Time spent'
+  original_estimate: 'Planned time', requested_estimate: 'Planned time requested', estimate_approved: 'Planned time set by manager',
+  estimate_requested_by: 'Requested by', remaining_estimate: 'Remaining estimate', time_spent: 'Time spent'
+};
+
+// "subtask_due_date:<id>" entries record a subtask being rescheduled.
+const fieldLabel = (field, subtasks) => {
+  const f = String(field || '');
+  if (f.startsWith('subtask_due_date:')) {
+    const id = f.split(':')[1];
+    const st = (Array.isArray(subtasks) ? subtasks : []).find(x => String(x.id) === id);
+    return st ? `Subtask due date (${String(st.title || '').slice(0, 40)})` : 'Subtask due date';
+  }
+  return FIELD_LABELS[f] || f;
 };
 
 const initialsOf = (name) => String(name || 'U').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
@@ -82,6 +94,7 @@ const renderFormattedComment = (rawText) => {
 };
 
 const ITIssueActivityTabs = ({
+  subtasks = [],
   activeTab = 'Comments',
   setActiveTab,
   comments = [],
@@ -99,6 +112,7 @@ const ITIssueActivityTabs = ({
   handleLogWork,
   handleDeleteWorklog,
   onTimerAction,
+  onReviewWorklog,
   handleGenerateDocs,
   aiDocsLoading,
   githubData,
@@ -368,7 +382,7 @@ const ITIssueActivityTabs = ({
                       <div className="text-xs text-gray-800">
                         <span className="">{entry.changed_by}</span>
                         <span className="text-gray-500"> updated </span>
-                        <span className="">{FIELD_LABELS[entry.field] || entry.field}</span>
+                        <span className="">{fieldLabel(entry.field, subtasks)}</span>
                         <span className="text-[10px] text-gray-400 ml-2">{relativeTime(entry.created_at)}</span>
                       </div>
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -428,7 +442,7 @@ const ITIssueActivityTabs = ({
                   <div className="text-xs text-gray-800">
                     <span className="">{entry.changed_by}</span>
                     <span className="text-gray-500"> updated </span>
-                    <span className="">{FIELD_LABELS[entry.field] || entry.field}</span>
+                    <span className="">{fieldLabel(entry.field, subtasks)}</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                     <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] line-through max-w-[200px] truncate">
@@ -542,7 +556,10 @@ const ITIssueActivityTabs = ({
             )}
 
             <div className="flex justify-between items-center pt-1">
-              <span className="text-xs text-gray-700 font-medium">Work log ({worklogData.worklogs.length})</span>
+              <span className="text-xs text-gray-700 font-medium">
+                Work log ({worklogData.worklogs.length})
+                {worklogData.pendingCount > 0 && <span className="ml-1.5 text-[10px] font-semibold text-amber-700">{worklogData.pendingCount} waiting for approval</span>}
+              </span>
               <button
                 onClick={() => setIsLoggingWork(v => !v)}
                 className="flex items-center gap-1 px-2.5 py-1 text-xs bg-red-600 text-white rounded font-medium hover:bg-red-700 transition cursor-pointer"
@@ -573,6 +590,9 @@ const ITIssueActivityTabs = ({
                     onChange={(e) => setWorkForm(p => ({ ...p, description: e.target.value }))}
                     className="w-full border border-gray-300 rounded px-2 py-1 outline-none text-xs h-12 resize-none bg-white" />
                 </div>
+                <p className="text-[10px] text-gray-500">
+                  A day's total can't exceed its working hours. Time for work more than 2 days ago counts once a manager approves it.
+                </p>
                 <div className="flex justify-end gap-2 pt-1">
                   <button onClick={() => setIsLoggingWork(false)} className="px-2.5 py-1 border border-gray-300 rounded hover:bg-gray-100 text-gray-700 text-xs cursor-pointer">Cancel</button>
                   <button onClick={submitWorkLog} className="px-3 py-1 bg-red-600 text-white rounded font-medium hover:bg-red-700 text-xs cursor-pointer">Save</button>
@@ -594,11 +614,19 @@ const ITIssueActivityTabs = ({
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-gray-900">{log.timeSpent || log.time_spent}</span>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded border ${sourceBadge[log.source] || sourceBadge.manual}`}>{sourceLabel[log.source] || 'Manual'}</span>
+                          {log.approval === 'pending' && <span className="text-[10px] px-1.5 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-200">Waiting for approval</span>}
+                          {log.approval === 'rejected' && <span className="text-[10px] px-1.5 py-0.5 rounded border bg-red-50 text-red-700 border-red-200">Rejected{log.reviewed_by ? ` by ${log.reviewed_by}` : ''}</span>}
                           <span className="text-[11px] text-gray-600">{log.author}</span>
                           {when && <span className="text-[10px] text-gray-400">· from {when}</span>}
                         </div>
                         {note && <p className="text-gray-600 text-[11px] break-words">{note}</p>}
                       </div>
+                      {log.approval === 'pending' && worklogData.canApprove && onReviewWorklog && (
+                        <div className="flex gap-1 shrink-0">
+                          <button onClick={() => onReviewWorklog(log.id, 'approved')} className="px-2 py-0.5 text-[10px] font-semibold rounded bg-green-600 text-white hover:bg-green-700 cursor-pointer">Approve</button>
+                          <button onClick={() => onReviewWorklog(log.id, 'rejected')} className="px-2 py-0.5 text-[10px] font-semibold rounded border border-red-300 text-red-700 hover:bg-red-50 cursor-pointer">Reject</button>
+                        </div>
+                      )}
                       {handleDeleteWorklog && log.canDelete && (
                         <button
                           onClick={() => { if (window.confirm(`Delete this ${log.timeSpent} entry?`)) handleDeleteWorklog(log.id); }}

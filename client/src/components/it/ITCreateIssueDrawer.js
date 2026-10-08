@@ -333,7 +333,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
       // Automatically preselects the active sprint so newly created work appears directly on the board.
       Promise.all([
         fetch(`${API_BASE_URL}/projects?department=${encodeURIComponent(currentDept)}`).then(r => r.json()),
-        fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(currentDept)}`).then(r => r.json())
+        fetch(`${API_BASE_URL}/sprints?lite=true&department=${encodeURIComponent(currentDept)}`).then(r => r.json())
       ])
         .then(([projData, sprintData]) => {
           let list = Array.isArray(projData?.data) ? projData.data : (Array.isArray(projData) ? projData : []);

@@ -19,7 +19,7 @@ import SearchableSelect from '../common/SearchableSelect';
 import TimeTrackingModal from '../common/TimeTrackingModal';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
-import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE } from '../../utils/access';
+import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser, hasWorkStarted } from '../../utils/access';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -59,7 +59,7 @@ const TYPE_ICONS = {
 
 // Work-type chips shown on a card (e.g. "GMB Graphics", "Content Writing").
 // 'content-calendar' only marks where the task came from, so it is not shown.
-const HIDDEN_CARD_LABELS = new Set(['content-calendar']);
+const HIDDEN_CARD_LABELS = new Set(['content-calendar', 'not-in-performance']);
 // chip: the badge itself; accent: the card's left edge, keyed off its first label.
 const LABEL_STYLES = {
   'GMB': { chip: 'bg-blue-50 text-blue-700 ring-blue-200', accent: 'border-l-blue-500' },
@@ -260,6 +260,8 @@ const DEPARTMENT_KANBAN_COLUMNS = {
 
 const ITKanbanPage = ({ department }) => {
   const { user } = useAuth();
+  // Same rule as the server: only managers change size/dates once work has started.
+  const canManageWork = isManagerUser(user);
   const { designation, username } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -322,6 +324,18 @@ const ITKanbanPage = ({ department }) => {
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedPriority, setSelectedPriority] = useState('ALL');
+  // Labels filter (multi-select): a card shows if it has any of the chosen labels.
+  const [selectedLabels, setSelectedLabels] = useState([]);
+  const [labelSearch, setLabelSearch] = useState('');
+  const labelsOf = (issue) => {
+    let l = issue && issue.labels;
+    if (typeof l === 'string') { try { l = JSON.parse(l); } catch (e) { l = []; } }
+    return (Array.isArray(l) ? l : []).map(x => String(x || '').trim()).filter(Boolean);
+  };
+  const issueHasSelectedLabel = (issue) => {
+    const wanted = selectedLabels.map(x => x.toLowerCase());
+    return labelsOf(issue).some(x => wanted.includes(x.toLowerCase()));
+  };
   const [selectedAssignees, setSelectedAssignees] = useState([]);
   const [onlyMyIssues, setOnlyMyIssues] = useState(true);
   const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL' | 'TODAY' | 'TOMORROW' | 'THIS_WEEK' | 'THIS_MONTH' | 'OVERDUE' | 'EXACT' | 'RANGE' | 'NO_DATE'
@@ -481,7 +495,15 @@ const ITKanbanPage = ({ department }) => {
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
   const [cardAssigneePos, setCardAssigneePos] = useState({ top: 0, left: 0 });
   const [openCardPriorityDropdown, setOpenCardPriorityDropdown] = useState(null);
+  // Drawing hundreds of draggable cards at once freezes the browser, so each column shows
+  // a page of cards and "Show more" adds the next page.
+  const CARD_PAGE = 50;
+  const [columnLimits, setColumnLimits] = useState({});
+  const limitFor = (col) => columnLimits[col] || CARD_PAGE;
   const [cardPriorityPos, setCardPriorityPos] = useState({ top: 0, left: 0 });
+  // Reschedule: clicking a card's date opens a small calendar to move the task to another day.
+  const [openCardDateDropdown, setOpenCardDateDropdown] = useState(null);
+  const [cardDatePos, setCardDatePos] = useState({ top: 0, left: 0 });
 
   const [openSubtasksPopover, setOpenSubtasksPopover] = useState(null);
   const [subtaskPos, setSubtaskPos] = useState({ top: 0, left: 0 });
@@ -576,6 +598,56 @@ const ITKanbanPage = ({ department }) => {
     setCardPriorityPos({ top: topPos, left: leftPos });
     setOpenCardAssigneeDropdown(null);
     setOpenCardPriorityDropdown(cardKey);
+  };
+
+  const handleOpenCardDate = (e, cardKey) => {
+    e.stopPropagation();
+    if (openCardDateDropdown === cardKey) {
+      setOpenCardDateDropdown(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popupWidth = 250;
+    const popupHeight = 250;
+    let leftPos = rect.right - popupWidth;
+    if (leftPos < 10) leftPos = 10;
+    if (leftPos + popupWidth > window.innerWidth) leftPos = Math.max(10, window.innerWidth - popupWidth - 10);
+    let topPos = rect.bottom + 6;
+    if (topPos + popupHeight > window.innerHeight) topPos = Math.max(10, rect.top - popupHeight - 6);
+    setCardDatePos({ top: topPos, left: leftPos });
+    setOpenCardAssigneeDropdown(null);
+    setOpenCardPriorityDropdown(null);
+    setOpenCardDateDropdown(cardKey);
+  };
+
+  // Moves a task to another day. The change is recorded in the ticket's History, and the
+  // on-time check uses the new date from then on.
+  const handleRescheduleCard = (card, newDate) => {
+    setOpenCardDateDropdown(null);
+    if (!newDate) return;
+    const current = getIssueDateParts(card.due_date || card.start_date);
+    if (current === newDate) return;
+    const label = new Date(`${newDate}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+
+    if (card.isSubtask) {
+      const parent = allRawIssues.find(i => (i.issue_key === card.parentKey || i.key === card.parentKey));
+      if (!parent) return;
+      let curSt = parent.subtasks;
+      if (typeof curSt === 'string') {
+        try { curSt = JSON.parse(curSt); } catch (err) { curSt = []; }
+      }
+      const updated = (Array.isArray(curSt) ? curSt : []).map(st => String(st.id) === String(card.subtaskId) ? { ...st, due_date: newDate } : st);
+      updateIssue(card.parentKey, { subtasks: updated });
+      showSuccessToast(`${card.key} moved to ${label}`);
+      return;
+    }
+
+    const updates = { due_date: newDate };
+    // A start date after the new due date would be invalid, so it moves with it.
+    const start = getIssueDateParts(card.start_date);
+    if (start && start > newDate) updates.start_date = newDate;
+    updateIssue(card.key, updates);
+    showSuccessToast(`${card.key} moved to ${label}`);
   };
 
   const handleUpdateCardPriority = (card, priority) => {
@@ -680,7 +752,7 @@ const ITKanbanPage = ({ department }) => {
     const deptParam = 'ALL';
     const roleParam = encodeURIComponent(user?.role || designation || '');
     // Which sprints are running determines what the board is allowed to show.
-    fetch(`${API_BASE_URL}/sprints?department=${encodeURIComponent(deptParam)}&role=${roleParam}&_t=${bust}`, { cache: 'no-store' })
+    fetch(`${API_BASE_URL}/sprints?lite=true&department=${encodeURIComponent(deptParam)}&role=${roleParam}&_t=${bust}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         const running = data.activeSprints || (data.activeSprint ? [data.activeSprint] : []);
@@ -762,6 +834,9 @@ const ITKanbanPage = ({ department }) => {
     }
     if (selectedPriority !== 'ALL') {
       filtered = filtered.filter(issue => issue.priority === selectedPriority);
+    }
+    if (selectedLabels.length > 0) {
+      filtered = filtered.filter(issueHasSelectedLabel);
     }
     if (dateFilter !== 'ALL') {
       const todayStr = getTodayStr();
@@ -936,6 +1011,9 @@ const ITKanbanPage = ({ department }) => {
       }
       if (!Array.isArray(rawSt) || rawSt.length === 0) return;
 
+      // Subtasks follow their parent ticket's labels.
+      if (selectedLabels.length > 0 && !issueHasSelectedLabel(issue)) return;
+
       rawSt.forEach((st, idx) => {
         const stStatus = (st.completed ? 'DONE' : (st.status || 'TO DO')).toUpperCase();
         if (selectedStatus !== 'ALL' && stStatus !== selectedStatus.toUpperCase()) {
@@ -1072,7 +1150,7 @@ const ITKanbanPage = ({ department }) => {
     });
 
     setBoardData(newBoard);
-  }, [allRawIssues, activeSprints, columnOrder, selectedProjectId, selectedType, selectedStatus, selectedPriority, selectedAssignees, onlyMyIssues, isManager, userSearchTerms, myIdentities, searchQuery, username, dateFilter, exactDate, rangeStart, rangeEnd]);
+  }, [allRawIssues, activeSprints, columnOrder, selectedProjectId, selectedType, selectedStatus, selectedPriority, selectedLabels, selectedAssignees, onlyMyIssues, isManager, userSearchTerms, myIdentities, searchQuery, username, dateFilter, exactDate, rangeStart, rangeEnd]);
 
   // Opens a ticket straight from a URL like ...&/kanban?ticketKey=MKT-104, which is how
   // notifications deep-link. Depends on location.search so clicking a notification while
@@ -1161,6 +1239,9 @@ const ITKanbanPage = ({ department }) => {
       if (openCardPriorityDropdown && !e.target.closest('.card-priority-dropdown')) {
         setOpenCardPriorityDropdown(null);
       }
+      if (openCardDateDropdown && !e.target.closest('.card-date-dropdown')) {
+        setOpenCardDateDropdown(null);
+      }
       if (openSubtasksPopover && !e.target.closest('.card-subtask-popover')) {
         setOpenSubtasksPopover(null);
       }
@@ -1170,7 +1251,7 @@ const ITKanbanPage = ({ department }) => {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [activeCreateColumn, activeFilterDropdown, openCardAssigneeDropdown, openCardPriorityDropdown, openSubtasksPopover, showSprintDetails]);
+  }, [activeCreateColumn, activeFilterDropdown, openCardAssigneeDropdown, openCardPriorityDropdown, openCardDateDropdown, openSubtasksPopover, showSprintDetails]);
 
 
   const handleCreateInlineIssue = async (col) => {
@@ -1369,6 +1450,12 @@ const ITKanbanPage = ({ department }) => {
 
       if (res.ok) {
         window.dispatchEvent(new Event('crm-refresh-notifications'));
+        const okData = await res.clone().json().catch(() => ({}));
+        if (okData.pendingEstimate) {
+          // The plan was above the limit: it is waiting for a manager, the ticket is unchanged.
+          Swal.fire({ icon: 'info', title: 'Sent for approval', text: `${okData.pendingEstimate.requested} is more than 1.5× the standard for ${okData.pendingEstimate.workType} (${okData.pendingEstimate.standardHours} h). Your manager has been asked to approve it.` });
+          fetchKanbanData();
+        }
       } else {
         const data = await res.json().catch(() => ({}));
         // The optimistic move already happened, so refetch to put the card back where the
@@ -1652,15 +1739,15 @@ const ITKanbanPage = ({ department }) => {
           <div className="flex-1 overflow-hidden flex relative">
             <div className="flex-1 flex flex-col p-4 pb-0 min-w-0 bg-white">
 
-              <div className="flex items-end justify-between mb-6">
-                <div>
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+                <div className="flex-1 min-w-0">
                   {/* No sprint name or status here: Jira's board header carries only the
                       toolbar and the Complete sprint button. Which sprints are running is
                       the Backlog's job to show. */}
                   <div className="flex items-center gap-2 flex-wrap relative">
 
                     {/* JIRA USER AVATAR BUBBLES */}
-                    <div className="flex items-center -space-x-1.5 mx-1">
+                    <div className="flex items-center -space-x-1.5 mr-1">
                       {itUsersList.slice(0, 5).map((u) => {
                         const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'User';
                         const initials = (u.first_name ? u.first_name[0] : (u.username ? u.username[0] : 'U')) +
@@ -1720,7 +1807,7 @@ const ITKanbanPage = ({ department }) => {
                     <div className="w-40">
                       <SearchableSelect
                         prefix="Project:"
-                        buttonClassName={`p-2 rounded text-xs font-medium border transition-colors ${selectedProjectId !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                        buttonClassName={`h-8 px-2.5 rounded text-xs font-medium border transition-colors whitespace-nowrap ${selectedProjectId !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                         dropdownClassName="w-64"
                         options={[
                           { value: 'ALL', label: 'All Projects' },
@@ -1736,7 +1823,7 @@ const ITKanbanPage = ({ department }) => {
                     <div className="relative">
                       <button
                         onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'status' ? null : 'status')}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedStatus !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700'}`}
+                        className={`flex items-center gap-1.5 h-8 px-2.5 rounded text-xs font-medium border whitespace-nowrap hover:bg-gray-50 transition-colors ${selectedStatus !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700'}`}
                       >
                         Status: {selectedStatus !== 'ALL' ? selectedStatus : 'All'} <ChevronDown size={14} />
                       </button>
@@ -1759,7 +1846,7 @@ const ITKanbanPage = ({ department }) => {
                     <div className="relative">
                       <button
                         onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'priority' ? null : 'priority')}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${selectedPriority !== 'ALL' ? 'bg-blue-50  ' : 'bg-white border-gray-300 text-gray-700'}`}
+                        className={`flex items-center gap-1.5 h-8 px-2.5 rounded text-xs font-medium border whitespace-nowrap hover:bg-gray-50 transition-colors ${selectedPriority !== 'ALL' ? 'bg-blue-50  ' : 'bg-white border-gray-300 text-gray-700'}`}
                       >
                         Priority: {selectedPriority !== 'ALL' ? selectedPriority : 'All'} <ChevronDown size={14} />
                       </button>
@@ -1778,11 +1865,64 @@ const ITKanbanPage = ({ department }) => {
                       )}
                     </div>
 
+                    {/* Labels Filter Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => { setActiveFilterDropdown(activeFilterDropdown === 'labels' ? null : 'labels'); setLabelSearch(''); }}
+                        className={`flex items-center gap-1.5 h-8 px-2.5 rounded text-xs font-medium border whitespace-nowrap hover:bg-gray-50 transition-colors ${selectedLabels.length > 0 ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-300 text-gray-700'}`}
+                      >
+                        Labels: {selectedLabels.length === 0 ? 'All' : selectedLabels.length === 1 ? selectedLabels[0] : `${selectedLabels.length} selected`} <ChevronDown size={14} />
+                      </button>
+                      {activeFilterDropdown === 'labels' && (() => {
+                        // Every label in use, with how many tickets carry it ('content-calendar' only marks the source).
+                        const counts = new Map();
+                        allRawIssues.forEach(issue => labelsOf(issue).forEach(l => {
+                          if (HIDDEN_CARD_LABELS.has(l.toLowerCase())) return;
+                          counts.set(l, (counts.get(l) || 0) + 1);
+                        }));
+                        const q = labelSearch.trim().toLowerCase();
+                        const options = [...counts.entries()]
+                          .filter(([l]) => !q || l.toLowerCase().includes(q))
+                          .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+                        const toggle = (l) => setSelectedLabels(prev => prev.includes(l) ? prev.filter(x => x !== l) : [...prev, l]);
+                        return (
+                          <div className="absolute left-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded shadow-xl z-50 text-xs text-gray-700">
+                            <div className="p-2 border-b border-gray-100">
+                              <input
+                                autoFocus
+                                value={labelSearch}
+                                onChange={(e) => setLabelSearch(e.target.value)}
+                                placeholder="Search labels..."
+                                className="w-full border border-gray-300 rounded px-2 py-1.5 outline-none focus:border-blue-500"
+                              />
+                            </div>
+                            <div className="max-h-64 overflow-y-auto py-1">
+                              {options.length === 0 ? (
+                                <div className="px-3 py-2 text-gray-400">No labels found</div>
+                              ) : options.map(([l, n]) => (
+                                <label key={l} className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer select-none">
+                                  <input type="checkbox" checked={selectedLabels.includes(l)} onChange={() => toggle(l)} />
+                                  <span className={`px-1.5 py-0.5 rounded ring-1 ring-inset text-[10px] font-semibold uppercase tracking-wide truncate max-w-[150px] ${getLabelStyle(l).chip}`}>{l}</span>
+                                  <span className="ml-auto text-gray-400 tabular-nums">{n}</span>
+                                </label>
+                              ))}
+                            </div>
+                            {selectedLabels.length > 0 && (
+                              <div className="p-2 border-t border-gray-100 flex justify-between">
+                                <button onClick={() => setSelectedLabels([])} className="text-red-600 hover:underline cursor-pointer">Clear</button>
+                                <button onClick={() => setActiveFilterDropdown(null)} className="text-blue-600 font-medium hover:underline cursor-pointer">Done</button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+
                     {/* Date Filter Dropdown */}
                     <div className="relative">
                       <button
                         onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'date' ? null : 'date')}
-                        className={`flex items-center gap-1.5 p-2 rounded text-xs font-medium border hover:bg-gray-50 transition-colors ${dateFilter !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700'}`}
+                        className={`flex items-center gap-1.5 h-8 px-2.5 rounded text-xs font-medium border whitespace-nowrap hover:bg-gray-50 transition-colors ${dateFilter !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700'}`}
                         title="Filter issues date wise"
                       >
                         <Calendar size={13} className={dateFilter !== 'ALL' ? 'text-blue-600' : 'text-gray-500'} />
@@ -1918,7 +2058,7 @@ const ITKanbanPage = ({ department }) => {
                       <SearchableSelect
                         prefix="Assignee:"
                         multiple={true}
-                        buttonClassName={`p-2 rounded text-xs font-medium border transition-colors ${selectedAssignees.length > 0 ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                        buttonClassName={`h-8 px-2.5 rounded text-xs font-medium border transition-colors whitespace-nowrap ${selectedAssignees.length > 0 ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                         dropdownClassName="w-64"
                         options={[
                           { value: 'ALL', label: 'All Assignees' },
@@ -1945,6 +2085,8 @@ const ITKanbanPage = ({ department }) => {
                       />
                     </div>
 
+                    <span className="w-px h-6 bg-gray-200 mx-1" aria-hidden="true" />
+
                     {/* Only My Tasks Quick Filter Pill — Visible to All */}
                     <button
                       onClick={() => {
@@ -1954,8 +2096,8 @@ const ITKanbanPage = ({ department }) => {
                           setSelectedAssignees([]);
                         }
                       }}
-                      className={`flex items-center gap-1.5 p-2 rounded text-xs  border transition-all cursor-pointer ${onlyMyIssues
-                        ? 'bg-red-600  text-white shadow-sm'
+                      className={`flex items-center gap-1.5 h-8 px-3 rounded text-xs font-medium border transition-all cursor-pointer whitespace-nowrap ${onlyMyIssues
+                        ? 'bg-red-600 border-red-600 text-white shadow-sm'
                         : 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200'
                         }`}
                       title="Show only tasks assigned to me"
@@ -1965,13 +2107,14 @@ const ITKanbanPage = ({ department }) => {
                     </button>
 
                     {/* Clear Filters reset button */}
-                    {(selectedProjectId !== 'ALL' || selectedType !== 'ALL' || selectedStatus !== 'ALL' || selectedPriority !== 'ALL' || selectedAssignees.length > 0 || onlyMyIssues || searchQuery || dateFilter !== 'ALL') && (
+                    {(selectedProjectId !== 'ALL' || selectedType !== 'ALL' || selectedStatus !== 'ALL' || selectedPriority !== 'ALL' || selectedLabels.length > 0 || selectedAssignees.length > 0 || onlyMyIssues || searchQuery || dateFilter !== 'ALL') && (
                       <button
                         onClick={() => {
                           setSelectedProjectId('ALL');
                           setSelectedType('ALL');
                           setSelectedStatus('ALL');
                           setSelectedPriority('ALL');
+                          setSelectedLabels([]);
                           setSelectedAssignees([]);
                           setOnlyMyIssues(false);
                           setSearchQuery('');
@@ -1980,7 +2123,7 @@ const ITKanbanPage = ({ department }) => {
                           setRangeStart('');
                           setRangeEnd('');
                         }}
-                        className="text-xs text-red-600 font-medium hover:underline ml-2"
+                        className="h-8 px-1 text-xs text-red-600 font-medium hover:underline whitespace-nowrap cursor-pointer"
                       >
                         Reset filters
                       </button>
@@ -1991,13 +2134,13 @@ const ITKanbanPage = ({ department }) => {
                     {/* <button className="text-xs text-blue-600 font-medium hover:underline ml-2">Save filter</button> */}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 shrink-0">
                   {/* Sprint controls are manager-only; employees just work the board. */}
                   {isManager && activeSprints.length > 0 && (
                     <>
                       <button
                         onClick={() => setIsCompletingSprint(true)}
-                        className="px-4 py-1.5 text-sm font-medium rounded bg-red-600 text-white hover:bg-blue-700 transition-colors"
+                        className="h-8 px-3 text-xs font-semibold rounded bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap cursor-pointer"
                       >
                         Complete sprint
                       </button>
@@ -2007,7 +2150,7 @@ const ITKanbanPage = ({ department }) => {
                         <button
                           onClick={() => setShowSprintDetails(!showSprintDetails)}
                           title="Sprint details"
-                          className={`p-1.5 rounded border transition-colors ${showSprintDetails
+                          className={`h-8 w-8 flex items-center justify-center rounded border transition-colors cursor-pointer ${showSprintDetails
                             ? 'bg-blue-50 border-blue-300 text-blue-700'
                             : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
                         >
@@ -2038,7 +2181,7 @@ const ITKanbanPage = ({ department }) => {
                       </div>
                     </>
                   )}
-                  <button className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 font-medium"><Download size={14} /> Export</button>
+                  <button className="h-8 px-3 flex items-center gap-1.5 rounded border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap cursor-pointer"><Download size={14} /> Export</button>
                   {/* <button className="text-gray-400 hover:text-gray-600"><MoreHorizontal size={16} /></button> */}
                 </div>
               </div>
@@ -2109,7 +2252,7 @@ const ITKanbanPage = ({ department }) => {
                                           ref={provided.innerRef}
                                           className={`flex-1 overflow-y-auto min-h-0 flex flex-col gap-2 pb-2 transition-colors rounded custom-scrollbar ${snapshot.isDraggingOver ? 'bg-blue-50/50' : ''}`}
                                         >
-                                          {(boardData[col] || []).map((card, idx) => (
+                                          {(boardData[col] || []).slice(0, limitFor(col)).map((card, idx) => (
                                             <Draggable key={card.key} draggableId={card.key} index={idx}>
                                               {(provided, snapshot) => (
                                                 <div
@@ -2222,7 +2365,14 @@ const ITKanbanPage = ({ department }) => {
                                                       <div className="relative card-priority-dropdown shrink-0">
                                                         <button
                                                           type="button"
-                                                          onClick={(e) => handleOpenCardPriority(e, card.key)}
+                                                          onClick={(e) => {
+                                                            if (!canManageWork && hasWorkStarted(card.status)) {
+                                                              e.stopPropagation();
+                                                              showErrorToast('Only a manager can change the priority once work has started');
+                                                              return;
+                                                            }
+                                                            handleOpenCardPriority(e, card.key);
+                                                          }}
                                                           className={`flex items-center gap-0.5 pl-0.5 pr-1 py-0.5 rounded text-[11px] text-gray-600 hover:bg-gray-100 transition cursor-pointer ${openCardPriorityDropdown === card.key ? 'bg-gray-100' : ''}`}
                                                           title={`Priority: ${card.priority || 'None'} (click to change)`}
                                                         >
@@ -2267,20 +2417,77 @@ const ITKanbanPage = ({ department }) => {
                                                       {(() => {
                                                         const value = card.due_date || card.start_date;
                                                         const text = formatDate(value);
-                                                        if (!text) return null;
                                                         const isDue = !!card.due_date;
                                                         const overdue = isDue && !isDoneStatus(card.status) && isPastDate(value);
+                                                        // Anyone can set a missing date; moving a set date is for managers.
+                                                        const canMove = !isDoneStatus(card.status) && (canManageWork || !card.due_date);
+                                                        const dayStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                                                        const addDays = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
+                                                        // Next working day (Sunday is off).
+                                                        const nextWorkingDay = () => { const d = addDays(1); if (d.getDay() === 0) d.setDate(d.getDate() + 1); return d; };
+                                                        const nextMonday = () => { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); return d; };
+                                                        const current = getIssueDateParts(value);
+                                                        const quick = [
+                                                          ['Today', dayStr(new Date())],
+                                                          ['Next working day', dayStr(nextWorkingDay())],
+                                                          ['Next Monday', dayStr(nextMonday())],
+                                                          ['In one week', dayStr(addDays(7))]
+                                                        ];
+                                                        if (!text && !canMove) return null;
                                                         return (
-                                                          <span
-                                                            title={`${isDue ? 'Due' : 'Starts'} ${text}${overdue ? ' — overdue' : ''}`}
-                                                            className={`shrink-0 inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border ${overdue
-                                                              ? 'bg-red-50 text-red-700 border-red-200 font-medium'
-                                                              : 'bg-gray-50 text-gray-600 border-gray-200'
-                                                              }`}
-                                                          >
-                                                            <Calendar size={11} className={overdue ? 'text-red-500' : 'text-gray-500'} />
-                                                            {text}
-                                                          </span>
+                                                          <div className="relative card-date-dropdown shrink-0">
+                                                            <button
+                                                              type="button"
+                                                              onClick={(e) => canMove ? handleOpenCardDate(e, card.key) : e.stopPropagation()}
+                                                              title={canMove ? `${text ? `${isDue ? 'Due' : 'Starts'} ${text}${overdue ? ' (overdue)' : ''}. ` : ''}Click to reschedule` : `${isDue ? 'Due' : 'Started'} ${text}`}
+                                                              className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border transition ${canMove ? 'cursor-pointer hover:ring-1 hover:ring-blue-400' : 'cursor-default'} ${openCardDateDropdown === card.key ? 'ring-1 ring-blue-500' : ''} ${overdue
+                                                                ? 'bg-red-50 text-red-700 border-red-200 font-medium'
+                                                                : 'bg-gray-50 text-gray-600 border-gray-200'
+                                                                }`}
+                                                            >
+                                                              <Calendar size={11} className={overdue ? 'text-red-500' : 'text-gray-500'} />
+                                                              {text || 'Set date'}
+                                                            </button>
+
+                                                            {openCardDateDropdown === card.key && (
+                                                              <BodyPortal>
+                                                                <div
+                                                                  className="card-date-dropdown bg-white border border-gray-200 rounded shadow-2xl p-3 text-xs text-gray-700 border-t-2 border-t-blue-500"
+                                                                  onClick={(e) => e.stopPropagation()}
+                                                                  onMouseDown={(e) => e.stopPropagation()}
+                                                                  style={{ position: 'fixed', top: `${cardDatePos.top}px`, left: `${cardDatePos.left}px`, width: '250px', zIndex: 99999 }}
+                                                                >
+                                                                  <div className="font-semibold text-gray-900 mb-0.5">Reschedule {card.key}</div>
+                                                                  <div className="text-[11px] text-gray-500 mb-2">{text ? `Currently ${isDue ? 'due' : 'starting'} ${text}` : 'No date set'}</div>
+                                                                  <div className="grid grid-cols-2 gap-1.5 mb-2">
+                                                                    {quick.map(([label, d]) => (
+                                                                      <button
+                                                                        key={label}
+                                                                        type="button"
+                                                                        disabled={d === current}
+                                                                        onClick={() => handleRescheduleCard(card, d)}
+                                                                        className="px-2 py-1.5 rounded border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-left disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                                                      >
+                                                                        <div className="font-medium text-gray-800">{label}</div>
+                                                                        <div className="text-[10px] text-gray-500">{new Date(`${d}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}</div>
+                                                                      </button>
+                                                                    ))}
+                                                                  </div>
+                                                                  <label className="block text-[11px] text-gray-600 mb-1" htmlFor={`resched-${card.key}`}>Or pick a date</label>
+                                                                  <input
+                                                                    id={`resched-${card.key}`}
+                                                                    type="date"
+                                                                    autoFocus
+                                                                    min={dayStr(new Date())}
+                                                                    defaultValue={current || ''}
+                                                                    onChange={(e) => { if (e.target.value) handleRescheduleCard(card, e.target.value); }}
+                                                                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-blue-500"
+                                                                  />
+                                                                  <p className="text-[10px] text-gray-400 mt-2">The change is saved in the ticket's History.</p>
+                                                                </div>
+                                                              </BodyPortal>
+                                                            )}
+                                                          </div>
                                                         );
                                                       })()}
 
@@ -2452,6 +2659,15 @@ const ITKanbanPage = ({ department }) => {
                                             </Draggable>
                                           ))}
                                           {provided.placeholder}
+                                          {(boardData[col] || []).length > limitFor(col) && (
+                                            <button
+                                              type="button"
+                                              onClick={() => setColumnLimits(prev => ({ ...prev, [col]: limitFor(col) + CARD_PAGE }))}
+                                              className="w-full py-2 text-xs font-medium text-gray-600 bg-white/70 border border-dashed border-gray-300 rounded hover:bg-white hover:text-gray-900 cursor-pointer"
+                                            >
+                                              Show more ({(boardData[col] || []).length - limitFor(col)} hidden)
+                                            </button>
+                                          )}
                                         </div>
                                       )}
                                     </Droppable>

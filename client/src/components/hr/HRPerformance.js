@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Users, CheckCircle2, Clock, Timer, AlertTriangle, Trophy, Award, Zap, Target,
-  Download, Printer, ArrowLeft, Search, ChevronUp, ChevronDown, Info, Star, TrendingUp, X,
+  Download, Printer, Calendar, ArrowLeft, Search, ChevronUp, ChevronDown, Info, Star, TrendingUp, X,
   ListChecks, MessageSquare, Video, FileText, Flame, CircleSlash
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Legend } from 'recharts';
@@ -23,12 +23,15 @@ const GRADE_STYLE = {
   'Not enough data': { cls: 'bg-gray-50 text-gray-600 border-gray-200', icon: CircleSlash }
 };
 const COMPONENT_LABELS = {
-  completion: 'Completion rate',
+  output: 'Effort delivered vs hours available',
+  utilisation: 'Hours recorded vs hours available',
   onTime: 'On-time delivery',
-  output: 'Output (points vs. busiest peer)',
-  logging: 'Time logged on finished tasks',
+  engagement: 'Days active vs working days',
   efficiency: 'Efficiency (planned ÷ actual time)',
-  review: 'Manager review score'
+  review: 'Manager review score',
+  // older reports
+  completion: 'Completion rate',
+  logging: 'Time logged on finished tasks'
 };
 
 const fmtNum = (v, suffix = '') => (v == null ? '—' : `${v}${suffix}`);
@@ -196,14 +199,17 @@ const ScoreExplainer = ({ weights }) => (
   <details className="text-xs text-gray-600 mt-2">
     <summary className="cursor-pointer text-blue-700 font-medium select-none">How is the score calculated?</summary>
     <div className="mt-2 space-y-1 leading-relaxed">
-      <p>The score (0–100) combines only what was recorded in the selected period:</p>
+      <p>The score (0–100) measures <strong>work, not ticket counts</strong>. Every finished task is worth its size in standard
+        hours: its own planned time, or the standard size for its kind of work (set in the Work types tab), × a small
+        priority weight. So 20 quick GMB posts don't outweigh 3 videos. Parts of the score:</p>
       <ul className="list-disc pl-5 space-y-0.5">
         {Object.entries(weights || {}).map(([k, w]) => (
           <li key={k}><strong>{COMPONENT_LABELS[k]}</strong> — weight {w}</li>
         ))}
       </ul>
-      <p>Parts with no data (for example no due dates, or no review) are left out and the rest are re-weighted.
-        With no finished task and no review, the grade is <em>Not enough data</em> rather than a guess.
+      <p>Parts with no data (no due dates, no time recorded by anyone, no review) are left out and the rest re-weighted.
+        With no finished work, no recorded time and no review, the grade is <em>Not enough data</em> rather than a guess.
+        Effort over ~110% of available hours is flagged: sizes are too high, or work was closed in bulk.
         Grades: 85+ Excellent · 70+ Good · 50+ Fair · below 50 Needs attention.</p>
     </div>
   </details>
@@ -241,7 +247,10 @@ const InsightsCard = ({ insights }) => {
 // "Better" direction per measure, so the comparison can say ahead/behind correctly.
 const COMPARE_ROWS = [
   ['score', 'Score', '', 'up'],
-  ['tasksCompleted', 'Tasks completed', '', 'up'],
+  ['effortHours', 'Effort delivered', ' h', 'up'],
+  ['utilisation', 'Hours recorded vs available', '%', 'up'],
+  ['activeDayRate', 'Days active', '%', 'up'],
+  ['tasksCompleted', 'Tasks completed (count only)', '', 'neutral'],
   ['onTimeRate', 'On-time delivery', '%', 'up'],
   ['avgHoursPerTask', 'Avg hours per task', ' h', 'down'],
   ['efficiency', 'Efficiency (planned ÷ actual)', '%', 'up'],
@@ -567,8 +576,8 @@ const TeamOverview = ({ data, onOpenEmployee }) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
-        <StatTile icon={CheckCircle2} label="Tasks completed" value={t.tasksCompleted} hint={`of ${t.tasksAssigned} in the period`} />
-        <StatTile icon={Clock} label="Hours logged" value={t.hoursLogged || 0} hint={noTime ? 'No time was logged' : 'Working hours, all sources'} />
+        <StatTile icon={Award} label="Effort delivered" value={`${t.effortHours || 0} h`} hint={`from ${t.tasksCompleted} finished tasks`} />
+        <StatTile icon={Clock} label="Hours logged" value={t.hoursLogged || 0} hint={noTime ? 'No time was logged' : `${fmtNum(t.utilisation, '%')} of ${t.availableHours} h available`} />
         <StatTile icon={Timer} label="Avg hours / task" value={t.avgHoursPerTask != null ? `${t.avgHoursPerTask} h` : '—'} hint="Recorded time per finished task" />
         <StatTile icon={Zap} label="Efficiency" value={fmtNum(t.efficiency, '%')} hint={t.plannedHours ? `Planned ${t.plannedHours} h · took ${t.actualHoursOnPlanned} h` : 'Needs planned time on tasks'} />
         <StatTile icon={Target} label="On-time delivery" value={fmtNum(t.onTimeRate, '%')} hint="Finished tasks that had a due date" />
@@ -591,8 +600,8 @@ const TeamOverview = ({ data, onOpenEmployee }) => {
 
       <Section title="Best records this period" subtitle="Click a name to open their report">
         <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
-          <LeaderCard icon={Trophy} label="Most tasks completed" leader={data.leaders.mostCompleted} unit=" tasks" onOpen={onOpenEmployee} />
-          <LeaderCard icon={Star} label="Most points earned" leader={data.leaders.mostPoints} unit=" pts" onOpen={onOpenEmployee} />
+          <LeaderCard icon={Trophy} label="Most effort delivered" leader={data.leaders.mostEffort} unit=" h" onOpen={onOpenEmployee} />
+          <LeaderCard icon={Users} label="Most days active" leader={data.leaders.mostActiveDays} unit=" days" onOpen={onOpenEmployee} />
           <LeaderCard icon={Clock} label="Most hours logged" leader={data.leaders.mostHours} unit=" h" onOpen={onOpenEmployee} />
           <LeaderCard icon={Target} label="Best on-time rate" leader={data.leaders.bestOnTime} unit="%" onOpen={onOpenEmployee} />
           <LeaderCard icon={Zap} label="Fastest avg completion" leader={data.leaders.fastestCycle} unit=" days" onOpen={onOpenEmployee} />
@@ -637,15 +646,19 @@ const COLUMNS = [
   { key: 'rank', label: 'Rank', get: r => -(r.rank ?? 9999) },
   { key: 'name', label: 'Employee', get: r => r.name, align: 'left' },
   { key: 'score', label: 'Score', get: r => r.score ?? -1 },
-  { key: 'completed', label: 'Done / assigned', get: r => r.metrics.tasksCompleted },
+  { key: 'effort', label: 'Effort (h)', get: r => r.metrics.effortHours || 0 },
+  { key: 'productivity', label: 'Effort / available', get: r => r.metrics.productivity ?? -1 },
+  { key: 'completed', label: 'Tasks done', get: r => r.metrics.tasksCompleted },
   { key: 'onTime', label: 'On-time', get: r => r.metrics.onTimeRate ?? -1 },
   { key: 'cycle', label: 'Avg days', get: r => r.metrics.avgCycleDays ?? 9999 },
   { key: 'hours', label: 'Hours', get: r => r.metrics.hoursLogged ?? 0 },
   { key: 'perTask', label: 'Avg h / task', get: r => r.metrics.avgHoursPerTask ?? -1 },
   { key: 'efficiency', label: 'Efficiency', get: r => r.metrics.efficiency ?? -1 },
-  { key: 'points', label: 'Points', get: r => r.metrics.pointsEarned },
+  { key: 'perTicket', label: 'h / task', get: r => r.metrics.avgEffortPerTask ?? -1 },
   { key: 'meetings', label: 'Meetings', get: r => r.metrics.meetings },
   { key: 'activeDays', label: 'Active days', get: r => r.metrics.activeDays },
+  { key: 'rescheduled', label: 'Rescheduled', get: r => r.metrics.reschedules || 0 },
+  { key: 'planVsStd', label: 'Own plans vs std', get: r => r.metrics.planVsStandard ?? -1 },
   { key: 'overdue', label: 'Overdue', get: r => r.metrics.overdueOpen }
 ];
 
@@ -681,7 +694,7 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
       )}
     >
       <div className="overflow-x-auto -mx-4">
-        <table className="w-full text-sm min-w-[1180px]">
+        <table className="w-full text-sm min-w-[1440px]">
           <thead>
             <tr className="text-xs text-gray-500 border-b border-gray-200">
               {COLUMNS.map(c => (
@@ -708,6 +721,8 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
                   </div>
                 </td>
                 <td className="py-2.5 px-3 text-right"><GradeBadge grade={r.grade} score={r.score} /></td>
+                <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-gray-900">{r.metrics.effortHours || 0}</td>
+                <td className={`py-2.5 px-3 text-right tabular-nums ${r.metrics.effortExceedsCapacity ? 'text-amber-700' : ''}`} title={r.metrics.effortExceedsCapacity ? 'More effort than hours available: check sizes or bulk-closed work' : undefined}>{fmtNum(r.metrics.productivity, '%')}{r.metrics.effortExceedsCapacity ? ' ⚠' : ''}</td>
                 <td className="py-2.5 px-3 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden hidden md:block" aria-hidden="true">
@@ -721,9 +736,17 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
                 <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.hoursLogged || 0}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{fmtNum(r.metrics.avgHoursPerTask)}</td>
                 <td className={`py-2.5 px-3 text-right tabular-nums ${r.metrics.efficiency == null ? '' : r.metrics.efficiency >= 90 ? 'text-green-700' : r.metrics.efficiency < 75 ? 'text-red-700' : 'text-amber-700'}`}>{fmtNum(r.metrics.efficiency, '%')}</td>
-                <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.pointsEarned}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums">{fmtNum(r.metrics.avgEffortPerTask)}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.meetings}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.activeDays}</td>
+                <td className={`py-2.5 px-3 text-right tabular-nums ${r.metrics.reschedules >= 3 ? 'text-amber-700 font-semibold' : ''}`}
+                  title={r.metrics.reschedules ? `${r.metrics.reschedules} date change(s) on ${r.metrics.rescheduledTasks} task(s); ${r.metrics.reschedulesBySelf} by themselves; pushed back ${r.metrics.postponedDays} days in total` : undefined}>
+                  {r.metrics.reschedules || 0}
+                </td>
+                <td className={`py-2.5 px-3 text-right tabular-nums ${r.metrics.planVsStandard >= 150 ? 'text-amber-700 font-semibold' : ''}`}
+                  title={r.metrics.ownPlansCount ? `Average of the person's own planned times vs the standard size, over ${r.metrics.ownPlansCount} task(s). Not used in the score.` : 'No own planned times'}>
+                  {fmtNum(r.metrics.planVsStandard, '%')}
+                </td>
                 <td className={`py-2.5 px-3 pr-4 text-right tabular-nums ${r.metrics.overdueOpen > 0 ? 'text-red-700 ' : ''}`}>{r.metrics.overdueOpen}</td>
               </tr>
             ))}
@@ -731,6 +754,137 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
         </table>
         {rows.length === 0 && <Empty>No employees match.</Empty>}
       </div>
+    </Section>
+  );
+};
+
+/* ───────────────────────── standard work sizes ───────────────────────── */
+
+const WorkSizesEditor = () => {
+  const [rows, setRows] = useState(null);
+  const [canEdit, setCanEdit] = useState(false);
+  const [draft, setDraft] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [meta, setMeta] = useState({ minMeasuredTasks: 5, windowDays: 90 });
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/hr/performance/work-sizes`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load sizes');
+      setRows(data.sizes); setCanEdit(Boolean(data.canEdit)); setDraft({});
+      setMeta({ minMeasuredTasks: data.minMeasuredTasks || 5, windowDays: data.windowDays || 90 });
+    } catch (e) { setRows([]); Swal.fire('Could not load work sizes', e.message, 'error'); }
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const changed = Object.entries(draft).filter(([k, v]) => {
+    const row = (rows || []).find(r => r.workType === k);
+    return row && String(v) !== String(row.hours);
+  });
+  const save = async () => {
+    const bad = changed.find(([, v]) => !(Number(v) > 0 && Number(v) <= 200));
+    if (bad) { Swal.fire('Check the sizes', `"${bad[0]}" must be between 0 and 200 hours.`, 'warning'); return; }
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/hr/performance/work-sizes`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sizes: changed.map(([workType, hours]) => ({ workType, hours: Number(hours) })) })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to save');
+      Swal.fire({ icon: 'success', title: 'Sizes saved', text: 'Reload the report to see updated scores.', timer: 1800, showConfirmButton: false });
+      load();
+    } catch (e) { Swal.fire('Could not save', e.message, 'error'); } finally { setSaving(false); }
+  };
+
+  // Measured values that differ from the current standard and have enough tasks behind them.
+  const applicable = (rows || []).filter(r => r.measured?.enough && Math.abs(r.measured.suggested - Number(draft[r.workType] ?? r.hours)) >= 0.25);
+  const applyMeasured = (list) => setDraft(d => {
+    const next = { ...d };
+    list.forEach(r => { next[r.workType] = r.measured.suggested; });
+    return next;
+  });
+
+  return (
+    <Section
+      title="Standard size of each kind of work"
+      subtitle="Hours a typical task of this kind takes. A finished task without its own planned time is worth this much effort, so many small tasks don't outweigh a few big ones."
+      right={canEdit && (
+        <div className="flex items-center gap-2">
+          {applicable.length > 0 && (
+            <button onClick={() => applyMeasured(applicable)} className="text-xs font-medium px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-50 cursor-pointer"
+              title={`Fill in the measured median for every work type with at least ${meta.minMeasuredTasks} finished tasks. Nothing is saved until you press Save.`}>
+              Apply all measured ({applicable.length})
+            </button>
+          )}
+          {changed.length > 0 && (
+            <button onClick={save} disabled={saving} className="text-xs font-semibold px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 cursor-pointer">
+              {saving ? 'Saving…' : `Save ${changed.length} change${changed.length > 1 ? 's' : ''}`}
+            </button>
+          )}
+        </div>
+      )}
+    >
+      {rows == null ? <div className="text-sm text-gray-500">Loading…</div> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
+            <thead>
+              <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+                <th className="py-2 pr-3 font-medium">Work type</th>
+                <th className="py-2 px-3 font-medium text-right">Standard (h)</th>
+                <th className="py-2 px-3 font-medium text-right" title={`Median recorded time on finished tasks, last ${meta.windowDays} days`}>Measured typical</th>
+                <th className="py-2 px-3 font-medium text-right">Average · range</th>
+                <th className="py-2 pl-3 font-medium text-right">Tasks</th>
+                {canEdit && <th className="py-2 pl-3" />}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r => {
+                const m = r.measured;
+                const current = Number(draft[r.workType] ?? r.hours);
+                const differs = m && Math.abs(m.suggested - current) >= 0.25;
+                return (
+                  <tr key={r.workType} className="border-b border-gray-100 last:border-0">
+                    <td className="py-1.5 pr-3 text-gray-800">
+                      {r.workType}{r.isDefault && <span className="text-[10px] text-gray-400 ml-1">(default)</span>}
+                    </td>
+                    <td className="py-1.5 px-3 text-right">
+                      <input type="number" min="0.1" max="200" step="0.25" disabled={!canEdit}
+                        value={draft[r.workType] ?? r.hours}
+                        onChange={e => setDraft(d => ({ ...d, [r.workType]: e.target.value }))}
+                        className="w-20 text-right border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-50" aria-label={`Standard hours for ${r.workType}`} />
+                    </td>
+                    <td className={`py-1.5 px-3 text-right tabular-nums ${m ? (m.enough ? 'font-semibold text-gray-900' : 'text-gray-500') : 'text-gray-300'}`}>
+                      {m ? `${m.median} h` : '—'}
+                    </td>
+                    <td className="py-1.5 px-3 text-right tabular-nums text-xs text-gray-500">
+                      {m ? `${m.average} h · ${m.min}–${m.max} h` : 'no recorded time yet'}
+                    </td>
+                    <td className="py-1.5 pl-3 text-right tabular-nums text-xs">
+                      {m ? <span className={m.enough ? 'text-gray-700' : 'text-amber-700'} title={m.enough ? undefined : `Needs at least ${meta.minMeasuredTasks} finished tasks to be reliable`}>{m.tasks}{m.enough ? '' : ` / ${meta.minMeasuredTasks}`}</span> : '—'}
+                    </td>
+                    {canEdit && (
+                      <td className="py-1.5 pl-3 text-right">
+                        {m && m.enough && differs && (
+                          <button onClick={() => applyMeasured([r])} className="text-xs font-medium text-blue-700 hover:underline cursor-pointer whitespace-nowrap">
+                            Use {m.suggested} h
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="text-[11px] text-gray-500 mt-3">
+        Measured typical = the median of the total time recorded on each finished task of that kind in the last {meta.windowDays} days
+        (median, so one forgotten timer doesn't distort it). It's offered once {meta.minMeasuredTasks}+ tasks have time recorded,
+        rounded to the nearest quarter hour. Nothing changes until a manager chooses "Use" and saves, so a slower month can't
+        quietly raise the standard.
+      </p>
     </Section>
   );
 };
@@ -746,11 +900,11 @@ const VERDICT_STYLE = {
 };
 
 const PlannedVsActual = ({ metrics: m, tasks }) => {
-  const rows = (tasks || []).filter(t => t.estimateHours);
+  const rows = (tasks || []).filter(t => t.planHours);
   const chart = rows.filter(t => t.hoursLogged).slice(0, 12).reverse()
-    .map(t => ({ label: t.key, Planned: Math.round(t.estimateHours * 10) / 10, Actual: t.hoursLogged }));
+    .map(t => ({ label: t.key, Planned: Math.round(t.planHours * 10) / 10, Actual: t.hoursLogged }));
   return (
-    <Section title="Planned vs actual time" subtitle="Finished tasks in this period that had a planned time. Efficiency = planned ÷ actual (100% = exactly on plan).">
+    <Section title="Planned vs actual time" subtitle="Plan used = a manager-approved planned time, else the standard size for the work. An employee's own estimate is shown but never scored. Efficiency = plan ÷ actual (100% = on plan).">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
         <StatTile icon={Target} label="Planned" value={fmtNum(m.plannedHours, ' h')} />
         <StatTile icon={Clock} label="Actual" value={fmtNum(m.actualHoursOnPlanned, ' h')} />
@@ -782,7 +936,8 @@ const PlannedVsActual = ({ metrics: m, tasks }) => {
               <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
                 <th className="py-2 pr-3 font-medium">Task</th>
                 <th className="py-2 px-3 font-medium">Work type</th>
-                <th className="py-2 px-3 font-medium text-right">Planned</th>
+                <th className="py-2 px-3 font-medium text-right">Plan used</th>
+                <th className="py-2 px-3 font-medium text-right">Own estimate</th>
                 <th className="py-2 px-3 font-medium text-right">Actual</th>
                 <th className="py-2 px-3 font-medium text-right">Difference</th>
                 <th className="py-2 px-3 font-medium text-right">Efficiency</th>
@@ -794,7 +949,12 @@ const PlannedVsActual = ({ metrics: m, tasks }) => {
                 <tr key={t.key} className="border-b border-gray-100 last:border-0">
                   <td className="py-2 pr-3 max-w-[300px]"><div className="text-[11px] text-gray-500">{t.key}</div><div className="truncate" title={t.title}>{t.title}</div></td>
                   <td className="py-2 px-3 text-xs text-gray-700">{t.workType}</td>
-                  <td className="py-2 px-3 text-right tabular-nums">{Math.round(t.estimateHours * 10) / 10} h</td>
+                  <td className="py-2 px-3 text-right tabular-nums" title={t.planBasis === 'approved plan' ? 'Set or approved by a manager' : 'Standard size for this kind of work'}>
+                    {Math.round(t.planHours * 10) / 10} h<div className="text-[10px] text-gray-400">{t.planBasis}</div>
+                  </td>
+                  <td className={`py-2 px-3 text-right tabular-nums ${t.planVsStandard >= 150 ? 'text-amber-700' : 'text-gray-500'}`}>
+                    {t.estimateHours && !t.estimateApproved ? `${Math.round(t.estimateHours * 10) / 10} h` : '—'}
+                  </td>
                   <td className="py-2 px-3 text-right tabular-nums">{t.hoursLogged ? `${t.hoursLogged} h` : '—'}</td>
                   <td className={`py-2 px-3 text-right tabular-nums ${t.varianceHours > 0 ? 'text-red-700' : t.varianceHours < 0 ? 'text-green-700' : ''}`}>{t.varianceHours == null ? '—' : `${t.varianceHours > 0 ? '+' : ''}${t.varianceHours} h`}</td>
                   <td className="py-2 px-3 text-right tabular-nums">{fmtNum(t.efficiency, '%')}</td>
@@ -894,6 +1054,7 @@ const DETAIL_TABS = [
   ['open', 'Open tasks', FileText],
   ['time', 'Time log', Clock],
   ['meetings', 'Meetings', Video],
+  ['reschedules', 'Reschedules', Calendar],
   ['activity', 'Activity', MessageSquare],
   ['reviews', 'Reviews', Star]
 ];
@@ -1031,7 +1192,10 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <StatTile icon={CheckCircle2} label="Completed" value={m.tasksCompleted} hint={`of ${m.tasksAssigned} assigned`} />
+        <StatTile icon={Award} label="Effort delivered" value={`${m.effortHours || 0} h`} hint={m.tasksCompleted ? `${m.tasksCompleted} tasks · ~${m.avgEffortPerTask} h each` : 'No finished task'} />
+        <StatTile icon={Target} label="Effort / available" value={fmtNum(m.productivity, '%')} hint={`${m.availableHours} working hours available`} tone={m.effortExceedsCapacity ? 'warn' : 'default'} />
+        <StatTile icon={Clock} label="Hours recorded" value={fmtNum(m.utilisation, '%')} hint={`${m.hoursLogged || 0} h of ${m.availableHours} h`} />
+        <StatTile icon={CheckCircle2} label="Tasks done" value={m.tasksCompleted} hint={`of ${m.tasksAssigned} assigned`} />
         <StatTile icon={ListChecks} label="Subtasks done" value={m.subtasksCompleted} />
         <StatTile icon={Target} label="On-time" value={fmtNum(m.onTimeRate, '%')} hint={`${m.onTimeCompleted} on time · ${m.lateCompleted} late`} />
         <StatTile icon={Timer} label="Avg days / task" value={fmtNum(m.avgCycleDays)} hint={m.fastestCycleDays != null ? `Fastest ${m.fastestCycleDays} d` : 'Start → done'} />
@@ -1042,6 +1206,12 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
         <StatTile icon={Star} label="Points" value={m.pointsEarned} hint={m.pointsApproved ? `${m.pointsApproved} approved` : 'From finished tasks'} />
         <StatTile icon={Video} label="Meetings" value={m.meetings} hint={m.meetingHours ? `${m.meetingHours} h${m.avgMeetingMinutes ? ` · avg ${m.avgMeetingMinutes} min` : ''}` : undefined} />
         <StatTile icon={AlertTriangle} label="Overdue now" value={m.overdueOpen} tone="warn" />
+        <StatTile icon={Calendar} label="Rescheduled" value={m.reschedules || 0}
+          hint={m.reschedules ? `${m.rescheduledTasks} task${m.rescheduledTasks > 1 ? 's' : ''} · ${m.reschedulesBySelf} by self · +${m.postponedDays} days` : 'No due dates moved'}
+          tone={m.reschedules >= 3 ? 'warn' : 'default'} />
+        <StatTile icon={Target} label="Own plans vs standard" value={fmtNum(m.planVsStandard, '%')}
+          hint={m.ownPlansCount ? `${m.ownPlansCount} task${m.ownPlansCount > 1 ? 's' : ''} · 100% = normal · not scored` : 'No own planned times'}
+          tone={m.planVsStandard >= 150 ? 'warn' : 'default'} />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -1119,7 +1289,8 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
           {DETAIL_TABS.map(([k, label, Icon]) => {
             const count = k === 'completed' ? data.tasks.completed.length : k === 'open' ? data.tasks.open.length
               : k === 'time' ? data.timeLog.length : k === 'meetings' ? data.meetings.length
-                : k === 'activity' ? data.activity.length : data.reviews.length;
+                : k === 'reschedules' ? (data.rescheduleLog || []).length
+                  : k === 'activity' ? data.activity.length : data.reviews.length;
             return (
               <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
                 className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 -mb-px whitespace-nowrap cursor-pointer ${tab === k ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
@@ -1162,6 +1333,27 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
                 </tr>
               ))}</tbody>
             </table>
+          ))}
+          {tab === 'reschedules' && ((data.rescheduleLog || []).length === 0 ? <Empty>No due dates were moved in this period.</Empty> : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
+                <thead><tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+                  <th className="py-2 pr-3 font-medium">When</th><th className="py-2 px-3 font-medium">Task</th>
+                  <th className="py-2 px-3 font-medium">From → to</th><th className="py-2 px-3 font-medium text-right">Shift</th>
+                  <th className="py-2 pl-3 font-medium">Moved by</th>
+                </tr></thead>
+                <tbody>{data.rescheduleLog.map((r, i) => (
+                  <tr key={i} className="border-b border-gray-100 last:border-0">
+                    <td className="py-2 pr-3 text-xs text-gray-700 whitespace-nowrap">{fmtDateTime(r.at)}</td>
+                    <td className="py-2 px-3 max-w-[280px]"><div className="text-[11px] text-gray-500">{r.key}</div><div className="truncate" title={r.title}>{r.title}</div></td>
+                    <td className="py-2 px-3 text-xs whitespace-nowrap">{fmtDate(r.from)} → {fmtDate(r.to)}</td>
+                    <td className={`py-2 px-3 text-right tabular-nums ${r.shiftDays > 0 ? 'text-amber-700' : 'text-green-700'}`}>{r.shiftDays == null ? '—' : `${r.shiftDays > 0 ? '+' : ''}${r.shiftDays} d`}</td>
+                    <td className="py-2 pl-3 text-xs">{r.by}{r.bySelf ? <span className="text-gray-400"> (self)</span> : ''}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+              <p className="text-[11px] text-gray-500 mt-2">On-time delivery is judged against the latest due date. This list shows every move so managers can see how often deadlines changed and who changed them.</p>
+            </div>
           ))}
           {tab === 'activity' && (data.activity.length === 0 ? <Empty>No ticket updates or comments in this period.</Empty> : (
             <ol className="relative border-l border-gray-200 ml-2 space-y-3">
@@ -1305,9 +1497,12 @@ const HRPerformance = () => {
           {tab === 'employees' && <EmployeesTable data={data} onOpenEmployee={setOpenEmployee} />}
           {tab === 'champions' && <ChampionsView data={data} onOpenEmployee={setOpenEmployee} />}
           {tab === 'worktypes' && (
-            <Section title="Average time by kind of work" subtitle="Team benchmarks from all recorded history. Use them to set realistic estimates and spot outliers.">
-              <WorkTypeTable rows={data.workTypes} team />
-            </Section>
+            <div className="space-y-4">
+              <WorkSizesEditor />
+              <Section title="Average time by kind of work" subtitle="Actual time recorded, from all history. Compare with the standard sizes above to tune them.">
+                <WorkTypeTable rows={data.workTypes} team />
+              </Section>
+            </div>
           )}
         </div>
       )}

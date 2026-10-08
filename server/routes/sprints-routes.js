@@ -169,6 +169,31 @@ module.exports = function setupSprintsRoutes(app, pool) {
 
       const [sprints] = await db.query(sql, params);
 
+      // lite=true: just the sprints and their counts, no ticket lists. The board, the
+      // details panel and the create drawers only need ids/names/status; sending every
+      // ticket inside every sprint made each of those calls several MB.
+      if (req.query.lite === 'true') {
+        const ids = sprints.map(s => s.id);
+        const counts = new Map(ids.map(id => [id, { todo: 0, inProgress: 0, done: 0 }]));
+        if (ids.length) {
+          const [rows] = await db.query(
+            `SELECT sprint_id, UPPER(TRIM(COALESCE(status, ''))) AS st, COUNT(*) AS n
+               FROM it_kanban_issues WHERE sprint_id IN (?) GROUP BY sprint_id, st`,
+            [ids]
+          );
+          rows.forEach(r => {
+            const c = counts.get(r.sprint_id);
+            if (!c) return;
+            if (isDone(r.st)) c.done += Number(r.n);
+            else if (r.st === 'IN PROGRESS') c.inProgress += Number(r.n);
+            else c.todo += Number(r.n);
+          });
+        }
+        sprints.forEach(s => { s.counts = counts.get(s.id); });
+        const active = sprints.filter(s => s.status === 'Active');
+        return res.json({ sprints, backlog: [], activeSprints: active, activeSprint: active[0] || null });
+      }
+
       // Attach each sprint's items plus a To Do / In Progress / Done breakdown.
       for (const s of sprints) {
         // Only include issues relevant to this department (including cross-department assignments).
