@@ -32,12 +32,12 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
       className="fixed inset-0 z-[100] overflow-y-auto"
     >
       <div className="flex min-h-screen items-center justify-center px-4 text-center">
-        <div className="fixed inset-0 bg-red-600/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
+        <div className="fixed inset-0 bg-gray-600/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
         <div
           className="inline-block w-full max-w-md transform overflow-hidden rounded bg-white text-left align-middle shadow-2xl transition-all border border-gray-100 relative z-10"
         >
-          <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+          <div className="relative overflow-hidden bg-red-600 px-6 py-4">
             <div className="absolute inset-0 bg-white/10 mix-blend-overlay"></div>
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center gap-3">
