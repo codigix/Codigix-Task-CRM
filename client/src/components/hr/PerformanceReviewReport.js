@@ -311,6 +311,8 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
           <Kpi label="Meetings" value={m.meetings} hint={m.meetingHours ? `${m.meetingHours} h total` : '—'} />
           <Kpi label="Points earned" value={m.pointsEarned} hint={m.pointsApproved ? `${m.pointsApproved} approved` : 'From finished tasks'} />
           <Kpi label="Overdue now" value={m.overdueOpen} tone={m.overdueOpen > 0 ? RED : undefined} hint={m.reopened ? `${m.reopened} reopened` : 'Open past due date'} />
+          <Kpi label="Efficiency" value={fmt(m.efficiency, '%')} tone={m.efficiency != null && m.efficiency < 75 ? RED : undefined} hint={m.plannedHours ? `Planned ${m.plannedHours} h · took ${m.actualHoursOnPlanned} h` : 'No planned time on tasks'} />
+          <Kpi label="Within plan" value={m.tasksWithPlan ? `${m.tasksWithinPlan} / ${m.tasksWithPlan}` : '—'} hint="Tasks within 10% of plan" />
         </div>
 
         <H2>Summary</H2>
@@ -332,7 +334,7 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
         <H2 sub="Parts without data are left out and the rest re-weighted">How the score is made up</H2>
         {(data.breakdown || []).length === 0 ? <div style={{ color: MUTED }}>Not enough recorded work to score this period.</div> : data.breakdown.map(p => (
           <div key={p.component} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <div style={{ width: 210, fontSize: 11 }}>{({ completion: 'Completion rate', onTime: 'On-time delivery', output: 'Output vs busiest peer', logging: 'Time recorded on tasks', review: 'Manager review' })[p.component]} <span style={{ color: MUTED }}>({p.weight}%)</span></div>
+            <div style={{ width: 210, fontSize: 11 }}>{({ completion: 'Completion rate', onTime: 'On-time delivery', efficiency: 'Efficiency (planned ÷ actual)', output: 'Output vs busiest peer', logging: 'Time recorded on tasks', review: 'Manager review' })[p.component]} <span style={{ color: MUTED }}>({p.weight}%)</span></div>
             <div style={{ flex: 1, height: 8, background: '#f3f4f6', borderRadius: 4 }}>
               <div style={{ width: `${p.value}%`, height: 8, background: BLUE, borderRadius: 4 }} />
             </div>
@@ -349,6 +351,7 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
             ['Tasks completed', m.tasksCompleted, fmt(team.tasksCompleted), pctDiff(m.tasksCompleted, team.tasksCompleted)],
             ['On-time delivery', fmt(m.onTimeRate, '%'), fmt(team.onTimeRate, '%'), pctDiff(m.onTimeRate, team.onTimeRate)],
             ['Avg hours per task', fmt(m.avgHoursPerTask, ' h'), fmt(team.avgHoursPerTask, ' h'), pctDiff(m.avgHoursPerTask, team.avgHoursPerTask, 'down')],
+            ['Efficiency', fmt(m.efficiency, '%'), fmt(team.efficiency, '%'), pctDiff(m.efficiency, team.efficiency)],
             ['Avg days start → done', fmt(m.avgCycleDays), fmt(team.avgCycleDays), pctDiff(m.avgCycleDays, team.avgCycleDays, 'down')],
             ['Hours worked', fmt(m.hoursLogged || 0), fmt(team.hoursLogged), pctDiff(m.hoursLogged, team.hoursLogged)],
             ['Active days', m.activeDays, fmt(team.activeDays), pctDiff(m.activeDays, team.activeDays)]
@@ -423,11 +426,11 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
       <Page n={3} total={TOTAL} name={name} period={period}>
         <H2 sub="Score and rank are within the department for each month">Monthly scorecard</H2>
         <Table
-          head={['Month', 'Score', 'Grade', 'Rank', 'Tasks', 'Hours', 'Avg h/task', 'On-time', 'Meetings']}
-          align={['left', 'right', 'left', 'right', 'right', 'right', 'right', 'right', 'right']}
+          head={['Month', 'Score', 'Grade', 'Rank', 'Tasks', 'Hours', 'Avg h/task', 'Efficiency', 'On-time', 'Meetings']}
+          align={['left', 'right', 'left', 'right', 'right', 'right', 'right', 'right', 'right', 'right']}
           rows={(data.scorecard || []).filter(s => s.score != null || s.tasksCompleted || s.hoursLogged || s.meetings).map(s => [
             s.label, fmt(s.score), s.score != null ? <span style={{ color: GRADE_COLOR[s.grade], fontWeight: 600 }}>{s.grade}</span> : '—',
-            s.rank ? `#${s.rank}/${s.rankedOutOf}` : '—', s.tasksCompleted, s.hoursLogged || 0, fmt(s.avgHoursPerTask), fmt(s.onTimeRate, '%'), s.meetings
+            s.rank ? `#${s.rank}/${s.rankedOutOf}` : '—', s.tasksCompleted, s.hoursLogged || 0, fmt(s.avgHoursPerTask), fmt(s.efficiency, '%'), fmt(s.onTimeRate, '%'), s.meetings
           ])}
         />
 
@@ -438,6 +441,19 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
           rows={(data.quarterCard || []).map(s => [
             s.label, fmt(s.score), s.score != null ? <span style={{ color: GRADE_COLOR[s.grade], fontWeight: 600 }}>{s.grade}</span> : '—',
             s.rank ? `#${s.rank}/${s.rankedOutOf}` : '—', s.tasksCompleted, s.hoursLogged || 0, fmt(s.avgHoursPerTask), fmt(s.onTimeRate, '%'), s.meetings
+          ])}
+        />
+
+        <H2 sub="Finished tasks with a planned time · efficiency = planned ÷ actual">Planned vs actual time</H2>
+        <Table
+          head={['Task', 'Planned', 'Actual', 'Difference', 'Efficiency', 'Result']}
+          align={['left', 'right', 'right', 'right', 'right', 'left']}
+          rows={completed.filter(t => t.estimateHours).slice(0, 12).map(t => [
+            <span><strong>{t.key}</strong> {String(t.title).slice(0, 48)}</span>,
+            `${Math.round(t.estimateHours * 10) / 10} h`, t.hoursLogged ? `${t.hoursLogged} h` : '—',
+            t.varianceHours == null ? '—' : <span style={{ color: t.varianceHours > 0 ? RED : t.varianceHours < 0 ? GREEN : INK }}>{t.varianceHours > 0 ? '+' : ''}{t.varianceHours} h</span>,
+            fmt(t.efficiency, '%'),
+            <span style={{ color: t.planVerdict === 'Over plan' ? RED : t.planVerdict === 'No time recorded' ? MUTED : GREEN, fontWeight: 600 }}>{t.planVerdict}</span>
           ])}
         />
 

@@ -900,7 +900,8 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/worklogs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ timeSpent, description, startedAt, originalEstimate, author: loggedUser })
+        // The server credits the entry to the signed-in user.
+        body: JSON.stringify({ timeSpent, description, startedAt, originalEstimate })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to log work');
@@ -910,14 +911,44 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     }
   };
 
+  // Start / Pause the ticket's timer. Start also moves a To Do ticket to In Progress, so
+  // the board is refreshed afterwards.
+  const handleTimerAction = async (action, note) => {
+    if (!issueKey) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/timer/${action === 'start' ? 'start' : 'stop'}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: note || '' })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Timer action failed');
+      if (action === 'start') {
+        showSuccessToast(data.movedToInProgress ? 'Timer started · ticket moved to In Progress' : 'Timer started');
+        if (data.movedToInProgress) setCurrentStatus('IN PROGRESS');
+      } else {
+        showSuccessToast(data.seconds ? `Logged ${data.logged}` : 'Timer stopped (no working time to log)');
+      }
+      loadWorklogs();
+      loadHistory();
+      if (onIssueCreated) onIssueCreated();
+    } catch (err) {
+      showErrorToast(err.message);
+    }
+  };
+
   const handleDeleteWorklog = async (id) => {
     if (!issueKey) return;
     try {
       const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/worklogs/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete work log');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Could not delete the entry');
+      }
       loadWorklogs();
+      loadHistory();
     } catch (err) {
-      Swal.fire('Error', 'Could not delete work log', 'error');
+      Swal.fire('Could not delete', err.message, 'error');
     }
   };
 
@@ -1147,6 +1178,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               worklogData={worklogData}
               handleLogWork={handleLogWork}
               handleDeleteWorklog={handleDeleteWorklog}
+              onTimerAction={handleTimerAction}
               handleGenerateDocs={handleGenerateDocs}
               aiDocsLoading={aiDocsLoading}
               githubData={githubData}

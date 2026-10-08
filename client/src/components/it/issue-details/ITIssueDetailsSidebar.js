@@ -90,7 +90,9 @@ const ITIssueDetailsSidebar = ({
         body: JSON.stringify({
           type: issue.type,
           priority: issue.priority,
-          subtasksCount: subtasksList.length
+          subtasksCount: subtasksList.length,
+          // With a planned time, points = planned hours × priority weight.
+          estimate: issue.original_estimate
         })
       });
       const data = await res.json();
@@ -119,13 +121,13 @@ const ITIssueDetailsSidebar = ({
   const pointsBasisRef = React.useRef(null);
   React.useEffect(() => {
     if (!issue || !issue.id || !issue.type) return;
-    const basis = `${issue.id}|${issue.type}|${issue.priority}|${subtaskCount}`;
+    const basis = `${issue.id}|${issue.type}|${issue.priority}|${subtaskCount}|${issue.original_estimate || ''}`;
     const prev = pointsBasisRef.current;
     pointsBasisRef.current = basis;
     if (prev === null || !prev.startsWith(`${issue.id}|`) || prev === basis) return;
     handleAutoCalculatePoints();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [issue?.id, issue?.type, issue?.priority, subtaskCount]);
+  }, [issue?.id, issue?.type, issue?.priority, subtaskCount, issue?.original_estimate]);
 
   // Typed fields save once, on blur or Enter, rather than on every keystroke.
   const [estimateDraft, setEstimateDraft] = useState(issue?.original_estimate || '');
@@ -677,11 +679,11 @@ const ITIssueDetailsSidebar = ({
             </div>
             {/* Estimated Time */}
             <div className="flex items-center min-h-[32px] gap-2">
-              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Est. Time</span>
+              <span className="w-24 shrink-0 text-gray-500 font-medium text-xs" title="How long this should take. 1d = one working day (9h). Used for efficiency and effort points.">Planned time</span>
               <div className="flex-1 min-w-0">
                 <input
                   type="text"
-                  placeholder="e.g. 2h 30m"
+                  placeholder="e.g. 6h, 2h 30m, 1d"
                   value={estimateDraft}
                   onChange={(e) => setEstimateDraft(e.target.value)}
                   onBlur={commitEstimate}

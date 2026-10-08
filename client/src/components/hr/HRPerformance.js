@@ -4,7 +4,7 @@ import {
   Download, Printer, ArrowLeft, Search, ChevronUp, ChevronDown, Info, Star, TrendingUp, X,
   ListChecks, MessageSquare, Video, FileText, Flame, CircleSlash
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Legend } from 'recharts';
 import Swal from 'sweetalert2';
 import { API_BASE_URL } from '../../config/environment';
 import { useAuth } from '../../hooks/useAuth';
@@ -27,6 +27,7 @@ const COMPONENT_LABELS = {
   onTime: 'On-time delivery',
   output: 'Output (points vs. busiest peer)',
   logging: 'Time logged on finished tasks',
+  efficiency: 'Efficiency (planned ÷ actual time)',
   review: 'Manager review score'
 };
 
@@ -243,6 +244,7 @@ const COMPARE_ROWS = [
   ['tasksCompleted', 'Tasks completed', '', 'up'],
   ['onTimeRate', 'On-time delivery', '%', 'up'],
   ['avgHoursPerTask', 'Avg hours per task', ' h', 'down'],
+  ['efficiency', 'Efficiency (planned ÷ actual)', '%', 'up'],
   ['avgCycleDays', 'Avg days start → done', ' d', 'down'],
   ['hoursLogged', 'Hours logged', ' h', 'up'],
   ['activeDays', 'Active days', '', 'up'],
@@ -336,6 +338,7 @@ const ScorecardTable = ({ rows, quarter = false }) => (
           <th className="py-2 px-3 font-medium text-right">Tasks</th>
           <th className="py-2 px-3 font-medium text-right">Hours</th>
           <th className="py-2 px-3 font-medium text-right">Avg h / task</th>
+          <th className="py-2 px-3 font-medium text-right">Efficiency</th>
           <th className="py-2 px-3 font-medium text-right">On-time</th>
           <th className="py-2 px-3 font-medium text-right">Avg days</th>
           {!quarter && <th className="py-2 px-3 font-medium text-right">Active days</th>}
@@ -353,6 +356,7 @@ const ScorecardTable = ({ rows, quarter = false }) => (
               <td className="py-2 px-3 text-right tabular-nums">{r.tasksCompleted}</td>
               <td className="py-2 px-3 text-right tabular-nums">{r.hoursLogged || 0}</td>
               <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.avgHoursPerTask)}</td>
+              <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.efficiency, '%')}</td>
               <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.onTimeRate, '%')}</td>
               <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.avgCycleDays)}</td>
               {!quarter && <td className="py-2 px-3 text-right tabular-nums">{r.activeDays}</td>}
@@ -562,10 +566,11 @@ const TeamOverview = ({ data, onOpenEmployee }) => {
   const noTime = !t.hoursLogged;
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         <StatTile icon={CheckCircle2} label="Tasks completed" value={t.tasksCompleted} hint={`of ${t.tasksAssigned} in the period`} />
         <StatTile icon={Clock} label="Hours logged" value={t.hoursLogged || 0} hint={noTime ? 'No time was logged' : 'Working hours, all sources'} />
         <StatTile icon={Timer} label="Avg hours / task" value={t.avgHoursPerTask != null ? `${t.avgHoursPerTask} h` : '—'} hint="Recorded time per finished task" />
+        <StatTile icon={Zap} label="Efficiency" value={fmtNum(t.efficiency, '%')} hint={t.plannedHours ? `Planned ${t.plannedHours} h · took ${t.actualHoursOnPlanned} h` : 'Needs planned time on tasks'} />
         <StatTile icon={Target} label="On-time delivery" value={fmtNum(t.onTimeRate, '%')} hint="Finished tasks that had a due date" />
         <StatTile icon={Timer} label="Avg completion time" value={t.avgCycleDays != null ? `${t.avgCycleDays} d` : '—'} hint="Start → done, per task" />
         <StatTile icon={Video} label="Meetings" value={t.meetings} hint={t.meetingHours ? `${t.meetingHours} h in meetings` : 'Meetings & calls'} />
@@ -585,15 +590,16 @@ const TeamOverview = ({ data, onOpenEmployee }) => {
       <DataQualityCard dq={data.dataQuality} />
 
       <Section title="Best records this period" subtitle="Click a name to open their report">
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
           <LeaderCard icon={Trophy} label="Most tasks completed" leader={data.leaders.mostCompleted} unit=" tasks" onOpen={onOpenEmployee} />
           <LeaderCard icon={Star} label="Most points earned" leader={data.leaders.mostPoints} unit=" pts" onOpen={onOpenEmployee} />
           <LeaderCard icon={Clock} label="Most hours logged" leader={data.leaders.mostHours} unit=" h" onOpen={onOpenEmployee} />
           <LeaderCard icon={Target} label="Best on-time rate" leader={data.leaders.bestOnTime} unit="%" onOpen={onOpenEmployee} />
           <LeaderCard icon={Zap} label="Fastest avg completion" leader={data.leaders.fastestCycle} unit=" days" onOpen={onOpenEmployee} />
           <LeaderCard icon={Video} label="Most meetings" leader={data.leaders.mostMeetings} unit="" onOpen={onOpenEmployee} />
+          <LeaderCard icon={Zap} label="Best efficiency" leader={data.leaders.bestEfficiency} unit="%" onOpen={onOpenEmployee} />
         </div>
-        <p className="text-[11px] text-gray-500 mt-2">On-time and speed records need at least 3 finished tasks, so one quick task doesn't top the list.</p>
+        <p className="text-[11px] text-gray-500 mt-2">On-time, speed and efficiency records need at least 3 finished tasks, so one quick task doesn't top the list.</p>
       </Section>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -636,6 +642,7 @@ const COLUMNS = [
   { key: 'cycle', label: 'Avg days', get: r => r.metrics.avgCycleDays ?? 9999 },
   { key: 'hours', label: 'Hours', get: r => r.metrics.hoursLogged ?? 0 },
   { key: 'perTask', label: 'Avg h / task', get: r => r.metrics.avgHoursPerTask ?? -1 },
+  { key: 'efficiency', label: 'Efficiency', get: r => r.metrics.efficiency ?? -1 },
   { key: 'points', label: 'Points', get: r => r.metrics.pointsEarned },
   { key: 'meetings', label: 'Meetings', get: r => r.metrics.meetings },
   { key: 'activeDays', label: 'Active days', get: r => r.metrics.activeDays },
@@ -674,7 +681,7 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
       )}
     >
       <div className="overflow-x-auto -mx-4">
-        <table className="w-full text-sm min-w-[1100px]">
+        <table className="w-full text-sm min-w-[1180px]">
           <thead>
             <tr className="text-xs text-gray-500 border-b border-gray-200">
               {COLUMNS.map(c => (
@@ -713,6 +720,7 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
                 <td className="py-2.5 px-3 text-right tabular-nums">{fmtNum(r.metrics.avgCycleDays)}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.hoursLogged || 0}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{fmtNum(r.metrics.avgHoursPerTask)}</td>
+                <td className={`py-2.5 px-3 text-right tabular-nums ${r.metrics.efficiency == null ? '' : r.metrics.efficiency >= 90 ? 'text-green-700' : r.metrics.efficiency < 75 ? 'text-red-700' : 'text-amber-700'}`}>{fmtNum(r.metrics.efficiency, '%')}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.pointsEarned}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.meetings}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.activeDays}</td>
@@ -723,6 +731,80 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
         </table>
         {rows.length === 0 && <Empty>No employees match.</Empty>}
       </div>
+    </Section>
+  );
+};
+
+/* ───────────────────────── planned vs actual ───────────────────────── */
+
+const VERDICT_STYLE = {
+  'On plan': 'bg-green-50 text-green-800 border-green-200',
+  'Under plan': 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  'Over plan': 'bg-red-50 text-red-800 border-red-200',
+  'No plan': 'bg-amber-50 text-amber-800 border-amber-200',
+  'No time recorded': 'bg-gray-50 text-gray-600 border-gray-200'
+};
+
+const PlannedVsActual = ({ metrics: m, tasks }) => {
+  const rows = (tasks || []).filter(t => t.estimateHours);
+  const chart = rows.filter(t => t.hoursLogged).slice(0, 12).reverse()
+    .map(t => ({ label: t.key, Planned: Math.round(t.estimateHours * 10) / 10, Actual: t.hoursLogged }));
+  return (
+    <Section title="Planned vs actual time" subtitle="Finished tasks in this period that had a planned time. Efficiency = planned ÷ actual (100% = exactly on plan).">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        <StatTile icon={Target} label="Planned" value={fmtNum(m.plannedHours, ' h')} />
+        <StatTile icon={Clock} label="Actual" value={fmtNum(m.actualHoursOnPlanned, ' h')} />
+        <StatTile icon={Zap} label="Efficiency" value={fmtNum(m.efficiency, '%')} tone={m.efficiency != null && m.efficiency < 75 ? 'warn' : 'default'} />
+        <StatTile icon={CheckCircle2} label="Within plan" value={m.tasksWithPlan ? `${m.tasksWithinPlan} / ${m.tasksWithPlan}` : '—'} hint="Up to 10% over counts as within" />
+        <StatTile icon={Info} label="Tasks with a plan" value={fmtNum(m.planCoverage, '%')} hint="of finished tasks" />
+      </div>
+      {chart.length > 0 && (
+        <div style={{ height: 220 }} role="img" aria-label="Planned and actual hours per task">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chart} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={GRID} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: AXIS }} tickLine={false} axisLine={{ stroke: GRID }} interval={0} />
+              <YAxis tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={false} />
+              <Tooltip formatter={(v, n) => [`${v} h`, n]} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="Planned" fill="#c3c2bb" radius={[3, 3, 0, 0]} maxBarSize={18} />
+              <Bar dataKey="Actual" fill={SERIES} radius={[3, 3, 0, 0]} maxBarSize={18} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      {rows.length === 0 ? (
+        <Empty>No finished task in this period had a planned time. Set "Planned time" on tickets to measure efficiency.</Empty>
+      ) : (
+        <div className="overflow-x-auto mt-3">
+          <table className="w-full text-sm min-w-[680px]">
+            <thead>
+              <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+                <th className="py-2 pr-3 font-medium">Task</th>
+                <th className="py-2 px-3 font-medium">Work type</th>
+                <th className="py-2 px-3 font-medium text-right">Planned</th>
+                <th className="py-2 px-3 font-medium text-right">Actual</th>
+                <th className="py-2 px-3 font-medium text-right">Difference</th>
+                <th className="py-2 px-3 font-medium text-right">Efficiency</th>
+                <th className="py-2 pl-3 font-medium">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(t => (
+                <tr key={t.key} className="border-b border-gray-100 last:border-0">
+                  <td className="py-2 pr-3 max-w-[300px]"><div className="text-[11px] text-gray-500">{t.key}</div><div className="truncate" title={t.title}>{t.title}</div></td>
+                  <td className="py-2 px-3 text-xs text-gray-700">{t.workType}</td>
+                  <td className="py-2 px-3 text-right tabular-nums">{Math.round(t.estimateHours * 10) / 10} h</td>
+                  <td className="py-2 px-3 text-right tabular-nums">{t.hoursLogged ? `${t.hoursLogged} h` : '—'}</td>
+                  <td className={`py-2 px-3 text-right tabular-nums ${t.varianceHours > 0 ? 'text-red-700' : t.varianceHours < 0 ? 'text-green-700' : ''}`}>{t.varianceHours == null ? '—' : `${t.varianceHours > 0 ? '+' : ''}${t.varianceHours} h`}</td>
+                  <td className="py-2 px-3 text-right tabular-nums">{fmtNum(t.efficiency, '%')}</td>
+                  <td className="py-2 pl-3"><span className={`text-[11px] px-1.5 py-0.5 rounded border ${VERDICT_STYLE[t.planVerdict] || VERDICT_STYLE['No plan']}`}>{t.planVerdict}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Section>
   );
 };
@@ -956,6 +1038,7 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
         <StatTile icon={Clock} label="Hours logged" value={m.hoursLogged || 0} hint="Working hours recorded" />
         <StatTile icon={Timer} label="Avg hours / task" value={m.avgHoursPerTask != null ? `${m.avgHoursPerTask} h` : '—'} hint={m.tasksWithTimeLogged ? `From ${m.tasksWithTimeLogged} finished task${m.tasksWithTimeLogged > 1 ? 's' : ''}` : 'No time on finished tasks'} />
         <StatTile icon={Users} label="Active days" value={m.activeDays} hint="Days with any recorded work" />
+        <StatTile icon={Zap} label="Efficiency" value={fmtNum(m.efficiency, '%')} hint={m.tasksWithPlan ? `${m.tasksWithinPlan} of ${m.tasksWithPlan} tasks within plan` : 'No finished task with a plan'} tone={m.efficiency != null && m.efficiency < 75 ? 'warn' : 'default'} />
         <StatTile icon={Star} label="Points" value={m.pointsEarned} hint={m.pointsApproved ? `${m.pointsApproved} approved` : 'From finished tasks'} />
         <StatTile icon={Video} label="Meetings" value={m.meetings} hint={m.meetingHours ? `${m.meetingHours} h${m.avgMeetingMinutes ? ` · avg ${m.avgMeetingMinutes} min` : ''}` : undefined} />
         <StatTile icon={AlertTriangle} label="Overdue now" value={m.overdueOpen} tone="warn" />
@@ -1015,6 +1098,8 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
         <Section title="Tasks completed per month" subtitle="Last 12 months"><TrendChart data={data.monthly} dataKey="tasksCompleted" unit=" tasks" /></Section>
         <Section title="Hours logged per month" subtitle="Last 12 months"><TrendChart data={data.monthly} dataKey="hoursLogged" unit=" h" /></Section>
       </div>
+
+      <PlannedVsActual metrics={m} tasks={data.tasks.completed} />
 
       <Section title="Work by type" subtitle={`${data.range.label} · compared with the department's average time for the same kind of work`}>
         <WorkTypeTable rows={data.workTypes} />

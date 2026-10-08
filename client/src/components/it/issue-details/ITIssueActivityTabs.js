@@ -98,6 +98,7 @@ const ITIssueActivityTabs = ({
   worklogData = { worklogs: [], totalSpent: '0h', originalEstimate: '0h', remainingEstimate: '0h' },
   handleLogWork,
   handleDeleteWorklog,
+  onTimerAction,
   handleGenerateDocs,
   aiDocsLoading,
   githubData,
@@ -112,87 +113,32 @@ const ITIssueActivityTabs = ({
   const [editingCommentIndex, setEditingCommentIndex] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState('');
 
-  // --- LIVE TIMER STATE ---
-  const [timerState, setTimerState] = useState(() => {
-    try {
-      if (!issueKey) return { isActive: false, sessionStart: null, accumulatedSeconds: 0, initialSessionStart: null };
-      const saved = localStorage.getItem(`workTimer_${issueKey}`);
-      return saved ? JSON.parse(saved) : { isActive: false, sessionStart: null, accumulatedSeconds: 0, initialSessionStart: null };
-    } catch {
-      return { isActive: false, sessionStart: null, accumulatedSeconds: 0, initialSessionStart: null };
-    }
-  });
+  // --- LIVE TIMER (server-side) ---
+  // The running clock lives on the ticket (server), so everyone sees the same timer and
+  // every session ends up in the work log and the performance report.
+  const timer = worklogData.timer || { running: false };
   const [liveElapsed, setLiveElapsed] = useState(0);
+  const [timerBusy, setTimerBusy] = useState(false);
+  const [pauseNote, setPauseNote] = useState('');
 
   React.useEffect(() => {
-    if (issueKey) {
-      localStorage.setItem(`workTimer_${issueKey}`, JSON.stringify(timerState));
-    }
-  }, [timerState, issueKey]);
-
-  React.useEffect(() => {
-    let interval;
-    if (timerState.isActive && timerState.sessionStart) {
-      interval = setInterval(() => {
-        const currentElapsed = Math.floor((Date.now() - timerState.sessionStart) / 1000);
-        setLiveElapsed(timerState.accumulatedSeconds + currentElapsed);
-      }, 1000);
-    } else {
-      setLiveElapsed(timerState.accumulatedSeconds);
-    }
+    if (!timer.running || !timer.startedAt) { setLiveElapsed(0); return undefined; }
+    const start = new Date(timer.startedAt).getTime();
+    const tick = () => setLiveElapsed(Math.max(0, Math.floor((Date.now() - start) / 1000)));
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [timerState.isActive, timerState.sessionStart, timerState.accumulatedSeconds]);
+  }, [timer.running, timer.startedAt]);
 
-  const handlePauseTimer = React.useCallback(() => {
-    setTimerState({ isActive: false, sessionStart: null, accumulatedSeconds: 0, initialSessionStart: null });
-    if (issueKey) localStorage.removeItem(`workTimer_${issueKey}`);
-  }, [issueKey]);
-
-  const handleStartTimer = React.useCallback(() => {
-    const now = Date.now();
-    setTimerState(prev => {
-      if (prev.isActive) return prev;
-      return {
-        ...prev,
-        isActive: true,
-        sessionStart: now,
-        initialSessionStart: prev.initialSessionStart || now
-      };
-    });
-  }, []);
-
-  React.useEffect(() => {
-    if (!issueKey) return;
-    if (issueStatus?.toUpperCase() === 'IN PROGRESS') {
-      handleStartTimer();
-    } else {
-      handlePauseTimer();
+  const runTimerAction = async (action) => {
+    if (!onTimerAction) return;
+    setTimerBusy(true);
+    try {
+      await onTimerAction(action, action === 'stop' ? pauseNote : undefined);
+      setPauseNote('');
+    } finally {
+      setTimerBusy(false);
     }
-  }, [issueStatus, issueKey, handleStartTimer, handlePauseTimer]);
-
-  const handleStopAndLog = () => {
-    let finalSeconds = timerState.accumulatedSeconds;
-    if (timerState.isActive && timerState.sessionStart) {
-      finalSeconds += Math.floor((Date.now() - timerState.sessionStart) / 1000);
-    }
-
-    const h = Math.floor(finalSeconds / 3600);
-    const m = Math.floor((finalSeconds % 3600) / 60);
-    let timeStr = '';
-    if (h > 0) timeStr += `${h}h `;
-    if (m > 0 || h === 0) timeStr += `${Math.max(1, m)}m`;
-
-    let startDateStr = '';
-    if (timerState.initialSessionStart) {
-      startDateStr = new Date(timerState.initialSessionStart).toISOString().slice(0, 16);
-    } else {
-      startDateStr = new Date().toISOString().slice(0, 16);
-    }
-
-    setWorkForm({ timeSpent: timeStr.trim(), description: '', startedAt: startDateStr, originalEstimate: '' });
-    setIsLoggingWork(true);
-    setTimerState({ isActive: false, sessionStart: null, accumulatedSeconds: 0, initialSessionStart: null });
-    if (issueKey) localStorage.removeItem(`workTimer_${issueKey}`);
   };
 
   const formatLiveElapsed = (totalSec) => {
@@ -501,150 +447,175 @@ const ITIssueActivityTabs = ({
         </div>
       )}
 
-      {/* ── WORK LOG TAB — time tracking ── */}
-      {activeTab === 'Work log' && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-3 gap-2 text-center">
-            {[
-              { label: 'Estimated', value: worklogData.originalEstimate || '0h', cls: 'text-gray-700' },
-              { label: 'Logged', value: worklogData.totalSpent || '0h', cls: 'text-blue-600' },
-              { label: 'Remaining', value: worklogData.remainingEstimate || '0h', cls: worklogData.remainingEstimate?.includes('Overdue') ? 'text-red-600 ' : 'text-emerald-600' }
-            ].map(s => (
-              <div key={s.label} className="p-2 bg-gray-50 rounded border border-gray-100">
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider block ">{s.label}</span>
-                <span className={`text-sm  ${s.cls}`}>{s.value}</span>
-              </div>
-            ))}
-          </div>
-
-          {(timerState.isActive || liveElapsed > 0) && (
-            <div className="bg-slate-50 border border-slate-200 rounded p-3 flex items-center justify-between mt-2 mb-2">
-              <div>
-                <span className="text-xs  text-slate-700 block mb-0.5">Live Tracker</span>
-                <span className={`font-mono text-lg  tracking-tight ${timerState.isActive ? 'text-red-600' : 'text-slate-600'}`}>
-                  {formatLiveElapsed(liveElapsed)}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {/* The timer is exclusively controlled by the issue status (e.g. IN PROGRESS) */}
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center pt-2">
-            <span className="text-xs  text-gray-700">Work Logs</span>
-            <button
-              onClick={() => setIsLoggingWork(v => !v)}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs bg-red-600 text-white rounded font-medium hover:bg-blue-700 transition cursor-pointer"
-            >
-              <Plus size={12} /> Log Work
-            </button>
-          </div>
-
-          {isLoggingWork && (
-            <div className="p-3 bg-gray-50 rounded border border-gray-200 space-y-2 text-xs">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[10px]  text-gray-600 mb-0.5">Time Spent (e.g. 2h 30m, 1d)</label>
-                  <input
-                    type="text"
-                    value={workForm.timeSpent}
-                    onChange={(e) => setWorkForm(p => ({ ...p, timeSpent: e.target.value }))}
-                    placeholder="2h"
-                    className="w-full border border-gray-300 rounded px-2 py-1 outline-none text-xs bg-white"
-                  />
+      {/* ── WORK LOG TAB — planned vs actual time ── */}
+      {activeTab === 'Work log' && (() => {
+        const verdictStyle = {
+          'On plan': 'bg-green-50 text-green-800 border-green-200',
+          'Under plan': 'bg-emerald-50 text-emerald-800 border-emerald-200',
+          'Over plan': 'bg-red-50 text-red-800 border-red-200',
+          'Not started': 'bg-gray-50 text-gray-600 border-gray-200',
+          'No plan': 'bg-amber-50 text-amber-800 border-amber-200'
+        };
+        const planned = worklogData.plannedSeconds || 0;
+        const logged = worklogData.totalSeconds || 0;
+        const withLive = logged + (timer.running ? liveElapsed : 0);
+        const pctUsed = planned ? Math.round((withLive / planned) * 100) : null;
+        const sourceBadge = {
+          automatic: 'bg-blue-50 text-blue-700 border-blue-200',
+          timer: 'bg-violet-50 text-violet-700 border-violet-200',
+          manual: 'bg-gray-50 text-gray-600 border-gray-200'
+        };
+        const sourceLabel = { automatic: 'Automatic', timer: 'Timer', manual: 'Manual' };
+        return (
+          <div className="space-y-3">
+            {/* Planned vs actual */}
+            <div className="grid grid-cols-4 gap-2 text-center">
+              {[
+                { label: 'Planned', value: worklogData.originalEstimate || '0h', cls: 'text-gray-800' },
+                { label: 'Logged', value: worklogData.totalSpent || '0h', cls: 'text-blue-700' },
+                { label: 'Remaining', value: worklogData.remainingEstimate || '0h', cls: String(worklogData.remainingEstimate || '').includes('Overdue') ? 'text-red-600' : 'text-emerald-700' },
+                { label: 'Efficiency', value: worklogData.efficiency != null ? `${worklogData.efficiency}%` : '—', cls: worklogData.efficiency == null ? 'text-gray-500' : worklogData.efficiency >= 90 ? 'text-green-700' : worklogData.efficiency >= 75 ? 'text-amber-700' : 'text-red-700' }
+              ].map(s => (
+                <div key={s.label} className="p-2 bg-gray-50 rounded border border-gray-100">
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block">{s.label}</span>
+                  <span className={`text-sm font-semibold ${s.cls}`}>{s.value}</span>
                 </div>
-                <div>
-                  <label className="block text-[10px]  text-gray-600 mb-0.5">Date / Time</label>
-                  <input
-                    type="datetime-local"
-                    value={workForm.startedAt}
-                    onChange={(e) => setWorkForm(p => ({ ...p, startedAt: e.target.value }))}
-                    className="w-full border border-gray-300 rounded px-2 py-1 outline-none text-xs bg-white"
-                  />
+              ))}
+            </div>
+            {planned > 0 ? (
+              <div>
+                <div className="flex justify-between text-[11px] text-gray-600 mb-1">
+                  <span>{pctUsed}% of planned time used{timer.running ? ' (including the running timer)' : ''}</span>
+                  <span className={`px-1.5 py-0.5 rounded border text-[10px] font-semibold ${verdictStyle[worklogData.verdict] || verdictStyle['Not started']}`}>{worklogData.verdict || 'Not started'}</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden" aria-hidden="true">
+                  <div className={`h-full rounded-full ${pctUsed > 110 ? 'bg-red-500' : pctUsed > 90 ? 'bg-amber-500' : 'bg-blue-600'}`} style={{ width: `${Math.min(100, pctUsed)}%` }} />
                 </div>
               </div>
-              <div>
-                <label className="block text-[10px]  text-gray-600 mb-0.5">Work Description</label>
-                <textarea
-                  value={workForm.description}
-                  onChange={(e) => setWorkForm(p => ({ ...p, description: e.target.value }))}
-                  placeholder="What did you work on?"
-                  className="w-full border border-gray-300 rounded px-2 py-1 outline-none text-xs h-12 resize-none bg-white"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-1">
-                <button
-                  onClick={() => setIsLoggingWork(false)}
-                  className="px-2.5 py-1 border border-gray-300 rounded hover:bg-gray-100 text-gray-700 text-xs cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={submitWorkLog}
-                  className="px-3 py-1 bg-red-600 text-white rounded font-medium hover:bg-blue-700 text-xs cursor-pointer"
-                >
-                  Save Log
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2 pt-1">
-            {worklogData.worklogs.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-4">No work logged on this issue yet.</p>
             ) : (
-              worklogData.worklogs.map(log => {
-                let endTimeStr = '';
-                let startTimeStr = '';
-                if (log.started_at) {
-                  const start = new Date(log.started_at);
-                  startTimeStr = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  if (log.seconds) {
-                    const end = new Date(start.getTime() + log.seconds * 1000);
-                    endTimeStr = end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  }
-                }
-
-                return (
-                  <div key={log.id} className="flex justify-between items-start p-2 bg-gray-50 rounded border border-gray-100 text-xs group">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className=" text-gray-800">{log.time_spent}</span>
-                        <span className="text-[10px] text-gray-400">by {log.author}</span>
-                        <span className="text-[10px] text-gray-400">· {relativeTime(log.started_at || log.created_at)}</span>
-                      </div>
-
-                      {startTimeStr && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                          <Clock size={10} />
-                          <span>Started: {startTimeStr}</span>
-                          {endTimeStr && (
-                            <>
-                              <span>→</span>
-                              <span>Stopped: {endTimeStr}</span>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {log.description && <p className="text-gray-600 text-[11px] mt-0.5">{log.description}</p>}
-                    </div>
-                    {handleDeleteWorklog && (
-                      <button
-                        onClick={() => handleDeleteWorklog(log.id)}
-                        className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    )}
-                  </div>
-                );
-              })
+              <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">
+                No planned time yet. Set <strong>Planned time</strong> in Details (e.g. 6h or 1d) so efficiency and effort points can be calculated.
+              </p>
             )}
+
+            {/* Timer */}
+            <div className={`rounded border p-3 ${timer.running ? 'bg-red-50/60 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <span className="text-xs text-slate-700 font-medium block">
+                    {timer.running
+                      ? `Timer running · ${timer.owner || 'someone'}${timer.source === 'auto' ? ' · started by moving to In Progress' : ''}`
+                      : 'Timer stopped'}
+                  </span>
+                  <span className={`font-mono text-lg tracking-tight ${timer.running ? 'text-red-600' : 'text-slate-400'}`}>
+                    {formatLiveElapsed(liveElapsed)}
+                  </span>
+                </div>
+                {onTimerAction && (
+                  timer.running ? (
+                    <div className="flex items-center gap-2">
+                      <input value={pauseNote} onChange={e => setPauseNote(e.target.value)} placeholder="What did you do? (optional)"
+                        className="text-xs border border-gray-300 rounded px-2 py-1.5 w-48 bg-white outline-none focus:border-blue-500" aria-label="Note for this session" />
+                      <button onClick={() => runTimerAction('stop')} disabled={timerBusy}
+                        className="px-3 py-1.5 text-xs font-semibold rounded bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 cursor-pointer">
+                        {timerBusy ? 'Saving…' : 'Pause & log'}
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => runTimerAction('start')} disabled={timerBusy}
+                      className="px-3 py-1.5 text-xs font-semibold rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 cursor-pointer">
+                      {timerBusy ? 'Starting…' : 'Start timer'}
+                    </button>
+                  )
+                )}
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1.5">
+                Moving a ticket to In Progress starts the clock automatically (working hours only). Use Start / Pause for breaks or overtime; leaving In Progress logs the session.
+              </p>
+            </div>
+
+            {/* Who spent the time */}
+            {(worklogData.byPerson || []).length > 1 && (
+              <div className="text-[11px] text-gray-600 flex flex-wrap gap-2">
+                {worklogData.byPerson.map(p => <span key={p.author} className="bg-gray-100 rounded-full px-2 py-0.5">{p.author}: <strong>{p.time}</strong></span>)}
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-1">
+              <span className="text-xs text-gray-700 font-medium">Work log ({worklogData.worklogs.length})</span>
+              <button
+                onClick={() => setIsLoggingWork(v => !v)}
+                className="flex items-center gap-1 px-2.5 py-1 text-xs bg-red-600 text-white rounded font-medium hover:bg-red-700 transition cursor-pointer"
+              >
+                <Plus size={12} /> Log work
+              </button>
+            </div>
+
+            {isLoggingWork && (
+              <div className="p-3 bg-gray-50 rounded border border-gray-200 space-y-2 text-xs">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-gray-600 mb-0.5" htmlFor="wl-time">Time spent (e.g. 2h 30m, 45m, 1d = 9h)</label>
+                    <input id="wl-time" type="text" value={workForm.timeSpent}
+                      onChange={(e) => setWorkForm(p => ({ ...p, timeSpent: e.target.value }))}
+                      placeholder="2h" className="w-full border border-gray-300 rounded px-2 py-1 outline-none text-xs bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-600 mb-0.5" htmlFor="wl-when">Started at</label>
+                    <input id="wl-when" type="datetime-local" value={workForm.startedAt}
+                      onChange={(e) => setWorkForm(p => ({ ...p, startedAt: e.target.value }))}
+                      className="w-full border border-gray-300 rounded px-2 py-1 outline-none text-xs bg-white" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-600 mb-0.5" htmlFor="wl-desc">What did you work on?</label>
+                  <textarea id="wl-desc" value={workForm.description}
+                    onChange={(e) => setWorkForm(p => ({ ...p, description: e.target.value }))}
+                    className="w-full border border-gray-300 rounded px-2 py-1 outline-none text-xs h-12 resize-none bg-white" />
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <button onClick={() => setIsLoggingWork(false)} className="px-2.5 py-1 border border-gray-300 rounded hover:bg-gray-100 text-gray-700 text-xs cursor-pointer">Cancel</button>
+                  <button onClick={submitWorkLog} className="px-3 py-1 bg-red-600 text-white rounded font-medium hover:bg-red-700 text-xs cursor-pointer">Save</button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2 pt-1">
+              {worklogData.worklogs.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-4">No time recorded on this ticket yet.</p>
+              ) : (
+                worklogData.worklogs.map(log => {
+                  const start = log.started_at ? new Date(log.started_at) : null;
+                  const when = start ? start.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                  const note = String(log.description || '').replace(/^(Auto-logged|Timer(?: \(In Progress\))?):?\s*/i, '');
+                  return (
+                    <div key={log.id} className="flex justify-between items-start p-2 bg-gray-50 rounded border border-gray-100 text-xs group">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-gray-900">{log.timeSpent || log.time_spent}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${sourceBadge[log.source] || sourceBadge.manual}`}>{sourceLabel[log.source] || 'Manual'}</span>
+                          <span className="text-[11px] text-gray-600">{log.author}</span>
+                          {when && <span className="text-[10px] text-gray-400">· from {when}</span>}
+                        </div>
+                        {note && <p className="text-gray-600 text-[11px] break-words">{note}</p>}
+                      </div>
+                      {handleDeleteWorklog && log.canDelete && (
+                        <button
+                          onClick={() => { if (window.confirm(`Delete this ${log.timeSpent} entry?`)) handleDeleteWorklog(log.id); }}
+                          className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 focus:opacity-100 transition cursor-pointer"
+                          aria-label="Delete entry"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* GITHUB EVIDENCE TAB */}
       {activeTab === 'GitHub' && (
