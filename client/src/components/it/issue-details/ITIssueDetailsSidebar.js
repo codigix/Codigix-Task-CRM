@@ -1014,6 +1014,8 @@ const ITIssueDetailsSidebar = ({
                 {sprintsList && sprintsList.length > 0 ? (
                   <select
                     value={sprintId || ''}
+                    disabled={!canManage}
+                    title={!canManage ? 'Sprints are planned by your manager' : undefined}
                     onChange={(e) => {
                       const value = e.target.value;
                       setSprintId(value);

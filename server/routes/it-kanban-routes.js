@@ -1535,7 +1535,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       // ── Fair-play rules (see isManagerReq above) ──
       const isMgr = isManagerReq(req);
       const [[curRow]] = await db.query(
-        'SELECT status, assignee, due_date, start_date, original_estimate, priority, type, labels FROM it_kanban_issues WHERE issue_key = ?',
+        'SELECT status, assignee, due_date, start_date, original_estimate, priority, type, labels, sprint_id FROM it_kanban_issues WHERE issue_key = ?',
         [key]
       );
       if (!curRow) return res.status(404).json({ error: 'Issue not found' });
@@ -1564,6 +1564,9 @@ app.get('/api/it-kanban/labels', async (req, res) => {
           if (what.length) {
             return res.status(403).json({ error: `Only a manager can change the ${what.join(', ')} once work has started.`, code: 'LOCKED' });
           }
+        }
+        if (updates.sprint_id !== undefined && String(updates.sprint_id ?? '') !== String(curRow.sprint_id ?? '')) {
+          return res.status(403).json({ error: 'Only a manager can move work between sprints.', code: 'LOCKED' });
         }
         for (const [field, label] of [['due_date', 'due date'], ['start_date', 'start date']]) {
           if (updates[field] !== undefined && curRow[field] && ymdOf(updates[field]) !== ymdOf(curRow[field])) {

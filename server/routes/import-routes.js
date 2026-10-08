@@ -18,6 +18,8 @@ const { resolvePrefix } = require('../utils/issueKeys');
  * A wrong date column silently creating sixty tasks is not something anyone wants to undo
  * by hand, so nothing is written until the caller sends back the rows they approved.
  */
+const { requireManager } = require('../middleware/session');
+
 module.exports = function setupImportRoutes(app, pool) {
   const db = { query: (sql, params) => pool.query(sql, params) };
 
@@ -525,7 +527,7 @@ module.exports = function setupImportRoutes(app, pool) {
   });
 
   // ── Step 2: create the confirmed rows ─────────────────────────────────
-  app.post('/api/it-kanban/import/commit', async (req, res) => {
+  app.post('/api/it-kanban/import/commit', requireManager, async (req, res) => {
     const conn = await pool.getConnection();
     try {
       const {

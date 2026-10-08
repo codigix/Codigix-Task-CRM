@@ -9,6 +9,10 @@
  *
  * Sprints are scoped by department, matching how the boards themselves are scoped.
  */
+// Sprint planning (create, edit, start, complete, delete, move or rank work) is for managers;
+// everyone can still read sprints and the backlog.
+const { requireManager } = require('../middleware/session');
+
 module.exports = function setupSprintsRoutes(app, pool) {
   const db = { query: (sql, params) => pool.query(sql, params) };
 
@@ -272,7 +276,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
     }
   });
 
-  app.post('/api/sprints', async (req, res) => {
+  app.post('/api/sprints', requireManager, async (req, res) => {
     try {
       const { name, goal, department, project_id, start_date, end_date } = req.body;
       const dept = deptFilter(department);
@@ -300,7 +304,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
   // Move work items between the backlog and sprints (used by the Backlog view).
   // Must be registered before PUT /api/sprints/:id, otherwise Express matches
   // "move-issues" as an :id and this endpoint is never reached.
-  app.put('/api/sprints/move-issues', async (req, res) => {
+  app.put('/api/sprints/move-issues', requireManager, async (req, res) => {
     try {
       const { issueKeys, sprintId } = req.body;
       if (!Array.isArray(issueKeys) || issueKeys.length === 0) {
@@ -334,7 +338,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
   // the backlog), and ranks are rewritten to match. Renumbering everything keeps ranks
   // globally comparable, which is what lets the List view sort by the same field.
   // Registered before PUT /:id so "rank" is not matched as an :id.
-  app.put('/api/sprints/rank', async (req, res) => {
+  app.put('/api/sprints/rank', requireManager, async (req, res) => {
     const conn = await pool.getConnection();
     try {
       const { order } = req.body; // [{ issue_key, sprint_id }] in final visual order
@@ -394,7 +398,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
 
   // Reorder a sprint within its board: up / down / top / bottom.
   // Registered before PUT /:id for the same reason as move-issues.
-  app.put('/api/sprints/:id/reorder', async (req, res) => {
+  app.put('/api/sprints/:id/reorder', requireManager, async (req, res) => {
     try {
       const { id } = req.params;
       const { direction } = req.body; // 'up' | 'down' | 'top' | 'bottom'
@@ -430,7 +434,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
     }
   });
 
-  app.put('/api/sprints/:id', async (req, res) => {
+  app.put('/api/sprints/:id', requireManager, async (req, res) => {
     try {
       const allowed = ['name', 'goal', 'start_date', 'end_date', 'status', 'project_id'];
       const sets = [];
@@ -454,7 +458,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
   // ── Start a sprint ────────────────────────────────────────────────────
   // Jira supports parallel sprints on a board, so several can run at the same time and the
   // board shows the work from all of them.
-  app.post('/api/sprints/:id/start', async (req, res) => {
+  app.post('/api/sprints/:id/start', requireManager, async (req, res) => {
     try {
       const { id } = req.params;
       const { start_date, end_date, goal } = req.body;
@@ -488,7 +492,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
   // ── Complete a sprint ─────────────────────────────────────────────────
   // Finished work is completed/archived; unfinished work either stays in this sprint for renewal
   // (the default) or goes to the backlog, a chosen sprint, or a brand new one.
-  app.post('/api/sprints/:id/complete', async (req, res) => {
+  app.post('/api/sprints/:id/complete', requireManager, async (req, res) => {
     try {
       const { id } = req.params;
       const { moveTo = 'stay' } = req.body; // 'stay' (default, keeps open work for renewal) | 'backlog' | 'new' | sprint_id
@@ -570,7 +574,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
   });
 
   // ── Renew a completed sprint with new dates ─────────────────────────────
-  app.post('/api/sprints/:id/renew', async (req, res) => {
+  app.post('/api/sprints/:id/renew', requireManager, async (req, res) => {
     try {
       const { id } = req.params;
       const { start_date, end_date, name, goal } = req.body;
@@ -613,7 +617,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
     }
   });
 
-  app.delete('/api/sprints/:id', async (req, res) => {
+  app.delete('/api/sprints/:id', requireManager, async (req, res) => {
     try {
       const { id } = req.params;
       const [[sprint]] = await db.query('SELECT status FROM sprints WHERE id = ?', [id]);

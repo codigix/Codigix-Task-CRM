@@ -24,8 +24,8 @@ const BoardTabs = ({ department, spaceName }) => {
     { key: 'dashboard', label: 'Summary', icon: Globe },
     { key: 'tasks', label: 'List', icon: Table },
     { key: 'kanban', label: 'Board', icon: Columns },
-    // Sprint planning is a manager activity, so employees get no Backlog tab.
-    { key: 'backlog', label: 'Backlog', icon: Rows3, hidden: !canPlanSprints },
+    // Everyone can see the Backlog; only managers plan sprints there.
+    { key: 'backlog', label: 'Backlog', icon: Rows3 },
     { key: 'projects', label: 'Projects', icon: Folder, hidden: isSalesUser },
     // Planning views are for managers; an employee works from the Board and List.
     { key: 'calendar', label: 'Calendar', icon: Calendar, hidden: !canPlanSprints },

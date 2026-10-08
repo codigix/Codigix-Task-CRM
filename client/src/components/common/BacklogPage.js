@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   ChevronDown, ChevronRight, Plus, MoreHorizontal, Calendar,
-  CheckSquare, ArrowUp, ArrowDown, Inbox, Search, Check, Lock, Trash2, RefreshCw
+  CheckSquare, ArrowUp, ArrowDown, Inbox, Search, Check, Trash2, RefreshCw
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
 import { useAuth } from '../../hooks/useAuth';
-import { isManagerDesignation, canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE } from '../../utils/access';
+import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser } from '../../utils/access';
 import { API_BASE_URL } from '../../config/environment';
 import BoardTabs from './BoardTabs';
 import StartSprintModal from './StartSprintModal';
@@ -321,17 +321,18 @@ const InlineCreateRow = ({ sprintId, onCreate }) => {
 
 // A single work item row, shared by sprint sections and the backlog.
 const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUserName, isSelected, onMove, onOpen, onUpdate, onDelete, onCopy }) => {
+  const canMove = typeof onMove === 'function';
   const [menuOpen, setMenuOpen] = useState(false);
   const [anchorRect, setAnchorRect] = useState(null);
 
-  const destinations = [
+  const destinations = !canMove ? [] : [
     ...sprints.filter(s => s.id !== currentSprintId && s.status !== 'Completed')
       .map(s => ({ id: s.id, label: s.name })),
     ...(currentSprintId ? [{ id: null, label: 'Backlog' }] : [])
   ];
 
   return (
-    <Draggable draggableId={item.issue_key} index={index}>
+    <Draggable draggableId={item.issue_key} index={index} isDragDisabled={!canMove}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -426,8 +427,8 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
               <MoreHorizontal size={14} />
             </button>
             <AnchoredMenu open={menuOpen} anchorRect={anchorRect} width={230} onClose={() => setMenuOpen(false)}>
-              <div className="px-3 py-1 text-[10px] text-gray-400 uppercase tracking-wide">Move to</div>
-              {destinations.length === 0 && (
+              {canMove && <div className="px-3 py-1 text-[10px] text-gray-400 uppercase tracking-wide">Move to</div>}
+              {canMove && destinations.length === 0 && (
                 <div className="px-3 py-1.5 text-gray-400 text-xs">No other sprint yet</div>
               )}
               {destinations.map(d => (
@@ -478,7 +479,9 @@ const BacklogPage = ({ department }) => {
   // Everyone can edit tickets; only managers can delete them.
   const canDelete = canDeleteTickets(user);
   const { designation, username } = useParams();
-  const canPlanSprints = isManagerDesignation(designation);
+  // Everyone sees the Backlog. Sprint planning (create/start/complete/delete sprints, move or
+  // re-rank work between them, import calendars) is for managers, and the server enforces it.
+  const canPlanSprints = isManagerUser(user);
 
   const isManager = Boolean(
     canPlanSprints ||
@@ -890,6 +893,7 @@ const BacklogPage = ({ department }) => {
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
+    if (!canPlanSprints) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const idOf = (droppableId) => (droppableId === 'backlog' ? null : Number(droppableId.replace('sprint-', '')));
@@ -1008,24 +1012,6 @@ const BacklogPage = ({ department }) => {
     </div>
   );
 
-  // Hiding the tab is not enough — the URL can still be typed.
-  if (!canPlanSprints) {
-    return (
-      <div className="bg-[#f8fafc] min-h-screen font-sans">
-        <BoardTabs department={currentDept} spaceName={`${currentDept} Workspace`} />
-        <div className="flex flex-col items-center justify-center text-center py-24 px-6">
-          <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-            <Lock size={22} className="text-gray-400" />
-          </div>
-          <h3 className="text-base  text-gray-900 mb-1">Backlog is managed by your manager</h3>
-          <p className="text-sm text-gray-500 max-w-sm">
-            Sprint planning is handled by managers. Your assigned work is on the Board.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (isLoading) {
     return <div className="p-8 text-center text-sm text-gray-400">Loading backlog…</div>;
   }
@@ -1140,12 +1126,14 @@ const BacklogPage = ({ department }) => {
               <span className="text-xs text-gray-500">
                 ({displayedBacklog.length} work item{displayedBacklog.length === 1 ? '' : 's'})
               </span>
-              <button
-                onClick={() => setIsCreatingSprint(true)}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
-              >
-                <Plus size={13} /> Create sprint
-              </button>
+              {canPlanSprints && (
+                <button
+                  onClick={() => setIsCreatingSprint(true)}
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
+                >
+                  <Plus size={13} /> Create sprint
+                </button>
+              )}
             </div>
 
             {!collapsed.backlog && (
@@ -1161,7 +1149,7 @@ const BacklogPage = ({ department }) => {
                       <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints}
                         currentSprintId={null} users={assignableUsers}
                         currentUserName={currentUserName} isSelected={selectedKey === item.issue_key}
-                        onMove={moveItem} onOpen={openIssue} onUpdate={updateItem}
+                        onMove={canPlanSprints ? moveItem : undefined} onOpen={openIssue} onUpdate={updateItem}
                         onDelete={canDelete ? (item) => deleteItem(item.issue_key) : undefined} onCopy={copyToClipboard} />
                     ))}
                     {displayedBacklog.length === 0 && (
@@ -1210,7 +1198,9 @@ const BacklogPage = ({ department }) => {
                   {sprint.status === 'Completed' && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">COMPLETED</span>
                   )}
-                  {dates ? (
+                  {!canPlanSprints ? (
+                    dates && <span className="flex items-center gap-1 text-xs text-gray-500"><Calendar size={11} /> {dates}</span>
+                  ) : dates ? (
                     <button
                       onClick={(e) => { e.stopPropagation(); setSprintToEdit(sprint); }}
                       className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 hover:underline"
@@ -1238,7 +1228,7 @@ const BacklogPage = ({ department }) => {
 
                   <div className="ml-auto flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                     <CountBadges counts={sprint.counts} />
-                    {sprint.status === 'Active' ? (
+                    {!canPlanSprints ? null : sprint.status === 'Active' ? (
                       <button
                         onClick={() => setSprintToComplete(sprint)}
                         className="px-3 py-1 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 transition"
@@ -1261,7 +1251,7 @@ const BacklogPage = ({ department }) => {
                         Start sprint
                       </button>
                     )}
-                    <SprintMenu sprint={sprint} index={idx} total={displayedSprints.length} />
+                    {canPlanSprints && <SprintMenu sprint={sprint} index={idx} total={displayedSprints.length} />}
                   </div>
                 </div>
 
@@ -1273,12 +1263,12 @@ const BacklogPage = ({ department }) => {
                         {...provided.droppableProps}
                         className={snapshot.isDraggingOver ? 'bg-blue-50/60' : ''}
                       >
-                        <InlineCreateRow sprintId={sprint.id} onCreate={createWorkItem} />
+                        {canPlanSprints && <InlineCreateRow sprintId={sprint.id} onCreate={createWorkItem} />}
                         {sprint.issues.map((item, i) => (
                           <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints}
                             currentSprintId={sprint.id} users={assignableUsers}
                             currentUserName={currentUserName} isSelected={selectedKey === item.issue_key}
-                            onMove={moveItem} onOpen={openIssue} onUpdate={updateItem}
+                            onMove={canPlanSprints ? moveItem : undefined} onOpen={openIssue} onUpdate={updateItem}
                             onDelete={canDelete ? (item) => deleteItem(item.issue_key) : undefined} onCopy={copyToClipboard} />
                         ))}
                         {sprint.issues.length === 0 && (
