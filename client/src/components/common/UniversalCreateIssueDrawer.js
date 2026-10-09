@@ -112,7 +112,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
         priority,
         status,
         assignee,
-        reporter: user?.name || user?.email || `${department} User`,
+        reporter: user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.name || user.email) : `${department} User`,
         description,
         department,
         keyPrefix: selectedSpace?.code || config.defaultPrefix,
@@ -122,7 +122,11 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
 
       const res = await fetch(`${API_BASE_URL}/it-kanban/issues`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-name': user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.name) : '',
+          'x-user-id': user?.id || ''
+        },
         body: JSON.stringify(payload)
       });
 

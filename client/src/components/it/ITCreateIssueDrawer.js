@@ -200,6 +200,18 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
     onBusyChange: setIsUploadingFile
   });
 
+  const getLoggedInUserOption = () => {
+    if (!user) return null;
+    return {
+      id: user.id,
+      name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.name || 'User',
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      avatar: user.avatar
+    };
+  };
+
   const [formData, setFormData] = useState({
     space: null,
     workType: 'Task',
@@ -207,7 +219,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
     summary: '',
     description: '',
     assignee: null,
-    reporter: null,
+    reporter: getLoggedInUserOption(),
     parent: null,
     dueDate: '',
     labels: [],
@@ -225,6 +237,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
 
   useEffect(() => {
     if (isOpen) {
+      const defaultUser = getLoggedInUserOption();
       setShouldRender(true);
       setIsClosing(false);
       setAttachedFiles([]);
@@ -235,8 +248,8 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
         status: initialStatus || 'To Do',
         summary: initialSummary || '',
         description: '',
-        assignee: null,
-        reporter: null,
+        assignee: defaultUser,
+        reporter: defaultUser,
         parent: null,
         dueDate: '',
         labels: [],
@@ -314,15 +327,18 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
           setUsers(userList);
 
           if (user) {
-            const currentReporter = {
+            const matchedUser = userList.find(u => Number(u.id) === Number(user.id) || (u.email && u.email.toLowerCase() === user.email?.toLowerCase()));
+            const currentReporter = matchedUser || {
               id: user.id,
-              name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'User',
+              name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.name || 'User',
               first_name: user.first_name,
               last_name: user.last_name,
-              email: user.email
+              email: user.email,
+              avatar: user.avatar
             };
             setFormData(prev => ({
               ...prev,
+              reporter: prev.reporter || currentReporter,
               assignee: prev.assignee || currentReporter
             }));
           }
@@ -401,11 +417,11 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
           if (formatted.length > 0) {
             setTeamMembers(formatted);
 
-            // Keep current reporter if in list, otherwise keep current or fallback to first
+            // Keep current reporter if already set; only fallback to logged-in user or first team member if completely missing
             setFormData(prev => {
-              const currentReporterName = prev.reporter ? (prev.reporter.name || `${prev.reporter.first_name || ''} ${prev.reporter.last_name || ''}`.trim()).toLowerCase() : '';
-              const inTeam = formatted.find(m => m.name.toLowerCase() === currentReporterName);
-              return inTeam ? prev : { ...prev, reporter: prev.reporter || formatted[0] };
+              if (prev.reporter) return prev;
+              const defaultReporter = getLoggedInUserOption();
+              return { ...prev, reporter: defaultReporter || formatted[0] };
             });
           } else {
             setTeamMembers([]);
@@ -565,7 +581,8 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
           priority: 'Medium',
           assigned_to: formData.assignee ? formData.assignee.id : null,
           linked_type: 'Project',
-          linked_id: parseInt(projectId)
+          linked_id: parseInt(projectId),
+          created_by: user?.id || null
         };
 
         res = await fetch(`${API_BASE_URL}/projects/${projectId}/tasks`, {
@@ -576,12 +593,15 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
       } else {
         const selectedProjId = (formData.space ? formData.space.id : null) || (formData.parent ? formData.parent.id : null);
 
-        const currentUserName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : (username || 'Unassigned');
+        const currentUserName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.name) : (username || 'Unassigned');
 
         // Create Kanban issue
-        const reporterVal = formData.reporter
-          ? (formData.reporter.name || `${formData.reporter.first_name || ''} ${formData.reporter.last_name || ''}`.trim() || 'Unassigned')
-          : 'Unassigned';
+        let reporterVal = formData.reporter
+          ? (formData.reporter.name || `${formData.reporter.first_name || ''} ${formData.reporter.last_name || ''}`.trim() || currentUserName)
+          : currentUserName;
+        if (!reporterVal || reporterVal === 'Unassigned') {
+          reporterVal = currentUserName;
+        }
 
         const teamVal = formData.team
           ? (typeof formData.team === 'string' ? formData.team : (formData.team.name || 'None'))

@@ -1255,6 +1255,11 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         cleanSprint = cleanSprint.substring(0, 255);
       }
 
+      const headerUser = req.headers['x-user-name'] || '';
+      const sessionUser = req.user ? (`${req.user.first_name || ''} ${req.user.last_name || ''}`.trim() || req.user.username) : '';
+      const resolvedCreator = headerUser || sessionUser || '';
+      const finalReporter = (reporter && reporter !== 'Unassigned') ? reporter : (resolvedCreator || 'Unassigned');
+
       const [result] = await db.query(`
         INSERT INTO it_kanban_issues (issue_key, title, type, priority, status, assignee, reporter, team, team_id, project_id, description, department, due_date, start_date, sprint, sprint_id, labels, story_points, flagged, parent_id, subtasks, linked_issues, comments, progress, original_estimate, remaining_estimate, time_spent, components, environment, vulnerability)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '0h', '0h', '0h', '', '', '')
@@ -1265,7 +1270,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         priority || 'Medium',
         status || 'TO DO',
         assignee || 'Unassigned',
-        reporter || 'Unassigned',
+        finalReporter,
         team || 'None',
         team_id || null,
         resolvedProjectId,
@@ -1535,7 +1540,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       // ── Fair-play rules (see isManagerReq above) ──
       const isMgr = isManagerReq(req);
       const [[curRow]] = await db.query(
-        'SELECT status, assignee, due_date, start_date, original_estimate, priority, type, labels, sprint_id FROM it_kanban_issues WHERE issue_key = ?',
+        'SELECT status, assignee, reporter, due_date, start_date, original_estimate, priority, type, labels, sprint_id FROM it_kanban_issues WHERE issue_key = ?',
         [key]
       );
       if (!curRow) return res.status(404).json({ error: 'Issue not found' });
@@ -1571,6 +1576,40 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         for (const [field, label] of [['due_date', 'due date'], ['start_date', 'start date']]) {
           if (updates[field] !== undefined && curRow[field] && ymdOf(updates[field]) !== ymdOf(curRow[field])) {
             return res.status(403).json({ error: `Only a manager can move the ${label} once it is set. Ask your manager to reschedule.`, code: 'LOCKED' });
+          }
+        }
+      }
+
+      // Only the reporter of a task can move it to DONE
+      if (updates.status && isDoneStatus(updates.status)) {
+        const repVal = String(curRow.reporter || '').trim();
+        if (repVal && repVal.toLowerCase() !== 'unassigned') {
+          const userIdentities = new Set();
+          if (req.user) {
+            if (req.user.username) userIdentities.add(String(req.user.username).trim().toLowerCase());
+            if (req.user.email) userIdentities.add(String(req.user.email).trim().toLowerCase());
+            const fullName = `${req.user.first_name || ''} ${req.user.last_name || ''}`.trim().toLowerCase();
+            if (fullName) userIdentities.add(fullName);
+            if (req.user.name) userIdentities.add(String(req.user.name).trim().toLowerCase());
+            if (req.user.first_name) userIdentities.add(String(req.user.first_name).trim().toLowerCase());
+          }
+          const headerUser = req.headers['x-user-name'];
+          if (headerUser) userIdentities.add(String(headerUser).trim().toLowerCase());
+
+          const targetRep = repVal.toLowerCase();
+          let isMatch = false;
+          for (const uid of userIdentities) {
+            if (uid && (uid === targetRep || targetRep === uid || targetRep.includes(uid) || uid.includes(targetRep))) {
+              isMatch = true;
+              break;
+            }
+          }
+
+          if (!isMatch) {
+            return res.status(403).json({
+              error: `Only the reporter of this task (${repVal}) can move it to Done.`,
+              code: 'REPORTER_ONLY'
+            });
           }
         }
       }

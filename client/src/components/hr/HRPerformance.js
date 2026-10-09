@@ -1416,12 +1416,37 @@ const HRPerformance = () => {
   const [tab, setTab] = useState('overview');
   const [openEmployee, setOpenEmployee] = useState(null);
 
+  const isHR = user?.role?.toLowerCase().includes('hr') || user?.department?.toLowerCase().includes('hr');
+  const isAdmin = user?.role === 'Super Admin' || user?.role?.toLowerCase().includes('admin') || user?.department?.toLowerCase().includes('admin') || user?.department === 'Management';
+
   const teamUrl = `${API_BASE_URL}/hr/performance/report?${buildQuery(params)}`;
   const { loading, error, data, status } = useReport(teamUrl);
 
   // People without HR/manager access get their own report instead of the team view.
   const selfOnly = status === 403;
   const canReview = !selfOnly;
+
+  if (user && !isAdmin && !isHR) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={24} />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Access Restricted</h2>
+          <p className="text-xs text-gray-600 mb-6">
+            Performance reports are confidential and only accessible to HR and Administrators.
+          </p>
+          <button
+            onClick={() => window.location.href = '/dashboard'}
+            className="px-4 py-2 bg-[#1e2b4a] hover:bg-[#151f35] text-white text-xs font-medium rounded-lg transition-colors cursor-pointer"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const exportTeamCsv = () => {
     if (!data) return;

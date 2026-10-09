@@ -303,15 +303,22 @@ export const AuthProvider = ({ children }) => {
           setUser({ ...dbUser, role: dbUser.role_name || dbUser.role });
           return;
         }
-        if (dbUser && dbUser.role_name && (dbUser.role_name !== user.role || dbUser.role_name !== user.role_name)) {
-          const updated = {
-            ...user,
-            ...dbUser,
-            role: dbUser.role_name,
-            role_name: dbUser.role_name
-          };
-          setUser(updated);
-          localStorage.setItem('currentUser', JSON.stringify(updated));
+        if (dbUser && dbUser.id) {
+          const roleChanged = dbUser.role_name && (dbUser.role_name !== user.role || dbUser.role_name !== user.role_name);
+          const deptRoleChanged = dbUser.department_role !== user.department_role;
+          const jobTitleChanged = dbUser.job_title !== user.job_title;
+          if (roleChanged || deptRoleChanged || jobTitleChanged) {
+            const updated = {
+              ...user,
+              ...dbUser,
+              role: dbUser.role_name || user.role,
+              role_name: dbUser.role_name || user.role_name,
+              department_role: dbUser.department_role,
+              job_title: dbUser.job_title
+            };
+            setUser(updated);
+            localStorage.setItem('currentUser', JSON.stringify(updated));
+          }
         }
       }
     } catch (err) {

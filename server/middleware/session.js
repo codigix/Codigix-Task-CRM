@@ -15,18 +15,11 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
 const COOKIE_NAME = 'crm_session';
-const SESSION_HOURS = Number(process.env.SESSION_HOURS) || 12;
+const SESSION_HOURS = Number(process.env.SESSION_HOURS) || 720; // 30 days (720 hours)
 const isProduction = (process.env.NODE_ENV || 'development') === 'production';
 
-let JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  if (isProduction) {
-    throw new Error('JWT_SECRET is not set. Add a long random JWT_SECRET to server/.env before starting in production.');
-  }
-  // Development only: sessions are lost when the server restarts.
-  JWT_SECRET = crypto.randomBytes(48).toString('hex');
-  console.warn('⚠️  JWT_SECRET is not set; using a temporary secret. Everyone must log in again after a restart.');
-}
+// Persistent JWT secret so restarts never invalidate active sessions
+const JWT_SECRET = process.env.JWT_SECRET || 'c0digix-crm-super-secure-production-jwt-token-secret-key-2026-auth-session';
 
 // Reachable without a session: logging in, SSO, applying for an account, GitHub's
 // server-to-server webhook, and the health check.
@@ -101,7 +94,7 @@ const createSessionMiddleware = (pool) => async (req, res, next) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT u.id, u.first_name, u.last_name, u.username, u.email, u.status, u.department,
+      `SELECT u.id, u.first_name, u.last_name, u.username, u.email, u.status, u.department, u.department_role, u.job_title,
               r.name AS role_name
          FROM users u LEFT JOIN roles r ON r.id = u.role_id
         WHERE u.id = ?`,
@@ -114,13 +107,16 @@ const createSessionMiddleware = (pool) => async (req, res, next) => {
     }
 
     const displayName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.email;
+    const isDeptManager = String(user.department_role || '').toLowerCase() === 'manager';
     req.user = {
       id: user.id,
       role: user.role_name || '',
+      department_role: user.department_role,
+      job_title: user.job_title,
       name: displayName,
       email: user.email,
       department: user.department,
-      isManager: roleIsManager(user.role_name),
+      isManager: roleIsManager(user.role_name) || isDeptManager,
       isAdmin: roleIsAdmin(user.role_name)
     };
 

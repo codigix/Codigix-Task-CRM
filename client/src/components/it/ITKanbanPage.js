@@ -19,7 +19,7 @@ import SearchableSelect from '../common/SearchableSelect';
 import TimeTrackingModal from '../common/TimeTrackingModal';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
-import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser, hasWorkStarted } from '../../utils/access';
+import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser, hasWorkStarted, isUserTaskReporter } from '../../utils/access';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -291,6 +291,9 @@ const ITKanbanPage = ({ department }) => {
   const canDelete = canDeleteTickets(user);
 
   const isManager = Boolean(
+    isManagerUser(user) ||
+    String(user?.department_role || '').toLowerCase() === 'manager' ||
+    (user?.email && user.email.toLowerCase() === 'sonalicodigix@gmail.com') ||
     (designation && (
       designation.toLowerCase().includes('manager') ||
       designation.toLowerCase().includes('admin') ||
@@ -308,12 +311,26 @@ const ITKanbanPage = ({ department }) => {
       user.role.toLowerCase().includes('director') ||
       user.role.toLowerCase().includes('head')
     )) ||
+    (user?.role_name && (
+      user.role_name.toLowerCase().includes('manager') ||
+      user.role_name.toLowerCase().includes('admin') ||
+      user.role_name.toLowerCase().includes('lead') ||
+      user.role_name.toLowerCase().includes('management') ||
+      user.role_name.toLowerCase().includes('hr') ||
+      user.role_name.toLowerCase().includes('director') ||
+      user.role_name.toLowerCase().includes('head')
+    )) ||
     (user?.designation && (
       user.designation.toLowerCase().includes('manager') ||
       user.designation.toLowerCase().includes('admin') ||
       user.designation.toLowerCase().includes('lead') ||
       user.designation.toLowerCase().includes('management') ||
       user.designation.toLowerCase().includes('head')
+    )) ||
+    (user?.job_title && (
+      user.job_title.toLowerCase().includes('manager') ||
+      user.job_title.toLowerCase().includes('admin') ||
+      user.job_title.toLowerCase().includes('lead')
     ))
   );
 
@@ -1257,8 +1274,8 @@ const ITKanbanPage = ({ department }) => {
   const handleCreateInlineIssue = async (col) => {
     if (!newIssueTitle.trim()) return;
 
-    const currentUserName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : (username || 'Unassigned');
-    const reporterVal = 'Unassigned';
+    const currentUserName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.name) : (username || 'Unassigned');
+    const reporterVal = currentUserName;
 
     let assigneeVal = newIssueAssignee;
     if (!assigneeVal || assigneeVal === 'Automatic') {
@@ -1397,6 +1414,20 @@ const ITKanbanPage = ({ department }) => {
 
 
   const updateIssue = async (key, updates) => {
+    // Only the reporter of a task may move it to DONE
+    if (updates.status && String(updates.status).toUpperCase() === 'DONE') {
+      const targetIssue = allRawIssues.find(i => i.issue_key === key || i.key === key);
+      const rep = targetIssue?.reporter;
+      if (!isUserTaskReporter(rep, user, myIdentities)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Only Reporter Can Mark Done',
+          text: `Only the reporter of this task (${rep || 'Reporter'}) can move it to Done.`
+        });
+        return;
+      }
+    }
+
     // Optimistic update locally
     setBoardData(prev => {
       const next = { ...prev };
@@ -1473,6 +1504,12 @@ const ITKanbanPage = ({ department }) => {
                      </ul>
                    </div>`
           });
+        } else if (data.code === 'REPORTER_ONLY') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Only Reporter Can Mark Done',
+            text: data.error || 'Only the reporter of this task can move it to Done.'
+          });
         } else {
           Swal.fire('Could not save the change', data.error || 'Update rejected by the server', 'error');
         }
@@ -1539,12 +1576,33 @@ const ITKanbanPage = ({ department }) => {
     }
 
     if (source.droppableId !== destination.droppableId) {
+      const newStatus = destination.droppableId;
+      const isMovingToDone = String(newStatus || '').toUpperCase() === 'DONE';
+
+      // Check reporter-only rule when moving to DONE
+      if (isMovingToDone) {
+        const itemToCheck = (boardData[source.droppableId] || [])[source.index];
+        if (itemToCheck) {
+          let taskReporter = itemToCheck.reporter;
+          if (itemToCheck.isSubtask) {
+            const parent = allRawIssues.find(i => (i.issue_key === itemToCheck.parentKey || i.key === itemToCheck.parentKey));
+            taskReporter = itemToCheck.reporter || parent?.reporter;
+          }
+          if (!isUserTaskReporter(taskReporter, user, myIdentities)) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Only Reporter Can Mark Done',
+              text: `Only the reporter of this task (${taskReporter || 'Reporter'}) can move it to Done.`
+            });
+            return;
+          }
+        }
+      }
+
       const sourceCol = [...(boardData[source.droppableId] || [])];
       const destCol = [...(boardData[destination.droppableId] || [])];
       const [removed] = sourceCol.splice(source.index, 1);
       if (!removed) return;
-
-      const newStatus = destination.droppableId;
 
       if (removed.isSubtask) {
         removed.status = newStatus;

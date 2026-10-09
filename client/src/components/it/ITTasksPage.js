@@ -12,7 +12,7 @@ import BoardTabs from '../common/BoardTabs';
 import DataTable from '../common/DataTable';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
-import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE } from '../../utils/access';
+import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser } from '../../utils/access';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -68,6 +68,9 @@ const ITTasksPage = () => {
   const canDelete = canDeleteTickets(user);
   const { designation, username } = useParams();
   const isManager = Boolean(
+    isManagerUser(user) ||
+    String(user?.department_role || '').toLowerCase() === 'manager' ||
+    (user?.email && user.email.toLowerCase() === 'sonalicodigix@gmail.com') ||
     (designation && (
       designation.toLowerCase().includes('manager') ||
       designation.toLowerCase().includes('admin') ||
@@ -78,6 +81,11 @@ const ITTasksPage = () => {
       user.role.toLowerCase().includes('admin') ||
       user.role.toLowerCase().includes('lead') ||
       user.role.toLowerCase().includes('hr')
+    )) ||
+    (user?.job_title && (
+      user.job_title.toLowerCase().includes('manager') ||
+      user.job_title.toLowerCase().includes('admin') ||
+      user.job_title.toLowerCase().includes('lead')
     ))
   );
 

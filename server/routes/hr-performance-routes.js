@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { buildTeamReport, buildEmployeeReport } = require('../services/performanceReport');
 
-// HR, managers and admins see everyone; anyone else only their own report.
+// Only HR and admins see the team report; anyone else only their own report.
 const canSeeTeam = (user) => {
   const role = String(user?.role || '').toLowerCase();
-  return Boolean(user) && (user.isManager || user.isAdmin || /\bhr\b|human resource/.test(role));
+  const dept = String(user?.department || '').toLowerCase();
+  return Boolean(user) && (user.isAdmin || /\bhr\b|human resource/.test(role) || /\bhr\b|human resource/.test(dept));
 };
 
 module.exports = (pool) => {
@@ -13,7 +14,7 @@ module.exports = (pool) => {
   // GET /api/hr/performance/report?period=month|quarter|year|custom&value=2026-10&from=&to=&department=
   router.get('/report', async (req, res) => {
     if (!canSeeTeam(req.user)) {
-      return res.status(403).json({ error: 'Only HR, managers and admins can view the team report.' });
+      return res.status(403).json({ error: 'Only HR and admins can view the team report.' });
     }
     try {
       res.json(await buildTeamReport(pool, req.query));

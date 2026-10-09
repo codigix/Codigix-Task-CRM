@@ -213,12 +213,19 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
 
   const userDept = user?.department || '';
   const userRole = user?.role || '';
+  const userEmail = (user?.email || '').toLowerCase();
   const isSuperAdmin = userRole === 'Super Admin';
-  const isManager = userRole === 'Manager' || userRole.includes('Manager') || isSuperAdmin || userRole.includes('HR');
+  const isAdmin = isSuperAdmin || userRole === 'Admin' || userDept === 'Admin' || userDept === 'Management';
+  const isHR = userRole.toLowerCase().includes('hr') || userDept.toLowerCase().includes('hr');
+  const isManager = userRole === 'Manager' || userRole.includes('Manager') || user?.department_role === 'Manager' || isAdmin || isHR || userEmail === 'sonalicodigix@gmail.com';
+  const isSEOUser = userRole.includes('SEO') || userRole.includes('GMB') ||
+                    (user?.job_title || '').toLowerCase().includes('seo') ||
+                    (user?.job_title || '').toLowerCase().includes('gmb') ||
+                    userDept.includes('SEO') || userEmail === 'sonalicodigix@gmail.com';
   // Scoped deliberately: the Marketing manager's own sidebar, not the whole department and
-  // not any other department.
+  // not any other department. Also hide non-SEO marketing tabs for SEO & GMB specialists/managers.
   const isMarketingDept = userDept.toLowerCase().includes('marketing');
-  const hideForMarketingManager = isMarketingDept && isManager && !isSuperAdmin;
+  const hideForMarketingManager = (isMarketingDept && isManager && !isSuperAdmin) || isSEOUser;
   // Sales staff manage deals/leads, not delivery projects — never surface a Projects tab for
   // them, whichever department sidebar they land in. Keyed on department, with a role fallback
   // for accounts whose department is set to a delivery team but whose role is still Sales.
@@ -343,16 +350,16 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   );
 
   const renderMarketingPages = () => {
-    const showSEO = isSuperAdmin || isManager || userRole === 'SEO & GMB';
-    const showPPC = isSuperAdmin || isManager || userRole === 'PPC Manager';
-    const showCreative = isSuperAdmin || isManager || userRole === 'Graphics Designer' || userRole === 'Video Editor';
-    const showSocial = isSuperAdmin || isManager || userRole === 'Social Media Marketing';
-    const showWordpress = isSuperAdmin || isManager || userRole === 'Wordpress Developer';
+    const showSEO = isSuperAdmin || (!isSEOUser && isManager) || userRole === 'SEO & GMB';
+    const showPPC = !isSEOUser && (isSuperAdmin || isManager || userRole === 'PPC Manager');
+    const showCreative = !isSEOUser && (isSuperAdmin || isManager || userRole === 'Graphics Designer' || userRole === 'Video Editor');
+    const showSocial = !isSEOUser && (isSuperAdmin || isManager || userRole === 'Social Media Marketing');
+    const showWordpress = !isSEOUser && (isSuperAdmin || isManager || userRole === 'Wordpress Developer');
 
     return (
       <>
         <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Marketing Operations</div>
-        {!isSalesUser && <SubmenuItem label="All Projects" page="projects" icon={FolderOpen} prefix="/marketing" />}
+        {!isSalesUser && !isSEOUser && <SubmenuItem label="All Projects" page="projects" icon={FolderOpen} prefix="/marketing" />}
 
         {/* HIDDEN FOR THE MARKETING MANAGER ONLY (hideForMarketingManager).
             Every other role — Graphics Designer, Video Editor, Social Media Marketing,
@@ -414,34 +421,13 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
     <>
       <div className="p-2 text-xs  text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">SEO Management</div>
       {!isSalesUser && <SubmenuItem label="All Projects" page="projects" icon={Briefcase} prefix="/seo-gmb" />}
-      <SubmenuItem label="Project Setup" page="project-setup" icon={Settings} prefix="/seo-gmb" />
-      <SubmenuItem label="Website Audit" page="website-audit" icon={Activity} prefix="/seo-gmb" />
-      <SubmenuItem label="Keyword Management" page="keyword-management" icon={Search} prefix="/seo-gmb" />
-      <SubmenuItem label="On-Page SEO" page="on-page-seo" icon={Code} prefix="/seo-gmb" />
-      <SubmenuItem label="Content Marketing" page="content-marketing" icon={FileText} prefix="/seo-gmb" />
-      <SubmenuItem label="Off-Page SEO" page="off-page-seo" icon={Link} prefix="/seo-gmb" />
-      <SubmenuItem label="Rank Tracking" page="rank-tracking" icon={TrendingUp} prefix="/seo-gmb" />
 
-      <div className="p-2 text-xs  text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">Google My Business</div>
-      <SubmenuItem label="GMB Profile" page="gmb-profile" icon={MapPin} prefix="/seo-gmb" />
-      <SubmenuItem label="Google Posts" page="google-posts" icon={MessageSquare} prefix="/seo-gmb" />
-      <SubmenuItem label="Customer Engagement" page="customer-engagement" icon={Star} prefix="/seo-gmb" />
-      <SubmenuItem label="Media Management" page="media-management" icon={Image} prefix="/seo-gmb" />
-      <SubmenuItem label="Local SEO" page="local-seo" icon={Map} prefix="/seo-gmb" />
-      <SubmenuItem label="Google Integrations" page="google-integrations" icon={Globe} prefix="/seo-gmb" />
-
-      <div className="p-2 text-xs  text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">GEO/AI</div>
-      <SubmenuItem label="GEO Optimization" page="geo-optimization" icon={Map} prefix="/seo-gmb" />
-      <SubmenuItem label="AI Content Generation" page="ai-content-generation" icon={Zap} prefix="/seo-gmb" />
-      <SubmenuItem label="Predictive Analysis" page="predictive-analysis" icon={TrendingUp} prefix="/seo-gmb" />
-      <SubmenuItem label="Location Intelligence" page="location-intelligence" icon={MapPin} prefix="/seo-gmb" />
-
-      {isManager && (
-        <>
-          <div className="p-2 text-xs  text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">SEO Operations</div>
-          <SubmenuItem label="Automation" page="automation" icon={Workflow} prefix="/seo-gmb" />
-        </>
-      )}
+      {/* Pages hidden from sidebar as requested:
+          - Project Setup
+          - Website Audit, Keyword Management, On-Page SEO, Content Marketing, Off-Page SEO, Rank Tracking
+          - Google My Business: GMB Profile, Google Posts, Customer Engagement, Media Management, Local SEO, Google Integrations
+          - GEO/AI: GEO Optimization, AI Content Generation, Predictive Analysis, Location Intelligence
+          - SEO Operations: Automation */}
     </>
   );
 
@@ -468,15 +454,8 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       {(isSuperAdmin || userDept === 'Sales Department') && renderSalesPages()}
       {(isSuperAdmin || userDept === 'IT Department') && renderITPages()}
       {(isSuperAdmin || userDept === 'Marketing Department') && renderMarketingPages()}
-      {/* Hidden specifically in SEO & GMB user login; only Super Admin retains visibility */}
-      {isSuperAdmin && renderSEOGMBPages()}
-      {(isSuperAdmin || userRole.includes('HR')) && renderHRPages()}
-      {(isManager && !isSuperAdmin && !userRole.includes('HR')) && (
-        <>
-          <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Team Performance</div>
-          <SubmenuItem label="Performance" page="performance" icon={TrendingUp} prefix="/hr" />
-        </>
-      )}
+      {(isSuperAdmin || isSEOUser) && renderSEOGMBPages()}
+      {(isAdmin || isHR) && renderHRPages()}
       {renderBottomCommonPages()}
     </>
   );

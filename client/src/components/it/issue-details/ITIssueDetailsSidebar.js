@@ -6,7 +6,8 @@ import {
   RefreshCw, CheckCircle, ExternalLink, X, Copy, Terminal, User, Search, Lock
 } from 'lucide-react';
 import { normalizeLabel } from '../../../utils/labels';
-import { hasWorkStarted } from '../../../utils/access';
+import { hasWorkStarted, isUserTaskReporter } from '../../../utils/access';
+import Swal from 'sweetalert2';
 import { API_BASE_URL } from '../../../config/environment';
 
 // Read-only timestamp, shown in local time.
@@ -80,6 +81,16 @@ const ITIssueDetailsSidebar = ({
   onRefresh
 }) => {
   const [loadingPoints, setLoadingPoints] = useState(false);
+
+  const currentUser = React.useMemo(() => {
+    try {
+      const u = localStorage.getItem('currentUser') || localStorage.getItem('user');
+      return u ? JSON.parse(u) : null;
+    } catch (e) { return null; }
+  }, []);
+
+  const taskReporter = reporter?.name || issue?.reporter;
+  const isReporter = isUserTaskReporter(taskReporter, currentUser);
 
   // Fair-play locks (the server enforces the same rules): once work has started only a
   // manager can change what decides the task's worth; set dates and the owner of a
@@ -336,21 +347,39 @@ const ITIssueDetailsSidebar = ({
             {currentStatus} <ChevronDown size={12} className="opacity-70" />
           </button>
           {openDropdown === 'status-select' && (
-            <div className="absolute left-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded shadow-lg py-1 z-50 text-xs">
-              {Object.keys(STATUS_COLORS).map(status => (
-                <div
-                  key={status}
-                  onClick={() => {
-                    setCurrentStatus(status);
-                    setOpenDropdown(null);
-                    handleUpdate({ status });
-                  }}
-                  className="p-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between font-medium text-gray-700"
-                >
-                  <span>{status}</span>
-                  {currentStatus === status && <Check size={13} className="text-blue-600" />}
-                </div>
-              ))}
+            <div className="absolute left-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded shadow-lg py-1 z-50 text-xs">
+              {Object.keys(STATUS_COLORS).map(status => {
+                const isStatusDone = String(status).toUpperCase() === 'DONE';
+                const isBlockedDone = isStatusDone && !isReporter;
+
+                return (
+                  <div
+                    key={status}
+                    onClick={() => {
+                      if (isBlockedDone) {
+                        Swal.fire({
+                          icon: 'warning',
+                          title: 'Only Reporter Can Mark Done',
+                          text: `Only the reporter of this task (${taskReporter || 'Reporter'}) can move it to Done.`
+                        });
+                        return;
+                      }
+                      setCurrentStatus(status);
+                      setOpenDropdown(null);
+                      handleUpdate({ status });
+                    }}
+                    className={`p-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between font-medium ${
+                      isBlockedDone ? 'text-gray-400 opacity-70' : 'text-gray-700'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      {status}
+                      {isBlockedDone && <Lock size={11} className="text-gray-400" title="Only reporter can mark Done" />}
+                    </span>
+                    {currentStatus === status && <Check size={13} className="text-blue-600" />}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

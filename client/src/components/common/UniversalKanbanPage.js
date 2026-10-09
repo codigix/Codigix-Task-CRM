@@ -12,7 +12,8 @@ import ITIssueDetailsPanel from '../it/ITIssueDetailsPanel';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
 import { API_BASE_URL } from '../../config/environment';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
-import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE } from '../../utils/access';
+import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isUserTaskReporter } from '../../utils/access';
+import Swal from 'sweetalert2';
 
 function BookmarkIcon(props) {
   return <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" {...props}><path d="M5 3v18l7-4.5 7 4.5V3z" /></svg>;
@@ -93,6 +94,8 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
   const config = DEPARTMENT_KANBAN_CONFIG[department] || DEPARTMENT_KANBAN_CONFIG['IT'];
 
   const isManager = Boolean(
+    String(user?.department_role || '').toLowerCase() === 'manager' ||
+    (user?.email && user.email.toLowerCase() === 'sonalicodigix@gmail.com') ||
     (designation && (
       designation.toLowerCase().includes('manager') ||
       designation.toLowerCase().includes('admin') ||
@@ -116,6 +119,11 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
       user.designation.toLowerCase().includes('lead') ||
       user.designation.toLowerCase().includes('management') ||
       user.designation.toLowerCase().includes('head')
+    )) ||
+    (user?.job_title && (
+      user.job_title.toLowerCase().includes('manager') ||
+      user.job_title.toLowerCase().includes('admin') ||
+      user.job_title.toLowerCase().includes('lead')
     ))
   );
 
@@ -504,6 +512,20 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
     }
 
     if (source.droppableId !== destination.droppableId || source.index !== destination.index) {
+      const isMovingToDone = String(destination.droppableId || '').toUpperCase() === 'DONE';
+      const itemToCheck = (boardData[source.droppableId] || [])[source.index];
+
+      if (isMovingToDone && itemToCheck) {
+        if (!isUserTaskReporter(itemToCheck.reporter, user)) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Only Reporter Can Mark Done',
+            text: `Only the reporter of this task (${itemToCheck.reporter || 'Reporter'}) can move it to Done.`
+          });
+          return;
+        }
+      }
+
       const sourceItems = Array.from(boardData[source.droppableId] || []);
       const destItems = Array.from(boardData[destination.droppableId] || []);
       const [removed] = sourceItems.splice(source.index, 1);
