@@ -32,7 +32,7 @@ const DEPARTMENTS = [
 ];
 
 const DESIGNATIONS = {
-  'Management': ['Super Admin', 'HR Management'],
+  'Management': ['Admin', 'Super Admin', 'HR Management'],
   'Sales Department': ['Manager', 'Sales Executive', 'Employee'],
   'IT Department': ['Manager', 'Developer', 'Tester', 'DevOps Engineer'],
   'Marketing Department': ['Graphics Designer', 'Video Editor', 'Social Media Marketing', 'SEO & GMB', 'Manager', 'PPC Manager', 'Wordpress Developer'],
@@ -44,6 +44,8 @@ const getRoleName = (department, roleType) => {
   if (department === 'Sales Department' && roleType === 'Manager') return 'Sales Manager';
   if (department === 'Marketing Department' && roleType === 'Manager') return 'Marketing Manager';
   if (department === 'Management' && roleType === 'Super Admin') return 'Super Admin';
+  if (department === 'Management' && roleType === 'Admin') return 'Admin';
+  if (roleType === 'Admin') return 'Admin';
   return roleType;
 };
 

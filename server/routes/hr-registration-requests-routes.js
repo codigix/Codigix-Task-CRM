@@ -116,7 +116,10 @@ module.exports = (pool) => {
       // Determine final department and role assigned by HR/Admin
       const finalDepartment = department || request.department || null;
       const finalRoleType = role_type || request.role_type || null;
-      const targetRoleName = role_name || request.role_name || finalRoleType || 'Employee';
+      let targetRoleName = role_name || request.role_name || finalRoleType || 'Employee';
+      if (String(targetRoleName).trim().toLowerCase() === 'admin') {
+        targetRoleName = 'Admin';
+      }
 
       // 2. Check if an active user already exists with this email
       const [existingUsers] = await connection.query(
@@ -130,7 +133,10 @@ module.exports = (pool) => {
       // 3. Resolve role_id
       let role_id = 13; // General Employee role fallback
 
-      const [roles] = await connection.query('SELECT id FROM roles WHERE name = ?', [targetRoleName]);
+      const [roles] = await connection.query(
+        'SELECT id FROM roles WHERE LOWER(name) = LOWER(?)',
+        [targetRoleName]
+      );
       if (roles.length > 0) {
         role_id = roles[0].id;
       } else {
@@ -144,19 +150,24 @@ module.exports = (pool) => {
       // 3b. Resolve department_id
       let department_id = null;
       if (finalDepartment) {
-        const [depts] = await connection.query('SELECT id FROM departments WHERE name = ?', [finalDepartment]);
+        const [depts] = await connection.query(
+          'SELECT id FROM departments WHERE name = ? OR (name = "Admin" AND ? = "Management")',
+          [finalDepartment, finalDepartment]
+        );
         if (depts.length > 0) {
           department_id = depts[0].id;
         }
       }
+
+      const departmentRole = String(finalRoleType || '').toLowerCase().includes('manager') ? 'Manager' : 'Executive';
 
       if (existingUsers.length > 0) {
         // User record already exists, just update their role & department and approve
         createdUserId = existingUsers[0].id;
         createdUserUuid = existingUsers[0].uuid || crypto.randomUUID();
         await connection.query(
-          `UPDATE users SET uuid = COALESCE(uuid, ?), department = ?, department_id = ?, job_title = ?, role_id = ?, status = 'Active' WHERE id = ?`,
-          [createdUserUuid, finalDepartment, department_id, finalRoleType, role_id, createdUserId]
+          `UPDATE users SET uuid = COALESCE(uuid, ?), department = ?, department_id = ?, job_title = ?, role_id = ?, department_role = ?, status = 'Active' WHERE id = ?`,
+          [createdUserUuid, finalDepartment, department_id, finalRoleType, role_id, departmentRole, createdUserId]
         );
       } else {
         // 4. Generate unique username
@@ -177,8 +188,8 @@ module.exports = (pool) => {
         createdUserUuid = crypto.randomUUID();
         const [insertResult] = await connection.query(
           `INSERT INTO users (
-            uuid, first_name, last_name, email, username, password, phone1, location, role_id, status, department, department_id, job_title
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?)`,
+            uuid, first_name, last_name, email, username, password, phone1, location, role_id, status, department, department_id, job_title, department_role
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', ?, ?, ?, ?)`,
           [
             createdUserUuid,
             request.first_name,
@@ -191,7 +202,8 @@ module.exports = (pool) => {
             role_id,
             finalDepartment,
             department_id,
-            finalRoleType
+            finalRoleType,
+            departmentRole
           ]
         );
 
