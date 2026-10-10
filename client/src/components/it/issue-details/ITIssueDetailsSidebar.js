@@ -93,13 +93,13 @@ const ITIssueDetailsSidebar = ({
   const isReporter = isUserTaskReporter(taskReporter, currentUser);
 
   // Fair-play locks (the server enforces the same rules): once work has started only a
-  // manager can change what decides the task's worth; set dates and the owner of a
-  // finished task are manager-only too.
+  // manager can change what decides the task's worth (planned time, type, labels), and
+  // the owner of a finished task. Anyone can set priority and move dates; moves are logged.
   const workStarted = hasWorkStarted(currentStatus);
   const lockSize = !canManage && workStarted;
   const lockOwner = !canManage && ['DONE', 'COMPLETED', 'CLOSED'].includes(String(currentStatus || '').toUpperCase());
-  const lockStart = !canManage && Boolean(issue?.start_date);
-  const lockDue = !canManage && Boolean(issue?.due_date);
+  const lockStart = false;
+  const lockDue = false;
   const lockedTitle = 'Only a manager can change this once work has started';
   const lockedCls = 'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
 
@@ -448,7 +448,7 @@ const ITIssueDetailsSidebar = ({
                 <Lock size={12} className="shrink-0 mt-0.5 text-gray-400" />
                 <span>
                   {lockOwner ? 'This task is finished; only a manager can change who it belongs to. '
-                    : ''}{lockSize ? 'Work has started: planned time, priority, type and labels are set by your manager. ' : ''}{lockDue ? 'To move the dates, ask your manager to reschedule.' : ''}
+                    : ''}{lockSize ? 'Work has started: planned time, type and labels are set by your manager. ' : ''}{lockDue ? 'To move the dates, ask your manager to reschedule.' : ''}
                 </span>
               </div>
             )}
@@ -794,8 +794,8 @@ const ITIssueDetailsSidebar = ({
               <div className="flex-1 min-w-0">
                 <select
                   value={priority || 'Medium'}
-                  disabled={lockSize}
-                  title={lockSize ? lockedTitle : undefined}
+                  disabled={false}
+                  title={undefined}
                   onChange={(e) => {
                     if (setPriority) setPriority(e.target.value);
                     handleUpdate({ priority: e.target.value });

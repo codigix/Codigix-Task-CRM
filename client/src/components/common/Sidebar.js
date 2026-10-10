@@ -216,6 +216,9 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const userEmail = (user?.email || '').toLowerCase();
   const isSuperAdmin = userRole === 'Super Admin';
   const isAdmin = isSuperAdmin || userRole === 'Admin' || userDept === 'Admin' || userDept === 'Management';
+  // Admins see every department's section (IT, Marketing, SEO & GMB, Sales, HR) so they can
+  // try each page and hand access out later. The Super Admin console itself stays Super Admin only.
+  const seesAllSections = isSuperAdmin || userRole === 'Admin';
   const isHR = userRole.toLowerCase().includes('hr') || userDept.toLowerCase().includes('hr');
   const isManager = userRole === 'Manager' || userRole.includes('Manager') || user?.department_role === 'Manager' || isAdmin || isHR || userEmail === 'sonalicodigix@gmail.com';
   const isSEOUser = userRole.includes('SEO') || userRole.includes('GMB') ||
@@ -451,10 +454,10 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
     <>
       {renderTopCommonPages()}
       {isSuperAdmin && renderAdminPages()}
-      {(isSuperAdmin || userDept === 'Sales Department') && renderSalesPages()}
-      {(isSuperAdmin || userDept === 'IT Department') && renderITPages()}
-      {(isSuperAdmin || userDept === 'Marketing Department') && renderMarketingPages()}
-      {(isSuperAdmin || isSEOUser) && renderSEOGMBPages()}
+      {(seesAllSections || userDept === 'Sales Department') && renderSalesPages()}
+      {(seesAllSections || userDept === 'IT Department') && renderITPages()}
+      {(seesAllSections || userDept === 'Marketing Department') && renderMarketingPages()}
+      {(seesAllSections || isSEOUser) && renderSEOGMBPages()}
       {(isAdmin || isHR) && renderHRPages()}
       {renderBottomCommonPages()}
     </>

@@ -27,12 +27,13 @@ const PRIORITY_ICONS = {
 };
 
 // The board's columns, so a status set here lands the item in the right column there.
-const STATUS_OPTIONS = ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'];
+const STATUS_OPTIONS = ['TO DO', 'IN PROGRESS', 'ON HOLD', 'IN REVIEW', 'TESTING', 'DONE'];
 
 const STATUS_STYLES = {
   'TO DO': 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200',
   'IN PROGRESS': 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
   'IN REVIEW': 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100',
+  'ON HOLD': 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200',
   'TESTING': 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
   'DONE': 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
 };

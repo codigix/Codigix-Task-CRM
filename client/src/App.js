@@ -100,6 +100,7 @@ import ApprovalsPage from './components/sales/ApprovalsPage';
 import SalesReportsPage from './components/sales/SalesReportsPage';
 import NotificationsPage from './components/common/NotificationsPage';
 import BacklogPage from './components/common/BacklogPage';
+import AdminDashboard from './components/common/AdminDashboard';
 import ProfileSettingsPage from './components/common/ProfileSettingsPage';
 import DepartmentsPage from './components/common/DepartmentsPage';
 import AutomationRulesPage from './components/common/AutomationRulesPage';
@@ -275,6 +276,15 @@ const routeMap = {
   '/registration-requests': 'registration-requests',
 };
 
+// Admins land on the organisation-wide Admin overview; ?view=sales shows the Sales dashboard.
+const SalesOrAdminDashboard = () => {
+  const { user } = useAuth();
+  const role = String(user?.role || user?.role_name || '');
+  const wantsSales = new URLSearchParams(window.location.search).get('view') === 'sales';
+  const isAdmin = role === 'Admin' || role === 'Super Admin';
+  return isAdmin && !wantsSales ? <AdminDashboard /> : <SalesDashboard />;
+};
+
 const DashboardRouter = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -435,7 +445,7 @@ function AppContent() {
         <Route path="/deals/:designation/:username/kanban" element={<DealsKanbanBoard onDealClick={handleViewDealDetails} />} />
         <Route path="/deals/:designation/:username/analytics" element={<RevenueForecastPage />} />
         <Route path="/deals/:designation/:username/deal/:id" element={<LeadDetailsPage />} />
-        <Route path="/sales/:designation/:username/dashboard" element={<SalesDashboard />} />
+        <Route path="/sales/:designation/:username/dashboard" element={<SalesOrAdminDashboard />} />
         <Route path="/sales/quotations" element={<QuotationsPage />} />
         <Route path="/sales/:designation/:username/quotations" element={<QuotationsPage />} />
         <Route path="/sales/:designation/:username/customers" element={<CustomersPage />} />

@@ -54,6 +54,8 @@ const PRIORITY_WEIGHT = { low: 1, medium: 1, high: 1.25, highest: 1.5, critical:
 
 const isDone = (s) => DONE.has(String(s || '').toUpperCase().trim());
 const isActive = (s) => IN_PROGRESS.has(String(s || '').toUpperCase().trim());
+// "On hold" / "Under discussion": paused by decision, so not counted as overdue.
+const isOnHold = (s) => /HOLD|DISCUSS/.test(String(s || '').toUpperCase());
 const toDate = (v) => {
   if (!v) return null;
   const d = v instanceof Date ? v : new Date(v);
@@ -475,7 +477,7 @@ const computeMetrics = (facts, userId, from, to) => {
   // Workload: tasks that existed by the end of the range and were not finished before it began.
   const assigned = mine.filter(t => t.createdAt && t.createdAt <= to && (!t.completedAt || t.completedAt >= from));
   const cutoff = to < now ? to : now;
-  const openOverdue = mine.filter(t => t.dueAt && t.dueAt < cutoff && (!t.completedAt || t.completedAt > cutoff));
+  const openOverdue = mine.filter(t => t.dueAt && t.dueAt < cutoff && (!t.completedAt || t.completedAt > cutoff) && !(!t.completedAt && isOnHold(t.status)));
   const withDue = completed.filter(t => t.dueAt);
   const endOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
   const onTime = withDue.filter(t => t.completedAt <= endOfDay(t.dueAt));
@@ -1138,7 +1140,7 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
     tasks: {
       completed: mineTasks.filter(t => inRange(t.completedAt, range.from, range.to)).sort((a, b) => b.completedAt - a.completedAt).map(fmt),
       open: mineTasks.filter(t => !t.completedAt).sort((a, b) => (a.dueAt || Infinity) - (b.dueAt || Infinity)).map(fmt)
-        .map(t => ({ ...t, overdue: Boolean(t.dueAt && new Date(t.dueAt) < now) }))
+        .map(t => ({ ...t, onHold: isOnHold(t.status), overdue: Boolean(t.dueAt && new Date(t.dueAt) < now && !isOnHold(t.status)) }))
     },
     timeLog: facts.time.filter(e => Number(e.userId) === uid && inRange(e.at, range.from, range.to))
       .sort((a, b) => b.at - a.at).map(e => ({ at: e.at, hours: round(e.hours, 2), taskKey: e.taskKey, source: e.source, note: e.note || null })),

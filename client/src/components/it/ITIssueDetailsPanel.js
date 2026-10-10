@@ -99,6 +99,7 @@ const STATUS_COLORS = {
   'TO DO': 'bg-gray-100 text-gray-700 hover:bg-gray-200',
   'IN PROGRESS': 'bg-blue-100 text-blue-800 hover:bg-blue-200 ',
   'IN REVIEW': 'bg-purple-100 text-purple-800 hover:bg-purple-200 ',
+  'ON HOLD': 'bg-slate-200 text-slate-700 hover:bg-slate-300 ',
   'DONE': 'bg-green-100 text-green-800 hover:bg-green-200 '
 };
 

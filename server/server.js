@@ -564,6 +564,7 @@ setupSprintsRoutes(app, pool);
 setupImportRoutes(app, pool);
 setupGithubRoutes(app, pool);
 require('./routes/calendar-routes')(app, pool);
+require('./routes/admin-dashboard-routes')(app, pool);
 setupItServicesRoutes(app, pool);
 
 const testerDashboardRoutes = require('./routes/tester-dashboard-routes');
@@ -633,6 +634,15 @@ const server = app.listen(PORT, async () => {
   console.log('✓ Automation checks scheduled (first run in 1 minute, then hourly)');
 });
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use by another process! Please free port ${PORT} or change PORT in .env.`);
+  } else {
+    console.error('Server error:', err);
+  }
+  process.exit(1);
+});
+
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
   server.close(() => {
@@ -666,4 +676,4 @@ module.exports = server;
 
 // trigger restart 3
 
-// trigger restart 4
+// trigger restart 5 - port 5001

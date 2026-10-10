@@ -6,7 +6,7 @@ import {
   Search, Bell, HelpCircle, Settings, ChevronDown, ChevronRight,
   Share2, Download, MoreHorizontal, LayoutList, Plus, AlertCircle, ArrowUp, ArrowDown, CheckSquare,
   Trash2, User, Check, Megaphone, Palette, Video, FileText, Globe, Users, IterationCw, Calendar,
-  Folder, Maximize2, X, ChevronsUp
+  Folder, Maximize2, X, ChevronsUp, Zap, Tag, PauseCircle
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ITCreateIssueDrawer from './ITCreateIssueDrawer';
@@ -19,7 +19,7 @@ import SearchableSelect from '../common/SearchableSelect';
 import TimeTrackingModal from '../common/TimeTrackingModal';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
-import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser, hasWorkStarted, isUserTaskReporter } from '../../utils/access';
+import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser, isUserTaskReporter } from '../../utils/access';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -115,6 +115,7 @@ const COLUMN_COLORS = {
   'TO DO': 'bg-gray-100',
   'IN PROGRESS': 'bg-blue-50',
   'IN REVIEW': 'bg-purple-50',
+  'ON HOLD': 'bg-slate-100',
   'TESTING': 'bg-orange-50',
   'DONE': 'bg-green-50',
 };
@@ -254,14 +255,25 @@ const AlertTriangleIcon = ({ size = 16, className = "" }) => (
 );
 
 const DEPARTMENT_KANBAN_COLUMNS = {
-  'IT': ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE'],
-  'Marketing': ['TO DO', 'IN PROGRESS', 'IN REVIEW', 'TESTING', 'DONE']
+  'IT': ['TO DO', 'IN PROGRESS', 'ON HOLD', 'IN REVIEW', 'TESTING', 'DONE'],
+  'Marketing': ['TO DO', 'IN PROGRESS', 'ON HOLD', 'IN REVIEW', 'TESTING', 'DONE']
 };
+
+// "Under discussion / on hold": work is paused, so the card shows no progress and the
+// timer stops. Any column whose name mentions hold or discussion counts.
+const isHoldStatus = (s) => /HOLD|DISCUSS/.test(String(s || '').toUpperCase());
+const HOLD_COLUMN = 'ON HOLD';
+const withHoldColumn = (cols) => {
+  if (cols.some(isHoldStatus)) return cols;
+  const next = [...cols];
+  const at = next.indexOf('IN PROGRESS');
+  next.splice(at === -1 ? Math.max(next.length - 1, 0) : at + 1, 0, HOLD_COLUMN);
+  return next;
+};
+const columnTitle = (col) => (isHoldStatus(col) && col === HOLD_COLUMN ? 'UNDER DISCUSSION / HOLD' : col);
 
 const ITKanbanPage = ({ department }) => {
   const { user } = useAuth();
-  // Same rule as the server: only managers change size/dates once work has started.
-  const canManageWork = isManagerUser(user);
   const { designation, username } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -439,7 +451,7 @@ const ITKanbanPage = ({ department }) => {
               parsed.push('TESTING');
             }
           }
-          return parsed;
+          return withHoldColumn(parsed);
         }
       } catch (e) { }
     }
@@ -461,7 +473,7 @@ const ITKanbanPage = ({ department }) => {
               parsed.push('TESTING');
             }
           }
-          cols = parsed;
+          cols = withHoldColumn(parsed);
         }
       } catch (e) { }
     }
@@ -808,6 +820,16 @@ const ITKanbanPage = ({ department }) => {
       .catch(err => console.error('Error fetching users for kanban filter:', err));
   }, [currentDept, isManager, user?.role, designation]);
 
+  const projectNameById = React.useMemo(
+    () => new Map(projectsList.map(p => [Number(p.id), p.name || p.title || ''])),
+    [projectsList]
+  );
+
+  const sprintById = React.useMemo(
+    () => new Map([...allSprints, ...activeSprints].map(sp => [Number(sp.id), sp])),
+    [allSprints, activeSprints]
+  );
+
   const itUsersList = React.useMemo(() => {
     const SYSTEM_DUMMY_USERNAMES = ['admin', 'leads', 'deals', 'sales', 'marketing', 'it', 'accounting'];
     return usersList.filter(u => {
@@ -946,21 +968,10 @@ const ITKanbanPage = ({ department }) => {
       return isPersonMatch(issue.assignee) || isPersonMatch(issue.reporter);
     };
 
-    const isTaskAssigned = (issue) => {
-      if (!issue || !issue.assignee) return false;
-      const a = String(issue.assignee).trim().toLowerCase();
-      return a !== '' && a !== 'unassigned' && a !== 'automatic' && a !== 'none' && a !== 'null' && a !== 'undefined';
-    };
-
-    // Managers see all tasks (both assigned and unassigned), and can narrow with the "Only My Tasks" toggle.
-    // Unassigned tasks are ONLY visible to the manager. Employees / non-managers only see assigned tasks.
+    // Everyone sees all tasks, unassigned included, so anyone can pick up work or hand it
+    // to a colleague. "Only My Tasks" narrows the board to their own.
     const shouldFilterOnlyMy = onlyMyIssues && selectedAssignees.length === 0;
-    if (!isManager) {
-      filtered = filtered.filter(issue => isTaskAssigned(issue));
-      if (shouldFilterOnlyMy) {
-        filtered = filtered.filter(issue => isAssignedToMe(issue));
-      }
-    } else if (shouldFilterOnlyMy) {
+    if (shouldFilterOnlyMy) {
       filtered = filtered.filter(issue => isAssignedToMe(issue));
     }
     if (searchQuery.trim()) {
@@ -1061,19 +1072,8 @@ const ITKanbanPage = ({ department }) => {
           return isPersonMatch(stAss) || isPersonMatch(issue.reporter);
         };
 
-        const isStAssigned = (stAss) => {
-          if (!stAss) return false;
-          const a = String(stAss).trim().toLowerCase();
-          return a !== '' && a !== 'unassigned' && a !== 'automatic' && a !== 'none' && a !== 'null' && a !== 'undefined';
-        };
-
         const shouldFilterOnlyMy = onlyMyIssues && selectedAssignees.length === 0;
-        if (!isManager) {
-          if (!isStAssigned(stAssignee)) return; // Unassigned subtasks are strictly visible to managers only
-          if (shouldFilterOnlyMy && !isStAssignedToMe(stAssignee)) return;
-        } else if (shouldFilterOnlyMy && !isStAssignedToMe(stAssignee)) {
-          return;
-        }
+        if (shouldFilterOnlyMy && !isStAssignedToMe(stAssignee)) return;
 
         const stKey = st.subtaskKey || `${issue.issue_key || issue.key}-${idx + 1}`;
         if (searchQuery.trim()) {
@@ -1214,6 +1214,30 @@ const ITKanbanPage = ({ department }) => {
   const [newIssueProjectId, setNewIssueProjectId] = useState('');
   const [inlineAssigneeSearch, setInlineAssigneeSearch] = useState('');
   const [openInlineDropdown, setOpenInlineDropdown] = useState(null);
+  const [newIssueSprintId, setNewIssueSprintId] = useState('');
+  const [newIssueLabels, setNewIssueLabels] = useState([]);
+  const [inlineProjectSearch, setInlineProjectSearch] = useState('');
+  const [inlineLabelSearch, setInlineLabelSearch] = useState('');
+  const [labelOptions, setLabelOptions] = useState([]);
+
+  // A sprint that belongs to a project decides the ticket's project on the server, so the
+  // two pickers stay in step: choosing one moves the other to a matching value.
+  const sprintFitsProject = (s, projectId) => !s || s.project_id == null || !projectId || Number(s.project_id) === Number(projectId);
+
+  const chooseInlineSprint = (sprintId) => {
+    setNewIssueSprintId(sprintId);
+    const s = activeSprints.find(sp => Number(sp.id) === Number(sprintId));
+    if (s && s.project_id != null) setNewIssueProjectId(s.project_id);
+  };
+
+  const chooseInlineProject = (projectId) => {
+    setNewIssueProjectId(projectId);
+    const current = activeSprints.find(sp => Number(sp.id) === Number(newIssueSprintId));
+    if (current && sprintFitsProject(current, projectId)) return;
+    const match = activeSprints.find(sp => projectId && Number(sp.project_id) === Number(projectId))
+      || activeSprints.find(sp => sp.project_id == null);
+    setNewIssueSprintId(match ? match.id : '');
+  };
 
   const handleOpenInlineCreate = (col) => {
     setActiveCreateColumn(col);
@@ -1222,13 +1246,21 @@ const ITKanbanPage = ({ department }) => {
     setNewIssueAssignee('Unassigned');
     setNewIssueDueDate('');
     setInlineAssigneeSearch('');
+    setInlineProjectSearch('');
+    setInlineLabelSearch('');
+    setNewIssueLabels([]);
     setOpenInlineDropdown(null);
-    if (selectedProjectId !== 'ALL') {
-      setNewIssueProjectId(selectedProjectId);
-    } else if (projectsList.length > 0) {
-      setNewIssueProjectId(projectsList[0].id);
-    } else {
-      setNewIssueProjectId('');
+    const projectId = selectedProjectId !== 'ALL' ? selectedProjectId : '';
+    const sprint = (projectId && activeSprints.find(sp => Number(sp.project_id) === Number(projectId)))
+      || activeSprints.find(sp => sprintFitsProject(sp, projectId))
+      || null;
+    setNewIssueSprintId(sprint ? sprint.id : '');
+    setNewIssueProjectId(projectId || (sprint && sprint.project_id != null ? sprint.project_id : ''));
+    if (labelOptions.length === 0) {
+      fetch(`${API_BASE_URL}/it-kanban/labels?department=${encodeURIComponent(currentDept)}`)
+        .then(res => res.json())
+        .then(data => setLabelOptions(Array.isArray(data) ? data.map(l => l.label).filter(l => l && !HIDDEN_CARD_LABELS.has(l.toLowerCase())) : []))
+        .catch(() => {});
     }
   };
 
@@ -1282,9 +1314,8 @@ const ITKanbanPage = ({ department }) => {
       assigneeVal = currentUserName;
     }
 
-    const targetProjectId = selectedProjectId !== 'ALL'
-      ? Number(selectedProjectId)
-      : (newIssueProjectId ? Number(newIssueProjectId) : (projectsList[0]?.id ? Number(projectsList[0].id) : null));
+    const targetProjectId = newIssueProjectId ? Number(newIssueProjectId) : null;
+    const targetSprint = activeSprints.find(sp => Number(sp.id) === Number(newIssueSprintId)) || null;
 
     let cleanDueDate = null;
     if (newIssueDueDate && String(newIssueDueDate).trim()) {
@@ -1322,7 +1353,8 @@ const ITKanbanPage = ({ department }) => {
           keyPrefix: prefix,
           project_id: targetProjectId,
           due_date: cleanDueDate,
-          sprint_id: activeSprints.length > 0 ? Number(activeSprints[0].id) : null
+          labels: newIssueLabels,
+          sprint_id: targetSprint ? Number(targetSprint.id) : null
         })
       });
       const data = await res.json();
@@ -1345,10 +1377,10 @@ const ITKanbanPage = ({ department }) => {
         department: currentDept,
         project_id: targetProjectId,
         due_date: cleanDueDate,
-        labels: [currentDept],
-        sprint: activeSprints.length > 0 ? activeSprints[0].name : null,
-        sprint_id: activeSprints.length > 0 ? Number(activeSprints[0].id) : null,
-        sprint_status: activeSprints.length > 0 ? 'Active' : null,
+        labels: newIssueLabels.length > 0 ? newIssueLabels : [currentDept],
+        sprint: targetSprint ? targetSprint.name : null,
+        sprint_id: targetSprint ? Number(targetSprint.id) : null,
+        sprint_status: targetSprint ? 'Active' : null,
         subtasks: [],
         linked_issues: [],
         comments: [],
@@ -1375,6 +1407,7 @@ const ITKanbanPage = ({ department }) => {
       setNewIssueType('Task');
       setNewIssueAssignee('Unassigned');
       setNewIssueDueDate('');
+      setNewIssueLabels([]);
       setInlineAssigneeSearch('');
       setActiveCreateColumn(null);
       setOpenInlineDropdown(null);
@@ -2120,7 +2153,7 @@ const ITKanbanPage = ({ department }) => {
                         dropdownClassName="w-64"
                         options={[
                           { value: 'ALL', label: 'All Assignees' },
-                          ...(isManager ? [{ value: 'UNASSIGNED', label: 'Unassigned' }] : []),
+                          { value: 'UNASSIGNED', label: 'Unassigned' },
                           ...usersList.map(u => {
                             const uName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
                             if (!uName) return null;
@@ -2299,7 +2332,10 @@ const ITKanbanPage = ({ department }) => {
                                       {...provided.dragHandleProps}
                                       className="flex items-center gap-2 pb-3 pt-1 px-1 shrink-0 cursor-grab active:cursor-grabbing sticky top-0 bg-inherit z-10"
                                     >
-                                      <span className="text-xs  text-gray-500 ">{col}</span>
+                                      <span className={`text-xs ${isHoldStatus(col) ? 'text-slate-600 flex items-center gap-1' : 'text-gray-500'}`}>
+                                        {isHoldStatus(col) && <PauseCircle size={12} className="text-slate-500" />}
+                                        {columnTitle(col)}
+                                      </span>
                                       <span className="text-xs text-gray-400 font-medium">{boardData[col] ? boardData[col].length : 0}</span>
                                     </div>
 
@@ -2361,12 +2397,23 @@ const ITKanbanPage = ({ department }) => {
 
                                                   {(() => {
                                                     const labels = getCardLabels(card);
-                                                    const { client, text } = splitCardTitle(card);
+                                                    const split = splitCardTitle(card);
+                                                    const { text } = split;
+                                                    // Content-calendar cards name their client; every other card shows its project.
+                                                    const cardSprint = card.sprint_id ? sprintById.get(Number(card.sprint_id)) : null;
+                                                    const sprintName = cardSprint?.name || (typeof card.sprint === 'string' ? card.sprint : '') || '';
+                                                    const client = split.client || card.project_name || (card.project_id ? projectNameById.get(Number(card.project_id)) : null)
+                                                      || (cardSprint && Number(cardSprint.project_id) === Number(card.project_id) ? cardSprint.project_name : null) || null;
                                                     return (
                                                       <>
                                                         {/* WORK-TYPE LABELS */}
-                                                        {(labels.length > 0 || card.isSubtask) && (
+                                                        {(labels.length > 0 || card.isSubtask || isHoldStatus(card.status)) && (
                                                           <div className="flex items-center gap-1 mb-1.5 flex-wrap pr-6">
+                                                            {isHoldStatus(card.status) && (
+                                                              <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-300 flex items-center gap-1" title="Paused: no work or timer until it leaves this column">
+                                                                <PauseCircle size={10} /> On hold
+                                                              </span>
+                                                            )}
                                                             {card.isSubtask && (
                                                               <span className="text-[10px]  uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200">
                                                                 Subtask
@@ -2385,13 +2432,20 @@ const ITKanbanPage = ({ department }) => {
                                                         )}
 
                                                         {/* CLIENT + TITLE */}
-                                                        {client && (
-                                                          <div className="text-[11px] text-gray-500 font-medium truncate pr-6" title={client}>
-                                                            {client}
+                                                        {(client || sprintName) && (
+                                                          <div className={`flex items-center gap-1 text-[11px] text-gray-500 font-medium min-w-0 ${labels.length === 0 ? 'pr-6' : ''}`}>
+                                                            {client && <span className="truncate" title={client}>{client}</span>}
+                                                            {client && sprintName && <span className="text-gray-300 shrink-0">·</span>}
+                                                            {sprintName && (
+                                                              <span className="flex items-center gap-0.5 truncate text-blue-700" title={`Sprint: ${sprintName}`}>
+                                                                <Zap size={10} className="shrink-0" />
+                                                                <span className="truncate">{sprintName}</span>
+                                                              </span>
+                                                            )}
                                                           </div>
                                                         )}
                                                         <div
-                                                          className={`text-[13px] text-gray-900 font-medium leading-snug line-clamp-2 mb-2.5 cursor-grab active:cursor-grabbing ${labels.length === 0 && !client ? 'pr-6' : ''}`}
+                                                          className={`text-[13px] text-gray-900 font-medium leading-snug line-clamp-2 mb-2.5 cursor-grab active:cursor-grabbing ${labels.length === 0 && !client && !sprintName ? 'pr-6' : ''}`}
                                                           title={card.title}
                                                         >
                                                           {text}
@@ -2424,11 +2478,6 @@ const ITKanbanPage = ({ department }) => {
                                                         <button
                                                           type="button"
                                                           onClick={(e) => {
-                                                            if (!canManageWork && hasWorkStarted(card.status)) {
-                                                              e.stopPropagation();
-                                                              showErrorToast('Only a manager can change the priority once work has started');
-                                                              return;
-                                                            }
                                                             handleOpenCardPriority(e, card.key);
                                                           }}
                                                           className={`flex items-center gap-0.5 pl-0.5 pr-1 py-0.5 rounded text-[11px] text-gray-600 hover:bg-gray-100 transition cursor-pointer ${openCardPriorityDropdown === card.key ? 'bg-gray-100' : ''}`}
@@ -2477,8 +2526,8 @@ const ITKanbanPage = ({ department }) => {
                                                         const text = formatDate(value);
                                                         const isDue = !!card.due_date;
                                                         const overdue = isDue && !isDoneStatus(card.status) && isPastDate(value);
-                                                        // Anyone can set a missing date; moving a set date is for managers.
-                                                        const canMove = !isDoneStatus(card.status) && (canManageWork || !card.due_date);
+                                                        // Anyone can set or move the date of unfinished work; every move is logged.
+                                                        const canMove = !isDoneStatus(card.status);
                                                         const dayStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                                                         const addDays = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
                                                         // Next working day (Sunday is off).
@@ -2749,6 +2798,198 @@ const ITKanbanPage = ({ department }) => {
                                             }
                                           }}
                                         />
+
+                                        {/* Sprint, project and labels: what the ticket belongs to */}
+                                        <div className="flex items-center gap-1 flex-wrap">
+                                          {activeSprints.length > 0 && (
+                                            <div className="relative inline-dropdown">
+                                              <button
+                                                type="button"
+                                                onClick={() => setOpenInlineDropdown(openInlineDropdown === 'sprint' ? null : 'sprint')}
+                                                className={`px-1.5 py-1 rounded border flex items-center gap-1 transition ${newIssueSprintId ? 'border-blue-200 bg-blue-50 text-blue-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}
+                                                title="Sprint"
+                                              >
+                                                <Zap size={12} className="shrink-0" />
+                                                <span className="text-[11px] font-medium max-w-[90px] truncate">
+                                                  {activeSprints.find(sp => Number(sp.id) === Number(newIssueSprintId))?.name || 'Backlog'}
+                                                </span>
+                                                <ChevronDown size={10} />
+                                              </button>
+                                              {openInlineDropdown === 'sprint' && (
+                                                <div className="absolute left-0 bottom-full mb-2 w-60 bg-white border border-gray-200 rounded shadow-xl py-1 z-50 text-xs">
+                                                  <div className="px-2.5 py-1 text-[10px] text-gray-400 uppercase tracking-wider">Running sprint</div>
+                                                  <div className="max-h-48 overflow-y-auto">
+                                                    {activeSprints.map(sp => (
+                                                      <div
+                                                        key={sp.id}
+                                                        onClick={() => { chooseInlineSprint(sp.id); setOpenInlineDropdown(null); }}
+                                                        className={`px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2 ${Number(newIssueSprintId) === Number(sp.id) ? 'bg-[#deebff] text-blue-900' : 'text-gray-700'}`}
+                                                      >
+                                                        <Zap size={12} className="text-blue-500 shrink-0" />
+                                                        <div className="min-w-0 flex-1">
+                                                          <div className="truncate font-medium">{sp.name}</div>
+                                                          {sp.project_name && <div className="truncate text-[10px] text-gray-500">{sp.project_name}</div>}
+                                                        </div>
+                                                        {Number(newIssueSprintId) === Number(sp.id) && <Check size={12} className="text-blue-600 shrink-0" />}
+                                                      </div>
+                                                    ))}
+                                                    <div
+                                                      onClick={() => { setNewIssueSprintId(''); setOpenInlineDropdown(null); }}
+                                                      className={`px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2 border-t border-gray-100 ${!newIssueSprintId ? 'bg-[#deebff] text-blue-900' : 'text-gray-700'}`}
+                                                    >
+                                                      <div className="min-w-0 flex-1">
+                                                        <div className="font-medium">Backlog</div>
+                                                        <div className="text-[10px] text-gray-500">Not shown on the board until it is added to a sprint</div>
+                                                      </div>
+                                                      {!newIssueSprintId && <Check size={12} className="text-blue-600 shrink-0" />}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          {projectsList.length > 0 && (
+                                            <div className="relative inline-dropdown">
+                                              <button
+                                                type="button"
+                                                onClick={() => { setInlineProjectSearch(''); setOpenInlineDropdown(openInlineDropdown === 'project' ? null : 'project'); }}
+                                                className="px-1.5 py-1 rounded border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center gap-1 transition"
+                                                title="Project"
+                                              >
+                                                <Folder size={12} className="text-amber-500 shrink-0" />
+                                                <span className="text-[11px] font-medium max-w-[90px] truncate">
+                                                  {projectsList.find(p => Number(p.id) === Number(newIssueProjectId))?.name || 'No project'}
+                                                </span>
+                                                <ChevronDown size={10} />
+                                              </button>
+                                              {openInlineDropdown === 'project' && (
+                                                <div className="absolute left-0 bottom-full mb-2 w-60 bg-white border border-gray-200 rounded shadow-xl py-1 z-50 text-xs">
+                                                  <div className="px-2.5 py-1 text-[10px] text-gray-400 uppercase tracking-wider">Assign to project</div>
+                                                  <div className="px-2 pb-1.5">
+                                                    <div className="relative">
+                                                      <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                                                      <input
+                                                        autoFocus
+                                                        value={inlineProjectSearch}
+                                                        onChange={e => setInlineProjectSearch(e.target.value)}
+                                                        onKeyDown={e => { if (e.key === 'Escape') setOpenInlineDropdown(null); }}
+                                                        placeholder="Search projects"
+                                                        className="w-full h-7 pl-7 pr-2 text-xs border border-gray-300 rounded outline-none focus:border-blue-500"
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                  <div className="max-h-48 overflow-y-auto">
+                                                    {!inlineProjectSearch.trim() && (
+                                                      <div
+                                                        onClick={() => { chooseInlineProject(''); setOpenInlineDropdown(null); }}
+                                                        className={`px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2 ${!newIssueProjectId ? 'bg-[#deebff] text-blue-900' : 'text-gray-500'}`}
+                                                      >
+                                                        <Folder size={12} className="text-gray-300 shrink-0" />
+                                                        <span className="truncate">No project</span>
+                                                      </div>
+                                                    )}
+                                                    {projectsList
+                                                      .filter(p => !inlineProjectSearch.trim() || String(p.name || '').toLowerCase().includes(inlineProjectSearch.trim().toLowerCase()))
+                                                      .map(proj => (
+                                                        <div
+                                                          key={proj.id}
+                                                          onClick={() => { chooseInlineProject(proj.id); setOpenInlineDropdown(null); }}
+                                                          className={`px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2 ${Number(newIssueProjectId) === Number(proj.id) ? 'bg-[#deebff] text-blue-900' : 'text-gray-700'}`}
+                                                        >
+                                                          <Folder size={12} className="text-amber-500 shrink-0" />
+                                                          <span className="truncate flex-1">{proj.name}</span>
+                                                          {Number(newIssueProjectId) === Number(proj.id) && <Check size={12} className="text-blue-600 shrink-0" />}
+                                                        </div>
+                                                      ))}
+                                                    {inlineProjectSearch.trim() && !projectsList.some(p => String(p.name || '').toLowerCase().includes(inlineProjectSearch.trim().toLowerCase())) && (
+                                                      <div className="px-2.5 py-2 text-gray-400">No project matches.</div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          <div className="relative inline-dropdown">
+                                            <button
+                                              type="button"
+                                              onClick={() => { setInlineLabelSearch(''); setOpenInlineDropdown(openInlineDropdown === 'labels' ? null : 'labels'); }}
+                                              className="px-1.5 py-1 rounded border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center gap-1 transition"
+                                              title="Labels"
+                                            >
+                                              <Tag size={12} className="text-gray-500 shrink-0" />
+                                              <span className="text-[11px] font-medium">
+                                                {newIssueLabels.length === 0 ? 'Label' : `${newIssueLabels.length} label${newIssueLabels.length > 1 ? 's' : ''}`}
+                                              </span>
+                                              <ChevronDown size={10} />
+                                            </button>
+                                            {openInlineDropdown === 'labels' && (() => {
+                                              const q = inlineLabelSearch.trim();
+                                              const options = [...new Set([...Object.keys(LABEL_STYLES), ...labelOptions])]
+                                                .filter(l => !q || l.toLowerCase().includes(q.toLowerCase()));
+                                              const toggle = (l) => setNewIssueLabels(prev => prev.includes(l) ? prev.filter(x => x !== l) : [...prev, l]);
+                                              const canAdd = q && !options.some(l => l.toLowerCase() === q.toLowerCase());
+                                              return (
+                                                <div className="absolute right-0 bottom-full mb-2 w-56 bg-white border border-gray-200 rounded shadow-xl py-1 z-50 text-xs">
+                                                  <div className="px-2.5 py-1 text-[10px] text-gray-400 uppercase tracking-wider">Labels</div>
+                                                  <div className="px-2 pb-1.5">
+                                                    <div className="relative">
+                                                      <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                                                      <input
+                                                        autoFocus
+                                                        value={inlineLabelSearch}
+                                                        onChange={e => setInlineLabelSearch(e.target.value)}
+                                                        onKeyDown={e => {
+                                                          if (e.key === 'Enter' && canAdd) { e.preventDefault(); toggle(q); setInlineLabelSearch(''); }
+                                                          if (e.key === 'Escape') setOpenInlineDropdown(null);
+                                                        }}
+                                                        placeholder="Search or add a label"
+                                                        className="w-full h-7 pl-7 pr-2 text-xs border border-gray-300 rounded outline-none focus:border-blue-500"
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                  <div className="max-h-48 overflow-y-auto">
+                                                    {options.map(l => (
+                                                      <div
+                                                        key={l}
+                                                        onClick={() => toggle(l)}
+                                                        className="px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
+                                                      >
+                                                        <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${newIssueLabels.includes(l) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                                                          {newIssueLabels.includes(l) && <Check size={10} className="text-white" />}
+                                                        </span>
+                                                        <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ring-1 ring-inset truncate ${getLabelStyle(l).chip}`}>{l}</span>
+                                                      </div>
+                                                    ))}
+                                                    {canAdd && (
+                                                      <div
+                                                        onClick={() => { toggle(q); setInlineLabelSearch(''); }}
+                                                        className="px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-blue-700 border-t border-gray-100"
+                                                      >
+                                                        <Plus size={12} className="shrink-0" />
+                                                        <span className="truncate">Add “{q}”</span>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              );
+                                            })()}
+                                          </div>
+                                        </div>
+
+                                        {newIssueLabels.length > 0 && (
+                                          <div className="flex items-center gap-1 flex-wrap -mt-1">
+                                            {newIssueLabels.map(l => (
+                                              <span key={l} className={`text-[10px] uppercase tracking-wide pl-1.5 pr-1 py-0.5 rounded ring-1 ring-inset flex items-center gap-1 ${getLabelStyle(l).chip}`}>
+                                                {l}
+                                                <button type="button" onClick={() => setNewIssueLabels(prev => prev.filter(x => x !== l))} className="opacity-60 hover:opacity-100" aria-label={`Remove ${l}`}>
+                                                  <X size={10} />
+                                                </button>
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
 
                                         {/* Bottom Row Controls */}
                                         <div className="flex items-center justify-between mt-1 relative">
@@ -3062,46 +3303,6 @@ const ITKanbanPage = ({ department }) => {
                                               )}
                                             </div>
 
-                                            {/* Project selector dropdown */}
-                                            {projectsList.length > 0 && (
-                                              <div className="relative inline-dropdown">
-                                                <button
-                                                  type="button"
-                                                  onClick={() => setOpenInlineDropdown(openInlineDropdown === 'project' ? null : 'project')}
-                                                  className="px-1.5 py-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition flex items-center gap-1"
-                                                  title="Select Project"
-                                                >
-                                                  <Folder size={13} className="text-amber-500 shrink-0" />
-                                                  <span className="text-[11px] font-medium text-gray-600 max-w-[70px] truncate">
-                                                    {projectsList.find(p => Number(p.id) === Number(newIssueProjectId))?.name || 'Project'}
-                                                  </span>
-                                                  <ChevronDown size={10} />
-                                                </button>
-                                                {openInlineDropdown === 'project' && (
-                                                  <div className="absolute left-0 bottom-full mb-2 w-52 bg-white border border-gray-200 rounded shadow-xl py-1 z-50 text-xs">
-                                                    <div className="px-2.5 py-1 text-[10px]  text-gray-400 uppercase tracking-wider">
-                                                      Assign to Project
-                                                    </div>
-                                                    <div className="max-h-40 overflow-y-auto">
-                                                      {projectsList.map(proj => (
-                                                        <div
-                                                          key={proj.id}
-                                                          onClick={() => {
-                                                            setNewIssueProjectId(proj.id);
-                                                            setOpenInlineDropdown(null);
-                                                          }}
-                                                          className={`px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2 truncate ${Number(newIssueProjectId) === Number(proj.id) ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'
-                                                            }`}
-                                                        >
-                                                          <Folder size={12} className="text-amber-500 shrink-0" />
-                                                          <span className="truncate">{proj.name}</span>
-                                                        </div>
-                                                      ))}
-                                                    </div>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            )}
                                           </div>
 
                                           {/* Right Side Action Buttons */}

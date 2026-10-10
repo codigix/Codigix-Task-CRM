@@ -1561,7 +1561,6 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         if (hasStarted(curRow.status)) {
           const changed = {
             'planned time': updates.original_estimate !== undefined && parseDurationToSeconds(updates.original_estimate) !== parseDurationToSeconds(curRow.original_estimate),
-            priority: updates.priority !== undefined && String(updates.priority) !== String(curRow.priority || ''),
             'work type': updates.type !== undefined && String(updates.type) !== String(curRow.type || ''),
             labels: updates.labels !== undefined && labelSet(updates.labels) !== labelSet(curRow.labels)
           };
@@ -1573,11 +1572,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         if (updates.sprint_id !== undefined && String(updates.sprint_id ?? '') !== String(curRow.sprint_id ?? '')) {
           return res.status(403).json({ error: 'Only a manager can move work between sprints.', code: 'LOCKED' });
         }
-        for (const [field, label] of [['due_date', 'due date'], ['start_date', 'start date']]) {
-          if (updates[field] !== undefined && curRow[field] && ymdOf(updates[field]) !== ymdOf(curRow[field])) {
-            return res.status(403).json({ error: `Only a manager can move the ${label} once it is set. Ask your manager to reschedule.`, code: 'LOCKED' });
-          }
-        }
+        // Dates and priority are open to everyone so people can plan their own day; each
+        // date move is written to History and shows up as a reschedule in performance.
       }
 
       // Only the reporter of a task can move it to DONE
