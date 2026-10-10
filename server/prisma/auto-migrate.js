@@ -107,6 +107,21 @@ async function runAutoMigration() {
         console.warn('⚠️ Auto-recovery fallback warning:', innerErr.message);
       }
     }
+
+    try {
+      const fs = require('fs');
+      const syncScript = path.join(__dirname, '..', 'migrations', 'sync_task_tables_and_roles.js');
+      if (fs.existsSync(syncScript)) {
+        console.log('🚀 Running sync_task_tables_and_roles migration script...');
+        execSync(`node "${syncScript}"`, {
+          stdio: 'inherit',
+          env: { ...process.env }
+        });
+      }
+    } catch (scriptErr) {
+      console.warn('⚠️ Custom migration notice:', scriptErr.message);
+    }
+
     console.log('✅ Database migration completed successfully.');
     process.exit(0);
   } catch (err) {
