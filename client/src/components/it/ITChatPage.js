@@ -9,6 +9,7 @@ import {
 import { API_BASE_URL } from '../../config/environment';
 import { uploadDescriptionFile, toAbsoluteFileUrl, formatFileSize } from '../../utils/descriptionFiles';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import { setActiveChatRoom } from '../../utils/chatState';
 
 /**
  * Team chat: direct messages, private groups and team channels with live updates.
@@ -457,7 +458,6 @@ export default function ITChatPage() {
       const first = d.rooms.find(r => r.id === wanted) || d.rooms[0];
       if (first) setActiveId(first.id);
     }).catch(e => showErrorToast(e.message)).finally(() => setLoading(false));
-    if (window.Notification && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -490,6 +490,16 @@ export default function ITChatPage() {
       if (lastId) markRead(roomId, lastId);
     } catch (e) { showErrorToast(e.message); } finally { setLoadingMsgs(false); }
   }, [markRead]);
+
+  // Tell the app-wide notifier which conversation is on screen.
+  useEffect(() => { setActiveChatRoom(activeId); }, [activeId]);
+  useEffect(() => () => setActiveChatRoom(null), []);
+
+  // Opened from a notification while already on the chat page: switch conversation.
+  useEffect(() => {
+    const wanted = Number(new URLSearchParams(location.search).get('room'));
+    if (wanted && wanted !== activeRef.current && roomsRef.current.some(r => r.id === wanted)) setActiveId(wanted);
+  }, [location.search]);
 
   useEffect(() => {
     if (!activeId) return;
@@ -553,17 +563,7 @@ export default function ITChatPage() {
         ...r, lastAt: msg.createdAt, unread: mine || visible ? r.unread : r.unread + (msg.kind === 'system' ? 0 : 1),
         last: { id: msg.id, sender: mine ? 'You' : msg.sender, text: msg.body || (msg.attachments.length ? '📎 Attachment' : ''), at: msg.createdAt, kind: msg.kind }
       } : r)).sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt)));
-      if (!mine && msg.kind !== 'system' && !room.muted && (!visible)) {
-        const mentioned = msg.mentions.includes(meRef.current?.id) || /@(everyone|here)\b/i.test(msg.body);
-        if (room.kind === 'dm' || mentioned || room.kind === 'group') {
-          try {
-            if (window.Notification && Notification.permission === 'granted') {
-              const n = new Notification(room.kind === 'dm' ? msg.sender : `${msg.sender} in ${roomTitle(room)}`, { body: msg.body || 'Sent an attachment', tag: `chat-${msg.roomId}` });
-              n.onclick = () => { window.focus(); setActiveId(msg.roomId); n.close(); };
-            }
-          } catch (err) { /* notifications unavailable */ }
-        }
-      }
+      // Desktop notifications are shown app-wide by ChatNotifier.
     });
     es.addEventListener('message:update', (e) => {
       const msg = JSON.parse(e.data);

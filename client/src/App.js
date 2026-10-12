@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navig
 import './App.css';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
+import ChatNotifier from './components/common/ChatNotifier';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import DepartmentRoute from './components/common/DepartmentRoute';
 import LoginPage from './components/common/LoginPage';
@@ -430,7 +431,9 @@ function AppContent() {
   };
 
   return (
-    <Layout 
+    <>
+    <ChatNotifier />
+    <Layout
       currentPage={currentPage} 
       onNavigate={handleNavigate}
       hideSidebar={isVideoCall}
@@ -706,6 +709,7 @@ function AppContent() {
         <Route path="/registration-requests" element={<RegistrationRequestsPage />} />
       </Routes>
     </Layout>
+    </>
   );
 }
 

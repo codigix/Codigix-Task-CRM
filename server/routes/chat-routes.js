@@ -279,6 +279,7 @@ module.exports = function setupChatRoutes(app, pool) {
       await pool.query('INSERT IGNORE INTO chat_members (room_id, user_id, role) VALUES ?', [values]);
       await systemMessage(r.insertId, `${req.user.name} created ${kind === 'channel' ? `#${name}` : `the group "${name}"`}`);
       send(ids, 'rooms', {});
+      send(ids, 'added', { roomId: r.insertId, kind, name, by: req.user.name });
       res.status(201).json({ roomId: r.insertId, rooms: await roomsFor(uid) });
     } catch (e) {
       console.error('chat create room:', e.message);
@@ -338,6 +339,7 @@ module.exports = function setupChatRoutes(app, pool) {
       const names = await nameMap();
       await systemMessage(roomId, selfJoin ? `${req.user.name} joined` : `${req.user.name} added ${fresh.map(id => names.get(id) || 'someone').join(', ')}`);
       send(fresh, 'rooms', {});
+      if (!selfJoin) send(fresh, 'added', { roomId, kind: room.kind, name: room.name, by: req.user.name });
       res.json({ ok: true, rooms: await roomsFor(uid) });
     } catch (e) {
       console.error('chat add members:', e.message);
@@ -514,10 +516,18 @@ module.exports = function setupChatRoutes(app, pool) {
       if (!emoji) return res.status(400).json({ error: 'Pick an emoji.' });
       const reactions = parseJson(m.reactions, {});
       const list = new Set((reactions[emoji] || []).map(Number));
+      const adding = !list.has(uid);
       if (list.has(uid)) list.delete(uid); else list.add(uid);
       if (list.size) reactions[emoji] = [...list]; else delete reactions[emoji];
       await pool.query('UPDATE chat_messages SET reactions = ? WHERE id = ?', [JSON.stringify(reactions), m.id]);
-      res.json({ message: await broadcastMessage(m.id) });
+      const updated = await broadcastMessage(m.id);
+      if (adding && Number(m.sender_id) !== uid) {
+        send([Number(m.sender_id)], 'reaction', {
+          roomId: m.room_id, messageId: m.id, emoji, byId: uid, by: req.user.name,
+          preview: String(m.body || '').slice(0, 140), hasAttachment: parseJson(m.attachments, []).length > 0
+        });
+      }
+      res.json({ message: updated });
     } catch (e) { res.status(500).json({ error: 'Could not react' }); }
   });
 
