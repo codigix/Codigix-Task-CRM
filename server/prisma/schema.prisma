@@ -2718,3 +2718,23 @@ model work_type_sizes {
   updated_by String?   @db.VarChar(120)
   updated_at DateTime? @default(now()) @db.Timestamp(0)
 }
+
+model push_subscriptions {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  endpoint     String    @unique(map: "uniq_push_endpoint", length: 255) @db.VarChar(700)
+  p256dh       String    @db.VarChar(255)
+  auth         String    @db.VarChar(100)
+  user_agent   String?   @db.VarChar(255)
+  created_at   DateTime? @default(now()) @db.DateTime(0)
+  last_used_at DateTime? @db.DateTime(0)
+
+  @@index([user_id], map: "idx_push_user")
+}
+
+model push_vapid_keys {
+  id          Int       @id
+  public_key  String    @db.VarChar(200)
+  private_key String    @db.VarChar(200)
+  created_at  DateTime? @default(now()) @db.DateTime(0)
+}

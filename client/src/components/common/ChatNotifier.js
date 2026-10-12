@@ -1,24 +1,31 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, X, MessageSquare } from 'lucide-react';
+import { Bell, X, MessageSquare, Share, PlusSquare, Loader2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config/environment';
 import { toAbsoluteFileUrl } from '../../utils/descriptionFiles';
 import { getActiveChatRoom } from '../../utils/chatState';
+import {
+  enablePush, syncPush, pushActiveFor, needsHomeScreen, pushSupported, permission as pushPermission,
+  showLocalNotification, sendTestPush, isIOS
+} from '../../utils/push';
 
 /**
  * Chat notifications for the whole app, on every page while signed in.
  *
- * Listens to the chat's live stream and shows a system (desktop) notification for each new
- * message: who sent it, where, and a preview. Also for @mentions, reactions to your messages
- * and being added to a group or channel. Clicking one opens that conversation.
+ * Notification bar (phone / desktop): through Web Push, sent by the server for new messages,
+ * @mentions, reactions to your messages and being added to a group or channel, with who
+ * sent it and a preview. Works with the CRM in the background or closed. On iPhone/iPad this
+ * needs the CRM added to the Home Screen (iOS 16.4+); the card below walks people through it.
  *
- * Skipped: your own messages, the conversation you are looking at right now, and muted
- * conversations (unless you are mentioned). If desktop notifications are not allowed, the
- * same thing appears as a small card in the corner of the app instead.
+ * Without push (not turned on / not supported): the open app still shows a system
+ * notification where the browser allows it, or a small card in the corner.
+ *
+ * Skipped: your own messages, the conversation on screen, muted conversations (unless you
+ * are mentioned).
  */
 
-const PERMISSION_KEY = 'chatNotifyPromptDismissed';
+const PROMPT_KEY = 'chatPushPromptDismissed';
 const DEPT_SEGMENTS = ['it', 'marketing', 'sales', 'hr', 'seo-gmb', 'deals', 'leads', 'projects'];
 
 const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
@@ -59,14 +66,18 @@ export default function ChatNotifier() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [cards, setCards] = useState([]);
-  const [permission, setPermission] = useState(() => (typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'));
-  const [promptHidden, setPromptHidden] = useState(() => { try { return localStorage.getItem(PERMISSION_KEY) === '1'; } catch (e) { return false; } });
+  const [perm, setPerm] = useState(pushPermission());
+  const [pushOn, setPushOn] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState('');
+  const [promptHidden, setPromptHidden] = useState(() => { try { return localStorage.getItem(PROMPT_KEY) === '1'; } catch (e) { return false; } });
   const rooms = useRef(new Map());
   const people = useRef(new Map());
   const userRef = useRef(user);
+  const pushOnRef = useRef(false);
   userRef.current = user;
+  pushOnRef.current = pushOn;
 
-  // Where the chat lives for this person (keeps them in their own department's section).
   const chatPath = useCallback((roomId) => {
     const parts = window.location.pathname.split('/').filter(Boolean);
     const u = userRef.current;
@@ -85,20 +96,37 @@ export default function ChatNotifier() {
     } catch (e) { /* offline */ }
   }, []);
 
-  const notify = useCallback(({ title, body, roomId, icon, tag }) => {
-    const open = () => { window.focus(); navigate(chatPath(roomId)); };
-    chime();
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      try {
-        const n = new Notification(title, { body, icon: icon || '/logo192.png', badge: '/favicon.ico', tag: tag || `chat-room-${roomId}`, renotify: true });
-        n.onclick = () => { open(); n.close(); };
-        return;
-      } catch (e) { /* fall back to the in-app card */ }
-    }
+  const addCard = useCallback((title, body, icon, roomId) => {
     const id = `${Date.now()}-${Math.random()}`;
     setCards(cs => [...cs.slice(-3), { id, title, body, icon, roomId }]);
     setTimeout(() => setCards(cs => cs.filter(c => c.id !== id)), 8000);
-  }, [navigate, chatPath]);
+  }, []);
+
+  const notify = useCallback(async ({ title, body, roomId, icon, tag }) => {
+    if (document.visibilityState === 'visible') chime();
+    // With push on, the server's push puts it in the notification bar; nothing more to do.
+    if (pushOnRef.current) return;
+    const shown = await showLocalNotification(title, { body, icon: icon || '/logo192.png', badge: '/logo192.png', tag: tag || `chat-room-${roomId}`, renotify: true, data: { url: chatPath(roomId), roomId } });
+    if (!shown) addCard(title, body, icon, roomId);
+  }, [chatPath, addCard]);
+
+  // Keep this device registered for push for whoever is signed in.
+  useEffect(() => {
+    if (!user?.id) return;
+    syncPush(user.id).then(ok => setPushOn(ok || pushActiveFor(user.id)));
+  }, [user?.id]);
+
+  // A notification tapped while the app is open (some browsers hand the link to the page).
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return undefined;
+    const onMsg = (e) => {
+      if (e.data?.type === 'open-url' && e.data.url) {
+        try { const u = new URL(e.data.url); navigate(`${u.pathname}${u.search}`); } catch (err) { /* ignore */ }
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', onMsg);
+    return () => navigator.serviceWorker.removeEventListener('message', onMsg);
+  }, [navigate]);
 
   useEffect(() => {
     if (!user?.id) return undefined;
@@ -124,8 +152,7 @@ export default function ChatNotifier() {
       const title = mentioned
         ? `${msg.sender} mentioned you${room && room.kind !== 'dm' ? ` in ${where}` : ''}`
         : room?.kind === 'dm' || !room ? msg.sender : `${msg.sender} · ${where}`;
-      const body = msg.replyTo ? `↪ ${preview(msg)}` : preview(msg);
-      notify({ title, body, roomId: msg.roomId, icon: avatarOf(msg.senderId) });
+      notify({ title, body: msg.replyTo ? `↪ ${preview(msg)}` : preview(msg), roomId: msg.roomId, icon: avatarOf(msg.senderId) });
     });
 
     es.addEventListener('reaction', (e) => {
@@ -144,27 +171,40 @@ export default function ChatNotifier() {
     });
 
     es.addEventListener('rooms', () => loadRooms());
-    // Muting / starring happens on the chat page; pick it up when coming back.
     const onFocus = () => loadRooms();
     window.addEventListener('focus', onFocus);
     return () => { closed = true; es.close(); window.removeEventListener('focus', onFocus); };
   }, [user?.id, loadRooms, notify]);
 
-  const enable = async () => {
+  const hidePrompt = () => { setPromptHidden(true); try { localStorage.setItem(PROMPT_KEY, '1'); } catch (e) { /* storage unavailable */ } };
+  const turnOn = async () => {
+    setBusy(true); setNote('');
     try {
-      const p = await Notification.requestPermission();
-      setPermission(p);
-      if (p !== 'default') { setPromptHidden(true); try { localStorage.setItem(PERMISSION_KEY, '1'); } catch (e) { /* storage unavailable */ } }
-    } catch (e) { setPromptHidden(true); }
+      const ok = await enablePush(user?.id);
+      setPerm(pushPermission());
+      setPushOn(ok);
+      if (ok) {
+        const sent = await sendTestPush().catch(() => 0);
+        setNote(sent ? 'Done. A test notification is on its way.' : 'Notifications are on.');
+        setTimeout(hidePrompt, 4000);
+      } else {
+        setNote(pushPermission() === 'denied' ? 'Notifications are blocked. Allow them for this site in your browser settings.' : '');
+        if (pushPermission() === 'denied') setTimeout(hidePrompt, 6000);
+      }
+    } catch (e) {
+      setNote(e.message);
+    } finally { setBusy(false); }
   };
-  const dismiss = () => { setPromptHidden(true); try { localStorage.setItem(PERMISSION_KEY, '1'); } catch (e) { /* storage unavailable */ } };
 
   if (!user?.id) return null;
+  const showIOSGuide = needsHomeScreen() && !promptHidden;
+  const showTurnOn = !needsHomeScreen() && pushSupported() && !pushOn && perm !== 'denied' && !promptHidden;
+
   return (
-    <div className="fixed bottom-4 right-4 z-[2500] flex flex-col items-end gap-2 pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-[2500] flex flex-col items-end gap-2 pointer-events-none max-w-[calc(100vw-2rem)]">
       {cards.map(c => (
         <button key={c.id} onClick={() => { setCards(cs => cs.filter(x => x.id !== c.id)); navigate(chatPath(c.roomId)); }}
-          className="pointer-events-auto w-80 text-left bg-white border border-gray-200 rounded-xl shadow-xl p-3 flex gap-3 cursor-pointer hover:border-blue-300">
+          className="pointer-events-auto w-80 max-w-full text-left bg-white border border-gray-200 rounded-xl shadow-xl p-3 flex gap-3 cursor-pointer hover:border-blue-300">
           {c.icon ? <img src={c.icon} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
             : <span className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0"><MessageSquare size={16} /></span>}
           <span className="min-w-0 flex-1">
@@ -173,19 +213,39 @@ export default function ChatNotifier() {
           </span>
         </button>
       ))}
-      {permission === 'default' && !promptHidden && (
-        <div className="pointer-events-auto w-80 bg-white border border-gray-200 rounded-xl shadow-xl p-3">
+
+      {showIOSGuide && (
+        <div className="pointer-events-auto w-80 max-w-full bg-white border border-gray-200 rounded-xl shadow-xl p-3">
+          <div className="flex items-start gap-2.5">
+            <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Bell size={15} /></span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13px] font-semibold text-gray-900">Chat notifications on iPhone</div>
+              <ol className="text-[12px] text-gray-600 mt-1 space-y-1 list-decimal pl-4">
+                <li>Tap <Share size={12} className="inline -mt-0.5" /> <strong>Share</strong> in Safari.</li>
+                <li>Choose <PlusSquare size={12} className="inline -mt-0.5" /> <strong>Add to Home Screen</strong>.</li>
+                <li>Open <strong>Codigix</strong> from the Home Screen and tap <strong>Turn on</strong>.</li>
+              </ol>
+              <p className="text-[11px] text-gray-500 mt-1">Needs iOS 16.4 or newer. Safari tabs cannot show notifications.</p>
+            </div>
+            <button onClick={hidePrompt} className="text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Close"><X size={14} /></button>
+          </div>
+        </div>
+      )}
+
+      {showTurnOn && (
+        <div className="pointer-events-auto w-80 max-w-full bg-white border border-gray-200 rounded-xl shadow-xl p-3">
           <div className="flex items-start gap-2.5">
             <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Bell size={15} /></span>
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-semibold text-gray-900">Get chat notifications</div>
-              <div className="text-[12px] text-gray-600">See who messaged you and a preview, even when this tab is in the background.</div>
+              <div className="text-[12px] text-gray-600">Who messaged you and a preview, in your {isIOS() ? 'iPhone' : 'phone or computer'}'s notification bar, even when the CRM is closed.</div>
+              {note && <div className="text-[12px] text-blue-700 mt-1">{note}</div>}
               <div className="flex gap-2 mt-2">
-                <button onClick={enable} className="h-7 px-3 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">Turn on</button>
-                <button onClick={dismiss} className="h-7 px-3 text-xs rounded border border-gray-300 hover:bg-gray-50 cursor-pointer">Not now</button>
+                <button onClick={turnOn} disabled={busy} className="h-7 px-3 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 cursor-pointer flex items-center gap-1">{busy && <Loader2 size={12} className="animate-spin" />} Turn on</button>
+                <button onClick={hidePrompt} className="h-7 px-3 text-xs rounded border border-gray-300 hover:bg-gray-50 cursor-pointer">Not now</button>
               </div>
             </div>
-            <button onClick={dismiss} className="text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Close"><X size={14} /></button>
+            <button onClick={hidePrompt} className="text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Close"><X size={14} /></button>
           </div>
         </div>
       )}

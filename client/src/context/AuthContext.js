@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { getDataAccessLevel } from '../utils/roleBasedAccess';
 import { API_BASE_URL } from '../config/environment';
+import { forgetPushOnLogout } from '../utils/push';
 
 export const AuthContext = createContext();
 
@@ -273,7 +274,10 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(() => {
     // Ends the server session too (clears the httpOnly cookie), not just local state.
-    fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => { });
+    // Stop this device getting this person's chat notifications first (needs the session).
+    forgetPushOnLogout().finally(() => {
+      fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => { });
+    });
     setUser(null);
     localStorage.removeItem('currentUser');
     localStorage.removeItem('user');

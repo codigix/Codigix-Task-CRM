@@ -14,7 +14,21 @@
  * The old chat (conversations / messages) is copied in once, on first start.
  */
 
+const push = require('../services/push');
+
 const MAX_BODY = 8000;
+const slugify = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+// Notification text: plain words, no formatting marks, 140 characters at most.
+const plainText = (t) => String(t || '').replace(/```[\s\S]*?```/g, '[code]').replace(/\*\*([^*]+)\*\*/g, '$1')
+  .replace(/`([^`]+)`/g, '$1').replace(/\s+/g, ' ').trim();
+const previewOf = (body, attachments) => {
+  const text = plainText(body);
+  if (text) return text.length > 140 ? `${text.slice(0, 140)}…` : text;
+  const att = attachments || [];
+  if (att.length === 1) return att[0].isImage ? '📷 Photo' : `📎 ${att[0].name}`;
+  if (att.length > 1) return `📎 ${att.length} files`;
+  return 'New message';
+};
 const PAGE = 50;
 
 const parseJson = (v, fallback) => {
@@ -130,6 +144,29 @@ module.exports = function setupChatRoutes(app, pool) {
   const people = async () => {
     const rows = await q("SELECT id, first_name, last_name, username, email, avatar, department, job_title FROM users WHERE COALESCE(status, 'Active') = 'Active' ORDER BY first_name, last_name");
     return rows.map(u => ({ id: u.id, name: userName(u), email: u.email, avatar: u.avatar || null, department: u.department || '', title: u.job_title || '', online: isOnline(u.id), lastActive: lastActive.get(Number(u.id)) || null }));
+  };
+
+  // Web Push to people's phones / desktops, each opening their own chat page.
+  push.init(pool);
+  const chatUrlFor = async (ids, roomId) => {
+    const rows = await q(`SELECT u.id, u.username, u.first_name, u.department, r.name AS role FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE u.id IN (?)`, [ids.concat(0)]);
+    const map = new Map();
+    rows.forEach(u => {
+      const d = String(u.department || '').toLowerCase();
+      const seg = d.includes('marketing') ? 'marketing' : d.includes('sales') ? 'sales' : d.includes('hr') ? 'hr' : 'it';
+      map.set(Number(u.id), `/${seg}/${slugify(u.role || 'employee')}/${slugify(u.username || u.first_name || 'me')}/chat?room=${roomId}`);
+    });
+    return map;
+  };
+  const pushTo = async (ids, roomId, payload) => {
+    const list = [...new Set(ids.map(Number).filter(Boolean))];
+    if (!list.length) return;
+    const urls = await chatUrlFor(list, roomId);
+    await Promise.all(list.map(id => push.sendToUsers([id], { ...payload, roomId, url: urls.get(id) || '/' })));
+  };
+  const senderIcon = async (uid) => {
+    const [u] = await q('SELECT avatar FROM users WHERE id = ?', [uid]);
+    return u?.avatar && /^https?:\/\//.test(u.avatar) ? u.avatar : (u?.avatar ? u.avatar : null);
   };
 
   const auth = (req, res) => {
@@ -280,6 +317,7 @@ module.exports = function setupChatRoutes(app, pool) {
       await systemMessage(r.insertId, `${req.user.name} created ${kind === 'channel' ? `#${name}` : `the group "${name}"`}`);
       send(ids, 'rooms', {});
       send(ids, 'added', { roomId: r.insertId, kind, name, by: req.user.name });
+      pushTo(ids, r.insertId, { title: `${req.user.name} added you to ${kind === 'channel' ? `#${name}` : name}`, body: 'Open the conversation to catch up.', tag: `chat-added-${r.insertId}`, kind: 'added' }).catch(() => {});
       res.status(201).json({ roomId: r.insertId, rooms: await roomsFor(uid) });
     } catch (e) {
       console.error('chat create room:', e.message);
@@ -339,7 +377,10 @@ module.exports = function setupChatRoutes(app, pool) {
       const names = await nameMap();
       await systemMessage(roomId, selfJoin ? `${req.user.name} joined` : `${req.user.name} added ${fresh.map(id => names.get(id) || 'someone').join(', ')}`);
       send(fresh, 'rooms', {});
-      if (!selfJoin) send(fresh, 'added', { roomId, kind: room.kind, name: room.name, by: req.user.name });
+      if (!selfJoin) {
+        send(fresh, 'added', { roomId, kind: room.kind, name: room.name, by: req.user.name });
+        pushTo(fresh, roomId, { title: `${req.user.name} added you to ${room.kind === 'channel' ? `#${room.name}` : room.name}`, body: 'Open the conversation to catch up.', tag: `chat-added-${roomId}`, kind: 'added' }).catch(() => {});
+      }
       res.json({ ok: true, rooms: await roomsFor(uid) });
     } catch (e) {
       console.error('chat add members:', e.message);
@@ -447,6 +488,24 @@ module.exports = function setupChatRoutes(app, pool) {
       const msg = shapeMessage(m, await nameMap());
       send(members, 'message', msg);
 
+      // Phone / desktop notifications for everyone else in the conversation.
+      (async () => {
+        const mutedSet = new Set((await q('SELECT user_id FROM chat_members WHERE room_id = ? AND muted = 1', [mem.room_id])).map(x => Number(x.user_id)));
+        const where = mem.kind === 'channel' ? `#${mem.name}` : mem.name;
+        const others = members.filter(id => id !== uid);
+        const preview = `${replyTo ? '↪ ' : ''}${previewOf(body, attachments)}`;
+        const icon = await senderIcon(uid);
+        const mentionedSet = new Set(everyone ? others : mentions);
+        const mentioned = others.filter(id => mentionedSet.has(id));
+        const regular = others.filter(id => !mentionedSet.has(id) && !mutedSet.has(id));
+        if (mentioned.length) {
+          await pushTo(mentioned, mem.room_id, { title: `${req.user.name} mentioned you${mem.kind === 'dm' ? '' : ` in ${where}`}`, body: preview, tag: `chat-room-${mem.room_id}`, icon, kind: 'mention' });
+        }
+        if (regular.length) {
+          await pushTo(regular, mem.room_id, { title: mem.kind === 'dm' ? req.user.name : `${req.user.name} · ${where}`, body: preview, tag: `chat-room-${mem.room_id}`, icon, kind: 'message' });
+        }
+      })().catch(e => console.error('chat push:', e.message));
+
       // Bell notifications: mentions always; direct messages when the person is not in the chat right now.
       const notifyIds = new Set(mentions);
       if (everyone) members.filter(id => id !== uid).forEach(id => notifyIds.add(id));
@@ -522,6 +581,11 @@ module.exports = function setupChatRoutes(app, pool) {
       await pool.query('UPDATE chat_messages SET reactions = ? WHERE id = ?', [JSON.stringify(reactions), m.id]);
       const updated = await broadcastMessage(m.id);
       if (adding && Number(m.sender_id) !== uid) {
+        const [roomRow] = await q('SELECT r.kind, r.name, m2.muted FROM chat_rooms r LEFT JOIN chat_members m2 ON m2.room_id = r.id AND m2.user_id = ? WHERE r.id = ?', [m.sender_id, m.room_id]);
+        if (roomRow && !roomRow.muted) {
+          const what = m.body ? `“${plainText(m.body).slice(0, 100)}”` : 'your attachment';
+          pushTo([Number(m.sender_id)], m.room_id, { title: `${req.user.name} reacted ${emoji}`, body: `to ${what}${roomRow.kind === 'dm' ? '' : ` in ${roomRow.kind === 'channel' ? '#' : ''}${roomRow.name}`}`, tag: `chat-reaction-${m.id}`, icon: await senderIcon(uid), kind: 'reaction' }).catch(() => {});
+        }
         send([Number(m.sender_id)], 'reaction', {
           roomId: m.room_id, messageId: m.id, emoji, byId: uid, by: req.user.name,
           preview: String(m.body || '').slice(0, 140), hasAttachment: parseJson(m.attachments, []).length > 0

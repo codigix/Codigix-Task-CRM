@@ -569,6 +569,7 @@ require('./routes/sheet-sync-routes')(app, pool);
 require('./routes/daily-report-routes')(app, pool);
 require('./routes/knowledge-routes')(app, pool);
 require('./routes/chat-routes')(app, pool);
+require('./routes/push-routes')(app, pool);
 require('./routes/team-overview-routes')(app, pool);
 setupItServicesRoutes(app, pool);
 
