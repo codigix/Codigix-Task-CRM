@@ -118,6 +118,7 @@ module.exports = function setupMarketingITWorkflowRoutes(app, pool) {
   });
 
   app.post('/api/teams', async (req, res) => {
+    if (!(req.user?.isManager || req.user?.isAdmin)) return res.status(403).json({ error: 'Only managers can change teams.' });
     let connection;
     try {
       connection = await pool.getConnection();
@@ -160,6 +161,7 @@ module.exports = function setupMarketingITWorkflowRoutes(app, pool) {
   });
 
   app.post('/api/teams/:id/members', async (req, res) => {
+    if (!(req.user?.isManager || req.user?.isAdmin)) return res.status(403).json({ error: 'Only managers can change teams.' });
     let connection;
     try {
       connection = await pool.getConnection();
@@ -178,6 +180,7 @@ module.exports = function setupMarketingITWorkflowRoutes(app, pool) {
   });
 
   app.put('/api/teams/:id', async (req, res) => {
+    if (!(req.user?.isManager || req.user?.isAdmin)) return res.status(403).json({ error: 'Only managers can change teams.' });
     let connection;
     try {
       connection = await pool.getConnection();
@@ -195,9 +198,11 @@ module.exports = function setupMarketingITWorkflowRoutes(app, pool) {
   });
 
   app.delete('/api/teams/:id', async (req, res) => {
+    if (!(req.user?.isManager || req.user?.isAdmin)) return res.status(403).json({ error: 'Only managers can change teams.' });
     let connection;
     try {
       connection = await pool.getConnection();
+      await connection.query('DELETE FROM team_members WHERE team_id = ?', [req.params.id]);
       await connection.query('DELETE FROM teams WHERE id = ?', [req.params.id]);
       connection.release();
       res.json({ success: true });
@@ -208,6 +213,7 @@ module.exports = function setupMarketingITWorkflowRoutes(app, pool) {
   });
 
   app.delete('/api/teams/:id/members/:userId', async (req, res) => {
+    if (!(req.user?.isManager || req.user?.isAdmin)) return res.status(403).json({ error: 'Only managers can change teams.' });
     let connection;
     try {
       connection = await pool.getConnection();
@@ -364,7 +370,25 @@ module.exports = function setupMarketingITWorkflowRoutes(app, pool) {
       }
 
       // 4. Create Weekly and Monthly Report Follow-ups
-      if (project && (project.contact_id || project.company_id)) {
+      // A project can still point at a deal or contact that has since been deleted; copying
+      // that id into a follow-up breaks its foreign key and used to fail the whole team
+      // assignment. Keep only links that still exist, skip follow-ups the project already
+      // has, and never let the follow-ups stop the assignment itself.
+      if (project) {
+        if (project.deal_id) {
+          const [[deal]] = await connection.query('SELECT id FROM deals WHERE id = ?', [project.deal_id]);
+          if (!deal) project.deal_id = null;
+        }
+        if (project.contact_id) {
+          const [[contact]] = await connection.query('SELECT id FROM contacts WHERE id = ?', [project.contact_id]);
+          if (!contact) project.contact_id = null;
+        }
+      }
+      const [[existingReports]] = await connection.query(
+        "SELECT COUNT(*) AS n FROM followups WHERE project_id = ? AND type = 'Report' AND COALESCE(status, '') = 'Scheduled'",
+        [projectId]
+      ).catch(() => [[{ n: 0 }]]);
+      if (project && (project.contact_id || project.company_id) && !Number(existingReports?.n)) try {
         const today = new Date();
         const nextWeek = new Date(today);
         nextWeek.setDate(today.getDate() + 7);
@@ -407,6 +431,8 @@ module.exports = function setupMarketingITWorkflowRoutes(app, pool) {
           1, 'Monthly',
           managerId, projectId, project.contact_id, project.deal_id, 'Scheduled'
         ]);
+      } catch (followupErr) {
+        console.error('Team assigned, but the report follow-ups could not be created:', followupErr.message);
       }
 
       await connection.commit();

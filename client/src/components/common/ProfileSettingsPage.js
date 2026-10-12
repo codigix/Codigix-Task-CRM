@@ -333,33 +333,30 @@ const ProfileSettingsPage = () => {
           }
         }
 
-        // Real team workload
-        const teamForWorkload = deptUsers.length > 0 ? deptUsers : allUsers;
-        const computedWorkload = teamForWorkload
-          .filter(u => !['system', 'admin'].includes((u.username || '').toLowerCase()))
-          .map(u => {
-            const uName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username;
-            const userTasks = allIssues.filter(i => {
-              const a = (i.assignee || '').toLowerCase();
-              return a.includes(uName.toLowerCase()) || (u.first_name && a.includes((u.first_name || '').toLowerCase()));
-            });
-            const totalIssues = allIssues.length || 1;
-            const pct = Math.round((userTasks.length / totalIssues) * 100);
-            return {
-              name: uName,
-              role: u.job_title || u.department_role || u.designation || 'Team Member',
-              department: u.department || 'General',
-              workload: pct,
-              taskCount: userTasks.length,
-              avatar: u.avatar
-            };
-          })
-          .sort((a, b) => b.taskCount - a.taskCount)
-          .slice(0, 5);
-        setTeamWorkload(computedWorkload);
+        // The profile shows this person's own records only. "Me" is matched exactly on full
+        // name, username or email, never on "contains my first name".
+        const squash = (v) => String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        const myKeys = new Set([
+          `${user?.first_name || ''} ${user?.last_name || ''}`, user?.name, user?.username, user?.email
+        ].map(squash).filter(Boolean));
+        const isMe = (v) => myKeys.has(squash(v));
+        const assignedToMe = allIssues.filter(i => isMe(i.assignee));
+        const myIssues = allIssues.filter(i => isMe(i.assignee) || isMe(i.reporter));
+        const DONE_SET = ['DONE', 'COMPLETED', 'RESOLVED', 'CLOSED'];
+        const myOpen = assignedToMe.filter(i => !DONE_SET.includes(String(i.status || '').toUpperCase()));
 
-        // Map real tickets from it_kanban_issues
-        const mappedTickets = allIssues.map(i => ({
+        // My workload: my open work as a share of everything assigned to me.
+        setTeamWorkload(assignedToMe.length ? [{
+          name: `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.username || 'Me',
+          role: user?.job_title || user?.department_role || user?.designation || 'Team Member',
+          department: user?.department || 'General',
+          workload: Math.round((myOpen.length / assignedToMe.length) * 100),
+          taskCount: myOpen.length,
+          avatar: user?.avatar
+        }] : []);
+
+        // Tickets I am assigned to or reported.
+        const mappedTickets = myIssues.map(i => ({
           id: i.issue_key || `#IT-${i.id}`,
           subject: i.title || 'No Title',
           status: i.status || 'TO DO',
@@ -373,8 +370,8 @@ const ProfileSettingsPage = () => {
         }));
         setTickets(mappedTickets);
 
-        // Map real tasks
-        setTasks(allIssues.map(i => ({
+        // Tasks assigned to me
+        setTasks(assignedToMe.map(i => ({
           id: i.issue_key || `#IT-${i.id}`,
           name: i.title || 'No Title',
           project: i.department ? `${i.department} Workspace` : 'General',
@@ -386,8 +383,13 @@ const ProfileSettingsPage = () => {
           createdAt: i.created_at ? new Date(i.created_at).toISOString() : null
         })));
 
-        // Map real projects
-        setProjects(allProjects.map(p => ({
+        // Projects I have work in, or manage
+        const myProjectIds = new Set(myIssues.map(i => Number(i.project_id)).filter(Boolean));
+        const meId = Number(user?.id);
+        const mine = allProjects.filter(p => myProjectIds.has(Number(p.id))
+          || [p.manager_id, p.project_manager_id, p.assigned_to, p.owner_id, p.user_id].some(v => v != null && Number(v) === meId)
+          || isMe(p.project_manager) || isMe(p.manager_name));
+        setProjects(mine.map(p => ({
           id: p.id,
           name: p.name || 'Unnamed Project',
           status: p.status || 'Active',
@@ -399,15 +401,7 @@ const ProfileSettingsPage = () => {
         })));
 
         // Map activities
-        const userNameMatches = (nameField) => {
-          if (!nameField || !user) return false;
-          const search = nameField.toLowerCase();
-          const un = (user.username || '').toLowerCase();
-          const fn = (user.first_name || '').toLowerCase();
-          const ln = (user.last_name || '').toLowerCase();
-          const full = `${fn} ${ln}`.trim();
-          return (un && search.includes(un)) || (full && search.includes(full)) || (fn && search.includes(fn));
-        };
+        const userNameMatches = (nameField) => Boolean(nameField) && (isMe(nameField) || Number(nameField) === meId);
 
         setActivities(activitiesRes.data
           .filter(a => userNameMatches(a.created_by_name) || userNameMatches(a.created_by))
@@ -503,17 +497,17 @@ const ProfileSettingsPage = () => {
 
   const handleCreateMockTicket = () => {
     setActiveTab('Tickets');
-    showInfoToast('Viewing workspace tickets.');
+    showInfoToast('Viewing your tickets.');
   };
 
   const handleCreateMockProject = () => {
     setActiveTab('Projects');
-    showInfoToast('Viewing workspace projects.');
+    showInfoToast('Viewing your projects.');
   };
 
   const handleCreateMockTask = () => {
     setActiveTab('Tasks');
-    showInfoToast('Viewing workspace tasks.');
+    showInfoToast('Viewing your tasks.');
   };
 
   const handleDayShift = (direction) => {
@@ -1292,7 +1286,7 @@ const ProfileSettingsPage = () => {
 
             {/* Pagination */}
             <div className="p-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 font-medium">
-              <span>Showing 1 to {projects.length} of 24 entries</span>
+              <span>Showing {projects.length} of {projects.length} {projects.length === 1 ? 'project' : 'projects'}</span>
               <div className="flex items-center gap-1 ">
                 <button className="p-1 px-2 border border-gray-200 rounded hover:bg-gray-50">1</button>
                 <button className="p-1 px-2 border border-red-600 bg-red-600 text-white rounded">2</button>

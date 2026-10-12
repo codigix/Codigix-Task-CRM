@@ -1,500 +1,321 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Search, Filter, ChevronDown, Check, AlertCircle, MessageSquare,
-  FileText, DollarSign, Calendar, Users, Activity, X, ExternalLink
+  Search, ChevronDown, ChevronLeft, ChevronRight, Activity, X, ExternalLink, Loader2,
+  PlusCircle, ArrowRightLeft, UserCheck, CalendarClock, Timer, Pencil, MessageSquare, Hourglass
 } from 'lucide-react';
-import AdvancedDateRangePicker from '../common/AdvancedDateRangePicker';
+import { API_BASE_URL } from '../../config/environment';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+/**
+ * Activity stream: who did what to which work item. Everything is filtered and paged on the
+ * server (GET /it-kanban/activities); the KPIs compare the chosen range with the same-length
+ * period just before it.
+ */
 
-
-
-
-const TYPE_COLORS = {
-  'Task': 'text-blue-600 bg-blue-50',
-  'Issue': 'text-orange-600 bg-orange-50',
-  'Comment': 'text-purple-600 bg-purple-50',
-  'File': 'text-blue-600 bg-blue-50',
-  'Deal': 'text-green-600 bg-green-50',
-  'Event': 'text-rose-600 bg-rose-50',
-  'Team': 'text-purple-600 bg-purple-50'
+const KIND_STYLE = {
+  Created: { icon: PlusCircle, tone: 'text-emerald-700 bg-emerald-50', label: 'Created' },
+  Status: { icon: ArrowRightLeft, tone: 'text-blue-700 bg-blue-50', label: 'Status' },
+  Assignment: { icon: UserCheck, tone: 'text-violet-700 bg-violet-50', label: 'Assignment' },
+  Dates: { icon: CalendarClock, tone: 'text-amber-800 bg-amber-50', label: 'Dates' },
+  'Planned time': { icon: Hourglass, tone: 'text-orange-700 bg-orange-50', label: 'Planned time' },
+  Edited: { icon: Pencil, tone: 'text-gray-700 bg-gray-100', label: 'Edited' },
+  Comment: { icon: MessageSquare, tone: 'text-pink-700 bg-pink-50', label: 'Comment' },
+  'Time logged': { icon: Timer, tone: 'text-teal-700 bg-teal-50', label: 'Time logged' }
 };
+const KPI_KINDS = ['Created', 'Status', 'Assignment', 'Dates', 'Time logged'];
+
+const pad = (n) => String(n).padStart(2, '0');
+const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return ymd(d); };
+const PRESETS = [
+  { key: 'today', label: 'Today', range: () => [daysAgo(0), daysAgo(0)] },
+  { key: 'yesterday', label: 'Yesterday', range: () => [daysAgo(1), daysAgo(1)] },
+  { key: '7d', label: 'Last 7 days', range: () => [daysAgo(6), daysAgo(0)] },
+  { key: '30d', label: 'Last 30 days', range: () => [daysAgo(29), daysAgo(0)] },
+  { key: 'month', label: 'This month', range: () => { const d = new Date(); return [ymd(new Date(d.getFullYear(), d.getMonth(), 1)), daysAgo(0)]; } },
+  { key: 'all', label: 'All time', range: () => [null, null] },
+  { key: 'custom', label: 'Custom…', range: null }
+];
+
+const dayHeading = (iso) => {
+  const k = ymd(new Date(iso));
+  if (k === daysAgo(0)) return 'Today';
+  if (k === daysAgo(1)) return 'Yesterday';
+  return new Date(iso).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+};
+const timeOf = (iso) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+const fmtDate = (v) => (v ? new Date(`${String(v).slice(0, 10)}T12:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
+const initials = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('');
+const isDateValue = (v) => /^\d{4}-\d{2}-\d{2}/.test(String(v || ''));
+const showValue = (v) => (v == null || v === '' ? 'none' : isDateValue(v) ? fmtDate(v) : v);
+
+const Avatar = ({ name, size = 'w-7 h-7 text-[10px]' }) => (
+  <span className={`${size} rounded-full bg-gray-200 text-gray-700 font-semibold flex items-center justify-center shrink-0`} title={name}>{initials(name)}</span>
+);
+
+const ValueChange = ({ from, to }) => (
+  <span className="inline-flex items-center gap-1 flex-wrap">
+    {from != null && <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 line-through decoration-gray-400 max-w-[220px] truncate" title={String(from)}>{showValue(from)}</span>}
+    {from != null && <span className="text-gray-400">→</span>}
+    <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 max-w-[220px] truncate" title={String(to ?? '')}>{showValue(to)}</span>
+  </span>
+);
 
 export default function ITActivitiesPage() {
-  const [activitiesList, setActivitiesList] = useState([]);
-  const [selectedActivity, setSelectedActivity] = useState(null);
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [kpis, setKpis] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState('All Activities');
-  const [selectedModule, setSelectedModule] = useState('All Modules');
-  const [selectedUser, setSelectedUser] = useState('All Users');
-  const [openFilterDropdown, setOpenFilterDropdown] = useState(null);
-  const [dateRange, setDateRange] = useState({ start: null, end: null, label: 'All Time' });
+  const navigate = useNavigate();
+  const { designation, username } = useParams();
+  const [department, setDepartment] = useState('All');
+  const [preset, setPreset] = useState('7d');
+  const [custom, setCustom] = useState({ from: daysAgo(6), to: daysAgo(0) });
+  const [kind, setKind] = useState('');
+  const [person, setPerson] = useState('');
+  const [search, setSearch] = useState('');
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const [state, setState] = useState({ loading: true, error: '', data: null });
+  const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (openFilterDropdown && !e.target.closest('.interactive-dropdown')) {
-        setOpenFilterDropdown(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openFilterDropdown]);
+  // Search waits for typing to pause.
+  useEffect(() => { const t = setTimeout(() => setQ(search.trim()), 300); return () => clearTimeout(t); }, [search]);
+  useEffect(() => { setPage(1); }, [department, preset, custom, kind, person, q]);
 
-  useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        const res = await axios.get(API_BASE_URL + '/it-kanban/activities?department=IT');
+  const [from, to] = useMemo(() => {
+    if (preset === 'custom') return [custom.from, custom.to];
+    return PRESETS.find(p => p.key === preset).range();
+  }, [preset, custom]);
 
-        // Map raw data to UI format
-        const formatted = res.data.map(act => {
-          let typeColor = 'text-gray-600 bg-gray-50';
-          let icon = <Activity size={16} className="text-gray-500" />;
-          let iconBg = 'bg-gray-100';
+  const load = useCallback(() => {
+    setState(s => ({ ...s, loading: true, error: '' }));
+    const params = new URLSearchParams({ department, page: String(page), pageSize: '50' });
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    if (kind) params.set('kind', kind);
+    if (person) params.set('user', person);
+    if (q) params.set('q', q);
+    fetch(`${API_BASE_URL}/it-kanban/activities?${params}`)
+      .then(async r => { const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Could not load the activity stream'); return d; })
+      .then(d => setState({ loading: false, error: '', data: d }))
+      .catch(e => setState({ loading: false, error: e.message, data: null }));
+  }, [department, page, from, to, kind, person, q]);
 
-          if (act.activity_type === 'Task') { icon = <Check size={16} className="text-green-500" />; iconBg = 'bg-green-100'; }
-          else if (act.activity_type === 'Issue') { icon = <AlertCircle size={16} className="text-orange-500" />; iconBg = 'bg-orange-100'; }
-          else if (act.activity_type === 'Comment') { icon = <MessageSquare size={16} className="text-purple-500" />; iconBg = 'bg-purple-100'; }
-          else if (act.activity_type === 'Meeting') { icon = <Users size={16} className="text-blue-500" />; iconBg = 'bg-blue-100'; }
+  useEffect(() => { load(); }, [load]);
 
-          return {
-            id: act.id,
-            title: act.title || 'System Activity',
-            subtitle: act.description || 'General System Update',
-            details: 'Status: ' + (act.status || 'N/A') + ' | Priority: ' + (act.priority || 'N/A'),
-            user: {
-              name: act.created_by_name || 'System Auto',
-              avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(act.created_by_name || 'System')}&background=random`,
-              time: new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              date: new Date(act.created_at).toLocaleDateString()
-            },
-            type: act.activity_type || 'Update',
-            icon: icon,
-            iconBg: iconBg,
-            metadata: {
-              module: act.project_name ? 'Projects' :
-                act.deal_name ? 'Deals' :
-                  act.lead_name ? 'Leads' :
-                    act.task_name ? 'Tasks' :
-                      act.contact_name ? 'Contacts' :
-                        act.company_name ? 'Companies' : 'General',
-              project: act.project_name || 'Global',
-              task: act.task_name || null,
-              fieldUpdated: 'General Update',
-              oldValue: null,
-              newValue: null,
-              ipAddress: 'System',
-              userAgent: 'System Backend',
-              taskInfo: null
-            }
-          };
-        });
+  const data = state.data;
+  const k = data?.kpis;
+  const rows = useMemo(() => data?.rows || [], [data]);
+  const withHeadings = useMemo(() => {
+    const out = []; let last = null;
+    rows.forEach(r => { const h = dayHeading(r.at); if (h !== last) { out.push({ heading: h }); last = h; } out.push(r); });
+    return out;
+  }, [rows]);
 
-        setActivitiesList(formatted);
+  const boardBase = window.location.pathname.split('/')[1] || 'it';
+  const openOnBoard = (key) => navigate(`/${boardBase}/${designation}/${username}/kanban?ticketKey=${encodeURIComponent(key)}`);
 
-        // Compute dynamic KPIs
-        const total = formatted.length;
-        const tasks = formatted.filter(a => a.type === 'Task').length;
-        const issues = formatted.filter(a => a.type === 'Issue').length;
-        const comments = formatted.filter(a => a.type === 'Comment').length;
-        const meetings = formatted.filter(a => a.type === 'Meeting').length;
-
-        setKpis([
-          { icon: <Activity size={24} className="text-blue-500" />, count: total, label: 'All Activities', trend: '+0%', isPositive: true, bg: 'bg-blue-50' },
-          { icon: <Check size={24} className="text-green-500" />, count: tasks, label: 'Tasks Updated', trend: '+0%', isPositive: true, bg: 'bg-green-50' },
-          { icon: <AlertCircle size={24} className="text-orange-500" />, count: issues, label: 'Issues Updated', trend: '+0%', isPositive: true, bg: 'bg-orange-50' },
-          { icon: <MessageSquare size={24} className="text-purple-500" />, count: comments, label: 'Comments', trend: '+0%', isPositive: true, bg: 'bg-purple-50' },
-          { icon: <Users size={24} className="text-blue-500" />, count: meetings, label: 'Meetings', trend: '+0%', isPositive: true, bg: 'bg-blue-50' }
-        ]);
-
-      } catch (err) {
-        console.error('Failed to fetch activities', err);
-      }
-    };
-    fetchActivities();
-  }, []);
-
-  const uniqueTypes = ['All Activities', ...new Set(activitiesList.map(a => a.type).filter(Boolean))];
-  const uniqueModules = ['All Modules', ...new Set(activitiesList.map(a => a.metadata.module).filter(Boolean))];
-  const uniqueUsers = ['All Users', ...new Set(activitiesList.map(a => a.user.name).filter(Boolean))];
-
-  const filteredActivities = activitiesList.filter(act => {
-    const matchesSearch = searchQuery === '' ||
-      act.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      act.subtitle.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesType = selectedType === 'All Activities' || act.type === selectedType;
-    const matchesModule = selectedModule === 'All Modules' || act.metadata.module === selectedModule;
-    const matchesUser = selectedUser === 'All Users' || act.user.name === selectedUser;
-
-    let matchesDate = true;
-    if (dateRange.start && dateRange.end) {
-      // find the raw date object in activitiesList. Note: currently activitiesList maps raw created_at to strings.
-      // we need a real date object to compare. 
-      // act.user.date format is 'MM/DD/YYYY' usually based on locale, or we should just use a strict Date parse.
-      // But we can parse act.user.date if needed. Wait, let's parse act.user.date for filtering.
-      const actDate = new Date(act.user.date);
-      if (actDate < dateRange.start || actDate > dateRange.end) {
-        matchesDate = false;
-      }
-    }
-
-    return matchesSearch && matchesType && matchesModule && matchesUser && matchesDate;
-  });
+  const change = (cur, prev) => {
+    if (prev == null) return null;
+    if (prev === 0) return cur ? { text: 'new', up: true } : null;
+    const p = Math.round(((cur - prev) / prev) * 100);
+    return { text: `${p > 0 ? '+' : ''}${p}%`, up: p >= 0 };
+  };
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen p-6 font-sans flex flex-col gap-6 text-gray-900">
-
-      {/* Header */}
-      <div>
-        <h1 className="text-[22px]  text-gray-900 leading-tight">Activity Stream</h1>
-        <p className="text-sm text-gray-500 mt-1">Complete timeline of all activities, updates, and interactions across the system.</p>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-5 gap-2">
-        {kpis.map((kpi, idx) => (
-          <div key={idx} className="bg-white p-2 rounded  border border-gray-100 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-full ${kpi.bg} flex items-center justify-center shrink-0`}>
-              {kpi.icon}
-            </div>
-            <div>
-              <span className="text-xs  text-gray-500  tracking-wider block mb-1">{kpi.label}</span>
-              <div className="flex items-end gap-2">
-                <span className="text-[22px]  text-gray-900 leading-none">{kpi.count}</span>
-              </div>
-              <span className={`text-xs  ${kpi.isPositive ? 'text-green-500' : 'text-red-500'} flex items-center gap-1 mt-1`}>
-                &uarr; {kpi.trend} <span className="text-gray-400 font-medium">vs last week</span>
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Main Content Layout */}
-      <div className="flex gap-6 relative">
-
-        {/* Left Panel - Activity Stream */}
-        <div className="flex-1">
-
-          {/* Filters Bar */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="relative flex-1 max-w-sm">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search keyword or activity..."
-                className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded text-xs focus:outline-none focus:border-blue-500 "
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px]  text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">⌘ K</span>
-            </div>
-
-            {/* Activity Type Dropdown */}
-            <div className="relative interactive-dropdown">
-              <div
-                onClick={() => setOpenFilterDropdown(openFilterDropdown === 'type' ? null : 'type')}
-                className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded  cursor-pointer hover:bg-gray-50 text-xs text-gray-700 font-medium"
-              >
-                <span>{selectedType}</span>
-                <ChevronDown size={14} className="text-gray-400" />
-              </div>
-              {openFilterDropdown === 'type' && (
-                <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-200 rounded shadow-lg py-1 z-50 text-xs font-medium">
-                  {uniqueTypes.map(t => (
-                    <div
-                      key={t}
-                      onClick={() => { setSelectedType(t); setOpenFilterDropdown(null); }}
-                      className="p-2 hover:bg-gray-100 cursor-pointer flex items-center justify-between text-gray-700"
-                    >
-                      <span>{t}</span>
-                      {selectedType === t && <Check size={12} className="text-blue-600" />}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Module Dropdown */}
-            <div className="relative interactive-dropdown">
-              <div
-                onClick={() => setOpenFilterDropdown(openFilterDropdown === 'module' ? null : 'module')}
-                className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded  cursor-pointer hover:bg-gray-50 text-xs text-gray-700 font-medium"
-              >
-                <span>{selectedModule}</span>
-                <ChevronDown size={14} className="text-gray-400" />
-              </div>
-              {openFilterDropdown === 'module' && (
-                <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-200 rounded shadow-lg py-1 z-50 text-xs font-medium">
-                  {uniqueModules.map(m => (
-                    <div
-                      key={m}
-                      onClick={() => { setSelectedModule(m); setOpenFilterDropdown(null); }}
-                      className="p-2 hover:bg-gray-100 cursor-pointer flex items-center justify-between text-gray-700"
-                    >
-                      <span>{m}</span>
-                      {selectedModule === m && <Check size={12} className="text-blue-600" />}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* User Dropdown */}
-            <div className="relative interactive-dropdown">
-              <div
-                onClick={() => setOpenFilterDropdown(openFilterDropdown === 'user' ? null : 'user')}
-                className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded  cursor-pointer hover:bg-gray-50 text-xs text-gray-700 font-medium"
-              >
-                <span>{selectedUser}</span>
-                <ChevronDown size={14} className="text-gray-400" />
-              </div>
-              {openFilterDropdown === 'user' && (
-                <div className="absolute left-0 mt-1 w-48 bg-white border border-gray-200 rounded shadow-lg py-1 z-50 text-xs font-medium max-h-60 overflow-y-auto custom-scrollbar">
-                  {uniqueUsers.map(u => (
-                    <div
-                      key={u}
-                      onClick={() => { setSelectedUser(u); setOpenFilterDropdown(null); }}
-                      className="p-2 hover:bg-gray-100 cursor-pointer flex items-center justify-between text-gray-700"
-                    >
-                      <span>{u}</span>
-                      {selectedUser === u && <Check size={12} className="text-blue-600" />}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <AdvancedDateRangePicker
-                range={dateRange}
-                onChange={setDateRange}
-                initialRange="All Time"
-              />
-            </div>
-
-            <button className="flex items-center gap-1.5 p-2 bg-white border border-gray-200 rounded  text-gray-700 text-xs  hover:bg-gray-50 ml-auto">
-              <Filter size={14} /> Filters
-            </button>
-          </div>
-
-          {/* Activity List */}
-          <div className="bg-white rounded  border border-gray-100">
-            {filteredActivities.map((activity, index) => {
-              const isSelected = selectedActivity?.id === activity.id;
-              return (
-                <div
-                  key={activity.id}
-                  onClick={() => { setSelectedActivity(activity); setIsPanelOpen(true); }}
-                  className={`flex gap-4 p-2 cursor-pointer transition-colors border-b border-gray-100 last:border-0 
-                  ${isSelected ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
-                >
-                  <div className={`w-8 h-8 rounded-full ${activity.iconBg} flex items-center justify-center shrink-0`}>
-                    {activity.icon}
-                  </div>
-
-                  <div className="flex-1 pt-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-xs text-gray-900 truncate" title={activity.title}>{activity.title}</h4>
-                      {activity.titleBadge && (
-                        <span className={`px-2 py-0.5 rounded text-xs  border ${activity.titleBadge.color}`}>
-                          {activity.titleBadge.text}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[12px] text-gray-700 mb-1 line-clamp-2" title={activity.subtitle}>{activity.subtitle}</p>
-                    <p className="text-[12px] text-gray-500 truncate" title={activity.details}>{activity.details}</p>
-                  </div>
-
-                  <div className="flex items-start gap-4 pt-1 w-64 shrink-0 justify-between">
-                    <div className="flex items-center gap-2">
-                      <img src={activity.user.avatar} alt="Avatar" className="w-6 h-6 rounded-full" />
-                      <div>
-                        <p className="text-xs  text-gray-900">{activity.user.name}</p>
-                        <p className="text-xs font-medium text-gray-500">{activity.user.time}</p>
-                      </div>
-                    </div>
-                    <span className={`px-2 py-1 rounded text-xs  ${TYPE_COLORS[activity.type] || 'text-gray-600 bg-gray-50'}`}>
-                      {activity.type}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Pagination Footer */}
-            <div className="p-4 border-t border-gray-100 flex justify-between items-center bg-gray-50 rounded-b-xl">
-              <span className="text-xs  text-gray-500">Showing 1 to {filteredActivities.length} of {filteredActivities.length} activities</span>
-              <div className="flex items-center gap-1">
-                <button className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700"><ChevronDown size={14} className="rotate-90" /></button>
-                <button className="w-6 h-6 flex items-center justify-center bg-red-600 text-white rounded text-xs  ">1</button>
-                <button className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded text-xs ">2</button>
-                <button className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded text-xs ">3</button>
-                <button className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded text-xs ">4</button>
-                <button className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded text-xs ">5</button>
-                <span className="text-gray-400 mx-1">...</span>
-                <button className="w-8 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded text-xs ">125</button>
-                <button className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700"><ChevronDown size={14} className="-rotate-90" /></button>
-              </div>
-            </div>
-          </div>
+    <div className="bg-[#f8fafc] min-h-screen p-6 font-sans text-gray-900">
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+        <div>
+          <h1 className="text-[22px] font-semibold leading-tight">Activity Stream</h1>
+          <p className="text-sm text-gray-500 mt-1">Who created, moved, reassigned, rescheduled or logged time on which work item.</p>
         </div>
+        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded p-0.5">
+          {['All', 'IT', 'Marketing'].map(d => (
+            <button key={d} onClick={() => setDepartment(d)}
+              className={`px-3 h-7 text-xs font-medium rounded cursor-pointer ${department === d ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+              {d === 'All' ? 'All departments' : d}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {/* Right Panel - Activity Details */}
-        {isPanelOpen && selectedActivity && (
-          <div className="w-[320px] shrink-0 animate-slide-left">
-            <div className="bg-white rounded  border border-gray-100 sticky top-6">
-
-              {/* Details Header */}
-              <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                <h3 className="text-[14px]  text-gray-900">Activity Details</h3>
-                <button onClick={() => setIsPanelOpen(false)} className="text-gray-400 hover:text-gray-700"><X size={16} /></button>
+      {/* KPIs: click one to show just that kind */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-4">
+        {[{ key: '', label: 'All activity', value: k?.total, prev: k?.previousTotal, icon: Activity, tone: 'text-gray-700 bg-gray-100' },
+          ...KPI_KINDS.map(kk => ({ key: kk, label: kk === 'Created' ? 'Tasks created' : kk === 'Status' ? 'Status changes' : kk === 'Assignment' ? 'Assignments' : kk === 'Dates' ? 'Date changes' : 'Time logs', value: k?.byKind?.[kk], prev: k?.previousByKind?.[kk], icon: KIND_STYLE[kk].icon, tone: KIND_STYLE[kk].tone }))
+        ].map(t => {
+          const c = k ? change(t.value || 0, t.prev) : null;
+          const Icon = t.icon;
+          return (
+            <button key={t.label} onClick={() => setKind(kind === t.key ? '' : t.key)}
+              className={`text-left bg-white border rounded p-3 cursor-pointer transition ${kind === t.key && (t.key || !kind) ? 'border-blue-400 ring-1 ring-blue-200' : 'border-gray-200 hover:border-gray-300'}`}>
+              <div className="flex items-center gap-2 text-[11px] text-gray-500 font-medium">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center ${t.tone}`}><Icon size={13} /></span>{t.label}
               </div>
-
-              <div className="p-2">
-
-                {/* Selected Title */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-5 h-5 rounded-full ${selectedActivity.iconBg} flex items-center justify-center shrink-0`}>
-                      {React.cloneElement(selectedActivity.icon, { size: 10 })}
-                    </div>
-                    <h4 className="text-xs text-gray-900 line-clamp-2 break-words leading-relaxed" title={selectedActivity.title}>{selectedActivity.title}</h4>
-                    {selectedActivity.titleBadge && (
-                      <span className={`px-2 py-0.5 rounded text-[9px]  border ${selectedActivity.titleBadge.color}`}>
-                        {selectedActivity.titleBadge.text}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs font-medium text-gray-500 pl-7">{selectedActivity.user.time} ({selectedActivity.user.date})</p>
-                </div>
-
-                {/* Activity Information */}
-                <div className="mb-6">
-                  <h5 className="text-xs  text-gray-900 mb-3">Activity Information</h5>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-[100px_1fr] text-xs">
-                      <span className="text-gray-500 font-medium">Module</span>
-                      <span className=" text-gray-900">{selectedActivity.metadata.module}</span>
-                    </div>
-                    <div className="grid grid-cols-[100px_1fr] text-xs">
-                      <span className="text-gray-500 font-medium">Project</span>
-                      <span className=" text-gray-900">{selectedActivity.metadata.project}</span>
-                    </div>
-                    {selectedActivity.metadata.task && (
-                      <div className="grid grid-cols-[100px_1fr] text-xs">
-                        <span className="text-gray-500 font-medium">Task</span>
-                        <span className=" text-gray-900">{selectedActivity.metadata.task}</span>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-[100px_1fr] text-xs">
-                      <span className="text-gray-500 font-medium">Field Updated</span>
-                      <span className=" text-gray-900">{selectedActivity.metadata.fieldUpdated}</span>
-                    </div>
-
-                    {selectedActivity.metadata.oldValue && (
-                      <div className="grid grid-cols-[100px_1fr] text-xs items-center">
-                        <span className="text-gray-500 font-medium">Old Value</span>
-                        <div>
-                          <span className={`px-2 py-0.5 rounded text-xs  ${selectedActivity.metadata.oldValue.color}`}>
-                            {selectedActivity.metadata.oldValue.text}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {selectedActivity.metadata.newValue && (
-                      <div className="grid grid-cols-[100px_1fr] text-xs items-center">
-                        <span className="text-gray-500 font-medium">New Value</span>
-                        <div>
-                          <span className={`px-2 py-0.5 rounded text-xs  ${selectedActivity.metadata.newValue.color}`}>
-                            {selectedActivity.metadata.newValue.text}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-[100px_1fr] text-xs items-center">
-                      <span className="text-gray-500 font-medium">Updated By</span>
-                      <div className="flex items-center gap-1.5">
-                        <img src={selectedActivity.user.avatar} alt="Avatar" className="w-4 h-4 rounded-full" />
-                        <span className=" text-gray-900">{selectedActivity.user.name}</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-[100px_1fr] text-xs">
-                      <span className="text-gray-500 font-medium">IP Address</span>
-                      <span className=" text-gray-900">{selectedActivity.metadata.ipAddress}</span>
-                    </div>
-                    <div className="grid grid-cols-[100px_1fr] text-xs">
-                      <span className="text-gray-500 font-medium">User Agent</span>
-                      <span className=" text-gray-900">{selectedActivity.metadata.userAgent}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Task Information (if applicable) */}
-                {selectedActivity.metadata.taskInfo && (
-                  <div className="mb-6 pt-4 border-t border-gray-100">
-                    <h5 className="text-xs  text-gray-900 mb-3">Task Information</h5>
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-[100px_1fr] text-xs items-center">
-                        <span className="text-gray-500 font-medium">Priority</span>
-                        <div>
-                          <span className={`text-xs  ${selectedActivity.metadata.taskInfo.priority.color} px-1.5 py-0.5 rounded`}>
-                            {selectedActivity.metadata.taskInfo.priority.text}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-[100px_1fr] text-xs items-center">
-                        <span className="text-gray-500 font-medium">Assignee</span>
-                        <div className="flex items-center gap-1.5">
-                          <img src={selectedActivity.metadata.taskInfo.assignee.avatar} alt="Avatar" className="w-4 h-4 rounded-full" />
-                          <span className=" text-gray-900">{selectedActivity.metadata.taskInfo.assignee.name}</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-[100px_1fr] text-xs">
-                        <span className="text-gray-500 font-medium">Due Date</span>
-                        <span className=" text-gray-900">{selectedActivity.metadata.taskInfo.dueDate}</span>
-                      </div>
-                      {selectedActivity.metadata.taskInfo.sprint && (
-                        <div className="grid grid-cols-[100px_1fr] text-xs">
-                          <span className="text-gray-500 font-medium">Sprint</span>
-                          <span className={` ${selectedActivity.metadata.taskInfo.sprint.color}`}>{selectedActivity.metadata.taskInfo.sprint.text}</span>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-[100px_1fr] text-xs">
-                        <span className="text-gray-500 font-medium">Labels</span>
-                        <div className="flex gap-1 flex-wrap">
-                          {selectedActivity.metadata.taskInfo.labels.map(l => (
-                            <span key={l} className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded text-[9px] ">{l}</span>
-                          ))}
-                          <span className="text-gray-400  ml-1 cursor-pointer">+</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Actions Footer */}
-                <div className="pt-4 border-t border-gray-100">
-                  <h5 className="text-xs  text-gray-900 mb-3">Actions</h5>
-                  <button className="w-full flex items-center justify-between p-2 border border-gray-200 rounded text-xs  text-gray-700 hover:bg-gray-50  transition-colors">
-                    View Task <ExternalLink size={12} className="text-gray-400" />
-                  </button>
-                </div>
-
+              <div className="text-2xl font-semibold tabular-nums mt-1.5">{k ? (t.value || 0).toLocaleString('en-IN') : '–'}</div>
+              <div className="text-[11px] mt-0.5 h-4">
+                {c ? <span className={c.up ? 'text-emerald-700' : 'text-red-700'}>{c.text} <span className="text-gray-400">vs previous {preset === 'today' || preset === 'yesterday' ? 'day' : 'period'}</span></span>
+                  : <span className="text-gray-400">{k && t.key === '' ? `${k.people} people · ${k.tasksTouched} tasks` : ''}</span>}
               </div>
-            </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search person, task key, title, project…"
+            className="w-full h-8 pl-9 pr-8 bg-white border border-gray-300 rounded text-xs outline-none focus:border-blue-500" />
+          {search && <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Clear search"><X size={13} /></button>}
+        </div>
+        <div className="relative">
+          <select value={preset} onChange={e => setPreset(e.target.value)} className="h-8 pl-2.5 pr-7 bg-white border border-gray-300 rounded text-xs appearance-none cursor-pointer outline-none focus:border-blue-500">
+            {PRESETS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+          </select>
+          <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+        {preset === 'custom' && (
+          <div className="flex items-center gap-1 text-xs">
+            <input type="date" value={custom.from} max={custom.to} onChange={e => e.target.value && setCustom(c => ({ ...c, from: e.target.value }))} className="h-8 px-2 bg-white border border-gray-300 rounded" />
+            <span className="text-gray-400">to</span>
+            <input type="date" value={custom.to} min={custom.from} max={daysAgo(0)} onChange={e => e.target.value && setCustom(c => ({ ...c, to: e.target.value }))} className="h-8 px-2 bg-white border border-gray-300 rounded" />
           </div>
         )}
-
+        <div className="relative">
+          <select value={kind} onChange={e => setKind(e.target.value)} className="h-8 pl-2.5 pr-7 bg-white border border-gray-300 rounded text-xs appearance-none cursor-pointer outline-none focus:border-blue-500">
+            <option value="">All kinds</option>
+            {(data?.kinds || Object.keys(KIND_STYLE)).map(x => <option key={x} value={x}>{x}</option>)}
+          </select>
+          <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+        <div className="relative">
+          <select value={person} onChange={e => setPerson(e.target.value)} className="h-8 pl-2.5 pr-7 bg-white border border-gray-300 rounded text-xs appearance-none cursor-pointer outline-none focus:border-blue-500 max-w-[200px]">
+            <option value="">Everyone</option>
+            {(data?.users || []).map(u => <option key={u} value={u}>{u}</option>)}
+            {person && !(data?.users || []).includes(person) && <option value={person}>{person}</option>}
+          </select>
+          <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+        {(kind || person || search || preset !== '7d' || department !== 'All') && (
+          <button onClick={() => { setKind(''); setPerson(''); setSearch(''); setPreset('7d'); setDepartment('All'); }} className="h-8 px-2.5 text-xs text-gray-600 hover:text-gray-900 cursor-pointer">Reset</button>
+        )}
+        {state.loading && <Loader2 size={15} className="animate-spin text-gray-400" />}
       </div>
-      <style>{`
-        .animate-slide-left { animation: slideLeft 0.3s ease-out forwards; }
-        @keyframes slideLeft { from { transform: translateX(100%); } to { transform: translateX(0); } }
-      `}</style>
+
+      {state.error && <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">{state.error}</div>}
+
+      <div className="flex gap-4 items-start">
+        {/* Stream */}
+        <div className={`flex-1 min-w-0 bg-white border border-gray-200 rounded ${state.loading && data ? 'opacity-60' : ''}`}>
+          {!data && state.loading && <div className="py-20 flex items-center justify-center gap-2 text-sm text-gray-400"><Loader2 size={15} className="animate-spin" /> Loading…</div>}
+          {data && rows.length === 0 && (
+            <div className="py-16 text-center text-sm text-gray-500">No activity matches these filters.{preset !== 'all' && <> <button onClick={() => setPreset('all')} className="text-blue-600 hover:underline cursor-pointer">Look at all time</button></>}</div>
+          )}
+          {withHeadings.map((r, idx) => {
+            if (r.heading) return <div key={`h-${r.heading}-${idx}`} className="px-4 py-1.5 text-[11px] font-semibold text-gray-500 bg-gray-50 border-b border-gray-100 sticky top-0">{r.heading}</div>;
+            const style = KIND_STYLE[r.kind] || KIND_STYLE.Edited;
+            const Icon = style.icon;
+            const isSel = selected?.id === r.id;
+            return (
+              <div key={r.id} onClick={() => setSelected(r)}
+                className={`flex gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0 cursor-pointer ${isSel ? 'bg-blue-50/60' : 'hover:bg-gray-50'}`}>
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${style.tone}`}><Icon size={14} /></span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] text-gray-800 leading-snug">
+                    <span className="font-semibold text-gray-900">{r.by}</span>{' '}{r.text}{' '}
+                    {!r.group && <><span className="font-mono text-[11px] text-gray-500">{r.issueKey}</span>{r.issue?.title && <span className="text-gray-700"> · {r.issue.title}</span>}</>}
+                  </div>
+                  {(r.kind !== 'Created' && r.kind !== 'Time logged' && (r.from != null || r.to != null)) && (
+                    <div className="text-[11px] mt-1"><ValueChange from={r.from} to={r.to} /></div>
+                  )}
+                  {r.kind === 'Time logged' && r.note && <div className="text-[11px] text-gray-500 mt-0.5 truncate">“{r.note}”</div>}
+                  {r.issue?.project && !r.group && <div className="text-[11px] text-gray-500 mt-0.5 truncate">{r.issue.project}</div>}
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-[11px] text-gray-500 tabular-nums">{timeOf(r.at)}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${style.tone}`}>{style.label}</span>
+                </div>
+              </div>
+            );
+          })}
+          {data && data.total > 0 && (
+            <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50 flex items-center justify-between text-xs text-gray-600">
+              <span>Showing {((data.page - 1) * data.pageSize + 1).toLocaleString('en-IN')}–{Math.min(data.page * data.pageSize, data.total).toLocaleString('en-IN')} of {data.total.toLocaleString('en-IN')}</span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={data.page <= 1} className="h-7 w-7 flex items-center justify-center rounded border border-gray-300 bg-white disabled:opacity-40 cursor-pointer" aria-label="Previous page"><ChevronLeft size={14} /></button>
+                <span className="px-2 tabular-nums">Page {data.page} of {data.pages}</span>
+                <button onClick={() => setPage(p => Math.min(data.pages, p + 1))} disabled={data.page >= data.pages} className="h-7 w-7 flex items-center justify-center rounded border border-gray-300 bg-white disabled:opacity-40 cursor-pointer" aria-label="Next page"><ChevronRight size={14} /></button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Details */}
+        {selected && (
+          <aside className="w-[340px] shrink-0 bg-white border border-gray-200 rounded sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Activity details</h3>
+              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Close"><X size={16} /></button>
+            </div>
+            <div className="p-4 space-y-4 text-xs">
+              <div className="flex items-center gap-2">
+                <Avatar name={selected.by} />
+                <div className="min-w-0">
+                  <div className="font-semibold text-gray-900 truncate">{selected.by}</div>
+                  <div className="text-gray-500">{new Date(selected.at).toLocaleString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                </div>
+              </div>
+
+              <dl className="grid grid-cols-[96px_1fr] gap-y-2">
+                <dt className="text-gray-500">What</dt><dd className="text-gray-900 capitalize">{selected.text}</dd>
+                {selected.field && selected.kind !== 'Time logged' && <><dt className="text-gray-500">Change</dt><dd><ValueChange from={selected.from} to={selected.to} /></dd></>}
+                {selected.kind === 'Time logged' && <><dt className="text-gray-500">Time</dt><dd className="text-gray-900">{selected.to}</dd></>}
+                {selected.note && <><dt className="text-gray-500">Note</dt><dd className="text-gray-700">{selected.note}</dd></>}
+              </dl>
+
+              {selected.group ? (
+                <div>
+                  <div className="font-semibold text-gray-900 mb-2">{selected.count} tasks created</div>
+                  <div className="border border-gray-200 rounded divide-y divide-gray-100 max-h-80 overflow-y-auto">
+                    {selected.group.map(g => (
+                      <button key={g.key} onClick={() => openOnBoard(g.key)} className="w-full text-left px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer">
+                        <div className="font-mono text-[10px] text-gray-500">{g.key}{g.project ? ` · ${g.project}` : ''}</div>
+                        <div className="text-gray-800 truncate">{g.title}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="pt-3 border-t border-gray-100">
+                  <div className="font-mono text-[11px] text-gray-500">{selected.issueKey}</div>
+                  <div className="font-semibold text-gray-900 mt-0.5 mb-3 leading-snug">{selected.issue?.title || 'This work item no longer exists'}</div>
+                  {selected.issue?.title && (
+                    <dl className="grid grid-cols-[96px_1fr] gap-y-2">
+                      <dt className="text-gray-500">Status now</dt><dd className="text-gray-900">{selected.issue.status || '—'}</dd>
+                      <dt className="text-gray-500">Assignee</dt><dd className="text-gray-900">{selected.issue.assignee || 'Unassigned'}</dd>
+                      <dt className="text-gray-500">Priority</dt><dd className="text-gray-900">{selected.issue.priority || '—'}</dd>
+                      <dt className="text-gray-500">Due</dt><dd className="text-gray-900">{fmtDate(selected.issue.due)}</dd>
+                      <dt className="text-gray-500">Project</dt><dd className="text-gray-900">{selected.issue.project || '—'}</dd>
+                      <dt className="text-gray-500">Sprint</dt><dd className="text-gray-900">{selected.issue.sprint || 'Backlog'}</dd>
+                      <dt className="text-gray-500">Department</dt><dd className="text-gray-900">{selected.issue.department || '—'}</dd>
+                      {selected.issue.labels?.length > 0 && <><dt className="text-gray-500">Labels</dt><dd className="flex flex-wrap gap-1">{selected.issue.labels.map(l => <span key={l} className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-[10px] uppercase tracking-wide">{l}</span>)}</dd></>}
+                    </dl>
+                  )}
+                  <div className="flex gap-2 mt-4">
+                    {selected.issue?.title && (
+                      <button onClick={() => openOnBoard(selected.issueKey)} className="flex-1 h-8 flex items-center justify-center gap-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer">
+                        Open on board <ExternalLink size={12} />
+                      </button>
+                    )}
+                    <button onClick={() => { setSearch(selected.issueKey); setKind(''); setPerson(''); setPreset('all'); }} className="flex-1 h-8 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer">
+                      Full history
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </aside>
+        )}
+      </div>
     </div>
   );
 }

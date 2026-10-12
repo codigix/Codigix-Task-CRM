@@ -565,6 +565,11 @@ setupImportRoutes(app, pool);
 setupGithubRoutes(app, pool);
 require('./routes/calendar-routes')(app, pool);
 require('./routes/admin-dashboard-routes')(app, pool);
+require('./routes/sheet-sync-routes')(app, pool);
+require('./routes/daily-report-routes')(app, pool);
+require('./routes/knowledge-routes')(app, pool);
+require('./routes/chat-routes')(app, pool);
+require('./routes/team-overview-routes')(app, pool);
 setupItServicesRoutes(app, pool);
 
 const testerDashboardRoutes = require('./routes/tester-dashboard-routes');

@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { MessageSquare, History, Clock, Sparkles, Trash2, Plus, Edit2, Check, X, Layers, Play, Pause, Square } from 'lucide-react';
 import JiraCommentEditor from './JiraCommentEditor';
+import { ProofAttachments } from '../../common/TransitionProofModal';
+
+// Comments saved when a task is submitted for review (proof of work) or signed off as Done.
+const PROOF_BADGE = {
+  evidence: { text: 'Proof of work', cls: 'bg-purple-50 text-purple-800 ring-purple-200' },
+  approval: { text: 'Approved · Done', cls: 'bg-emerald-50 text-emerald-800 ring-emerald-200' }
+};
+const ProofBadge = ({ kind }) => (PROOF_BADGE[kind]
+  ? <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ring-1 ring-inset ${PROOF_BADGE[kind].cls}`}>{PROOF_BADGE[kind].text}</span>
+  : null);
 
 // "2 hours ago" style stamps, matching how Jira presents activity.
 const relativeTime = (value) => {
@@ -297,6 +307,7 @@ const ITIssueActivityTabs = ({
                         <div className="flex items-center gap-2">
                           <span className=" text-gray-900">{c.author || 'User'}</span>
                           <span className="text-[10px] text-gray-400">{relativeTime(c.time)}</span>
+                          <ProofBadge kind={c.kind} />
                           {c.is_edited && <span className="text-[9px] text-gray-400 italic">(edited)</span>}
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
@@ -332,6 +343,7 @@ const ITIssueActivityTabs = ({
                       ) : (
                         <div className="text-gray-800 leading-relaxed bg-gray-50/75 p-2.5 rounded border border-gray-100 text-xs break-words">
                           {renderFormattedComment(c.text)}
+                          <ProofAttachments links={c.links || []} files={c.files || []} />
                         </div>
                       )}
                     </div>
@@ -360,11 +372,13 @@ const ITIssueActivityTabs = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className=" text-gray-900">{c.author || 'User'}</span>
-                        <span className="text-gray-400 text-[10px]">commented</span>
+                        <span className="text-gray-400 text-[10px]">{c.kind === 'evidence' ? 'submitted for review' : c.kind === 'approval' ? 'approved' : 'commented'}</span>
+                        <ProofBadge kind={c.kind} />
                         <span className="text-[10px] text-gray-400 ml-auto">{relativeTime(c.time)}</span>
                       </div>
                       <div className="text-gray-800 bg-gray-50/75 p-2 rounded border border-gray-100 mt-1">
                         {renderFormattedComment(c.text)}
+                        <ProofAttachments links={c.links || []} files={c.files || []} />
                       </div>
                     </div>
                   </div>

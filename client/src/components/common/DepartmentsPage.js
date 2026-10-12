@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Building2, Plus, Search, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../config/environment';
 
 const DepartmentsPage = () => {
   const [departments, setDepartments] = useState([]);
@@ -16,8 +16,8 @@ const DepartmentsPage = () => {
   const fetchDepartments = async () => {
     try {
       setLoading(true);
-      const apiUrl = process.env.REACT_APP_API_URL || API_BASE_URL + '';
-      const response = await fetch(`${apiUrl}/entities/departments`);
+
+      const response = await fetch(`${API_BASE_URL}/departments`);
       if (response.ok) {
         const data = await response.json();
         setDepartments(Array.isArray(data) ? data : []);

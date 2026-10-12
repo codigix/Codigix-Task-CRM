@@ -820,6 +820,14 @@ const ITKanbanPage = ({ department }) => {
       .catch(err => console.error('Error fetching users for kanban filter:', err));
   }, [currentDept, isManager, user?.role, designation]);
 
+  // Proof of work / sign-off comments are saved by the server; reload so they show up.
+  useEffect(() => {
+    const onProof = () => fetchKanbanData();
+    window.addEventListener('crm-issue-proof-saved', onProof);
+    return () => window.removeEventListener('crm-issue-proof-saved', onProof);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const projectNameById = React.useMemo(
     () => new Map(projectsList.map(p => [Number(p.id), p.name || p.title || ''])),
     [projectsList]
@@ -1195,6 +1203,20 @@ const ITKanbanPage = ({ department }) => {
   }, [columnOrder, currentDept]);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [selectedSubtaskKey, setSelectedSubtaskKey] = useState(null);
+  // Moving a card to In Review / Done needs proof: open that ticket with a proof box in it.
+  const [proofRequest, setProofRequest] = useState(null);
+  useEffect(() => {
+    const onNeeded = (e) => {
+      const d = e.detail || {};
+      if (!d.issueKey) return;
+      d.handled = true;
+      setSelectedSubtaskKey(null);
+      setSelectedIssue(d.issueKey);
+      setProofRequest(d);
+    };
+    window.addEventListener('crm-proof-needed', onNeeded);
+    return () => window.removeEventListener('crm-proof-needed', onNeeded);
+  }, []);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
   const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false);
 
@@ -1526,6 +1548,8 @@ const ITKanbanPage = ({ department }) => {
         // server says it belongs rather than leaving the board showing a change that failed.
         fetchKanbanData();
 
+        // The proof dialog was closed without adding anything: the card just goes back.
+        if (data.code === 'PROOF_CANCELLED' || data.code === 'PROOF_PENDING') return;
         if (data.code === 'SUBTASKS_INCOMPLETE') {
           Swal.fire({
             icon: 'warning',
@@ -3424,10 +3448,13 @@ const ITKanbanPage = ({ department }) => {
               onClose={() => {
                 setSelectedIssue(null);
                 setSelectedSubtaskKey(null);
+                setProofRequest(null);
               }}
               onIssueCreated={fetchKanbanData}
               department={currentDept}
               initialSubtaskKey={selectedSubtaskKey}
+              proofRequest={proofRequest && proofRequest.issueKey === selectedIssue ? proofRequest : null}
+              onProofClose={() => setProofRequest(null)}
             />
 
             <CompleteSprintModal

@@ -22,7 +22,6 @@ import CrmPipelinePage from './components/sales/CrmPipelinePage';
 import CrmCampaignPage from './components/common/CrmCampaignPage';
 import CrmProjectsPage from './components/common/CrmProjectsPage';
 import CompanyDetailsPage from './components/common/CompanyDetailsPage';
-import ChatPage from './components/common/ChatPage';
 import VideoCallPage from './components/common/VideoCallPage';
 import ITTasksPage from './components/it/ITTasksPage';
 import ITKanbanPage from './components/it/ITKanbanPage';
@@ -378,7 +377,6 @@ function AppContent() {
 
   const currentPage = getPageFromPath(location.pathname);
   const isVideoCall = location.pathname.includes('/video-call');
-  const isChatPage = location.pathname.includes('/chat');
 
   useEffect(() => {
     if (location.state?.company) {
@@ -435,8 +433,8 @@ function AppContent() {
     <Layout 
       currentPage={currentPage} 
       onNavigate={handleNavigate}
-      hideSidebar={isVideoCall || isChatPage}
-      hideHeader={isVideoCall || isChatPage}
+      hideSidebar={isVideoCall}
+      hideHeader={isVideoCall}
     >
       <Routes>
         <Route path="/" element={<DashboardRouter />} />
@@ -460,7 +458,7 @@ function AppContent() {
         <Route path="/sales/:designation/:username/distribution" element={<LeadDistributionPage />} />
         <Route path="/sales/:designation/:username/followups" element={<FollowupsPage />} />
         <Route path="/sales/:designation/:username/activities" element={<ActivitiesPage />} />
-        <Route path="/sales/:designation/:username/chat" element={<ChatPage />} />
+        <Route path="/sales/:designation/:username/chat" element={<ITChatPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/profile-settings" element={<ProfileSettingsPage />} />
         <Route path="/departments" element={<DepartmentsPage />} />
@@ -486,7 +484,7 @@ function AppContent() {
         <Route path="/projects/:designation/:username/list" element={<CrmProjectsPage />} />
         <Route path="/estimations" element={<EstimationsPage />} />
         <Route path="/sales/:designation/:username/estimations" element={<EstimationsPage />} />
-        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/chat" element={<ITChatPage />} />
         <Route path="/video-call" element={<VideoCallPage />} />
         <Route path="/video-call/:code" element={<VideoCallPage />} />
         <Route path="/audio-call" element={<AudioCallPage />} />
@@ -568,6 +566,12 @@ function AppContent() {
         <Route path="/it/:designation/:username/documents/upload" element={<ITUploadDocumentPage />} />
         <Route path="/it/:designation/:username/calendar" element={<ITCalendarPage />} />
         <Route path="/it/:designation/:username/chat" element={<ITChatPage />} />
+        <Route path="/marketing/:designation/:username/chat" element={<ITChatPage />} />
+        <Route path="/hr/:designation/:username/chat" element={<ITChatPage />} />
+        <Route path="/seo-gmb/:designation/:username/chat" element={<ITChatPage />} />
+        <Route path="/deals/:designation/:username/chat" element={<ITChatPage />} />
+        <Route path="/leads/:designation/:username/chat" element={<ITChatPage />} />
+        <Route path="/projects/:designation/:username/chat" element={<ITChatPage />} />
         <Route path="/it/:designation/:username/notes" element={<ITNotesPage />} />
         <Route path="/:dept/:designation/:username/notes/create" element={<CreateNotePage />} />
         <Route path="/it/:designation/:username/teams" element={<ITTeamsPage />} />
@@ -624,7 +628,7 @@ function AppContent() {
                 <Route path="invoices" element={<InvoicesPage />} />
                 <Route path="payments" element={<PaymentsPage />} />
                 <Route path="activities" element={<ActivitiesPage />} />
-                <Route path="chat" element={<ChatPage />} />
+                <Route path="chat" element={<ITChatPage />} />
                 <Route path="video-call" element={<VideoCallPage />} />
                 <Route path="audio-call" element={<AudioCallPage />} />
                 <Route path="call-history" element={<CallHistoryPage />} />

@@ -395,7 +395,7 @@ const ITTicketAssignmentsPage = () => {
                       }`}
                   >
                     <span>{tab.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full  ${departmentFilter === tab.key ? 'bg-blue-700 text-blue-100' : 'bg-gray-200 text-gray-700'
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full  ${departmentFilter === tab.key ? 'bg-white text-black' : 'bg-gray-200 text-gray-700'
                       }`}>
                       {tab.count}
                     </span>
@@ -661,7 +661,7 @@ const ITTicketAssignmentsPage = () => {
 
       {/* TICKET DETAILS HIERARCHY MODAL */}
       {selectedTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-600/50 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-600/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200">
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-gray-50/60">

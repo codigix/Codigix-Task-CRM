@@ -1,1458 +1,1109 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import {
-  Search, Send, Phone, Video, MoreHorizontal, X, Plus, Filter,
-  Star, Paperclip, Smile, AtSign, Hash, Calendar, FileText,
-  ThumbsUp, Download, ChevronRight, Bell, Users, Settings,
-  Mic, Image, Link, Check, CheckCheck, Pin, Edit3, LogOut, Trash2, ArrowLeft,
-  Reply, CornerUpLeft, Edit2, ShieldAlert, UserPlus, ChevronDown, Copy, MoreVertical
-} from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import {
+  Search, Plus, Hash, Lock, Users, MessageSquare, Send, Paperclip, Smile, X, Reply, Pencil, Trash2, Pin,
+  Star, BellOff, Bell, Info, Loader2, FileText, Download, Copy, LogOut, UserPlus, Check,
+  CheckCheck, Image as ImageIcon, AtSign, Shield, Compass
+} from 'lucide-react';
+import { API_BASE_URL } from '../../config/environment';
+import { uploadDescriptionFile, toAbsoluteFileUrl, formatFileSize } from '../../utils/descriptionFiles';
+import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+/**
+ * Team chat: direct messages, private groups and team channels with live updates.
+ * Server: server/routes/chat-routes.js (identity from the session; live events over SSE).
+ */
 
-const formatMessageTime = (timeStr) => {
-  if (!timeStr) {
-    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-  }
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '🎉', '👀', '✅'];
+const EMOJIS = ['😀', '😁', '😂', '🤣', '😊', '😍', '😘', '😎', '🤔', '😅', '😇', '🙂', '🙃', '😉', '😴', '😢', '😭', '😡', '🤯', '🥳',
+  '👍', '👎', '👏', '🙏', '💪', '👌', '✌️', '🤝', '👋', '🙌', '❤️', '🔥', '🎉', '✅', '❌', '⚠️', '💡', '📌', '📎', '🚀', '⭐', '💯', '👀', '☕', '🍕', '📅', '⏰', '📞'];
 
-  const str = String(timeStr).trim();
-
-  if (/^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(str)) {
-    return str;
-  }
-
-  try {
-    let isoStr = str;
-    if (!isoStr.includes('T') && isoStr.includes(' ')) {
-      isoStr = isoStr.replace(' ', 'T') + 'Z';
-    } else if (isoStr.includes('T') && !isoStr.endsWith('Z') && !isoStr.includes('+')) {
-      isoStr = isoStr + 'Z';
-    }
-
-    const dateObj = new Date(isoStr);
-    if (!isNaN(dateObj.getTime())) {
-      return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-    }
-  } catch (e) { }
-
-  return str;
+const api = async (path, opts = {}) => {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...opts,
+    headers: { ...(opts.body ? { 'Content-Type': 'application/json' } : {}), ...(opts.headers || {}) },
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Something went wrong');
+  return data;
 };
 
-const WhatsAppTicks = ({ status = 'read', isMine = true }) => {
-  if (!isMine) return null;
-
-  if (status === 'sent' || status === 'sending') {
-    return <Check size={13} className="text-gray-400 shrink-0 inline-block ml-1" />;
-  }
-
-  if (status === 'delivered') {
-    return <CheckCheck size={14} className="text-gray-400 shrink-0 inline-block ml-1" />;
-  }
-
-  // Double Blue Tick ✓✓ (#34b7f1)
-  return <CheckCheck size={14} className="text-[#34b7f1] shrink-0 inline-block ml-1 " />;
+const initials = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('');
+const AVATAR_TONES = ['bg-blue-600', 'bg-emerald-600', 'bg-violet-600', 'bg-amber-600', 'bg-rose-600', 'bg-cyan-700', 'bg-fuchsia-600', 'bg-teal-600'];
+const toneFor = (id) => AVATAR_TONES[Math.abs(Number(id) || 0) % AVATAR_TONES.length];
+const dayKey = (v) => { const d = new Date(v); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
+const dayLabel = (v) => {
+  const d = new Date(v); const t = new Date(); const y = new Date(); y.setDate(t.getDate() - 1);
+  if (dayKey(d) === dayKey(t)) return 'Today';
+  if (dayKey(d) === dayKey(y)) return 'Yesterday';
+  return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: d.getFullYear() === t.getFullYear() ? undefined : 'numeric' });
+};
+const timeOf = (v) => new Date(v).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+const shortWhen = (v) => {
+  if (!v) return '';
+  const d = new Date(v); const t = new Date();
+  if (dayKey(d) === dayKey(t)) return timeOf(v);
+  const diff = (t - d) / 86400000;
+  if (diff < 6) return d.toLocaleDateString('en-GB', { weekday: 'short' });
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+};
+const lastSeen = (v) => {
+  if (!v) return 'Offline';
+  const mins = Math.round((Date.now() - new Date(v)) / 60000);
+  if (mins < 1) return 'Active just now';
+  if (mins < 60) return `Active ${mins} min ago`;
+  if (mins < 1440) return `Active ${Math.round(mins / 60)} h ago`;
+  return `Last seen ${new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`;
 };
 
-export default function ITChatPage() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const currentUserId = user?.id || 1;
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [attachedFile, setAttachedFile] = useState(null);
-  const fileInputRef = useRef(null);
-  const imageInputRef = useRef(null);
-  const EMOJIS = ['😀', '😂', '😍', '👍', '🙏', '🔥', '🎉', '❤️', '🤔', '🙌', '😢', '👏', '👀', '💯', '✨'];
-  const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+const Avatar = ({ name, id, src, size = 'w-8 h-8', text = 'text-[11px]', online }) => (
+  <span className={`relative ${size} shrink-0`}>
+    {src
+      ? <img src={toAbsoluteFileUrl(src)} alt={name} className={`${size} rounded-full object-cover`} />
+      : <span className={`${size} ${text} rounded-full ${toneFor(id)} text-white font-semibold flex items-center justify-center`}>{initials(name)}</span>}
+    {online !== undefined && <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${online ? 'bg-emerald-500' : 'bg-gray-300'}`} />}
+  </span>
+);
 
-  const [conversations, setConversations] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [activeTab, setActiveTab] = useState('Messages');
-  const [showDetails, setShowDetails] = useState(true);
-  const messagesEndRef = useRef(null);
+const RoomIcon = ({ room, size = 'w-8 h-8' }) => {
+  if (room.kind === 'dm') return <Avatar name={room.name} id={room.other?.id} src={room.other?.avatar} size={size} online={room.other?.online} />;
+  const Icon = room.kind === 'channel' ? Hash : Users;
+  return <span className={`${size} rounded-lg flex items-center justify-center shrink-0 ${room.kind === 'channel' ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600'}`}><Icon size={15} /></span>;
+};
+const roomTitle = (room) => (room.kind === 'channel' ? `#${room.name}` : room.name);
 
-  // WhatsApp Reaction & Context Menu States
-  const [activeHoverMessageId, setActiveHoverMessageId] = useState(null);
-  const [activeReactionPopoverId, setActiveReactionPopoverId] = useState(null);
-  const [activeContextMenuId, setActiveContextMenuId] = useState(null);
-  const [showTopHeaderMenu, setShowTopHeaderMenu] = useState(false);
-
-  // Messaging States
-  const [replyingToMessage, setReplyingToMessage] = useState(null);
-  const [editingMessageId, setEditingMessageId] = useState(null);
-  const [editingText, setEditingText] = useState('');
-  const [showInChatSearch, setShowInChatSearch] = useState(false);
-  const [chatSearchQuery, setChatSearchQuery] = useState('');
-
-  // Group Creation States
-  const [availableUsers, setAvailableUsers] = useState([]);
-  const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
-  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-  const [newTeamName, setNewTeamName] = useState('');
-  const [newTeamDesc, setNewTeamDesc] = useState('');
-  const [selectedUserIds, setSelectedUserIds] = useState([]);
-  const [groupMembers, setGroupMembers] = useState([]);
-
-  const [tasksState, setTasksState] = useState({});
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
-  const [mentionSearchTerm, setMentionSearchTerm] = useState('');
-
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setInput(value);
-
-    const cursorPosition = e.target.selectionStart || 0;
-    const textBeforeCursor = value.slice(0, cursorPosition);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-
-    if (lastAtIndex !== -1 && lastAtIndex >= textBeforeCursor.search(/\s[^\s]*$/)) {
-      const query = textBeforeCursor.slice(lastAtIndex + 1);
-      setMentionSearchTerm(query);
-      setShowMentionSuggestions(true);
-    } else {
-      setShowMentionSuggestions(false);
+// Message text: escaped, with links, @mentions, ticket keys, **bold**, _italic_, `code` and ``` blocks.
+function RichText({ text, names, meName, onTicket }) {
+  const blocks = String(text || '').split(/```/);
+  const inline = (s, keyBase) => {
+    const out = [];
+    const re = /(https?:\/\/[^\s<]+)|(@(?:everyone|here)\b)|(@[A-Za-z][\w.]*(?: [A-Z][\w.]*)?)|(\*\*[^*\n]+\*\*)|(`[^`\n]+`)|(\b_[^_\n]+_\b)|([A-Z][A-Z0-9]{1,9}(?:-\d{2,4}){1,3}\b)/g;
+    let last = 0; let m; let k = 0;
+    while ((m = re.exec(s))) {
+      if (m.index > last) out.push(s.slice(last, m.index));
+      const [tok] = m;
+      if (m[1]) out.push(<a key={`${keyBase}-${k++}`} href={tok} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline break-all">{tok}</a>);
+      else if (m[2]) out.push(<span key={`${keyBase}-${k++}`} className="px-0.5 rounded bg-amber-100 text-amber-900 font-medium">{tok}</span>);
+      else if (m[3]) {
+        const nm = tok.slice(1);
+        const match = names.find(n => nm.toLowerCase().startsWith(n.toLowerCase()) || n.toLowerCase().startsWith(nm.toLowerCase()));
+        if (match) {
+          const rest = tok.slice(1 + match.length);
+          const mine = meName && match.toLowerCase() === meName.toLowerCase();
+          out.push(<span key={`${keyBase}-${k++}`} className={`px-0.5 rounded font-medium ${mine ? 'bg-amber-100 text-amber-900' : 'bg-blue-50 text-blue-700'}`}>@{tok.slice(1, 1 + match.length)}</span>);
+          if (rest) out.push(rest);
+        } else out.push(tok);
+      } else if (m[4]) out.push(<strong key={`${keyBase}-${k++}`}>{tok.slice(2, -2)}</strong>);
+      else if (m[5]) out.push(<code key={`${keyBase}-${k++}`} className="px-1 py-0.5 rounded bg-gray-100 text-[12px] font-mono text-rose-700">{tok.slice(1, -1)}</code>);
+      else if (m[6]) out.push(<em key={`${keyBase}-${k++}`}>{tok.slice(1, -1)}</em>);
+      else if (m[7]) out.push(<button key={`${keyBase}-${k++}`} type="button" onClick={() => onTicket(tok)} className="font-mono text-[12px] text-blue-700 hover:underline cursor-pointer" title="Open ticket">{tok}</button>);
+      last = m.index + tok.length;
     }
+    if (last < s.length) out.push(s.slice(last));
+    return out;
   };
-
-  const handlePaste = (e) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (let item of items) {
-      if (item.type.indexOf('image') !== -1) {
-        const file = item.getAsFile();
-        if (file) setAttachedFile(file);
-      }
-    }
-  };
-
-  const handleSelectMentionUser = (userName) => {
-    const cursorPosition = document.getElementById('chat-input')?.selectionStart || input.length;
-    const textBeforeCursor = input.slice(0, cursorPosition);
-    const textAfterCursor = input.slice(cursorPosition);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-
-    if (lastAtIndex !== -1) {
-      const newText = textBeforeCursor.slice(0, lastAtIndex) + `@${userName} ` + textAfterCursor;
-      setInput(newText);
-    } else {
-      setInput(prev => prev + `@${userName} `);
-    }
-
-    setShowMentionSuggestions(false);
-    document.getElementById('chat-input')?.focus();
-  };
-
-  const filteredMentionUsers = availableUsers.filter(u => {
-    const name = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
-    return name.toLowerCase().includes(mentionSearchTerm.toLowerCase());
-  });
-
-  const getChatTasks = () => {
-    if (!selectedChat) return [];
-    return tasksState[selectedChat.id] || [
-      { id: 1, title: 'Review project requirements document', completed: true, assignee: 'Purvesh' },
-      { id: 2, title: 'Setup GitHub repository & branch rules', completed: false, assignee: 'Ashwini' },
-      { id: 3, title: 'Verify database migration scripts', completed: false, assignee: 'You' }
-    ];
-  };
-
-  const handleAddTask = () => {
-    if (!newTaskTitle.trim() || !selectedChat) return;
-    const chatId = selectedChat.id;
-    const currentTasks = getChatTasks();
-    const newTask = {
-      id: Date.now(),
-      title: newTaskTitle.trim(),
-      completed: false,
-      assignee: 'You'
-    };
-    setTasksState(prev => ({
-      ...prev,
-      [chatId]: [...currentTasks, newTask]
-    }));
-    setNewTaskTitle('');
-  };
-
-  const handleToggleTask = (taskId) => {
-    if (!selectedChat) return;
-    const chatId = selectedChat.id;
-    const currentTasks = getChatTasks();
-    setTasksState(prev => ({
-      ...prev,
-      [chatId]: currentTasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t)
-    }));
-  };
-
-  const handleDeleteTask = (taskId) => {
-    if (!selectedChat) return;
-    const chatId = selectedChat.id;
-    const currentTasks = getChatTasks();
-    setTasksState(prev => ({
-      ...prev,
-      [chatId]: currentTasks.filter(t => t.id !== taskId)
-    }));
-  };
-
-  const FILTER_TABS = ['All', 'Unread', 'Direct', 'Groups'];
-  const TABS = ['Messages', 'Files', 'Links', 'Tasks'];
-
-  const FILE_ICONS = {
-    'pdf': <FileText size={22} className="text-red-500" />,
-    'zip': <FileText size={22} className="text-blue-500" />,
-    'png': <Image size={22} className="text-green-500" />
-  };
-
-  const fetchConversations = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/conversations/${currentUserId}`);
-      setConversations(res.data);
-    } catch (err) {
-      console.error('Failed to fetch conversations', err);
-    }
-  };
-
-  const fetchAvailableUsers = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/available-users/${currentUserId}`);
-      setAvailableUsers(res.data);
-    } catch (err) {
-      console.error('Failed to fetch users', err);
-    }
-  };
-
-  useEffect(() => {
-    if (currentUserId) {
-      fetchConversations();
-      fetchAvailableUsers();
-    }
-  }, [currentUserId]);
-
-  useEffect(() => {
-    if (!currentUserId) return;
-    const sendHeartbeat = async () => {
-      try {
-        await axios.post(`${API_BASE_URL}/users/${currentUserId}/heartbeat`);
-      } catch (e) { }
-    };
-    sendHeartbeat();
-    const interval = setInterval(sendHeartbeat, 15000);
-    return () => clearInterval(interval);
-  }, [currentUserId]);
-
-  const getUserOnlineStatus = (chat) => {
-    if (!chat || chat.chat_type === 'group') return null;
-
-    if (!chat.last_seen) {
-      return { isOnline: true, text: 'online' };
-    }
-
-    try {
-      const lastSeenDate = new Date(String(chat.last_seen).includes('T') ? chat.last_seen : String(chat.last_seen).replace(/-/g, '/'));
-      const diffSecs = (Date.now() - lastSeenDate.getTime()) / 1000;
-
-      if (diffSecs <= 90) {
-        return { isOnline: true, text: 'online' };
-      }
-
-      const isToday = lastSeenDate.toDateString() === new Date().toDateString();
-      const timeStr = lastSeenDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-
-      if (isToday) {
-        return { isOnline: false, text: `last seen today at ${timeStr}` };
-      }
-      return { isOnline: false, text: `last seen ${lastSeenDate.toLocaleDateString([], { month: 'short', day: 'numeric' })} at ${timeStr}` };
-    } catch (e) {
-      return { isOnline: true, text: 'online' };
-    }
-  };
-
-  const fetchMessages = async (chat) => {
-    try {
-      const isGroup = chat.chat_type === 'group';
-      const endpoint = isGroup
-        ? `${API_BASE_URL}/messages/${currentUserId}?groupId=${chat.id}`
-        : `${API_BASE_URL}/messages/${currentUserId}?conversationWith=${chat.other_user_id}`;
-      const res = await axios.get(endpoint);
-      setMessages(res.data);
-
-      if (isGroup) {
-        const membersRes = await axios.get(`${API_BASE_URL}/chat-groups/${chat.id}/members`);
-        setGroupMembers(membersRes.data);
-      } else {
-        setGroupMembers([]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch messages', err);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedChat) {
-      fetchMessages(selectedChat);
-      const interval = setInterval(() => fetchMessages(selectedChat), 4000);
-      return () => clearInterval(interval);
-    }
-  }, [selectedChat]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleSelectChat = (chat) => {
-    setConversations(prev => prev.map(c => c.id === chat.id ? { ...c, unread: 0, unread_count: 0 } : c));
-    setSelectedChat({ ...chat, unread: 0, unread_count: 0 });
-    setActiveTab('Messages');
-    setReplyingToMessage(null);
-    setEditingMessageId(null);
-    setActiveReactionPopoverId(null);
-    setActiveContextMenuId(null);
-  };
-
-  const handleIconClick = (action) => {
-    if (action === 'smile') setShowEmojiPicker(!showEmojiPicker);
-    if (action === 'paperclip') fileInputRef.current?.click();
-    if (action === 'image') imageInputRef.current?.click();
-    if (action === 'atsign') {
-      setInput(prev => prev + '@');
-      setShowMentionSuggestions(true);
-      setMentionSearchTerm('');
-      setTimeout(() => document.getElementById('chat-input')?.focus(), 50);
-    }
-    if (action === 'hash') { setInput(prev => prev + '#'); document.getElementById('chat-input')?.focus(); }
-    if (action === 'calendar') { setInput(prev => prev + '📅 [Schedule a meeting] '); document.getElementById('chat-input')?.focus(); }
-    if (action === 'mic') { setInput(prev => prev + '🎤 [Voice note] '); document.getElementById('chat-input')?.focus(); }
-    if (action === 'plus') { setInput(prev => prev + '➕ '); document.getElementById('chat-input')?.focus(); }
-  };
-
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) setAttachedFile(file);
-    e.target.value = null;
-  };
-
-  const handleSend = async () => {
-    if (!input.trim() && !attachedFile) return;
-    if (!selectedChat) return;
-
-    try {
-      const isGroup = selectedChat.chat_type === 'group';
-      const rawRecId = selectedChat.other_user_id || selectedChat.receiver_id || (!isGroup ? selectedChat.id : null);
-      const targetReceiverId = rawRecId ? String(rawRecId).replace(/\D/g, '') : null;
-      const targetGroupId = isGroup ? String(selectedChat.id).replace(/\D/g, '') : null;
-
-      let res;
-      if (attachedFile) {
-        const formData = new FormData();
-        formData.append('sender_id', currentUserId);
-        if (targetGroupId) formData.append('group_id', targetGroupId);
-        if (targetReceiverId) formData.append('receiver_id', targetReceiverId);
-        formData.append('message_text', input.trim());
-        formData.append('file', attachedFile);
-        if (replyingToMessage) {
-          formData.append('reply_to_id', replyingToMessage.id);
-          formData.append('reply_to_text', replyingToMessage.text);
-          formData.append('reply_to_sender', replyingToMessage.sender === 'user' ? 'You' : `${replyingToMessage.first_name || ''} ${replyingToMessage.last_name || ''}`.trim());
-        }
-
-        res = await axios.post(`${API_BASE_URL}/messages`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      } else {
-        const payload = {
-          sender_id: currentUserId,
-          receiver_id: targetReceiverId ? parseInt(targetReceiverId, 10) : null,
-          group_id: targetGroupId ? parseInt(targetGroupId, 10) : null,
-          message_text: input.trim(),
-          reply_to_id: replyingToMessage ? replyingToMessage.id : null,
-          reply_to_text: replyingToMessage ? replyingToMessage.text : null,
-          reply_to_sender: replyingToMessage ? (replyingToMessage.sender === 'user' ? 'You' : `${replyingToMessage.first_name || ''} ${replyingToMessage.last_name || ''}`.trim()) : null
-        };
-
-        res = await axios.post(`${API_BASE_URL}/messages`, payload);
-      }
-
-      const newMsg = {
-        id: res.data?.id || res.data?.messageId || Date.now(),
-        sender: 'user',
-        first_name: user?.first_name || 'You',
-        last_name: user?.last_name || '',
-        sender_avatar: user?.avatar,
-        text: input.trim(),
-        timestamp: formatMessageTime(),
-        status: 'read',
-        is_read: true,
-        reply_to_id: replyingToMessage ? replyingToMessage.id : null,
-        reply_to_text: replyingToMessage ? replyingToMessage.text : null,
-        reply_to_sender: replyingToMessage ? (replyingToMessage.sender === 'user' ? 'You' : `${replyingToMessage.first_name || ''} ${replyingToMessage.last_name || ''}`.trim()) : null,
-        file: attachedFile ? {
-          name: attachedFile.name,
-          size: `${(attachedFile.size / 1024).toFixed(1)} KB`,
-          icon: attachedFile.name.split('.').pop().toLowerCase()
-        } : null
-      };
-
-      setMessages(prev => [...prev, newMsg]);
-      setInput('');
-      setAttachedFile(null);
-      setReplyingToMessage(null);
-      setShowEmojiPicker(false);
-      setShowMentionSuggestions(false);
-      fetchConversations();
-    } catch (err) {
-      console.error('Failed to send message', err);
-      Swal.fire({ icon: 'error', title: 'Send Error', text: err?.response?.data?.error || 'Could not send message' });
-    }
-  };
-
-  // WhatsApp Reaction Handler
-  const handleAddReaction = async (messageId, emoji) => {
-    try {
-      setMessages(prev => prev.map(m => {
-        if (m.id === messageId) {
-          let reactionsObj = {};
-          try {
-            reactionsObj = typeof m.reactions === 'string' ? JSON.parse(m.reactions || '{}') : (m.reactions || {});
-          } catch (e) { reactionsObj = {}; }
-          reactionsObj[emoji] = (reactionsObj[emoji] || 0) + 1;
-          return { ...m, reactions: reactionsObj };
-        }
-        return m;
-      }));
-      setActiveReactionPopoverId(null);
-      await axios.post(`${API_BASE_URL}/messages/${messageId}/reactions`, { emoji, userId: currentUserId });
-    } catch (err) {
-      console.error('Failed to react', err);
-    }
-  };
-
-  const handleSaveEdit = async (messageId) => {
-    if (!editingText.trim()) return;
-    try {
-      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, text: editingText.trim(), is_edited: 1 } : m));
-      setEditingMessageId(null);
-      setEditingText('');
-      await axios.put(`${API_BASE_URL}/messages/${messageId}`, { message_text: editingText.trim() });
-    } catch (err) {
-      console.error('Failed to edit message', err);
-    }
-  };
-
-  const handleDeleteMessage = async (messageId) => {
-    try {
-      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, is_deleted: 1, text: 'This message was deleted' } : m));
-      setActiveContextMenuId(null);
-      await axios.delete(`${API_BASE_URL}/messages/${messageId}`);
-    } catch (err) {
-      console.error('Failed to delete message', err);
-    }
-  };
-
-  const handleCreateTeam = async () => {
-    if (!newTeamName.trim()) {
-      Swal.fire({ icon: 'warning', title: 'Group Name Required', text: 'Please enter a name for the group.' });
-      return;
-    }
-    try {
-      const res = await axios.post(`${API_BASE_URL}/chat-groups`, {
-        name: newTeamName.trim(),
-        description: newTeamDesc.trim(),
-        created_by: currentUserId,
-        members: selectedUserIds
-      });
-      setIsCreateTeamOpen(false);
-      setNewTeamName('');
-      setNewTeamDesc('');
-      setSelectedUserIds([]);
-      await fetchConversations();
-
-      const newGroupObj = {
-        id: res.data.id,
-        name: res.data.name,
-        chat_type: 'group',
-        unread_count: 0
-      };
-      setSelectedChat(newGroupObj);
-      Swal.fire({ icon: 'success', title: 'Group Created!', text: `Team Group "${res.data.name}" created successfully!` });
-    } catch (err) {
-      console.error('Failed to create team', err);
-      Swal.fire({ icon: 'error', title: 'Create Group Failed', text: err?.response?.data?.error || 'Could not create group' });
-    }
-  };
-
-  const handleAddMembers = async () => {
-    if (!selectedChat || selectedUserIds.length === 0) return;
-    try {
-      await axios.post(`${API_BASE_URL}/chat-groups/${selectedChat.id}/members`, {
-        members: selectedUserIds
-      });
-      setIsAddMemberOpen(false);
-      setSelectedUserIds([]);
-      fetchMessages(selectedChat);
-      Swal.fire({ icon: 'success', title: 'Members Added', text: 'Selected members added to group!' });
-    } catch (err) {
-      console.error('Failed to add members', err);
-      Swal.fire({ icon: 'error', title: 'Error', text: err?.response?.data?.error || 'Failed to add members' });
-    }
-  };
-
-  const isEmployeeSearch = searchTerm.trim().toLowerCase().startsWith('emp-') || searchTerm.trim().toLowerCase().startsWith('employee');
-
-  const filteredChats = conversations.filter(chat => {
-    const matchesSearch = (chat.name || '').toLowerCase().includes(searchTerm.toLowerCase());
-    if (!matchesSearch && !isEmployeeSearch) return false;
-
-    if (activeFilter === 'Unread') return Number(chat.unread_count || chat.unread || 0) > 0;
-    if (activeFilter === 'Direct') return chat.chat_type === 'private';
-    if (activeFilter === 'Groups') return chat.chat_type === 'group';
-    return true;
-  });
-
-  const pinned = filteredChats.filter(c => c.pinned);
-  const recent = filteredChats.filter(c => !c.pinned);
-
-  const directoryUsers = searchTerm.trim()
-    ? availableUsers.filter(u =>
-      (isEmployeeSearch || (u.name || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
-      !recent.some(c => c.other_user_id === u.id) &&
-      !pinned.some(c => c.other_user_id === u.id)
-    ).map(u => ({
-      id: `dummy-${u.id}`,
-      chat_type: 'private',
-      other_user_id: u.id,
-      name: u.name || '',
-      avatar: u.avatar || '',
-      status: u.status || 'Active',
-      lastMessage: 'Start a new conversation'
-    }))
-    : [];
-
-  const groupInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'GR';
-
-  const filteredActiveMessages = messages.filter(m => {
-    if (!chatSearchQuery.trim()) return true;
-    return (m.text || '').toLowerCase().includes(chatSearchQuery.toLowerCase());
-  });
-
-  const renderMessage = (msg, idx) => {
-    const isMine = msg.sender === 'user';
-    const senderName = isMine ? 'You' : `${msg.first_name || ''} ${msg.last_name || ''}`.trim();
-    const avatarUrl = msg.sender_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random`;
-    const isDeleted = msg.is_deleted === 1 || msg.is_deleted === true;
-
-    let parsedReactions = {};
-    try {
-      parsedReactions = typeof msg.reactions === 'string' ? JSON.parse(msg.reactions || '{}') : (msg.reactions || {});
-    } catch (e) { parsedReactions = {}; }
-
-    const file = msg.file || (msg.file_name ? {
-      name: msg.file_name,
-      size: msg.file_size ? `${(msg.file_size / 1024).toFixed(1)} KB` : '0 KB',
-      icon: (msg.file_type || 'pdf').toLowerCase(),
-      path: msg.file_path
-    } : null);
-
-    const backendUrl = API_BASE_URL.replace('/api', '');
-    const fileUrl = file ? (file.path ? `${backendUrl}${file.path}` : `${backendUrl}/uploads/${file.name}`) : '';
-
-    return (
-      <React.Fragment key={msg.id || idx}>
-        {msg.date && (
-          <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 h-px bg-gray-100" />
-            <span className={`text-xs px-3 py-1 rounded-full ${msg.date === 'New Messages' ? 'bg-red-50 text-red-500 ' : 'bg-gray-100 text-gray-500'}`}>{msg.date}</span>
-            <div className="flex-1 h-px bg-gray-100" />
-          </div>
-        )}
-        <div
-          onMouseEnter={() => setActiveHoverMessageId(msg.id)}
-          onMouseLeave={() => {
-            setActiveHoverMessageId(null);
-          }}
-          className={`flex gap-2.5 px-5 py-1.5 group relative ${isMine ? 'flex-row-reverse' : ''}`}
-        >
-          {!isMine && <Avatar name={senderName} src={avatarUrl} size={32} />}
-
-          <div className={`max-w-[70%] ${isMine ? 'items-end' : 'items-start'} flex flex-col relative`}>
-            {!isMine && selectedChat?.chat_type === 'group' && (
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[12px]  text-[#25d366]">{senderName}</span>
-                <span className="text-[10px] text-gray-400 font-medium">{formatMessageTime(msg.timestamp || msg.created_at)}</span>
-              </div>
-            )}
-
-            {/* Quoted Reply Block (WhatsApp Style) */}
-            {msg.reply_to_text && !isDeleted && (
-              <div className={`mb-1 p-2 rounded border-l-4 text-xs ${isMine ? 'bg-[#c5eabf] border-[#25d366] text-gray-900 self-end' : 'bg-gray-100 border-purple-600 text-gray-900 self-start'} w-fit shadow-2xs`}>
-                <div className="flex items-center gap-1  text-xs text-[#075e54] mb-0.5">
-                  <CornerUpLeft size={10} />
-                  <span>{msg.reply_to_sender || 'Replied Message'}</span>
-                </div>
-                <div className="truncate text-xs text-gray-700 italic opacity-90">{msg.reply_to_text}</div>
-              </div>
-            )}
-
-            {/* Message Body / Inline Edit Mode */}
-            {editingMessageId === msg.id ? (
-              <div className="flex gap-2 items-center bg-white p-2 border border-blue-400 rounded shadow-md w-full">
-                <input
-                  type="text"
-                  value={editingText}
-                  onChange={(e) => setEditingText(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit(msg.id)}
-                  className="flex-1 text-xs outline-none px-2 py-1 bg-gray-50 border border-gray-200 rounded"
-                />
-                <button onClick={() => handleSaveEdit(msg.id)} className="px-2.5 py-1 bg-red-600 text-white rounded text-xs  hover:bg-blue-700 cursor-pointer">
-                  Save
-                </button>
-                <button onClick={() => setEditingMessageId(null)} className="px-2 py-1 text-gray-500 hover:bg-gray-100 rounded text-xs cursor-pointer">
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              msg.text && (
-                <div className={`px-3.5 py-2 rounded text-xs leading-relaxed whitespace-pre-wrap flex flex-col relative
-                  ${isDeleted ? 'bg-gray-100 text-gray-400 italic border border-gray-200' : isMine ? 'bg-[#d9fdd3] text-gray-900 border border-[#bceab4] rounded-tr-xs self-end shadow-2xs' : 'bg-white border border-gray-200 text-gray-800 rounded-tl-xs self-start shadow-2xs'}`}>
-                  {isDeleted ? (
-                    <div className="flex items-center gap-1 text-gray-400">
-                      <ShieldAlert size={12} /> <span>This message was deleted</span>
-                    </div>
-                  ) : (
-                    <div>{msg.text}</div>
-                  )}
-
-                  <div className="flex items-center gap-1 justify-end mt-1 text-[10px] text-gray-500 font-medium select-none">
-                    {msg.is_edited ? <span className="italic mr-1 text-gray-400">(edited)</span> : null}
-                    <span>{formatMessageTime(msg.timestamp || msg.created_at)}</span>
-                    <WhatsAppTicks status={msg.status || (msg.is_read ? 'read' : 'delivered')} isMine={isMine} />
-                  </div>
-
-                  {/* Reaction Badges below message */}
-                  {Object.keys(parsedReactions).length > 0 && (
-                    <div className="flex items-center gap-1 mt-1 flex-wrap">
-                      {Object.entries(parsedReactions).map(([emoji, count]) => (
-                        <span key={emoji} className="bg-white border border-gray-200 rounded-full px-1.5 py-0.5 text-[10px]  shadow-xs flex items-center gap-0.5">
-                          <span>{emoji}</span>
-                          <span className="text-gray-600">{count}</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            )}
-
-            {file && !isDeleted && (
-              <div className="mt-1 flex items-center gap-2.5 p-2.5 rounded border border-gray-200 bg-white shadow-2xs">
-                {FILE_ICONS[file.icon] || <FileText size={22} className="text-gray-400" />}
-                <div>
-                  <p className="text-[12px] text-gray-800 font-medium">{file.name}</p>
-                  <p className="text-[10px] text-gray-400 font-medium">{file.size}</p>
-                </div>
-                <a
-                  href={fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
-                  className="ml-3 text-gray-400 hover:text-blue-600 transition-colors p-1"
-                >
-                  <Download size={15} />
-                </a>
-              </div>
-            )}
-          </div>
-
-          {/* WhatsApp Hover Actions Bar (Smiley & Dropdown Arrow right beside message bubble) */}
-          {activeHoverMessageId === msg.id && !isDeleted && (
-            <div className={`flex items-center gap-1 self-center ${isMine ? 'mr-1 flex-row-reverse' : 'ml-1'} relative`}>
-              {/* Smiley Icon to trigger WhatsApp Reaction Bar */}
-              <button
-                onClick={() => {
-                  setActiveReactionPopoverId(prev => prev === msg.id ? null : msg.id);
-                  setActiveContextMenuId(null);
-                }}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-white/90 hover:bg-gray-100 text-gray-600 shadow-md border border-gray-200 transition-transform cursor-pointer hover:scale-110"
-                title="React to message"
-              >
-                <Smile size={15} />
-              </button>
-
-              {/* Chevron Dropdown Arrow to trigger Context Menu */}
-              <button
-                onClick={() => {
-                  setActiveContextMenuId(prev => prev === msg.id ? null : msg.id);
-                  setActiveReactionPopoverId(null);
-                }}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-white/90 hover:bg-gray-100 text-gray-600 shadow-md border border-gray-200 transition-transform cursor-pointer hover:scale-110"
-                title="Message options"
-              >
-                <ChevronDown size={15} />
-              </button>
-
-              {/* WhatsApp Floating Reaction Bar (Pill Shape) */}
-              {activeReactionPopoverId === msg.id && (
-                <div className={`absolute bottom-full mb-2 ${isMine ? 'right-0' : 'left-0'} z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full shadow-2xl px-3 py-1.5 flex items-center gap-2 animate-scaleIn`}>
-                  {QUICK_REACTIONS.map(emoji => (
-                    <button
-                      key={emoji}
-                      onClick={() => handleAddReaction(msg.id, emoji)}
-                      className="hover:scale-135 transition-transform text-lg cursor-pointer p-0.5"
-                      title={`React ${emoji}`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                  <div className="w-px h-4 bg-gray-300 dark:bg-slate-700 mx-0.5" />
-                  <button
-                    onClick={() => {
-                      setShowEmojiPicker(true);
-                      setActiveReactionPopoverId(null);
-                    }}
-                    className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center  text-xs cursor-pointer"
-                    title="More emojis"
-                  >
-                    +
-                  </button>
-                </div>
-              )}
-
-              {/* WhatsApp Context Menu Dropdown */}
-              {activeContextMenuId === msg.id && (
-                <div className={`absolute top-full mt-1 ${isMine ? 'right-0' : 'left-0'} z-50 bg-white border border-gray-200 rounded shadow-xl py-1.5 w-44 text-xs font-medium text-gray-700 divide-y divide-gray-100 animate-fadeIn`}>
-                  <div className="py-1">
-                    <button
-                      onClick={() => {
-                        setReplyingToMessage(msg);
-                        setActiveContextMenuId(null);
-                        document.getElementById('chat-input')?.focus();
-                      }}
-                      className="w-full text-left px-3.5 py-1.5 hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
-                    >
-                      <Reply size={14} className="text-gray-500" />
-                      <span>Reply</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(msg.text || '');
-                        setActiveContextMenuId(null);
-                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Copied to clipboard', showConfirmButton: false, timer: 1500 });
-                      }}
-                      className="w-full text-left px-3.5 py-1.5 hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
-                    >
-                      <Copy size={14} className="text-gray-500" />
-                      <span>Copy Text</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveContextMenuId(null);
-                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Message pinned', showConfirmButton: false, timer: 1500 });
-                      }}
-                      className="w-full text-left px-3.5 py-1.5 hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer"
-                    >
-                      <Pin size={14} className="text-gray-500" />
-                      <span>Pin Message</span>
-                    </button>
-                  </div>
-
-                  {isMine && (
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          setEditingMessageId(msg.id);
-                          setEditingText(msg.text);
-                          setActiveContextMenuId(null);
-                        }}
-                        className="w-full text-left px-3.5 py-1.5 hover:bg-amber-50 text-amber-700 flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <Edit2 size={14} />
-                        <span>Edit Message</span>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMessage(msg.id)}
-                        className="w-full text-left px-3.5 py-1.5 hover:bg-red-50 text-red-600 flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <Trash2 size={14} />
-                        <span>Delete Message</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </React.Fragment>
-    );
-  };
-
   return (
-    <div className="flex bg-[#f8fafc] font-sans text-gray-900 overflow-hidden w-full h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
-
-      {/* ── Left Panel: Chat List ─────────────────────────────────────────── */}
-      <div className="w-[290px] shrink-0 bg-white border-r border-gray-100 flex flex-col overflow-hidden">
-        {/* Header (WhatsApp Desktop Style) */}
-        <div className="px-3.5 py-3 border-b border-gray-100 flex items-center justify-between bg-white relative">
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => {
-                if (window.history.length > 1) {
-                  navigate(-1);
-                } else {
-                  navigate('/it/it manager/ashwinikhedekar1025/dashboard');
-                }
-              }}
-              className="p-1.5 hover:bg-gray-100 rounded text-gray-700 hover:text-red-600 transition flex items-center gap-1 cursor-pointer  text-xs bg-gray-50 border border-gray-200 shadow-xs"
-              title="Back to Dashboard"
-            >
-              <ArrowLeft size={14} />
-              <span>Back</span>
-            </button>
-            <div className="w-px h-4 bg-gray-200 mx-0.5" />
-            <h2 className="text-[15px]  text-gray-900">Chats</h2>
-          </div>
-
-          <div className="flex items-center gap-0.5">
-            {/* Quick Create Group Button */}
-            <button
-              onClick={() => {
-                setSelectedUserIds([]);
-                setIsCreateTeamOpen(true);
-              }}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 transition-colors cursor-pointer"
-              title="Create New Group"
-            >
-              <Plus size={18} />
-            </button>
-
-            {/* Three Dots Menu Button (WhatsApp Style) */}
-            <div className="relative">
-              <button
-                onClick={() => setShowTopHeaderMenu(prev => !prev)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 transition-colors cursor-pointer"
-                title="Menu Options"
-              >
-                <MoreVertical size={18} />
-              </button>
-
-              {/* WhatsApp Top Header Dropdown Menu */}
-              {showTopHeaderMenu && (
-                <div className="absolute right-0 top-full mt-1.5 z-50 bg-white border border-gray-200 rounded shadow-2xl py-1.5 w-48 text-xs font-medium text-gray-700 divide-y divide-gray-100 animate-fadeIn">
-                  <div className="py-1">
-                    <button
-                      onClick={() => {
-                        setShowTopHeaderMenu(false);
-                        setSelectedUserIds([]);
-                        setIsCreateTeamOpen(true);
-                      }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer text-gray-800 "
-                    >
-                      <Users size={15} className="text-blue-600" />
-                      <span>New group</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowTopHeaderMenu(false);
-                        Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Starred messages', showConfirmButton: false, timer: 1500 });
-                      }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer text-gray-700"
-                    >
-                      <Star size={15} className="text-amber-500" />
-                      <span>Starred messages</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowTopHeaderMenu(false);
-                        setConversations(prev => prev.map(c => ({ ...c, unread: 0, unread_count: 0 })));
-                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'All marked as read', showConfirmButton: false, timer: 1500 });
-                      }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-gray-50 flex items-center gap-2.5 cursor-pointer text-gray-700"
-                    >
-                      <CheckCheck size={15} className="text-emerald-600" />
-                      <span>Mark all as read</span>
-                    </button>
-                  </div>
-
-                  <div className="py-1">
-                    <button
-                      onClick={() => {
-                        setShowTopHeaderMenu(false);
-                        if (window.history.length > 1) {
-                          navigate(-1);
-                        } else {
-                          navigate('/it/it manager/ashwinikhedekar1025/dashboard');
-                        }
-                      }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2.5 cursor-pointer font-medium"
-                    >
-                      <LogOut size={15} />
-                      <span>Back to Dashboard</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="px-3 pt-3 border-b border-gray-100">
-          <div className="flex gap-3">
-            {FILTER_TABS.map(f => (
-              <button key={f} onClick={() => setActiveFilter(f)}
-                className={`p-2 text-xs transition-colors cursor-pointer
-                  ${activeFilter === f ? 'text-red-600 border-b-2 border-red-500 ' : 'text-gray-500 hover:text-gray-700'}`}>
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="p-3">
-          <div className="relative">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="Search chats..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-8 py-2 bg-gray-50 border border-gray-100 rounded text-[12px] focus:outline-none focus:border-blue-300 transition-colors" />
-            <button className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><Filter size={12} /></button>
-          </div>
-        </div>
-
-        {/* Chat List */}
-        <div className="flex-1 overflow-y-auto px-2">
-          {pinned.length > 0 && (
-            <>
-              <div className="flex items-center justify-between p-2 mb-1">
-                <span className="text-xs text-amber-500 tracking-wider flex items-center gap-1 "><Pin size={10} /> Pinned</span>
-                <button className="text-gray-400 hover:text-gray-600"><svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6" /></svg></button>
-              </div>
-              {pinned.map(chat => <ChatItem key={chat.id} chat={chat} selected={selectedChat?.id === chat.id} onSelect={handleSelectChat} groupInitials={groupInitials} />)}
-            </>
-          )}
-          {recent.length > 0 && (
-            <>
-              <div className="flex items-center justify-between p-2 mb-1 mt-2">
-                <span className="text-xs text-gray-400 tracking-wider ">Recent</span>
-                <button className="text-gray-400 hover:text-gray-600"><svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6" /></svg></button>
-              </div>
-              {recent.map(chat => <ChatItem key={chat.id} chat={chat} selected={selectedChat?.id === chat.id} onSelect={handleSelectChat} groupInitials={groupInitials} />)}
-            </>
-          )}
-          {directoryUsers.length > 0 && (
-            <>
-              <div className="flex items-center justify-between p-2 mb-1 mt-2 border-t border-gray-100 pt-2">
-                <span className="text-xs text-blue-500 tracking-wider flex items-center gap-1 "><Users size={10} /> Company Directory</span>
-              </div>
-              {directoryUsers.map(chat => <ChatItem key={chat.id} chat={chat} selected={selectedChat?.id === chat.id} onSelect={handleSelectChat} groupInitials={groupInitials} />)}
-            </>
-          )}
-        </div>
-
-        {/* Bottom status */}
-        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-xs text-gray-600 font-medium">Online</span>
-            <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
-          </div>
-          <div className="flex items-center gap-2 text-gray-400">
-            <button className="hover:text-gray-600 transition-colors cursor-pointer"><Settings size={14} /></button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Middle: Messages ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 relative bg-[#efeae2]/30">
-        {selectedChat && (
-          <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-3 flex items-center justify-between shrink-0 z-10">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                {selectedChat.chat_type === 'group'
-                  ? <div className={`w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs `}>{groupInitials(selectedChat.name)}</div>
-                  : <Avatar name={selectedChat.name} src={selectedChat.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedChat.name)}&background=random`} size={40} />
-                }
-                {selectedChat.chat_type === 'group' && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-[14px]  text-gray-900">{selectedChat.name}</h3>
-                  {selectedChat.chat_type === 'group' && <Star size={13} className="text-amber-400 fill-amber-400" />}
-                </div>
-                {selectedChat.chat_type === 'group' ? (
-                  <p className="text-xs text-gray-400 font-medium">{(groupMembers.length || 0)} members • <span className="hover:text-blue-600 cursor-pointer">Add description</span></p>
-                ) : (
-                  (() => {
-                    const statusObj = getUserOnlineStatus(selectedChat);
-                    if (!statusObj) return null;
-                    return (
-                      <p className={`text-xs  flex items-center gap-1.5 ${statusObj.isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
-                        {statusObj.isOnline && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>}
-                        <span>{statusObj.text}</span>
-                      </p>
-                    );
-                  })()
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {showInChatSearch ? (
-                <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs">
-                  <Search size={13} className="text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search in chat..."
-                    value={chatSearchQuery}
-                    onChange={(e) => setChatSearchQuery(e.target.value)}
-                    className="bg-transparent outline-none text-xs w-36 text-gray-800"
-                  />
-                  <button onClick={() => { setShowInChatSearch(false); setChatSearchQuery(''); }} className="text-gray-400 hover:text-gray-600 p-0.5">
-                    <X size={13} />
-                  </button>
-                </div>
-              ) : (
-                <ActionBtn icon={<Search size={15} />} onClick={() => setShowInChatSearch(true)} title="Search messages" />
-              )}
-              <ActionBtn icon={<Phone size={15} />} />
-              <ActionBtn icon={<Video size={15} />} />
-              <ActionBtn icon={<MoreHorizontal size={15} />} onClick={() => setShowDetails(d => !d)} />
-            </div>
-          </div>
-        )}
-
-        <div className="sticky top-[64px] bg-white border-b border-gray-100 p-2 flex items-center gap-4 z-10">
-          {TABS.map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`text-xs px-3 py-1.5 rounded transition-colors cursor-pointer ${activeTab === tab ? 'bg-red-50 text-red-600 ' : 'text-gray-500 hover:text-gray-700'}`}>
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 relative">
-          {activeTab === 'Messages' && (
-            filteredActiveMessages.length > 0 ? (
-              filteredActiveMessages.map((msg, idx) => renderMessage(msg, idx))
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-xs">
-                {chatSearchQuery ? 'No matching messages found.' : 'No messages yet. Send a message to start conversation.'}
-              </div>
-            )
-          )}
-
-          {activeTab === 'Files' && (
-            <div className="p-4 space-y-2">
-              <h4 className="text-xs  text-gray-700 mb-2">Shared Files</h4>
-              {messages.filter(m => m.file || m.file_name).map((m, i) => (
-                <div key={i} className="p-3 bg-white border border-gray-200 rounded flex justify-between items-center text-xs">
-                  <div className="flex items-center gap-2">
-                    <FileText size={16} className="text-blue-500" />
-                    <span>{m.file_name || m.file?.name}</span>
-                  </div>
-                  <span className="text-gray-400">{formatMessageTime(m.timestamp || m.created_at)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'Tasks' && (
-            <div className="p-4 space-y-3 font-sans">
-              <div className="flex justify-between items-center">
-                <h4 className="text-xs  text-gray-800">Team Tasks & To-Dos</h4>
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Add a new task..."
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
-                  className="flex-1 p-2 border border-gray-300 rounded text-xs outline-none bg-white focus:ring-1 focus:ring-blue-500"
-                />
-                <button
-                  onClick={handleAddTask}
-                  className="px-3 py-2 bg-red-600 text-white rounded text-xs  hover:bg-blue-700 cursor-pointer"
-                >
-                  Add Task
-                </button>
-              </div>
-
-              <div className="space-y-2 pt-2">
-                {getChatTasks().map(task => (
-                  <div key={task.id} className="p-2.5 bg-white border border-gray-200 rounded flex items-center justify-between text-xs">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={task.completed}
-                        onChange={() => handleToggleTask(task.id)}
-                        className="rounded text-blue-600 cursor-pointer"
-                      />
-                      <span className={task.completed ? 'line-through text-gray-400' : 'text-gray-800 font-medium'}>{task.title}</span>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{task.assignee}</span>
-                      <button onClick={() => handleDeleteTask(task.id)} className="text-gray-400 hover:text-red-500 cursor-pointer">
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Bar */}
-        <div className="p-3 bg-white border-t border-gray-100 relative">
-
-          {/* Replying to Message Banner (WhatsApp/Teams style) */}
-          {replyingToMessage && (
-            <div className="mb-2 p-2 bg-emerald-50 border-l-4 border-emerald-600 rounded flex items-center justify-between text-xs text-gray-800">
-              <div className="min-w-0 pr-2">
-                <span className=" text-emerald-800 text-xs block flex items-center gap-1">
-                  <Reply size={11} /> Replying to {replyingToMessage.sender === 'user' ? 'You' : `${replyingToMessage.first_name || ''}`}
-                </span>
-                <p className="truncate text-gray-600 text-xs italic">{replyingToMessage.text}</p>
-              </div>
-              <button onClick={() => setReplyingToMessage(null)} className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
-                <X size={14} />
-              </button>
-            </div>
-          )}
-
-          {showMentionSuggestions && (
-            <div className="absolute bottom-full left-4 bg-white border border-gray-200 rounded shadow-xl max-h-40 overflow-y-auto z-50 w-64 p-1 text-xs">
-              <div className="text-[10px]  text-gray-400 px-2 py-1 uppercase">Mention Team Member</div>
-              {filteredMentionUsers.map(u => {
-                const uName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                return (
-                  <div
-                    key={u.id}
-                    onClick={() => handleSelectMentionUser(uName)}
-                    className="p-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 rounded text-gray-800 font-medium"
-                  >
-                    <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] ">
-                      {uName.substring(0, 2).toUpperCase()}
-                    </div>
-                    <span>{uName}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {showEmojiPicker && (
-            <div className="absolute bottom-full left-4 bg-white border border-gray-200 rounded shadow-xl p-2 z-50 flex gap-2 flex-wrap max-w-xs mb-2">
-              {EMOJIS.map(emoji => (
-                <button key={emoji} onClick={() => setInput(prev => prev + emoji)} className="text-lg hover:scale-125 transition-transform p-1 cursor-pointer">
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {attachedFile && (
-            <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded flex items-center justify-between text-xs text-blue-900">
-              <span className="truncate flex items-center gap-1"><Paperclip size={13} /> {attachedFile.name}</span>
-              <button onClick={() => setAttachedFile(null)} className="text-blue-700 hover:text-red-500 p-0.5"><X size={14} /></button>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded px-3 py-2 focus-within:ring-2 focus-within:ring-blue-400 focus-within:bg-white transition-all">
-            <input
-              id="chat-input"
-              type="text"
-              placeholder="Type a message... (Paste screenshot or use @ to mention)"
-              value={input}
-              onChange={handleInputChange}
-              onPaste={handlePaste}
-              onKeyPress={e => e.key === 'Enter' && handleSend()}
-              className="w-full text-xs outline-none bg-transparent text-gray-800 placeholder-gray-400"
-            />
-            <div className="flex items-center gap-1.5 text-gray-400">
-              <button onClick={() => handleIconClick('smile')} className="hover:text-gray-600 cursor-pointer p-1"><Smile size={16} /></button>
-              <button onClick={() => handleIconClick('paperclip')} className="hover:text-gray-600 cursor-pointer p-1"><Paperclip size={16} /></button>
-              <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
-              <button onClick={handleSend} className="p-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition cursor-pointer shadow-xs ml-1">
-                <Send size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Right Panel: Details ─────────────────────────────────────────── */}
-      {showDetails && selectedChat && (
-        <div className="w-[280px] shrink-0 bg-white border-l border-gray-100 p-4 overflow-y-auto space-y-4 text-xs font-sans">
-          <div className="flex justify-between items-center border-b pb-3">
-            <span className=" text-gray-800 text-sm">Details</span>
-            <button onClick={() => setShowDetails(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer"><X size={16} /></button>
-          </div>
-
-          <div className="text-center space-y-2 py-2">
-            <Avatar name={selectedChat.name} src={selectedChat.avatar} size={64} color="bg-blue-500" />
-            <h3 className=" text-gray-900 text-sm">{selectedChat.name}</h3>
-            {selectedChat.chat_type === 'group' ? (
-              <p className="text-gray-400 text-xs font-medium">{(groupMembers.length || 0)} Members</p>
-            ) : (
-              (() => {
-                const statusObj = getUserOnlineStatus(selectedChat);
-                if (!statusObj) return null;
-                return (
-                  <p className={`text-xs  flex items-center justify-center gap-1 ${statusObj.isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
-                    {statusObj.isOnline && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
-                    <span>{statusObj.text}</span>
-                  </p>
-                );
-              })()
-            )}
-
-            {selectedChat.chat_type === 'group' && (
-              <button
-                onClick={() => {
-                  setSelectedUserIds([]);
-                  setIsAddMemberOpen(true);
-                }}
-                className="w-full mt-2 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded text-xs  transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-              >
-                <UserPlus size={14} />
-                <span>Add Members</span>
-              </button>
-            )}
-          </div>
-
-          <div className="p-3 bg-gray-50 border border-gray-100 rounded space-y-1">
-            <span className="text-gray-500  text-[10px] uppercase tracking-wider block">About</span>
-            <p className="text-gray-700 leading-relaxed text-xs">No description available</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Create Team Group Modal ── */}
-      {isCreateTeamOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn border border-gray-100">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center ">
-                  <Users size={16} />
-                </div>
-                <div>
-                  <h3 className=" text-gray-900 text-sm">Create New Team Group</h3>
-                  <p className="text-xs text-gray-400">Start a group channel for team collaboration</p>
-                </div>
-              </div>
-              <button onClick={() => setIsCreateTeamOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 cursor-pointer">
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4 text-xs">
-              <div>
-                <label className="block text-xs  text-gray-700 mb-1">Group Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Frontend Development Team"
-                  value={newTeamName}
-                  onChange={(e) => setNewTeamName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs  text-gray-700 mb-1">Group Description</label>
-                <textarea
-                  placeholder="What is this channel about?"
-                  rows={2}
-                  value={newTeamDesc}
-                  onChange={(e) => setNewTeamDesc(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white text-xs resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs  text-gray-700 mb-1.5 flex justify-between items-center">
-                  <span>Select Team Members</span>
-                  <span className="text-blue-600 font-normal">{selectedUserIds.length} selected</span>
-                </label>
-                <div className="max-h-40 overflow-y-auto border border-gray-200 rounded divide-y divide-gray-100 bg-white">
-                  {availableUsers.map(u => {
-                    const isSelected = selectedUserIds.includes(u.id);
-                    const uName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                    return (
-                      <label key={u.id} className="flex items-center justify-between p-2.5 hover:bg-gray-50 cursor-pointer">
-                        <div className="flex items-center gap-2.5">
-                          <Avatar name={uName} src={u.avatar} size={28} />
-                          <div>
-                            <span className=" text-gray-800 block text-xs">{uName}</span>
-                            <span className="text-[10px] text-gray-400 block">{u.email || u.status}</span>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {
-                            setSelectedUserIds(prev =>
-                              isSelected ? prev.filter(id => id !== u.id) : [...prev, u.id]
-                            );
-                          }}
-                          className="w-4 h-4 rounded text-blue-600 cursor-pointer"
-                        />
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
-              <button onClick={() => setIsCreateTeamOpen(false)} className="p-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-100 text-xs font-medium cursor-pointer">
-                Cancel
-              </button>
-              <button onClick={handleCreateTeam} className="p-2 bg-red-600 hover:bg-blue-700 text-white rounded text-xs  shadow-xs cursor-pointer">
-                Create Group
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Add Members to Group Modal ── */}
-      {isAddMemberOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn border border-gray-100">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center ">
-                  <UserPlus size={16} />
-                </div>
-                <div>
-                  <h3 className=" text-gray-900 text-sm">Add Members to {selectedChat?.name}</h3>
-                  <p className="text-xs text-gray-400">Expand team collaboration</p>
-                </div>
-              </div>
-              <button onClick={() => setIsAddMemberOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 cursor-pointer">
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4 text-xs">
-              <div>
-                <label className="block text-xs  text-gray-700 mb-1.5 flex justify-between items-center">
-                  <span>Select Users to Add</span>
-                  <span className="text-emerald-600 font-normal">{selectedUserIds.length} selected</span>
-                </label>
-                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded divide-y divide-gray-100 bg-white">
-                  {availableUsers
-                    .filter(u => !groupMembers.some(gm => gm.id === u.id))
-                    .map(u => {
-                      const isSelected = selectedUserIds.includes(u.id);
-                      const uName = u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                      return (
-                        <label key={u.id} className="flex items-center justify-between p-2.5 hover:bg-gray-50 cursor-pointer">
-                          <div className="flex items-center gap-2.5">
-                            <Avatar name={uName} src={u.avatar} size={28} />
-                            <div>
-                              <span className=" text-gray-800 block text-xs">{uName}</span>
-                              <span className="text-[10px] text-gray-400 block">{u.email || u.status}</span>
-                            </div>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {
-                              setSelectedUserIds(prev =>
-                                isSelected ? prev.filter(id => id !== u.id) : [...prev, u.id]
-                              );
-                            }}
-                            className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
-                          />
-                        </label>
-                      );
-                    })}
-                </div>
-              </div>
-            </div>
-
-            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
-              <button onClick={() => setIsAddMemberOpen(false)} className="p-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-100 text-xs font-medium cursor-pointer">
-                Cancel
-              </button>
-              <button onClick={handleAddMembers} className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs  shadow-xs cursor-pointer">
-                Add Selected Members
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="text-[13.5px] text-gray-900 leading-relaxed break-words">
+      {blocks.map((b, i) => (i % 2 === 1
+        ? <pre key={i} className="my-1 p-2.5 rounded bg-gray-900 text-gray-100 text-[12px] font-mono overflow-x-auto whitespace-pre">{b.replace(/^\n/, '')}</pre>
+        : <span key={i} className="whitespace-pre-wrap">{inline(b, i)}</span>))}
     </div>
   );
 }
 
-function ActionBtn({ icon, onClick, title }) {
+const Attachments = ({ items }) => {
+  if (!items?.length) return null;
+  const images = items.filter(a => a.isImage);
+  const files = items.filter(a => !a.isImage);
   return (
-    <button onClick={onClick} title={title} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer">
-      {icon}
-    </button>
-  );
-}
-
-function ChatItem({ chat, selected, onSelect, groupInitials }) {
-  const rawTime = chat.timestamp || chat.created_at || '';
-  const displayTime = formatMessageTime(rawTime);
-  const unreadCount = Number(chat.unread_count || chat.unread || 0);
-
-  return (
-    <button
-      onClick={() => onSelect(chat)}
-      className={`w-full flex items-center gap-3 px-2 py-2.5 rounded transition-all mb-0.5 text-left cursor-pointer
-        ${selected ? 'bg-gray-100 ' : 'hover:bg-gray-50'}`}
-    >
-      <div className="relative shrink-0">
-        {chat.chat_type === 'group'
-          ? <div className={`w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-[12px] `}>{groupInitials(chat.name)}</div>
-          : <img src={chat.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name)}&background=random`} alt={chat.name} className="w-10 h-10 rounded-full object-cover" />
-        }
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-center mb-0.5">
-          <div className="flex items-center gap-1 min-w-0">
-            <h4 className="text-xs  text-gray-900 truncate pr-1">{chat.name}</h4>
-            {chat.department && (
-              <span className="text-[9px] bg-blue-50 text-blue-600 px-1 py-0.2 rounded font-normal shrink-0">{chat.department}</span>
-            )}
-          </div>
-          <span className="text-[10px] text-gray-400 whitespace-nowrap">{displayTime}</span>
-        </div>
-        <p className={`text-xs truncate ${unreadCount > 0 ? ' text-gray-900' : 'text-gray-500'}`}>
-          {chat.lastMessage || 'New Conversation'}
-        </p>
-      </div>
-      {unreadCount > 0 && (
-        <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-[9px]  text-white shrink-0 shadow-xs">
-          {unreadCount > 99 ? '99+' : unreadCount}
+    <div className="mt-1.5 space-y-1.5">
+      {images.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {images.map((a, i) => (
+            <a key={i} href={toAbsoluteFileUrl(a.url)} target="_blank" rel="noopener noreferrer" title={a.name}>
+              <img src={toAbsoluteFileUrl(a.url)} alt={a.name} loading="lazy" className={`${images.length === 1 ? 'max-h-72 max-w-[min(420px,100%)]' : 'h-32 w-32 object-cover'} rounded-lg border border-gray-200 bg-gray-50`} />
+            </a>
+          ))}
         </div>
       )}
-    </button>
+      {files.map((a, i) => (
+        <a key={i} href={toAbsoluteFileUrl(a.url)} target="_blank" rel="noopener noreferrer" download={a.name}
+          className="flex items-center gap-2.5 max-w-sm p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50">
+          <span className="w-9 h-9 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><FileText size={17} /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13px] text-gray-900 truncate">{a.name}</span>
+            <span className="block text-[11px] text-gray-500">{a.size ? formatFileSize(a.size) : 'File'}</span>
+          </span>
+          <Download size={14} className="text-gray-400 shrink-0" />
+        </a>
+      ))}
+    </div>
+  );
+};
+
+// ── Small modals ─────────────────────────────────────────────────────────
+function Modal({ title, onClose, children, width = 'max-w-md' }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
+      <div className={`relative w-full ${width} max-h-[88vh] flex flex-col bg-white rounded-xl shadow-2xl`}>
+        <div className="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold text-gray-900">{title}</h2>
+          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 text-gray-500 cursor-pointer" aria-label="Close"><X size={17} /></button>
+        </div>
+        <div className="p-5 overflow-y-auto">{children}</div>
+      </div>
+    </div>
   );
 }
 
-function Avatar({ name, src, size = 32, color = 'bg-gray-200' }) {
-  if (src) {
-    return <img src={src} alt={name} style={{ width: size, height: size }} className="rounded-full object-cover shrink-0" />;
-  }
-  const initials = name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
+function PeoplePicker({ people, selected, onToggle, exclude = [] }) {
+  const [term, setTerm] = useState('');
+  const list = people.filter(p => !exclude.includes(p.id) && (!term || `${p.name} ${p.email} ${p.department}`.toLowerCase().includes(term.toLowerCase())));
   return (
-    <div style={{ width: size, height: size }} className={`${color} rounded-full flex items-center justify-center text-white font-medium shrink-0 text-xs`}>
-      {initials}
+    <div>
+      <div className="relative mb-2">
+        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input value={term} onChange={e => setTerm(e.target.value)} placeholder="Search people" className="w-full h-9 pl-8 pr-2 text-[13px] border border-gray-300 rounded outline-none focus:border-blue-500" />
+      </div>
+      <div className="max-h-64 overflow-y-auto border border-gray-200 rounded divide-y divide-gray-100">
+        {list.length === 0 && <div className="p-3 text-xs text-gray-500">No one found.</div>}
+        {list.map(p => (
+          <label key={p.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-gray-50">
+            <input type="checkbox" checked={selected.includes(p.id)} onChange={() => onToggle(p.id)} />
+            <Avatar name={p.name} id={p.id} src={p.avatar} size="w-7 h-7" text="text-[10px]" online={p.online} />
+            <span className="min-w-0 flex-1"><span className="block text-[13px] text-gray-900 truncate">{p.name}</span><span className="block text-[11px] text-gray-500 truncate">{p.title || p.department || p.email}</span></span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NewRoomModal({ kind, people, meId, onClose, onCreated }) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [members, setMembers] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const save = async () => {
+    setSaving(true); setError('');
+    try {
+      const d = await api('/chat/rooms', { method: 'POST', body: { kind, name, description, memberIds: members } });
+      onCreated(d);
+    } catch (e) { setError(e.message); setSaving(false); }
+  };
+  return (
+    <Modal title={kind === 'channel' ? 'Create a channel' : 'Create a group'} onClose={onClose}>
+      <div className="space-y-3">
+        <p className="text-xs text-gray-500">{kind === 'channel' ? 'Channels are open to the whole team: anyone can find and join them.' : 'Groups are private: only the people you add can see them.'}</p>
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Name</label>
+          <div className="relative">
+            {kind === 'channel' && <Hash size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />}
+            <input autoFocus value={name} onChange={e => setName(e.target.value)} placeholder={kind === 'channel' ? 'e.g. marketing-updates' : 'e.g. Bakul Caterings team'}
+              className={`w-full h-9 ${kind === 'channel' ? 'pl-8' : 'pl-2.5'} pr-2 text-[13px] border border-gray-300 rounded outline-none focus:border-blue-500`} />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Description <span className="font-normal text-gray-400">(optional)</span></label>
+          <input value={description} onChange={e => setDescription(e.target.value)} className="w-full h-9 px-2.5 text-[13px] border border-gray-300 rounded outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">{kind === 'channel' ? 'Add people now (optional)' : 'Members'} <span className="font-normal text-gray-400">{members.length ? `· ${members.length} selected` : ''}</span></label>
+          <PeoplePicker people={people} selected={members} exclude={[meId]} onToggle={(id) => setMembers(m => (m.includes(id) ? m.filter(x => x !== id) : [...m, id]))} />
+        </div>
+        {error && <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">{error}</div>}
+        <div className="flex justify-end gap-2 pt-1">
+          <button onClick={onClose} className="h-9 px-4 text-sm rounded border border-gray-300 hover:bg-gray-50 cursor-pointer">Cancel</button>
+          <button onClick={save} disabled={saving} className="h-9 px-4 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 cursor-pointer flex items-center gap-1.5">{saving && <Loader2 size={14} className="animate-spin" />} Create</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function BrowseChannelsModal({ onClose, onOpen }) {
+  const [channels, setChannels] = useState(null);
+  const [busy, setBusy] = useState(null);
+  useEffect(() => { api('/chat/channels').then(d => setChannels(d.channels)).catch(e => showErrorToast(e.message)); }, []);
+  const join = async (c) => {
+    setBusy(c.id);
+    try { await api(`/chat/rooms/${c.id}/members`, { method: 'POST', body: {} }); onOpen(c.id); } catch (e) { showErrorToast(e.message); setBusy(null); }
+  };
+  return (
+    <Modal title="Browse channels" onClose={onClose}>
+      {!channels ? <div className="py-8 flex justify-center"><Loader2 className="animate-spin text-gray-400" size={18} /></div> : (
+        <div className="divide-y divide-gray-100 border border-gray-200 rounded">
+          {channels.map(c => (
+            <div key={c.id} className="flex items-center gap-3 px-3 py-2.5">
+              <Hash size={16} className="text-gray-400 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-medium text-gray-900">{c.name}</div>
+                <div className="text-[11px] text-gray-500 truncate">{c.members} member{c.members === 1 ? '' : 's'}{c.description ? ` · ${c.description}` : ''}</div>
+              </div>
+              {c.joined
+                ? <button onClick={() => onOpen(c.id)} className="h-8 px-3 text-xs rounded border border-gray-300 hover:bg-gray-50 cursor-pointer">Open</button>
+                : <button onClick={() => join(c)} disabled={busy === c.id} className="h-8 px-3 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer disabled:opacity-60">Join</button>}
+            </div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+// ── Details drawer ───────────────────────────────────────────────────────
+function RoomDetails({ room, me, people, pinned, onClose, onChanged, onJump, onLeft }) {
+  const [tab, setTab] = useState(room.kind === 'dm' ? 'about' : 'members');
+  const [members, setMembers] = useState(null);
+  const [files, setFiles] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [toAdd, setToAdd] = useState([]);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({ name: room.name, description: room.description });
+  const isAdmin = room.role === 'owner' || room.role === 'admin' || me.isAdmin;
+
+  const loadMembers = useCallback(() => { api(`/chat/rooms/${room.id}/members`).then(d => setMembers(d.members)).catch(() => setMembers([])); }, [room.id]);
+  useEffect(() => { setMembers(null); setFiles(null); setTab(room.kind === 'dm' ? 'about' : 'members'); setForm({ name: room.name, description: room.description }); }, [room.id, room.kind, room.name, room.description]);
+  useEffect(() => { if (tab === 'members' && !members) loadMembers(); }, [tab, members, loadMembers]);
+  useEffect(() => { if (tab === 'files' && !files) api(`/chat/rooms/${room.id}/files`).then(d => setFiles(d.files)).catch(() => setFiles([])); }, [tab, files, room.id]);
+
+  const addPeople = async () => {
+    try { await api(`/chat/rooms/${room.id}/members`, { method: 'POST', body: { userIds: toAdd } }); setAdding(false); setToAdd([]); loadMembers(); onChanged(); } catch (e) { showErrorToast(e.message); }
+  };
+  const remove = async (m) => {
+    const ok = await Swal.fire({ title: `Remove ${m.name}?`, showCancelButton: true, confirmButtonText: 'Remove', confirmButtonColor: '#dc2626' });
+    if (!ok.isConfirmed) return;
+    try { await api(`/chat/rooms/${room.id}/members/${m.id}`, { method: 'DELETE' }); loadMembers(); onChanged(); } catch (e) { showErrorToast(e.message); }
+  };
+  const setRole = async (m, role) => {
+    try { await api(`/chat/rooms/${room.id}/role`, { method: 'POST', body: { userId: m.id, role } }); loadMembers(); } catch (e) { showErrorToast(e.message); }
+  };
+  const leave = async () => {
+    const ok = await Swal.fire({ title: `Leave ${roomTitle(room)}?`, showCancelButton: true, confirmButtonText: 'Leave', confirmButtonColor: '#dc2626' });
+    if (!ok.isConfirmed) return;
+    try { await api(`/chat/rooms/${room.id}/members/${me.id}`, { method: 'DELETE' }); onLeft(); } catch (e) { showErrorToast(e.message); }
+  };
+  const saveAbout = async () => {
+    try { await api(`/chat/rooms/${room.id}`, { method: 'PUT', body: form }); setEditing(false); onChanged(); } catch (e) { showErrorToast(e.message); }
+  };
+
+  const tabs = room.kind === 'dm' ? [['about', 'About'], ['pinned', `Pinned${pinned.length ? ` (${pinned.length})` : ''}`], ['files', 'Files']]
+    : [['members', `Members (${room.memberCount})`], ['pinned', `Pinned${pinned.length ? ` (${pinned.length})` : ''}`], ['files', 'Files'], ['about', 'About']];
+
+  return (
+    <aside className="w-[320px] shrink-0 border-l border-gray-200 bg-white flex flex-col">
+      <div className="h-14 px-4 border-b border-gray-200 flex items-center justify-between">
+        <span className="text-[14px] font-semibold text-gray-900">Details</span>
+        <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 text-gray-500 cursor-pointer" aria-label="Close details"><X size={17} /></button>
+      </div>
+      <div className="px-3 pt-2 border-b border-gray-200 flex gap-1 overflow-x-auto">
+        {tabs.map(([k, l]) => (
+          <button key={k} onClick={() => setTab(k)} className={`px-2.5 py-2 text-[12px] font-medium -mb-px border-b-2 whitespace-nowrap cursor-pointer ${tab === k ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>{l}</button>
+        ))}
+      </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        {tab === 'members' && (
+          <div className="space-y-3">
+            {(isAdmin || room.kind === 'channel') && !adding && <button onClick={() => setAdding(true)} className="w-full h-8 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 flex items-center justify-center gap-1.5 cursor-pointer"><UserPlus size={13} /> Add people</button>}
+            {adding && (
+              <div className="space-y-2">
+                <PeoplePicker people={people} selected={toAdd} exclude={(members || []).map(m => m.id)} onToggle={(id) => setToAdd(a => (a.includes(id) ? a.filter(x => x !== id) : [...a, id]))} />
+                <div className="flex gap-2">
+                  <button onClick={() => { setAdding(false); setToAdd([]); }} className="flex-1 h-8 text-xs rounded border border-gray-300 cursor-pointer">Cancel</button>
+                  <button onClick={addPeople} disabled={!toAdd.length} className="flex-1 h-8 text-xs font-medium rounded bg-blue-600 text-white disabled:opacity-50 cursor-pointer">Add {toAdd.length || ''}</button>
+                </div>
+              </div>
+            )}
+            {!members ? <Loader2 className="animate-spin text-gray-400 mx-auto" size={16} /> : members.map(m => (
+              <div key={m.id} className="flex items-center gap-2.5 group">
+                <Avatar name={m.name} id={m.id} src={m.avatar} size="w-8 h-8" online={m.online} />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13px] text-gray-900 truncate">{m.name}{m.id === me.id ? ' (you)' : ''}</div>
+                  <div className="text-[11px] text-gray-500 truncate">{m.role !== 'member' ? <span className="text-blue-700 font-medium capitalize">{m.role} · </span> : ''}{m.title || m.department}</div>
+                </div>
+                {isAdmin && m.id !== me.id && m.role !== 'owner' && (
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+                    <button onClick={() => setRole(m, m.role === 'admin' ? 'member' : 'admin')} className="p-1 rounded hover:bg-gray-100 text-gray-500 cursor-pointer" title={m.role === 'admin' ? 'Remove admin' : 'Make admin'}><Shield size={13} /></button>
+                    <button onClick={() => remove(m)} className="p-1 rounded hover:bg-red-50 text-gray-500 hover:text-red-600 cursor-pointer" title="Remove"><X size={13} /></button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {tab === 'pinned' && (pinned.length === 0 ? <div className="text-xs text-gray-500">No pinned messages. Hover a message and click the pin to keep it here.</div> : (
+          <div className="space-y-2">
+            {pinned.map(p => (
+              <button key={p.id} onClick={() => onJump(p.id)} className="w-full text-left p-2.5 rounded border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                <div className="text-[11px] text-gray-500">{p.sender} · {shortWhen(p.createdAt)}</div>
+                <div className="text-[13px] text-gray-800 line-clamp-3">{p.body || (p.attachments.length ? '📎 Attachment' : '')}</div>
+              </button>
+            ))}
+          </div>
+        ))}
+        {tab === 'files' && (!files ? <Loader2 className="animate-spin text-gray-400 mx-auto" size={16} /> : files.length === 0 ? <div className="text-xs text-gray-500">No files shared yet.</div> : (
+          <div className="space-y-2">
+            {files.map((f, i) => (
+              <a key={i} href={toAbsoluteFileUrl(f.url)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 p-2 rounded border border-gray-200 hover:bg-gray-50">
+                {f.isImage ? <img src={toAbsoluteFileUrl(f.url)} alt={f.name} className="w-10 h-10 rounded object-cover" loading="lazy" /> : <span className="w-10 h-10 rounded bg-blue-50 text-blue-600 flex items-center justify-center"><FileText size={16} /></span>}
+                <span className="min-w-0 flex-1"><span className="block text-[12px] text-gray-900 truncate">{f.name}</span><span className="block text-[11px] text-gray-500">{f.sender} · {shortWhen(f.at)}</span></span>
+              </a>
+            ))}
+          </div>
+        ))}
+        {tab === 'about' && (
+          <div className="space-y-4">
+            {room.kind === 'dm' && room.other ? (
+              <div className="text-center">
+                <div className="flex justify-center"><Avatar name={room.other.name} id={room.other.id} src={room.other.avatar} size="w-16 h-16" text="text-lg" online={room.other.online} /></div>
+                <div className="mt-2 text-[15px] font-semibold text-gray-900">{room.other.name}</div>
+                <div className="text-xs text-gray-500">{room.other.title || room.other.department}</div>
+                <div className="text-xs text-gray-500 mt-1">{room.other.online ? 'Online' : lastSeen(people.find(p => p.id === room.other.id)?.lastActive)}</div>
+                {room.other.email && <a href={`mailto:${room.other.email}`} className="inline-block mt-2 text-xs text-blue-700 hover:underline">{room.other.email}</a>}
+              </div>
+            ) : editing ? (
+              <div className="space-y-2">
+                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full h-9 px-2.5 text-[13px] border border-gray-300 rounded" />
+                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} placeholder="Description" className="w-full p-2.5 text-[13px] border border-gray-300 rounded" />
+                <div className="flex gap-2"><button onClick={() => setEditing(false)} className="flex-1 h-8 text-xs rounded border border-gray-300 cursor-pointer">Cancel</button><button onClick={saveAbout} className="flex-1 h-8 text-xs font-medium rounded bg-blue-600 text-white cursor-pointer">Save</button></div>
+              </div>
+            ) : (
+              <div>
+                <div className="text-[15px] font-semibold text-gray-900">{roomTitle(room)}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{room.kind === 'channel' ? 'Team channel · anyone can join' : 'Private group'}</div>
+                <p className="text-[13px] text-gray-700 mt-2 whitespace-pre-wrap">{room.description || 'No description.'}</p>
+                {isAdmin && <button onClick={() => setEditing(true)} className="mt-2 h-8 px-3 text-xs rounded border border-gray-300 hover:bg-gray-50 flex items-center gap-1.5 cursor-pointer"><Pencil size={12} /> Edit</button>}
+              </div>
+            )}
+            {room.kind !== 'dm' && !(room.kind === 'channel' && room.name === 'general') && (
+              <button onClick={leave} className="w-full h-8 text-xs rounded border border-red-200 text-red-700 hover:bg-red-50 flex items-center justify-center gap-1.5 cursor-pointer"><LogOut size={13} /> Leave {room.kind === 'channel' ? 'channel' : 'group'}</button>
+            )}
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────
+export default function ITChatPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { designation, username } = useParams();
+  const [me, setMe] = useState(null);
+  const [rooms, setRooms] = useState([]);
+  const [people, setPeople] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeId, setActiveId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [pinned, setPinned] = useState([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const [listSearch, setListSearch] = useState('');
+  const [newMenu, setNewMenu] = useState(false);
+  const [modal, setModal] = useState(null); // 'group' | 'channel' | 'browse' | 'dm'
+  const [showDetails, setShowDetails] = useState(false);
+  const [typing, setTyping] = useState({}); // roomId -> { userId: { name, at } }
+  const [draft, setDraft] = useState('');
+  const [mentionIds, setMentionIds] = useState([]);
+  const [pending, setPending] = useState([]); // attachments being uploaded / ready
+  const [replyTo, setReplyTo] = useState(null);
+  const [editing, setEditing] = useState(null); // message
+  const [sending, setSending] = useState(false);
+  const [emojiFor, setEmojiFor] = useState(null); // 'composer' | messageId
+  const [mention, setMention] = useState(null); // { query, start }
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [highlight, setHighlight] = useState(null);
+  const [firstUnreadId, setFirstUnreadId] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [connected, setConnected] = useState(true);
+
+  const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+  const fileRef = useRef(null);
+  const activeRef = useRef(null);
+  const meRef = useRef(null);
+  const roomsRef = useRef([]);
+  const lastTypingSent = useRef(0);
+  const stickToBottom = useRef(true);
+  activeRef.current = activeId;
+  meRef.current = me;
+  roomsRef.current = rooms;
+
+  const active = rooms.find(r => r.id === activeId) || null;
+  const nameList = useMemo(() => people.map(p => p.name).concat(me ? [me.name] : []).sort((a, b) => b.length - a.length), [people, me]);
+
+  const refreshRooms = useCallback(async () => {
+    try { const d = await api('/chat/rooms'); setRooms(d.rooms); } catch (e) { /* keep what we have */ }
+  }, []);
+
+  // Start-up.
+  useEffect(() => {
+    api('/chat/bootstrap').then(d => {
+      setMe(d.me); setRooms(d.rooms); setPeople(d.people);
+      const wanted = Number(new URLSearchParams(location.search).get('room'));
+      const first = d.rooms.find(r => r.id === wanted) || d.rooms[0];
+      if (first) setActiveId(first.id);
+    }).catch(e => showErrorToast(e.message)).finally(() => setLoading(false));
+    if (window.Notification && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Unread total in the tab title.
+  useEffect(() => {
+    const total = rooms.filter(r => !r.muted).reduce((s, r) => s + r.unread, 0);
+    const base = 'Chat';
+    document.title = total ? `(${total}) ${base}` : base;
+    return () => { document.title = 'CRM'; };
+  }, [rooms]);
+
+  const markRead = useCallback((roomId, messageId) => {
+    setRooms(rs => rs.map(r => (r.id === roomId ? { ...r, unread: 0, lastReadId: Math.max(r.lastReadId, messageId || 0) } : r)));
+    api(`/chat/rooms/${roomId}/read`, { method: 'POST', body: { messageId } }).catch(() => {});
+  }, []);
+
+  // Load a conversation.
+  const loadRoom = useCallback(async (roomId, around) => {
+    setLoadingMsgs(true);
+    try {
+      const d = await api(`/chat/rooms/${roomId}/messages${around ? `?around=${around}` : ''}`);
+      if (activeRef.current !== roomId) return;
+      setMessages(d.messages); setPinned(d.pinned); setHasMore(around ? true : d.hasMore);
+      const room = roomsRef.current.find(r => r.id === roomId);
+      const firstUnread = room && room.unread ? d.messages.find(m => m.id > room.lastReadId && m.senderId !== meRef.current?.id) : null;
+      setFirstUnreadId(firstUnread ? firstUnread.id : null);
+      stickToBottom.current = !around;
+      if (around) { setHighlight(around); setTimeout(() => setHighlight(null), 2500); }
+      const lastId = d.messages.length ? d.messages[d.messages.length - 1].id : 0;
+      if (lastId) markRead(roomId, lastId);
+    } catch (e) { showErrorToast(e.message); } finally { setLoadingMsgs(false); }
+  }, [markRead]);
+
+  useEffect(() => {
+    if (!activeId) return;
+    setMessages([]); setReplyTo(null); setEditing(null); setDraft(''); setMentionIds([]); setPending([]); setSearchOpen(false); setSearchResults(null);
+    loadRoom(activeId);
+    const url = new URL(window.location.href); url.searchParams.set('room', activeId); window.history.replaceState(null, '', url);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [activeId, loadRoom]);
+
+  // Keep the view at the bottom when new messages arrive (unless reading older ones).
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (highlight) {
+      const target = el.querySelector(`[data-mid="${highlight}"]`);
+      if (target) target.scrollIntoView({ block: 'center' });
+      return;
+    }
+    if (stickToBottom.current) {
+      const marker = firstUnreadId ? el.querySelector('[data-unread-marker]') : null;
+      if (marker && !el.dataset.scrolledOnce) { marker.scrollIntoView({ block: 'center' }); el.dataset.scrolledOnce = '1'; } else el.scrollTop = el.scrollHeight;
+    }
+  }, [messages, highlight, firstUnreadId]);
+  useEffect(() => { if (scrollRef.current) delete scrollRef.current.dataset.scrolledOnce; }, [activeId]);
+
+  const onScroll = async () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (el.scrollTop < 60 && hasMore && !loadingMsgs && messages.length) {
+      setLoadingMsgs(true);
+      const prevHeight = el.scrollHeight;
+      try {
+        const d = await api(`/chat/rooms/${activeId}/messages?before=${messages[0].id}`);
+        setMessages(ms => [...d.messages.filter(m => !ms.some(x => x.id === m.id)), ...ms]);
+        setHasMore(d.hasMore);
+        requestAnimationFrame(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight - prevHeight; });
+      } catch (e) { /* ignore */ } finally { setLoadingMsgs(false); }
+    }
+  };
+
+  // Live updates.
+  useEffect(() => {
+    if (!me) return undefined;
+    const es = new EventSource(`${API_BASE_URL}/chat/stream`, { withCredentials: true });
+    es.addEventListener('hello', () => setConnected(true));
+    es.onerror = () => setConnected(false);
+    es.onopen = () => setConnected(true);
+    es.addEventListener('message', (e) => {
+      const msg = JSON.parse(e.data);
+      const mine = msg.senderId === meRef.current?.id;
+      const room = roomsRef.current.find(r => r.id === msg.roomId);
+      if (!room) { refreshRooms(); return; }
+      const visible = activeRef.current === msg.roomId && document.visibilityState === 'visible';
+      if (activeRef.current === msg.roomId) {
+        setMessages(ms => (ms.some(m => m.id === msg.id) ? ms : [...ms, msg]));
+        if (visible && !mine) markRead(msg.roomId, msg.id);
+      }
+      setTyping(t => { const r = { ...(t[msg.roomId] || {}) }; delete r[msg.senderId]; return { ...t, [msg.roomId]: r }; });
+      setRooms(rs => rs.map(r => (r.id === msg.roomId ? {
+        ...r, lastAt: msg.createdAt, unread: mine || visible ? r.unread : r.unread + (msg.kind === 'system' ? 0 : 1),
+        last: { id: msg.id, sender: mine ? 'You' : msg.sender, text: msg.body || (msg.attachments.length ? '📎 Attachment' : ''), at: msg.createdAt, kind: msg.kind }
+      } : r)).sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt)));
+      if (!mine && msg.kind !== 'system' && !room.muted && (!visible)) {
+        const mentioned = msg.mentions.includes(meRef.current?.id) || /@(everyone|here)\b/i.test(msg.body);
+        if (room.kind === 'dm' || mentioned || room.kind === 'group') {
+          try {
+            if (window.Notification && Notification.permission === 'granted') {
+              const n = new Notification(room.kind === 'dm' ? msg.sender : `${msg.sender} in ${roomTitle(room)}`, { body: msg.body || 'Sent an attachment', tag: `chat-${msg.roomId}` });
+              n.onclick = () => { window.focus(); setActiveId(msg.roomId); n.close(); };
+            }
+          } catch (err) { /* notifications unavailable */ }
+        }
+      }
+    });
+    es.addEventListener('message:update', (e) => {
+      const msg = JSON.parse(e.data);
+      setMessages(ms => ms.map(m => (m.id === msg.id ? msg : m)));
+      setPinned(ps => {
+        if (activeRef.current !== msg.roomId) return ps;
+        const rest = ps.filter(p => p.id !== msg.id);
+        return msg.pinnedAt && !msg.deletedAt ? [msg, ...rest] : rest;
+      });
+    });
+    es.addEventListener('read', (e) => {
+      const d = JSON.parse(e.data);
+      if (d.userId === meRef.current?.id) return;
+      setRooms(rs => rs.map(r => (r.id === d.roomId && r.kind === 'dm' ? { ...r, otherReadId: Math.max(r.otherReadId || 0, d.messageId) } : r)));
+    });
+    es.addEventListener('typing', (e) => {
+      const d = JSON.parse(e.data);
+      setTyping(t => ({ ...t, [d.roomId]: { ...(t[d.roomId] || {}), [d.userId]: { name: d.name, at: Date.now() } } }));
+    });
+    es.addEventListener('presence', (e) => {
+      const d = JSON.parse(e.data);
+      setPeople(ps => ps.map(p => (p.id === d.userId ? { ...p, online: d.online, lastActive: d.lastActive || p.lastActive } : p)));
+      setRooms(rs => rs.map(r => (r.other?.id === d.userId ? { ...r, other: { ...r.other, online: d.online } } : r)));
+    });
+    es.addEventListener('rooms', () => refreshRooms());
+    es.addEventListener('notify', () => window.dispatchEvent(new Event('crm-refresh-notifications')));
+    return () => es.close();
+  }, [me, markRead, refreshRooms]);
+
+  // Typing indicators fade after 5 s.
+  useEffect(() => {
+    const t = setInterval(() => setTyping(cur => {
+      let changed = false; const next = {};
+      Object.entries(cur).forEach(([rid, users]) => {
+        const keep = Object.fromEntries(Object.entries(users).filter(([, v]) => Date.now() - v.at < 5000));
+        if (Object.keys(keep).length !== Object.keys(users).length) changed = true;
+        next[rid] = keep;
+      });
+      return changed ? next : cur;
+    }), 1500);
+    return () => clearInterval(t);
+  }, []);
+
+  // Mark read when coming back to the tab.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === 'visible' && activeRef.current) {
+        const r = roomsRef.current.find(x => x.id === activeRef.current);
+        if (r && r.unread) markRead(r.id, r.last?.id);
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [markRead]);
+
+  // ── Composer ───────────────────────────────────────────────────────────
+  const roomMembersForMention = useMemo(() => {
+    if (!active) return [];
+    if (active.kind === 'dm') return active.other ? [people.find(p => p.id === active.other.id) || active.other] : [];
+    return people; // filtered to members on the server
+  }, [active, people]);
+
+  const mentionOptions = useMemo(() => {
+    if (!mention) return [];
+    const term = mention.query.toLowerCase();
+    const opts = roomMembersForMention.filter(p => p.id !== me?.id && p.name.toLowerCase().includes(term)).slice(0, 7).map(p => ({ id: p.id, name: p.name, sub: p.title || p.department }));
+    if (active && active.kind !== 'dm') ['everyone', 'here'].filter(k => k.startsWith(term)).forEach(k => opts.push({ id: k, name: k, sub: k === 'everyone' ? 'Notify everyone in this conversation' : 'Notify everyone here' }));
+    return opts;
+  }, [mention, roomMembersForMention, me, active]);
+
+  const onDraftChange = (e) => {
+    const val = e.target.value;
+    setDraft(val);
+    const caret = e.target.selectionStart;
+    const before = val.slice(0, caret);
+    const m = before.match(/(^|\s)@([\w.]*(?: [\w.]*)?)$/);
+    if (m && m[2].length <= 30) { setMention({ query: m[2], start: caret - m[2].length - 1 }); setMentionIndex(0); } else setMention(null);
+    if (activeId && val && Date.now() - lastTypingSent.current > 3000) {
+      lastTypingSent.current = Date.now();
+      api(`/chat/rooms/${activeId}/typing`, { method: 'POST', body: {} }).catch(() => {});
+    }
+  };
+
+  const pickMention = (opt) => {
+    const el = inputRef.current;
+    const caret = el ? el.selectionStart : draft.length;
+    const insert = `@${opt.name} `;
+    const next = draft.slice(0, mention.start) + insert + draft.slice(caret);
+    setDraft(next);
+    if (typeof opt.id === 'number') setMentionIds(ids => [...new Set([...ids, opt.id])]);
+    setMention(null);
+    requestAnimationFrame(() => { if (el) { el.focus(); const pos = mention.start + insert.length; el.setSelectionRange(pos, pos); } });
+  };
+
+  const insertText = (t) => {
+    const el = inputRef.current;
+    const caret = el ? el.selectionStart : draft.length;
+    setDraft(d => d.slice(0, caret) + t + d.slice(caret));
+    requestAnimationFrame(() => { if (el) { el.focus(); el.setSelectionRange(caret + t.length, caret + t.length); } });
+  };
+
+  const addFiles = async (list) => {
+    for (const file of Array.from(list || []).slice(0, 10)) {
+      const key = `${Date.now()}-${Math.random()}`;
+      const isImage = String(file.type || '').startsWith('image/');
+      setPending(p => [...p, { key, name: file.name || 'screenshot.png', isImage, preview: isImage ? URL.createObjectURL(file) : null, uploading: true }]);
+      try {
+        const saved = await uploadDescriptionFile(file);
+        setPending(p => p.map(x => (x.key === key ? { ...x, uploading: false, url: saved.filePath || saved.url, size: saved.sizeBytes, mime: saved.mimeType, isImage: saved.isImage, name: saved.name } : x)));
+      } catch (e) {
+        showErrorToast(e.message);
+        setPending(p => p.filter(x => x.key !== key));
+      }
+    }
+  };
+
+  const send = async () => {
+    if (!active || sending) return;
+    const body = draft.trim();
+    if (editing) {
+      if (!body) return;
+      setSending(true);
+      try { await api(`/chat/messages/${editing.id}`, { method: 'PUT', body: { body } }); setEditing(null); setDraft(''); } catch (e) { showErrorToast(e.message); } finally { setSending(false); }
+      return;
+    }
+    if (pending.some(p => p.uploading)) { showErrorToast('Wait for the upload to finish'); return; }
+    const attachments = pending.filter(p => p.url).map(({ name, url, size, mime, isImage }) => ({ name, url, size, mime, isImage }));
+    if (!body && !attachments.length) return;
+    // Keep only mentions whose name is still in the text.
+    const ids = mentionIds.filter(id => { const p = people.find(x => x.id === id); return p && body.includes(`@${p.name}`); });
+    setSending(true);
+    stickToBottom.current = true;
+    try {
+      const d = await api(`/chat/rooms/${active.id}/messages`, { method: 'POST', body: { body, attachments, replyToId: replyTo?.id || null, mentions: ids } });
+      setMessages(ms => (ms.some(m => m.id === d.message.id) ? ms : [...ms, d.message]));
+      setDraft(''); setPending([]); setReplyTo(null); setMentionIds([]); setFirstUnreadId(null);
+    } catch (e) { showErrorToast(e.message); } finally { setSending(false); inputRef.current?.focus(); }
+  };
+
+  const onKeyDown = (e) => {
+    if (mention && mentionOptions.length) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setMentionIndex(i => (i + 1) % mentionOptions.length); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setMentionIndex(i => (i - 1 + mentionOptions.length) % mentionOptions.length); return; }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pickMention(mentionOptions[mentionIndex]); return; }
+      if (e.key === 'Escape') { setMention(null); return; }
+    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); return; }
+    if (e.key === 'Escape') { if (editing) { setEditing(null); setDraft(''); } else if (replyTo) setReplyTo(null); return; }
+    // Up arrow in an empty box edits your last message.
+    if (e.key === 'ArrowUp' && !draft) {
+      const mine = [...messages].reverse().find(m => m.senderId === me?.id && !m.deletedAt && m.kind === 'text' && m.body);
+      if (mine) { e.preventDefault(); startEdit(mine); }
+    }
+  };
+
+  const startEdit = (m) => { setEditing(m); setReplyTo(null); setDraft(m.body); requestAnimationFrame(() => inputRef.current?.focus()); };
+
+  // ── Message actions ────────────────────────────────────────────────────
+  const react = async (m, emoji) => {
+    setEmojiFor(null);
+    try { const d = await api(`/chat/messages/${m.id}/react`, { method: 'POST', body: { emoji } }); setMessages(ms => ms.map(x => (x.id === m.id ? d.message : x))); } catch (e) { showErrorToast(e.message); }
+  };
+  const remove = async (m) => {
+    const ok = await Swal.fire({ title: 'Delete this message?', text: 'It will be removed for everyone.', showCancelButton: true, confirmButtonText: 'Delete', confirmButtonColor: '#dc2626' });
+    if (!ok.isConfirmed) return;
+    try { const d = await api(`/chat/messages/${m.id}`, { method: 'DELETE' }); setMessages(ms => ms.map(x => (x.id === m.id ? d.message : x))); } catch (e) { showErrorToast(e.message); }
+  };
+  const pin = async (m) => {
+    try { const d = await api(`/chat/messages/${m.id}/pin`, { method: 'POST' }); setMessages(ms => ms.map(x => (x.id === m.id ? d.message : x))); showSuccessToast(d.message.pinnedAt ? 'Pinned' : 'Unpinned'); } catch (e) { showErrorToast(e.message); }
+  };
+  const jumpTo = (id) => {
+    if (messages.some(m => m.id === id)) { setHighlight(id); setTimeout(() => setHighlight(null), 2500); } else loadRoom(activeId, id);
+  };
+  const openTicket = (key) => navigate(`/${['it', 'marketing'].includes(window.location.pathname.split('/')[1]) ? window.location.pathname.split('/')[1] : 'it'}/${designation || 'user'}/${username || 'me'}/kanban?ticketKey=${encodeURIComponent(key)}`);
+
+  const setPrefs = async (patch) => {
+    if (!active) return;
+    setRooms(rs => rs.map(r => (r.id === active.id ? { ...r, ...patch } : r)));
+    try { await api(`/chat/rooms/${active.id}/prefs`, { method: 'POST', body: patch }); } catch (e) { showErrorToast(e.message); refreshRooms(); }
+  };
+
+  const openDm = async (userId) => {
+    try { const d = await api('/chat/dm', { method: 'POST', body: { userId } }); setRooms(d.rooms); setActiveId(d.roomId); setModal(null); setListSearch(''); } catch (e) { showErrorToast(e.message); }
+  };
+
+  const runSearch = useCallback(async (term) => {
+    if (term.trim().length < 2) { setSearchResults(null); return; }
+    try { const d = await api(`/chat/search?q=${encodeURIComponent(term.trim())}${activeId ? `&roomId=${activeId}` : ''}`); setSearchResults(d.results); } catch (e) { showErrorToast(e.message); }
+  }, [activeId]);
+  useEffect(() => { if (!searchOpen) return undefined; const t = setTimeout(() => runSearch(searchTerm), 300); return () => clearTimeout(t); }, [searchTerm, searchOpen, runSearch]);
+
+  // ── Sidebar lists ──────────────────────────────────────────────────────
+  const term = listSearch.trim().toLowerCase();
+  const matchRoom = (r) => !term || roomTitle(r).toLowerCase().includes(term) || (r.other?.email || '').toLowerCase().includes(term);
+  const starred = rooms.filter(r => r.starred && matchRoom(r));
+  const channels = rooms.filter(r => !r.starred && r.kind === 'channel' && matchRoom(r));
+  const groups = rooms.filter(r => !r.starred && r.kind === 'group' && matchRoom(r));
+  const dms = rooms.filter(r => !r.starred && r.kind === 'dm' && matchRoom(r));
+  const dmIds = new Set(rooms.filter(r => r.kind === 'dm').map(r => r.other?.id));
+  const newPeople = term ? people.filter(p => p.id !== me?.id && !dmIds.has(p.id) && `${p.name} ${p.email} ${p.department}`.toLowerCase().includes(term)).slice(0, 8) : [];
+
+  const RoomRow = ({ r }) => (
+    <button onClick={() => setActiveId(r.id)} className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left cursor-pointer ${activeId === r.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+      <RoomIcon room={r} />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1">
+          <span className={`truncate text-[13px] ${r.unread ? 'font-semibold text-gray-900' : 'text-gray-800'}`}>{roomTitle(r)}</span>
+          {r.muted && <BellOff size={11} className="text-gray-400 shrink-0" />}
+          <span className="ml-auto text-[10px] text-gray-400 shrink-0">{r.last ? shortWhen(r.last.at) : ''}</span>
+        </span>
+        <span className="flex items-center gap-1">
+          <span className={`truncate text-[12px] ${r.unread ? 'text-gray-800' : 'text-gray-500'}`}>
+            {typing[r.id] && Object.keys(typing[r.id]).length ? <em className="text-blue-600">typing…</em>
+              : r.last ? `${r.kind !== 'dm' && r.last.kind !== 'system' && r.last.sender ? `${r.last.sender}: ` : r.last.sender === 'You' ? 'You: ' : ''}${r.last.text}` : 'No messages yet'}
+          </span>
+          {r.unread > 0 && <span className={`ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold flex items-center justify-center ${r.muted ? 'bg-gray-300 text-gray-700' : 'bg-blue-600 text-white'}`}>{r.unread > 99 ? '99+' : r.unread}</span>}
+        </span>
+      </span>
+    </button>
+  );
+  const Section = ({ title, list, action }) => (list.length > 0 || action ? (
+    <div className="mb-3">
+      <div className="px-2.5 py-1 flex items-center justify-between text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+        <span>{title}</span>{action}
+      </div>
+      {list.map(r => <RoomRow key={r.id} r={r} />)}
+    </div>
+  ) : null);
+
+  const typingNames = active ? Object.values(typing[active.id] || {}).map(v => v.name) : [];
+
+  // Group consecutive messages from the same person within 5 minutes.
+  const rendered = useMemo(() => {
+    const out = [];
+    let prev = null;
+    messages.forEach(m => {
+      if (!prev || dayKey(prev.createdAt) !== dayKey(m.createdAt)) out.push({ type: 'day', key: `d-${m.id}`, label: dayLabel(m.createdAt) });
+      if (firstUnreadId && m.id === firstUnreadId) out.push({ type: 'unread', key: 'unread' });
+      const compact = prev && prev.kind !== 'system' && m.kind !== 'system' && prev.senderId === m.senderId && dayKey(prev.createdAt) === dayKey(m.createdAt)
+        && new Date(m.createdAt) - new Date(prev.createdAt) < 5 * 60000 && !m.replyTo && m.id !== firstUnreadId;
+      out.push({ type: 'msg', key: m.id, m, compact });
+      prev = m;
+    });
+    return out;
+  }, [messages, firstUnreadId]);
+
+  const myLastId = useMemo(() => { const mine = [...messages].reverse().find(m => m.senderId === me?.id && m.kind === 'text'); return mine?.id; }, [messages, me]);
+  const peopleById = useMemo(() => new Map(people.map(p => [p.id, p.name])), [people]);
+
+  if (loading) return <div className="h-[calc(100vh-64px)] flex items-center justify-center text-sm text-gray-500 gap-2"><Loader2 size={16} className="animate-spin" /> Loading chat…</div>;
+
+  return (
+    <div className="flex h-[calc(100vh-64px)] bg-white text-gray-900 overflow-hidden" onClick={() => { if (newMenu) setNewMenu(false); }}>
+      {/* Conversations */}
+      <aside className="w-[300px] shrink-0 border-r border-gray-200 flex flex-col bg-[#fbfcfd]">
+        <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200">
+          <span className="text-[16px] font-semibold flex items-center gap-2"><MessageSquare size={17} className="text-blue-600" /> Chat</span>
+          <div className="relative">
+            <button onClick={(e) => { e.stopPropagation(); setNewMenu(m => !m); }} className="h-8 px-2.5 rounded-lg bg-blue-600 text-white text-[12px] font-medium hover:bg-blue-700 flex items-center gap-1 cursor-pointer"><Plus size={14} /> New</button>
+            {newMenu && (
+              <div className="absolute right-0 top-10 z-30 w-52 bg-white border border-gray-200 rounded-lg shadow-xl py-1" onClick={e => e.stopPropagation()}>
+                {[['dm', MessageSquare, 'New message'], ['group', Users, 'New group'], ['channel', Hash, 'New channel'], ['browse', Compass, 'Browse channels']].map(([k, Icon, l]) => (
+                  <button key={k} onClick={() => { setModal(k); setNewMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-50 cursor-pointer"><Icon size={14} /> {l}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="p-3">
+          <div className="relative">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input value={listSearch} onChange={e => setListSearch(e.target.value)} placeholder="Search conversations or people" className="w-full h-9 pl-8 pr-7 text-[13px] bg-white border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
+            {listSearch && <button onClick={() => setListSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer" aria-label="Clear"><X size={13} /></button>}
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-1.5 pb-3">
+          <Section title="Starred" list={starred} />
+          <Section title="Channels" list={channels} action={<button onClick={() => setModal('browse')} className="text-gray-400 hover:text-blue-600 cursor-pointer" title="Browse channels"><Compass size={13} /></button>} />
+          <Section title="Groups" list={groups} action={<button onClick={() => setModal('group')} className="text-gray-400 hover:text-blue-600 cursor-pointer" title="New group"><Plus size={13} /></button>} />
+          <Section title="Direct messages" list={dms} action={<button onClick={() => setModal('dm')} className="text-gray-400 hover:text-blue-600 cursor-pointer" title="New message"><Plus size={13} /></button>} />
+          {newPeople.length > 0 && (
+            <div className="mb-3">
+              <div className="px-2.5 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Start a conversation</div>
+              {newPeople.map(p => (
+                <button key={p.id} onClick={() => openDm(p.id)} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-gray-50 text-left cursor-pointer">
+                  <Avatar name={p.name} id={p.id} src={p.avatar} online={p.online} />
+                  <span className="min-w-0"><span className="block text-[13px] text-gray-800 truncate">{p.name}</span><span className="block text-[11px] text-gray-500 truncate">{p.title || p.department}</span></span>
+                </button>
+              ))}
+            </div>
+          )}
+          {term && !starred.length && !channels.length && !groups.length && !dms.length && !newPeople.length && <div className="px-3 py-6 text-center text-xs text-gray-500">Nothing found.</div>}
+        </div>
+        {!connected && <div className="px-3 py-1.5 text-[11px] text-amber-800 bg-amber-50 border-t border-amber-200">Reconnecting… new messages will appear when back online.</div>}
+      </aside>
+
+      {/* Conversation */}
+      <section className="flex-1 min-w-0 flex flex-col" onDragOver={e => { if (active && e.dataTransfer?.types?.includes('Files')) { e.preventDefault(); setDragOver(true); } }}
+        onDragLeave={e => { if (e.currentTarget === e.target) setDragOver(false); }} onDrop={e => { if (!active) return; e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}>
+        {!active ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#f8fafc]">
+            <MessageSquare size={40} className="text-gray-300 mb-3" />
+            <div className="text-[15px] font-semibold text-gray-800">Pick a conversation</div>
+            <p className="text-sm text-gray-500 mt-1">or start one with a teammate.</p>
+            <button onClick={() => setModal('dm')} className="mt-4 h-9 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 cursor-pointer">New message</button>
+          </div>
+        ) : (
+          <>
+            <header className="h-14 px-4 border-b border-gray-200 flex items-center gap-3 bg-white">
+              <RoomIcon room={active} size="w-9 h-9" />
+              <button onClick={() => setShowDetails(s => !s)} className="min-w-0 text-left cursor-pointer">
+                <div className="text-[14px] font-semibold text-gray-900 truncate flex items-center gap-1.5">
+                  {roomTitle(active)} {active.kind === 'group' && <Lock size={12} className="text-gray-400" />}
+                </div>
+                <div className="text-[11px] text-gray-500 truncate">
+                  {typingNames.length ? <span className="text-blue-600">{typingNames.join(', ')} {typingNames.length > 1 ? 'are' : 'is'} typing…</span>
+                    : active.kind === 'dm' ? (active.other?.online ? <span className="text-emerald-600">Online</span> : lastSeen(people.find(p => p.id === active.other?.id)?.lastActive))
+                      : `${active.memberCount} member${active.memberCount === 1 ? '' : 's'}${active.description ? ` · ${active.description}` : ''}`}
+                </div>
+              </button>
+              <div className="ml-auto flex items-center gap-0.5">
+                <button onClick={() => { setSearchOpen(s => !s); setSearchTerm(''); setSearchResults(null); }} className={`p-2 rounded-lg cursor-pointer ${searchOpen ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`} title="Search in this conversation"><Search size={16} /></button>
+                <button onClick={() => setPrefs({ starred: !active.starred })} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title={active.starred ? 'Unstar' : 'Star'}><Star size={16} className={active.starred ? 'fill-amber-400 text-amber-500' : ''} /></button>
+                <button onClick={() => setPrefs({ muted: !active.muted })} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title={active.muted ? 'Unmute' : 'Mute notifications'}>{active.muted ? <BellOff size={16} /> : <Bell size={16} />}</button>
+                <button onClick={() => setShowDetails(s => !s)} className={`p-2 rounded-lg cursor-pointer ${showDetails ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`} title="Details, members, pinned and files"><Info size={16} /></button>
+              </div>
+            </header>
+
+            {searchOpen && (
+              <div className="border-b border-gray-200 bg-gray-50 px-4 py-2">
+                <div className="relative">
+                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input autoFocus value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder={`Search in ${roomTitle(active)}`} className="w-full h-8 pl-8 pr-2 text-[13px] border border-gray-300 rounded bg-white outline-none focus:border-blue-500" />
+                </div>
+                {searchResults && (
+                  <div className="mt-2 max-h-56 overflow-y-auto bg-white border border-gray-200 rounded divide-y divide-gray-100">
+                    {searchResults.length === 0 ? <div className="p-3 text-xs text-gray-500">No messages found.</div> : searchResults.map(r => (
+                      <button key={r.id} onClick={() => { setSearchOpen(false); jumpTo(r.id); }} className="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                        <div className="text-[11px] text-gray-500">{r.sender} · {shortWhen(r.createdAt)}</div>
+                        <div className="text-[13px] text-gray-800 line-clamp-2">{r.body || r.attachments.map(a => a.name).join(', ')}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {pinned.length > 0 && !searchOpen && (
+              <button onClick={() => jumpTo(pinned[0].id)} className="px-4 py-1.5 border-b border-gray-200 bg-amber-50/60 text-left flex items-center gap-2 text-[12px] text-gray-700 hover:bg-amber-50 cursor-pointer">
+                <Pin size={12} className="text-amber-600 shrink-0" /><span className="truncate"><strong>{pinned[0].sender}:</strong> {pinned[0].body || '📎 Attachment'}</span>
+                {pinned.length > 1 && <span className="ml-auto shrink-0 text-[11px] text-gray-500">+{pinned.length - 1} more</span>}
+              </button>
+            )}
+
+            <div ref={scrollRef} onScroll={onScroll} className="relative flex-1 overflow-y-auto bg-[#f8fafc] px-4 py-3">
+              {dragOver && <div className="absolute inset-2 z-20 rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/80 flex items-center justify-center text-blue-700 font-medium pointer-events-none">Drop files to share</div>}
+              {loadingMsgs && <div className="flex justify-center py-2"><Loader2 size={16} className="animate-spin text-gray-400" /></div>}
+              {!loadingMsgs && !hasMore && messages.length > 0 && (
+                <div className="text-center py-6">
+                  <div className="inline-flex"><RoomIcon room={active} size="w-12 h-12" /></div>
+                  <div className="mt-2 text-[14px] font-semibold text-gray-800">{active.kind === 'dm' ? `This is the start of your conversation with ${active.name}` : `Welcome to ${roomTitle(active)}`}</div>
+                </div>
+              )}
+              {!loadingMsgs && messages.length === 0 && (
+                <div className="h-full flex flex-col items-center justify-center text-center text-gray-500">
+                  <RoomIcon room={active} size="w-14 h-14" />
+                  <div className="mt-3 text-[14px] font-semibold text-gray-800">{active.kind === 'dm' ? `Say hello to ${active.name}` : `Start the conversation in ${roomTitle(active)}`}</div>
+                </div>
+              )}
+              {rendered.map(item => {
+                if (item.type === 'day') return <div key={item.key} className="flex items-center gap-3 my-3"><div className="flex-1 h-px bg-gray-200" /><span className="text-[11px] font-medium text-gray-500 px-2 py-0.5 rounded-full bg-white border border-gray-200">{item.label}</span><div className="flex-1 h-px bg-gray-200" /></div>;
+                if (item.type === 'unread') return <div key="unread" data-unread-marker className="flex items-center gap-3 my-2"><div className="flex-1 h-px bg-red-300" /><span className="text-[11px] font-semibold text-red-600">New messages</span><div className="flex-1 h-px bg-red-300" /></div>;
+                const { m, compact } = item;
+                if (m.kind === 'system') return <div key={m.id} data-mid={m.id} className="text-center text-[11px] text-gray-500 my-2">{m.body} · {timeOf(m.createdAt)}</div>;
+                const mine = m.senderId === me?.id;
+                const isAdmin = active.role === 'owner' || active.role === 'admin' || me?.isAdmin;
+                const seen = active.kind === 'dm' && mine && m.id === myLastId && (active.otherReadId || 0) >= m.id;
+                return (
+                  <div key={m.id} data-mid={m.id} className={`group relative flex gap-2.5 px-2 -mx-2 rounded-lg ${compact ? 'mt-0.5' : 'mt-3'} ${highlight === m.id ? 'bg-amber-100/70' : 'hover:bg-white'}`}>
+                    <div className="w-9 shrink-0">
+                      {compact ? <span className="hidden group-hover:block text-[10px] text-gray-400 pt-1.5 text-right">{timeOf(m.createdAt)}</span>
+                        : <Avatar name={m.sender} id={m.senderId} src={people.find(p => p.id === m.senderId)?.avatar} size="w-9 h-9" text="text-[12px]" />}
+                    </div>
+                    <div className="min-w-0 flex-1 py-0.5">
+                      {!compact && (
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-[13px] font-semibold text-gray-900">{mine ? 'You' : m.sender}</span>
+                          <span className="text-[11px] text-gray-400">{timeOf(m.createdAt)}</span>
+                          {m.pinnedAt && <span className="text-[10px] text-amber-700 flex items-center gap-0.5"><Pin size={10} /> Pinned</span>}
+                        </div>
+                      )}
+                      {m.replyTo && (
+                        <button onClick={() => jumpTo(m.replyTo.id)} className="mt-0.5 mb-1 max-w-full flex items-start gap-1.5 pl-2 border-l-2 border-blue-300 text-left cursor-pointer">
+                          <Reply size={11} className="text-blue-500 mt-0.5 shrink-0" />
+                          <span className="text-[12px] text-gray-500 truncate"><strong className="text-gray-700">{m.replyTo.sender}</strong> {m.replyTo.body || (m.replyTo.hasAttachment ? '📎 Attachment' : '')}</span>
+                        </button>
+                      )}
+                      {m.deletedAt ? <div className="text-[13px] italic text-gray-400">This message was deleted</div> : (
+                        <>
+                          {m.body && <RichText text={m.body} names={nameList} meName={me?.name} onTicket={openTicket} />}
+                          <Attachments items={m.attachments} />
+                          {m.editedAt && <span className="text-[10px] text-gray-400">(edited)</span>}
+                        </>
+                      )}
+                      {Object.keys(m.reactions || {}).length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {Object.entries(m.reactions).map(([emoji, ids]) => (
+                            <button key={emoji} onClick={() => react(m, emoji)} title={ids.map(id => (id === me?.id ? 'You' : peopleById.get(id) || 'Someone')).join(', ')}
+                              className={`h-6 px-1.5 rounded-full border text-[12px] flex items-center gap-1 cursor-pointer ${ids.includes(me?.id) ? 'bg-blue-50 border-blue-300 text-blue-800' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
+                              <span>{emoji}</span><span className="text-[11px] font-medium">{ids.length}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {seen && <div className="text-[10px] text-blue-600 mt-0.5 flex items-center gap-0.5"><CheckCheck size={12} /> Seen</div>}
+                      {active.kind === 'dm' && mine && m.id === myLastId && !seen && <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-0.5"><Check size={12} /> Sent</div>}
+                    </div>
+                    {!m.deletedAt && (
+                      <div className={`absolute -top-3 right-2 z-10 ${emojiFor === m.id ? 'flex' : 'hidden group-hover:flex'} items-center gap-0.5 bg-white border border-gray-200 rounded-lg shadow-sm px-1 py-0.5`}>
+                        {QUICK_REACTIONS.slice(0, 4).map(e => <button key={e} onClick={() => react(m, e)} className="w-7 h-7 rounded hover:bg-gray-100 text-[15px] cursor-pointer" title={`React ${e}`}>{e}</button>)}
+                        <div className="relative">
+                          <button onClick={() => setEmojiFor(emojiFor === m.id ? null : m.id)} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title="More reactions"><Smile size={15} /></button>
+                          {emojiFor === m.id && (
+                            <div className="absolute right-0 top-8 z-30 w-64 p-2 bg-white border border-gray-200 rounded-lg shadow-xl grid grid-cols-8 gap-0.5">
+                              {EMOJIS.map(e => <button key={e} onClick={() => react(m, e)} className="w-7 h-7 rounded hover:bg-gray-100 text-[16px] cursor-pointer">{e}</button>)}
+                            </div>
+                          )}
+                        </div>
+                        <button onClick={() => { setReplyTo(m); setEditing(null); inputRef.current?.focus(); }} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title="Reply"><Reply size={15} /></button>
+                        <button onClick={() => pin(m)} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title={m.pinnedAt ? 'Unpin' : 'Pin'}><Pin size={14} className={m.pinnedAt ? 'fill-amber-400 text-amber-600' : ''} /></button>
+                        {m.body && <button onClick={() => { navigator.clipboard.writeText(m.body).then(() => showSuccessToast('Copied')).catch(() => {}); }} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title="Copy text"><Copy size={14} /></button>}
+                        {mine && m.kind === 'text' && <button onClick={() => startEdit(m)} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title="Edit"><Pencil size={14} /></button>}
+                        {(mine || isAdmin) && <button onClick={() => remove(m)} className="w-7 h-7 rounded hover:bg-red-50 text-gray-500 hover:text-red-600 flex items-center justify-center cursor-pointer" title="Delete"><Trash2 size={14} /></button>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Composer */}
+            <div className="px-4 pb-4 pt-2 bg-[#f8fafc]">
+              <div className="relative bg-white border border-gray-300 rounded-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+                {(replyTo || editing) && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 border-b border-gray-200 bg-gray-50 rounded-t-xl text-[12px]">
+                    {editing ? <Pencil size={12} className="text-blue-600" /> : <Reply size={12} className="text-blue-600" />}
+                    <span className="truncate text-gray-600">{editing ? 'Editing your message' : <>Replying to <strong>{replyTo.senderId === me?.id ? 'yourself' : replyTo.sender}</strong>: {replyTo.body || '📎 Attachment'}</>}</span>
+                    <button onClick={() => { if (editing) setDraft(''); setEditing(null); setReplyTo(null); }} className="ml-auto text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Cancel"><X size={13} /></button>
+                  </div>
+                )}
+                {pending.length > 0 && (
+                  <div className="flex flex-wrap gap-2 px-3 pt-2">
+                    {pending.map(p => (
+                      <div key={p.key} className="relative">
+                        {p.isImage && (p.preview || p.url) ? <img src={p.preview || toAbsoluteFileUrl(p.url)} alt={p.name} className="h-16 w-16 rounded-lg object-cover border border-gray-200" />
+                          : <div className="h-16 w-36 rounded-lg border border-gray-200 bg-gray-50 px-2 flex items-center gap-1.5 text-[11px] text-gray-700"><FileText size={14} className="shrink-0 text-blue-600" /><span className="truncate">{p.name}</span></div>}
+                        {p.uploading && <div className="absolute inset-0 rounded-lg bg-white/70 flex items-center justify-center"><Loader2 size={14} className="animate-spin text-gray-500" /></div>}
+                        <button onClick={() => setPending(ps => ps.filter(x => x.key !== p.key))} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800 text-white flex items-center justify-center cursor-pointer" aria-label="Remove"><X size={11} /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {mention && mentionOptions.length > 0 && (
+                  <div className="absolute bottom-full left-2 mb-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-30">
+                    {mentionOptions.map((o, i) => (
+                      <button key={o.id} onMouseDown={e => { e.preventDefault(); pickMention(o); }} className={`w-full flex items-center gap-2 px-3 py-1.5 text-left cursor-pointer ${i === mentionIndex ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                        {typeof o.id === 'number' ? <Avatar name={o.name} id={o.id} size="w-6 h-6" text="text-[9px]" /> : <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center"><AtSign size={12} /></span>}
+                        <span className="min-w-0"><span className="block text-[13px] text-gray-900 truncate">{typeof o.id === 'number' ? o.name : `@${o.name}`}</span><span className="block text-[11px] text-gray-500 truncate">{o.sub}</span></span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <textarea ref={inputRef} value={draft} onChange={onDraftChange} onKeyDown={onKeyDown} rows={1}
+                  onPaste={e => { const files = Array.from(e.clipboardData?.files || []); if (files.length) { e.preventDefault(); addFiles(files); } }}
+                  placeholder={editing ? 'Edit your message' : `Message ${roomTitle(active)}`}
+                  className="block w-full resize-none px-3 pt-2.5 pb-1 text-[14px] outline-none rounded-xl max-h-48 min-h-[44px] bg-transparent"
+                  style={{ height: `${Math.min(192, 44 + Math.max(0, draft.split('\n').length - 1) * 20)}px` }} />
+                <div className="flex items-center gap-1 px-2 pb-1.5">
+                  <button onClick={() => fileRef.current?.click()} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title="Attach files or images"><Paperclip size={16} /></button>
+                  <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} />
+                  <div className="relative">
+                    <button onClick={() => setEmojiFor(emojiFor === 'composer' ? null : 'composer')} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title="Emoji"><Smile size={16} /></button>
+                    {emojiFor === 'composer' && (
+                      <div className="absolute left-0 bottom-9 z-30 w-72 p-2 bg-white border border-gray-200 rounded-lg shadow-xl grid grid-cols-8 gap-0.5">
+                        {EMOJIS.map(e => <button key={e} onClick={() => { insertText(e); setEmojiFor(null); }} className="w-8 h-8 rounded hover:bg-gray-100 text-[17px] cursor-pointer">{e}</button>)}
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => insertText('@')} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title="Mention someone"><AtSign size={16} /></button>
+                  <button onClick={() => fileRef.current?.click()} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title="Share an image"><ImageIcon size={16} /></button>
+                  <span className="ml-2 text-[11px] text-gray-400 hidden md:inline">Enter to send · Shift+Enter new line · **bold** `code` · ↑ edits your last message</span>
+                  <button onClick={send} disabled={sending || (!draft.trim() && !pending.some(p => p.url))}
+                    className="ml-auto h-8 px-3 rounded-lg bg-blue-600 text-white text-[13px] font-medium hover:bg-blue-700 disabled:opacity-40 flex items-center gap-1.5 cursor-pointer">
+                    {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {editing ? 'Save' : 'Send'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </section>
+
+      {active && showDetails && (
+        <RoomDetails room={active} me={me} people={people} pinned={pinned} onClose={() => setShowDetails(false)}
+          onChanged={refreshRooms} onJump={jumpTo} onLeft={() => { setShowDetails(false); setActiveId(null); refreshRooms(); }} />
+      )}
+
+      {modal === 'dm' && (
+        <Modal title="New message" onClose={() => setModal(null)}>
+          <DmPicker people={people.filter(p => p.id !== me?.id)} onPick={openDm} />
+        </Modal>
+      )}
+      {(modal === 'group' || modal === 'channel') && (
+        <NewRoomModal kind={modal} people={people} meId={me?.id} onClose={() => setModal(null)}
+          onCreated={(d) => { setRooms(d.rooms); setActiveId(d.roomId); setModal(null); }} />
+      )}
+      {modal === 'browse' && <BrowseChannelsModal onClose={() => setModal(null)} onOpen={async (id) => { await refreshRooms(); setActiveId(id); setModal(null); }} />}
+    </div>
+  );
+}
+
+function DmPicker({ people, onPick }) {
+  const [term, setTerm] = useState('');
+  const list = people.filter(p => !term || `${p.name} ${p.email} ${p.department} ${p.title}`.toLowerCase().includes(term.toLowerCase()));
+  return (
+    <div>
+      <div className="relative mb-2">
+        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input autoFocus value={term} onChange={e => setTerm(e.target.value)} placeholder="Search by name, email or department" className="w-full h-9 pl-8 pr-2 text-[13px] border border-gray-300 rounded outline-none focus:border-blue-500" />
+      </div>
+      <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 border border-gray-200 rounded">
+        {list.length === 0 && <div className="p-3 text-xs text-gray-500">No one found.</div>}
+        {list.map(p => (
+          <button key={p.id} onClick={() => onPick(p.id)} className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 text-left cursor-pointer">
+            <Avatar name={p.name} id={p.id} src={p.avatar} online={p.online} />
+            <span className="min-w-0 flex-1"><span className="block text-[13px] text-gray-900 truncate">{p.name}</span><span className="block text-[11px] text-gray-500 truncate">{p.title || p.department}{p.email ? ` · ${p.email}` : ''}</span></span>
+            {p.online && <span className="text-[11px] text-emerald-600">Online</span>}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

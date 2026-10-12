@@ -1,24 +1,59 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X, Clock } from 'lucide-react';
+import { API_BASE_URL } from '../../config/environment';
+
+// "2h 30m", "45m", "1.5h", "1d" (a working day = 9h) or a bare number of hours -> seconds.
+const parseDuration = (text) => {
+  const t = String(text || '').trim().toLowerCase();
+  if (!t) return 0;
+  if (/^\d+(\.\d+)?$/.test(t)) return Math.round(parseFloat(t) * 3600);
+  let total = 0; let matched = false;
+  const re = /(\d+(?:\.\d+)?)\s*(d|h|m)/g;
+  let m;
+  while ((m = re.exec(t))) {
+    matched = true;
+    const n = parseFloat(m[1]);
+    total += m[2] === 'd' ? n * 9 * 3600 : m[2] === 'h' ? n * 3600 : n * 60;
+  }
+  const leftover = t.replace(re, '').replace(/[\s,]+/g, '');
+  return matched && !leftover ? Math.round(total) : 0;
+};
 
 const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
   const [estimatedTime, setEstimatedTime] = useState('');
   const [startTime, setStartTime] = useState('');
+  const [error, setError] = useState('');
+  const [standard, setStandard] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       const now = new Date();
       const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
       setStartTime(local.toISOString().slice(0, 16));
-      setEstimatedTime(taskDetails?.original_estimate || taskDetails?.estimated_time || '');
+      const existing = taskDetails?.original_estimate || taskDetails?.estimated_time || '';
+      // "0h" is the empty default, not a plan.
+      setEstimatedTime(parseDuration(existing) ? existing : '');
+      setError('');
+      setStandard(null);
+      const key = taskDetails?.issue_key || taskDetails?.key;
+      if (key) {
+        fetch(`${API_BASE_URL}/it-kanban/issues/${encodeURIComponent(key)}/standard-size`)
+          .then(r => (r.ok ? r.json() : null))
+          .then(d => { if (d && d.hours) setStandard(d); })
+          .catch(() => {});
+      }
     }
   }, [isOpen, taskDetails]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!parseDuration(estimatedTime)) {
+      setError('Enter how long this will take, e.g. 2h, 45m or 1h 30m.');
+      return;
+    }
     onConfirm({
-      estimated_time: estimatedTime,
+      estimated_time: estimatedTime.trim(),
       start_time: new Date(startTime).toISOString()
     });
   };
@@ -80,15 +115,24 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estimated Time (e.g., 4h, 2d) - Optional
+                  Estimated Time <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. 2h 30m"
+                  required
+                  autoFocus
+                  placeholder="e.g. 2h, 45m or 1h 30m"
                   value={estimatedTime}
-                  onChange={(e) => setEstimatedTime(e.target.value)}
-                  className="block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border transition-colors"
+                  onChange={(e) => { setEstimatedTime(e.target.value); setError(''); }}
+                  aria-invalid={Boolean(error)}
+                  className={`block w-full rounded shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border transition-colors ${error ? 'border-red-400' : 'border-gray-300'}`}
                 />
+                {error
+                  ? <p className="mt-1 text-xs text-red-600">{error}</p>
+                  : <p className="mt-1 text-xs text-gray-500">
+                      Required. 1d = 9h.
+                      {standard && <> Standard for {standard.workType}: <button type="button" onClick={() => setEstimatedTime(`${standard.hours}h`)} className="text-blue-600 hover:underline cursor-pointer">{standard.hours} h</button>{standard.limitHours ? ` (up to ${Math.round(standard.limitHours * 100) / 100} h without approval)` : ''}.</>}
+                    </p>}
               </div>
             </div>
 

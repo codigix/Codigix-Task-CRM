@@ -52,7 +52,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
     }));
   };
 
-  const SubmenuItem = ({ icon: Icon, label, onClick, active, page, moduleKey, prefix: propPrefix }) => {
+  const SubmenuItem = ({ icon: Icon, label, onClick, active, page, moduleKey, prefix: propPrefix, to }) => {
     const isAccessible = !moduleKey || isModuleAccessible(user?.role, moduleKey);
     const accessLevel = page ? getMenuItemAccess(user?.role, `${page.charAt(0).toUpperCase()}${page.slice(1)}`) : null;
     const isViewOnly = accessLevel === 'view_only' || accessLevel === 'view_only_if_assigned';
@@ -62,6 +62,11 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
     }
 
     const handleClick = () => {
+      if (to) {
+        onNavigate(to);
+        if (toggleSidebar) toggleSidebar();
+        return;
+      }
       let finalPage = page;
 
       // Helper to determine department prefix based on current context
@@ -216,9 +221,11 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const userEmail = (user?.email || '').toLowerCase();
   const isSuperAdmin = userRole === 'Super Admin';
   const isAdmin = isSuperAdmin || userRole === 'Admin' || userDept === 'Admin' || userDept === 'Management';
-  // Admins see every department's section (IT, Marketing, SEO & GMB, Sales, HR) so they can
-  // try each page and hand access out later. The Super Admin console itself stays Super Admin only.
-  const seesAllSections = isSuperAdmin || userRole === 'Admin';
+  // The Admin department gets its own sidebar: administration pages only, with full rights
+  // (managing people, access, teams, approvals and every department's work). Department
+  // workspaces (Sales, IT, Marketing, SEO, HR) stay with those departments.
+  const isAdminDept = !isSuperAdmin && (userRole === 'Admin' || ['admin', 'administration'].includes(userDept.toLowerCase()));
+  const seesAllSections = isSuperAdmin;
   const isHR = userRole.toLowerCase().includes('hr') || userDept.toLowerCase().includes('hr');
   const isManager = userRole === 'Manager' || userRole.includes('Manager') || user?.department_role === 'Manager' || isAdmin || isHR || userEmail === 'sonalicodigix@gmail.com';
   const isSEOUser = userRole.includes('SEO') || userRole.includes('GMB') ||
@@ -450,7 +457,39 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
     </>
   );
 
-  const mainMenuItems = (
+  const renderAdminWorkspace = () => (
+    <>
+      <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Admin Overview</div>
+      <SubmenuItem label="Admin Dashboard" page="dashboard" icon={Gauge} prefix="/sales" />
+      <SubmenuItem label="Daily Reports" page="reports" icon={FileBarChart} prefix="/it" />
+      <SubmenuItem label="Activity Stream" page="activities" icon={Activity} prefix="/it" />
+      <SubmenuItem label="Calendar" page="calendar" icon={Calendar} prefix="/it" />
+
+      <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Work Oversight</div>
+      <SubmenuItem label="Task Board" page="kanban" icon={Layers} prefix="/it" />
+      <SubmenuItem label="Backlog & Sprints" page="backlog" icon={ListChecks} prefix="/it" />
+      <SubmenuItem label="All Projects" page="projects" icon={Briefcase} prefix="/it" />
+      <SubmenuItem label="Ticket Assignments" page="ticket-assignments" icon={ClipboardList} prefix="/it" />
+
+      <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">People & Access</div>
+      <SubmenuItem label="Manage Users" page="manage-users" icon={Users} to="/manage-users" />
+      <SubmenuItem label="Roles & Permissions" page="roles-permissions" icon={ShieldCheck} to="/roles-permissions" />
+      <SubmenuItem label="Departments" page="departments" icon={Building2} to="/departments" />
+      <SubmenuItem label="Teams & Workload" page="it-teams" icon={Users2} prefix="/it" />
+      <SubmenuItem label="Registration Requests" page="registration-requests" icon={UserCheck} prefix="/hr" />
+      <SubmenuItem label="Attendance" page="attendance" icon={Calendar} prefix="/hr" />
+      <SubmenuItem label="Performance" page="performance" icon={TrendingUp} prefix="/hr" />
+
+      <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Communication & Knowledge</div>
+      <SubmenuItem label="Team Chat" page="it-chat" icon={MessageCircle} prefix="/it" />
+      <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} prefix="/it" />
+
+      <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">System</div>
+      <SubmenuItem label="Settings" page="profile-settings" icon={Settings} />
+    </>
+  );
+
+  const mainMenuItems = isAdminDept ? renderAdminWorkspace() : (
     <>
       {renderTopCommonPages()}
       {isSuperAdmin && renderAdminPages()}

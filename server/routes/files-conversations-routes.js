@@ -341,7 +341,9 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
   app.get('/api/conversations/:userId', async (req, res) => {
     let connection;
     try {
-      const { userId } = req.params;
+      // Only your own conversations, whatever id is in the URL.
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Please sign in again.' });
       connection = await getConnection();
 
       // Query 1: Direct conversations
@@ -541,7 +543,8 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
         return cleaned ? parseInt(cleaned, 10) : null;
       };
 
-      const sender_id = parseId(body.sender_id);
+      // The sender is the signed-in user, never an id from the request.
+      const sender_id = req.user?.id ? Number(req.user.id) : null;
       const receiver_id = parseId(body.receiver_id);
       const group_id = parseId(body.group_id);
       const message_text = body.message_text || body.message || body.text || '';
@@ -629,6 +632,8 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
       if (!message_text) return res.status(400).json({ error: 'message_text required' });
 
       connection = await getConnection();
+      const [[own]] = await connection.query('SELECT sender_id FROM messages WHERE id = ?', [id]);
+      if (!own || Number(own.sender_id) !== Number(req.user?.id)) return res.status(403).json({ error: 'You can only edit your own messages.' });
       await connection.query(
         'UPDATE messages SET message_text = ?, is_edited = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [message_text, id]
@@ -647,6 +652,8 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
     try {
       const { id } = req.params;
       connection = await getConnection();
+      const [[own]] = await connection.query('SELECT sender_id FROM messages WHERE id = ?', [id]);
+      if (!own || Number(own.sender_id) !== Number(req.user?.id)) return res.status(403).json({ error: 'You can only delete your own messages.' });
       await connection.query(
         'UPDATE messages SET is_deleted = 1, message_text = "This message was deleted", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [id]
@@ -691,10 +698,16 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
   app.get('/api/messages/:userId', async (req, res) => {
     let connection;
     try {
-      const { userId } = req.params;
+      // Only your own messages, whatever id is in the URL.
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Please sign in again.' });
       const { conversationWith, groupId } = req.query;
 
       connection = await getConnection();
+      if (groupId) {
+        const [[inGroup]] = await connection.query('SELECT 1 AS ok FROM chat_group_members WHERE group_id = ? AND user_id = ?', [groupId, userId]);
+        if (!inGroup) return res.status(403).json({ error: 'You are not in this group.' });
+      }
 
       let query = `
         SELECT 
@@ -775,9 +788,11 @@ module.exports = function setupFilesConversationsRoutes(app, pool) {
   app.post('/api/users/:userId/heartbeat', async (req, res) => {
     let connection;
     try {
-      const { userId } = req.params;
+      // Presence only: never touch the account status (that is what disables an account).
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Please sign in again.' });
       connection = await getConnection();
-      await connection.query('UPDATE users SET last_seen = CURRENT_TIMESTAMP, status = "Active" WHERE id = ? OR uuid = ?', [userId, userId]);
+      await connection.query('UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE id = ?', [userId]);
       res.json({ success: true, timestamp: new Date() });
     } catch (error) {
       responseError(res, 500, 'Failed to update heartbeat', error);

@@ -18,6 +18,7 @@ import ITIssueActivityTabs from './issue-details/ITIssueActivityTabs';
 import ITIssueDetailsSidebar from './issue-details/ITIssueDetailsSidebar';
 import ITSubtaskAiModal from './issue-details/ITSubtaskAiModal';
 import ITManagerReviewGate from './issue-details/ITManagerReviewGate';
+import { ProofForm, ProofHeading } from '../common/TransitionProofModal';
 
 const PRIORITY_ICONS = {
   Highest: <ArrowUp size={14} className="text-red-600 " />,
@@ -103,7 +104,7 @@ const STATUS_COLORS = {
   'DONE': 'bg-green-100 text-green-800 hover:bg-green-200 '
 };
 
-const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssueCreated, department, initialSubtaskKey }) => {
+const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssueCreated, department, initialSubtaskKey, proofRequest, onProofClose }) => {
   const { user } = useAuth();
   const loggedUser = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username : 'Current User';
 
@@ -454,6 +455,43 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const showDevTools = false;
 
   const issueKey = issue?.issue_key || issue?.key;
+
+  // Proof of work. Moving this ticket to In Review (or to Done) needs proof; the move waits
+  // in a box at the top of the panel and happens as soon as the proof is submitted. The
+  // request comes from the page that opened the ticket (proofRequest), or from a status
+  // change made inside this panel.
+  const [localProof, setLocalProof] = useState(null);
+  const leftColumnRef = useRef(null);
+  useEffect(() => {
+    const onNeeded = (e) => {
+      const d = e.detail || {};
+      if (!issueKey || d.issueKey !== issueKey) return;
+      d.handled = true;
+      setLocalProof(d);
+    };
+    window.addEventListener('crm-proof-needed', onNeeded);
+    return () => window.removeEventListener('crm-proof-needed', onNeeded);
+  }, [issueKey]);
+  useEffect(() => { setLocalProof(null); }, [issueKey]);
+  const activeProof = localProof || (proofRequest && proofRequest.issueKey === issueKey ? proofRequest : null);
+  useEffect(() => { if (activeProof) leftColumnRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }, [activeProof]);
+  const closeProof = () => { setLocalProof(null); if (onProofClose) onProofClose(); };
+  const submitProof = async (proof) => {
+    const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${encodeURIComponent(issueKey)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: activeProof.to, transition_proof: proof })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Could not move the task');
+    const wasEvidence = activeProof.kind === 'evidence';
+    closeProof();
+    setCurrentStatus(activeProof.to);
+    showSuccessToast(wasEvidence ? 'Proof added · moved to In Review' : 'Approved · moved to Done');
+    window.dispatchEvent(new CustomEvent('crm-issue-proof-saved', { detail: { key: issueKey } }));
+    if (onIssueCreated) onIssueCreated();
+  };
+
   const activeSubtaskId = currentSubtask ? String(currentSubtask.id || currentSubtask.subtaskKey || '') : null;
 
   // Switching between the issue and one of its subtasks must not carry the previous
@@ -1044,7 +1082,13 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
         {/* INDEPENDENTLY SCROLLABLE 2-COLUMN JIRA CONTENT */}
         <div className="flex-1 min-h-0 p-5 flex gap-6 overflow-hidden">
           {/* Left Column (Main Content - Independent Scroll) */}
-          <div className="flex-1 min-w-0 overflow-y-auto pr-3 custom-scrollbar space-y-6">
+          <div ref={leftColumnRef} className="flex-1 min-w-0 overflow-y-auto pr-3 custom-scrollbar space-y-6">
+            {activeProof && (
+              <div className={`rounded-lg border-2 p-4 ${activeProof.kind === 'evidence' ? 'border-purple-300 bg-purple-50/40' : 'border-emerald-300 bg-emerald-50/40'}`}>
+                <div className="mb-3"><ProofHeading info={activeProof} /></div>
+                <ProofForm key={`${activeProof.issueKey}-${activeProof.kind}`} info={activeProof} onSubmit={submitProof} onCancel={closeProof} />
+              </div>
+            )}
             {/* Title (Interactive, Full Wrapping & Inline Editable like Jira) */}
             <div className="group relative">
               {isEditingTitle ? (

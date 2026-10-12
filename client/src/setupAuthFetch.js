@@ -47,7 +47,42 @@ window.fetch = async (input, init = {}) => {
   const url = typeof input === 'string' ? input : (input && input.url) || '';
   if (!isApiUrl(url)) return originalFetch(input, init);
 
-  const response = await originalFetch(input, { credentials: 'include', ...init });
+  let response = await originalFetch(input, { credentials: 'include', ...init });
+
+  // Moving a ticket to In Review needs proof of work, and to Done the reporting manager's
+  // comment. The server answers 428 PROOF_REQUIRED; ask for it here and send the same update
+  // again, so every board, panel and list that changes a status gets this without its own code.
+  if (response.status === 428 && String(init.method || '').toUpperCase() === 'PUT'
+    && /\/it-kanban\/issues\/[^/?]+(\?|$)/.test(url) && typeof init.body === 'string') {
+    const body = await response.clone().json().catch(() => null);
+    if (body?.code === 'PROOF_REQUIRED') {
+      // Usually the page opens the ticket and shows a proof box in it; submitting that box
+      // makes the move. The card stays where it was until then.
+      const detail = { ...body, handled: false };
+      window.dispatchEvent(new CustomEvent('crm-proof-needed', { detail }));
+      if (detail.handled) {
+        return new Response(JSON.stringify({ code: 'PROOF_PENDING', error: 'Add proof of work in the task to finish the move.' }), {
+          status: 428, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      // No ticket panel on this page: ask in a dialog instead and send the update again.
+      const { askForProof } = await import('./utils/transitionProof');
+      const proof = await askForProof(body);
+      if (!proof) {
+        return new Response(JSON.stringify({ code: 'PROOF_CANCELLED', error: 'Not moved: no proof was added.' }), {
+          status: 428, headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      let payload = {};
+      try { payload = JSON.parse(init.body); } catch (e) { /* not JSON: send as is */ }
+      response = await originalFetch(input, { credentials: 'include', ...init, body: JSON.stringify({ ...payload, transition_proof: proof }) });
+      if (response.ok) {
+        // The proof was saved as a comment on the ticket; let open views reload it.
+        window.dispatchEvent(new CustomEvent('crm-issue-proof-saved', { detail: { key: body.issueKey } }));
+      }
+    }
+  }
+
   if (response.status === 401 && !url.includes('/auth/login')) {
     response.clone().json()
       .then(body => { if (SESSION_CODES.includes(body?.code)) handleSessionLost(body.code); })

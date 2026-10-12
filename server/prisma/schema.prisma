@@ -577,10 +577,11 @@ model registration_requests {
   reviewed_by                                      Int?
   review_notes                                     String?                      @db.Text
   reviewed_at                                      DateTime?                    @db.Timestamp(0)
-  created_at                                       DateTime                     @default(now()) @db.Timestamp(0)
-  updated_at                                       DateTime                     @default(now()) @db.Timestamp(0)
+  created_at                                     DateTime?                     @default(now()) @db.Timestamp(0)
+  updated_at                                     DateTime?                     @default(now()) @db.Timestamp(0)
   users_registration_requests_reviewed_byTousers   users?                       @relation("registration_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "registration_requests_ibfk_1")
 
+  uuid                                           String?                       @unique(map: "idx_reg_requests_uuid") @db.VarChar(36)
   @@index([email], map: "idx_email")
   @@index([status], map: "idx_status")
   @@index([created_at], map: "idx_created_at")
@@ -846,7 +847,7 @@ model files {
 model followups {
   id                        Int                    @id @default(autoincrement())
   related_type              followups_related_type
-  related_id                Int
+  related_id                Int?
   type                      String                 @db.VarChar(100)
   subject                   String                 @db.VarChar(255)
   description               String?                @db.Text
@@ -952,10 +953,6 @@ model general_tasks {
   files                      files[]
   followups                  followups[]
   projects                   projects?                  @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_tasks_project")
-  task_contributions         task_contributions[]
-  task_history               task_history[]
-  task_subtasks              task_subtasks[]
-  task_time_logs             task_time_logs[]
 
   @@index([project_id], map: "fk_tasks_project")
   @@index([due_date], map: "idx_due_date")
@@ -1149,7 +1146,9 @@ model it_kanban_attachments {
   file_type   String?   @default("document") @db.VarChar(100)
   uploaded_at DateTime? @default(now()) @db.Timestamp(0)
 
+  subtask_id  String?   @db.VarChar(100)
   @@index([issue_key], map: "idx_issue_key")
+  @@index([issue_key, subtask_id], map: "idx_it_kanban_attachments_subtask")
 }
 
 model it_kanban_history {
@@ -1170,12 +1169,12 @@ model it_kanban_issues {
   issue_key                  String    @unique(map: "issue_key") @db.VarChar(50)
   title                      String    @db.Text
   description                String?   @db.LongText
-  type                       String?   @default("Task") @db.VarChar(50)
-  priority                   String?   @default("Medium") @db.VarChar(50)
-  status                     String?   @default("TO DO") @db.VarChar(50)
-  assignee                   String?   @db.VarChar(100)
-  reporter                   String?   @default("Unassigned") @db.VarChar(100)
-  sprint                     String?   @default("Sprint 1") @db.VarChar(50)
+  type                       String?   @default("Task") @db.VarChar(100)
+  priority                   String?   @default("Medium") @db.VarChar(100)
+  status                     String?   @default("TO DO") @db.VarChar(100)
+  assignee                   String?   @default("Unassigned") @db.VarChar(255)
+  reporter                   String?   @default("Unassigned") @db.VarChar(255)
+  sprint                     String?   @db.VarChar(255)
   due_date                   DateTime? @db.Date
   start_date                 DateTime? @db.Date
   subtasks                   Json?
@@ -1207,6 +1206,11 @@ model it_kanban_issues {
   timer_start_time           DateTime? @db.DateTime(0)
   is_timer_running           Boolean?  @default(false)
 
+  timer_owner                String?   @db.VarChar(120)
+  timer_source               String?   @db.VarChar(10)
+  estimate_approved          Boolean   @default(false)
+  requested_estimate         String?   @db.VarChar(20)
+  estimate_requested_by      String?   @db.VarChar(120)
   @@index([rank_order], map: "idx_rank_order")
   @@index([sprint_id], map: "idx_sprint_id")
 }
@@ -1220,6 +1224,8 @@ model it_kanban_worklogs {
   started_at  DateTime? @db.DateTime(0)
   created_at  DateTime? @default(now()) @db.Timestamp(0)
 
+  approval    String    @default("approved") @db.VarChar(10)
+  reviewed_by String?   @db.VarChar(120)
   @@index([issue_key], map: "idx_issue_key")
 }
 
@@ -1982,6 +1988,7 @@ model users {
   user_notes                                              user_notes[]
   departments                                             departments?           @relation(fields: [department_id], references: [id], onUpdate: NoAction, map: "users_ibfk_1")
 
+  uuid                                                           String?                 @unique(map: "idx_users_uuid") @db.VarChar(36)
   @@index([department_id], map: "department_id")
   @@index([email], map: "idx_email")
   @@index([role_id], map: "idx_role_id")
@@ -1990,79 +1997,65 @@ model users {
 }
 
 model task_subtasks {
-  id                   Int           @id @default(autoincrement())
-  task_id              Int
-  title                String        @db.VarChar(255)
-  description          String?       @db.LongText
-  point_value          Int           @default(0)
-  status               String?       @default("Pending") @db.VarChar(50)
-  assigned_to_user_id  Int?
-  created_by_user_id   Int?
-  completed_by_user_id Int?
-  completed_at         DateTime?     @db.Timestamp(0)
-  created_at           DateTime      @default(now()) @db.Timestamp(0)
-  started_at           DateTime?     @db.Timestamp(0)
-  updated_at           DateTime      @default(now()) @updatedAt @db.Timestamp(0)
-  general_tasks        general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
-
-  @@index([task_id])
+  id                   Int       @id @default(autoincrement())
+  task_id              String    @db.VarChar(50)
+  title                String    @db.VarChar(255)
+  description          String?   @db.Text
+  point_value          Decimal?  @default(0.00) @db.Decimal(10, 2)
+  status               String?   @default("To Do") @db.VarChar(50)
+  assigned_to_user_id  String?   @db.VarChar(50)
+  created_by_user_id   String?   @db.VarChar(50)
+  completed_by_user_id String?   @db.VarChar(50)
+  completed_at         DateTime? @db.Timestamp(0)
+  created_at           DateTime? @default(now()) @db.Timestamp(0)
+  started_at           DateTime? @db.Timestamp(0)
+  updated_at           DateTime  @default(now()) @updatedAt @db.Timestamp(0)
 }
 
 model task_time_logs {
-  id            Int           @id @default(autoincrement())
-  task_id       Int
-  user_id       Int
-  hours         Decimal       @db.Decimal(10, 2)
-  description   String?       @db.LongText
-  status        String?       @default("Pending") @db.VarChar(50)
-  created_at    DateTime      @default(now()) @db.Timestamp(0)
-  approved_at   DateTime?     @db.Timestamp(0)
-  approved_by   Int?
-  ended_at      DateTime?     @db.Timestamp(0)
-  started_at    DateTime?     @db.Timestamp(0)
-  subtask_id    Int?
-  updated_at    DateTime      @default(now()) @updatedAt @db.Timestamp(0)
-  work_type     String?       @db.VarChar(100)
-  general_tasks general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
-
-  @@index([task_id])
-  @@index([user_id])
+  id          Int       @id @default(autoincrement())
+  task_id     String    @db.VarChar(50)
+  user_id     String    @db.VarChar(50)
+  hours       Decimal   @db.Decimal(10, 2)
+  description String?   @db.Text
+  status      String?   @default("Approved") @db.VarChar(20)
+  created_at  DateTime? @default(now()) @db.Timestamp(0)
+  approved_at DateTime? @db.Timestamp(0)
+  approved_by Int?
+  ended_at    DateTime? @db.Timestamp(0)
+  started_at  DateTime? @db.Timestamp(0)
+  subtask_id  Int?
+  updated_at  DateTime  @default(now()) @updatedAt @db.Timestamp(0)
+  work_type   String?   @db.VarChar(100)
 }
 
 model task_contributions {
-  id                      Int           @id @default(autoincrement())
-  task_id                 Int
-  subtask_id              Int?
-  user_id                 Int
-  role                    String?       @db.VarChar(100)
-  effort_points           Int           @default(0)
-  contribution_percentage Decimal?      @db.Decimal(5, 2)
-  contribution_source     String?       @db.VarChar(100)
-  approval_status         String?       @default("Pending") @db.VarChar(50)
-  approved_by             Int?
-  approved_at             DateTime?     @db.Timestamp(0)
-  created_at              DateTime      @default(now()) @db.Timestamp(0)
-  updated_at              DateTime      @default(now()) @updatedAt @db.Timestamp(0)
-  general_tasks           general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
-
-  @@index([task_id])
-  @@index([user_id])
+  id                      Int       @id @default(autoincrement())
+  task_id                 String    @db.VarChar(50)
+  subtask_id              String?   @db.VarChar(50)
+  user_id                 String    @db.VarChar(50)
+  role                    String?   @db.VarChar(50)
+  effort_points           Decimal?  @default(0.00) @db.Decimal(10, 2)
+  contribution_percentage Decimal?  @db.Decimal(5, 2)
+  contribution_source     String?   @db.VarChar(100)
+  approval_status         String?   @default("Pending") @db.VarChar(20)
+  approved_by             String?   @db.VarChar(50)
+  approved_at             DateTime? @db.Timestamp(0)
+  created_at              DateTime? @default(now()) @db.Timestamp(0)
+  updated_at              DateTime  @default(now()) @updatedAt @db.Timestamp(0)
 }
 
 model task_history {
-  id                 Int           @id @default(autoincrement())
-  task_id            Int
-  changed_by_user_id Int?
-  action_type        String        @db.VarChar(100)
-  field_name         String?       @db.VarChar(100)
-  old_value          String?       @db.Text
-  new_value          String?       @db.Text
-  reason             String?       @db.Text
-  created_at         DateTime      @default(now()) @db.Timestamp(0)
+  id                 Int       @id @default(autoincrement())
+  task_id            String    @db.VarChar(50)
+  changed_by_user_id String?   @db.VarChar(50)
+  action_type        String?   @db.VarChar(100)
+  field_name         String?   @db.VarChar(100)
+  old_value          String?   @db.Text
+  new_value          String?   @db.Text
+  reason             String?   @db.Text
+  created_at         DateTime? @default(now()) @db.Timestamp(0)
   metadata           Json?
-  general_tasks      general_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
-
-  @@index([task_id])
 }
 
 model performance_reviews {
@@ -2079,8 +2072,8 @@ model performance_reviews {
   feedback            String?  @db.LongText
   created_at          DateTime @default(now()) @db.Timestamp(0)
   updated_at          DateTime @default(now()) @db.Timestamp(0)
-  users_employee      users    @relation("performance_reviews_employee", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users_reviewer      users    @relation("performance_reviews_reviewer", fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_employee      users    @relation("performance_reviews_employee", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_perf_employee")
+  users_reviewer      users    @relation("performance_reviews_reviewer", fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_perf_reviewer")
 
   @@index([employee_id], map: "idx_performance_reviews_employee")
   @@index([reviewer_id], map: "idx_performance_reviews_reviewer")
@@ -2100,6 +2093,7 @@ enum followups_related_type {
   Deal
   Customer
   Invoice
+  Internal
 }
 
 enum automation_rules_entity_type {
@@ -2559,6 +2553,7 @@ enum followups_status {
 enum users_department_role {
   Executive
   Manager
+  Admin
 }
 
 enum projects_workflow_type {
@@ -2584,4 +2579,142 @@ enum companies_visibility {
   Public
   Private
   People
+}
+
+model calendar_events {
+  id           Int       @id @default(autoincrement())
+  title        String    @db.VarChar(255)
+  category     String    @default("Meeting") @db.VarChar(40)
+  department   String?   @db.VarChar(60)
+  start_at     DateTime  @db.DateTime(0)
+  end_at       DateTime  @db.DateTime(0)
+  all_day      Boolean   @default(false)
+  mode         String    @default("offline") @db.VarChar(10)
+  meeting_link String?   @db.VarChar(500)
+  location     String?   @db.VarChar(255)
+  description  String?   @db.Text
+  attendee_ids Json?
+  guest_emails Json?
+  status       String    @default("Scheduled") @db.VarChar(20)
+  created_by   Int?
+  created_at   DateTime? @default(now()) @db.Timestamp(0)
+  updated_at   DateTime? @default(now()) @db.Timestamp(0)
+
+  @@index([department], map: "idx_cal_dept")
+  @@index([start_at], map: "idx_cal_start")
+}
+
+model chat_members {
+  room_id      Int
+  user_id      Int
+  role         String    @default("member") @db.VarChar(10)
+  joined_at    DateTime? @default(now()) @db.DateTime(0)
+  last_read_id Int       @default(0)
+  muted        Boolean   @default(false)
+  starred      Boolean   @default(false)
+
+  @@id([room_id, user_id])
+  @@index([user_id], map: "idx_chat_member_user")
+}
+
+model chat_messages {
+  id          Int       @id @default(autoincrement())
+  room_id     Int
+  sender_id   Int?
+  kind        String    @default("text") @db.VarChar(10)
+  body        String?   @db.Text
+  attachments Json?
+  reply_to_id Int?
+  mentions    Json?
+  reactions   Json?
+  edited_at   DateTime? @db.DateTime(0)
+  deleted_at  DateTime? @db.DateTime(0)
+  pinned_at   DateTime? @db.DateTime(0)
+  pinned_by   Int?
+  legacy_id   Int?      @unique(map: "uniq_chat_legacy")
+  created_at  DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([room_id, id], map: "idx_chat_room_msg")
+}
+
+model chat_rooms {
+  id              Int       @id @default(autoincrement())
+  kind            String    @default("group") @db.VarChar(10)
+  name            String?   @db.VarChar(120)
+  description     String?   @db.VarChar(500)
+  project_id      Int?
+  dm_key          String?   @unique(map: "uniq_dm") @db.VarChar(40)
+  created_by      Int?
+  created_at      DateTime? @default(now()) @db.DateTime(0)
+  last_message_at DateTime? @db.DateTime(0)
+  archived        Boolean   @default(false)
+}
+
+model kb_access_log {
+  id        Int       @id @default(autoincrement())
+  item_id   Int
+  user_id   Int?
+  user_name String?   @db.VarChar(120)
+  action    String    @db.VarChar(20)
+  at        DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([item_id], map: "idx_kb_log_item")
+}
+
+model kb_items {
+  id            Int       @id @default(autoincrement())
+  type          String    @default("note") @db.VarChar(20)
+  title         String    @db.VarChar(255)
+  body          String?   @db.MediumText
+  url           String?   @db.VarChar(1000)
+  username      String?   @db.VarChar(255)
+  email         String?   @db.VarChar(255)
+  secret_enc    String?   @db.Text
+  project_id    Int?
+  category      String?   @db.VarChar(80)
+  tags          Json?
+  files         Json?
+  visibility    String    @default("team") @db.VarChar(12)
+  pinned        Boolean   @default(false)
+  created_by_id Int?
+  created_by    String?   @db.VarChar(120)
+  updated_by    String?   @db.VarChar(120)
+  created_at    DateTime? @default(now()) @db.DateTime(0)
+  updated_at    DateTime? @default(now()) @db.DateTime(0)
+  deleted_at    DateTime? @db.DateTime(0)
+
+  @@index([project_id], map: "idx_kb_project")
+  @@index([type], map: "idx_kb_type")
+}
+
+model sheet_sync_items {
+  id         Int       @id @default(autoincrement())
+  source_id  Int
+  cell_key   String    @db.VarChar(400)
+  issue_key  String    @db.VarChar(60)
+  title      String?   @db.VarChar(500)
+  created_at DateTime? @default(now()) @db.DateTime(0)
+
+  @@unique([source_id, cell_key(length: 255)], map: "uniq_cell")
+  @@index([issue_key], map: "idx_issue")
+}
+
+model sheet_sync_sources {
+  id             Int       @id @default(autoincrement())
+  name           String?   @db.VarChar(160)
+  sheet_url      String    @db.VarChar(600)
+  sheet_id       String    @db.VarChar(120)
+  department     String    @default("Marketing") @db.VarChar(60)
+  created_by     String?   @db.VarChar(120)
+  created_at     DateTime? @default(now()) @db.DateTime(0)
+  last_synced_at DateTime? @db.DateTime(0)
+  last_synced_by String?   @db.VarChar(120)
+  last_result    Json?
+}
+
+model work_type_sizes {
+  work_type  String    @id @db.VarChar(100)
+  hours      Decimal   @db.Decimal(6, 2)
+  updated_by String?   @db.VarChar(120)
+  updated_at DateTime? @default(now()) @db.Timestamp(0)
 }

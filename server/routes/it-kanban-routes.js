@@ -1000,52 +1000,172 @@ Acceptance Criteria
    */
   
   //  ACTIVITIES (Global Activity Feed for IT Kanban) 
+  /**
+   * Activity stream: who did what to which work item, newest first.
+   * Sources: ticket creation, field changes (it_kanban_history, minus the timer's own
+   * bookkeeping rows) and time logged. Filters run on the server so paging is real.
+   *   department  IT | Marketing | All        from, to  YYYY-MM-DD (inclusive)
+   *   user        changed-by name             kind      Created | Status | Assignment | Dates | Planned time | Edited | Comment | Time logged
+   *   q           text search                 page, pageSize (max 200)
+   * KPIs compare the chosen range with the same-length period just before it.
+   */
+  const ACTIVITY_SKIP_FIELDS = new Set(['is_timer_running', 'timer_owner', 'timer_start_time', 'timer_source', 'estimate_requested_by', 'created']);
+  const activityKind = (field) => {
+    const f = String(field || '').toLowerCase();
+    if (f === 'status') return 'Status';
+    if (f === 'assignee' || f === 'reporter') return 'Assignment';
+    if (f === 'due_date' || f === 'start_date') return 'Dates';
+    if (['original_estimate', 'requested_estimate', 'estimate_approved', 'effort_points', 'story_points', 'remaining_estimate'].includes(f)) return 'Planned time';
+    if (f === 'comment' || f === 'comments') return 'Comment';
+    return 'Edited';
+  };
+  const ACTIVITY_FIELD_NAMES = {
+    status: 'status', assignee: 'assignee', reporter: 'reporter', due_date: 'due date', start_date: 'start date',
+    original_estimate: 'planned time', requested_estimate: 'requested planned time', estimate_approved: 'plan approval',
+    effort_points: 'effort points', story_points: 'story points', title: 'title', description: 'description',
+    priority: 'priority', labels: 'labels', type: 'work type', sprint_id: 'sprint', sprint: 'sprint',
+    project_id: 'project', department: 'department', remaining_estimate: 'remaining time'
+  };
+  const activitySecs = (secs) => {
+    const m = Math.round(Number(secs || 0) / 60);
+    const h = Math.floor(m / 60);
+    return h ? `${h}h${m % 60 ? ` ${m % 60}m` : ''}` : `${m}m`;
+  };
+  const activityVal = (v) => {
+    if (v == null || v === '') return null;
+    const t = String(v);
+    if (/^\d{4}-\d{2}-\d{2}T/.test(t)) return t.slice(0, 10);
+    return t.length > 140 ? `${t.slice(0, 140)}…` : t;
+  };
+  const activityDay = (d) => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+
   app.get('/api/it-kanban/activities', async (req, res) => {
     try {
-      const department = req.query.department || 'IT';
-      // 1. Get issue creations
-      const [creations] = await db.query(`
-        SELECT 
-          id, 
-          type as activity_type,
-          CONCAT('Created ', type, ' ', issue_key, ': ', title) as title,
-          description,
-          status,
-          priority,
-          reporter as created_by_name,
-          created_at,
-          department as project_name
-        FROM it_kanban_issues
-        WHERE department = ? OR ? = 'All'
-        ORDER BY created_at DESC
-        LIMIT 50
-      `, [department, department]);
+      const dept = String(req.query.department || 'All').replace(/\s*department\s*$/i, '').trim();
+      const allDepts = !dept || dept.toLowerCase() === 'all';
+      const isDay = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
+      const from = isDay(req.query.from) ? req.query.from : null;
+      const to = isDay(req.query.to) ? req.query.to : null;
+      const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+      const pageSize = Math.min(200, Math.max(10, parseInt(req.query.pageSize, 10) || 50));
+      const userFilter = String(req.query.user || '').trim().toLowerCase();
+      const kindFilter = String(req.query.kind || '').trim();
+      const q = String(req.query.q || '').trim().toLowerCase();
 
-      // 2. Get history (updates)
-      const [history] = await db.query(`
-        SELECT 
-          h.id, 
-          'Update' as activity_type,
-          CONCAT('Updated ', COALESCE(i.type, 'Issue'), ' ', h.issue_key, ': ', COALESCE(i.title, 'Unknown Title')) as title,
-          CONCAT('Changed ', h.field, ' from ', COALESCE(h.old_value, 'none'), ' to ', COALESCE(h.new_value, 'none')) as description,
-          i.status,
-          i.priority,
-          h.changed_by as created_by_name,
-          h.created_at,
-          i.department as project_name
-        FROM it_kanban_history h
-        JOIN it_kanban_issues i ON h.issue_key = i.issue_key
-        WHERE i.department = ? OR ? = 'All'
-        ORDER BY h.created_at DESC
-        LIMIT 100
-      `, [department, department]);
+      // The previous period of the same length, for the KPI comparison.
+      let prevFrom = null; let prevTo = null;
+      if (from && to) {
+        const a = new Date(`${from}T12:00:00`); const b = new Date(`${to}T12:00:00`);
+        const days = Math.round((b - a) / 86400000) + 1;
+        const pf = new Date(a); pf.setDate(pf.getDate() - days);
+        const pt = new Date(a); pt.setDate(pt.getDate() - 1);
+        prevFrom = activityDay(pf); prevTo = activityDay(pt);
+      }
+      const lower = prevFrom || from;
 
-      // Combine and sort
-      const allActivities = [...creations, ...history].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const [issues] = await db.query(
+        `SELECT i.issue_key, i.title, i.type, i.status, i.priority, i.assignee, i.reporter, i.department, i.labels,
+                DATE_FORMAT(i.due_date, '%Y-%m-%d') AS due, i.sprint, i.created_at, COALESCE(p.name, p.title) AS project
+           FROM it_kanban_issues i LEFT JOIN projects p ON p.id = i.project_id`
+      );
+      const issueByKey = new Map(issues.map(i => [i.issue_key, i]));
+      const inDept = (i) => i && (allDepts || String(i.department || '').toLowerCase() === dept.toLowerCase());
 
-      res.json(allActivities.slice(0, 100)); // Return top 100 most recent
+      const range = (col) => {
+        const parts = []; const params = [];
+        if (lower) { parts.push(`${col} >= ?`); params.push(`${lower} 00:00:00`); }
+        if (to) { parts.push(`${col} <= ?`); params.push(`${to} 23:59:59`); }
+        return { where: parts.length ? `WHERE ${parts.join(' AND ')}` : '', params };
+      };
+      const hr = range('created_at');
+      const [history] = await db.query(`SELECT id, issue_key, field, old_value, new_value, changed_by, created_at FROM it_kanban_history ${hr.where}`, hr.params);
+      const wr = range('COALESCE(started_at, created_at)');
+      const [logs] = await db.query(
+        `SELECT id, issue_key, author, seconds, description, COALESCE(started_at, created_at) AS at FROM it_kanban_worklogs ${wr.where}`, wr.params
+      ).catch(() => [[]]);
+
+      const items = [];
+      issues.forEach(i => {
+        if (!inDept(i) || !i.created_at) return;
+        items.push({ id: `c-${i.issue_key}`, kind: 'Created', at: i.created_at, by: i.reporter || 'System', issueKey: i.issue_key,
+          text: `created ${String(i.type || 'task').toLowerCase()}`, field: null, from: null, to: null });
+      });
+      history.forEach(h => {
+        if (ACTIVITY_SKIP_FIELDS.has(String(h.field || '').toLowerCase())) return;
+        const i = issueByKey.get(h.issue_key);
+        if (!inDept(i)) return;
+        const name = ACTIVITY_FIELD_NAMES[h.field] || String(h.field || '').replace(/_/g, ' ');
+        items.push({ id: `h-${h.id}`, kind: activityKind(h.field), at: h.created_at, by: h.changed_by || 'System', issueKey: h.issue_key,
+          text: `changed ${name}`, field: name, from: activityVal(h.old_value), to: activityVal(h.new_value) });
+      });
+      logs.forEach(w => {
+        const i = issueByKey.get(w.issue_key);
+        if (!inDept(i)) return;
+        items.push({ id: `w-${w.id}`, kind: 'Time logged', at: w.at, by: w.author || 'Unknown', issueKey: w.issue_key,
+          text: `logged ${activitySecs(w.seconds)}`, field: 'time', from: null, to: activitySecs(w.seconds), note: activityVal(w.description) });
+      });
+
+      const within = (d, a, b) => { const k = activityDay(d); return (!a || k >= a) && (!b || k <= b); };
+      const current = items.filter(it => within(it.at, from, to));
+      const previous = prevFrom ? items.filter(it => within(it.at, prevFrom, prevTo)) : null;
+
+      const KINDS = ['Created', 'Status', 'Assignment', 'Dates', 'Planned time', 'Edited', 'Comment', 'Time logged'];
+      const count = (list) => Object.fromEntries(KINDS.map(k => [k, list.filter(x => x.kind === k).length]));
+      const kpis = {
+        total: current.length, byKind: count(current),
+        previousTotal: previous ? previous.length : null, previousByKind: previous ? count(previous) : null,
+        people: new Set(current.map(x => String(x.by).toLowerCase())).size,
+        tasksTouched: new Set(current.map(x => x.issueKey)).size
+      };
+      const users = [...new Set(current.map(x => x.by).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+
+      let list = current;
+      if (userFilter) list = list.filter(x => String(x.by).toLowerCase() === userFilter);
+      if (kindFilter) list = list.filter(x => x.kind === kindFilter);
+      if (q) {
+        list = list.filter(x => {
+          const i = issueByKey.get(x.issueKey) || {};
+          return [x.by, x.text, x.from, x.to, x.issueKey, i.title, i.project].some(v => String(v || '').toLowerCase().includes(q));
+        });
+      }
+      list.sort((a, b) => new Date(b.at) - new Date(a.at));
+      // A bulk import or sync creates hundreds of tickets in a minute or two; show that as
+      // one row ("created 120 tasks") that lists them, instead of flooding the stream.
+      const grouped = [];
+      for (const x of list) {
+        const last = grouped[grouped.length - 1];
+        if (x.kind === 'Created' && last && last.kind === 'Created' && last.by === x.by
+          && Math.abs(new Date(last.lastAt) - new Date(x.at)) <= 120000) {
+          if (!last.group) last.group = [last.issueKey];
+          last.group.push(x.issueKey);
+          last.lastAt = x.at;
+          continue;
+        }
+        grouped.push({ ...x, lastAt: x.at });
+      }
+      grouped.forEach(g => {
+        if (g.group) { g.count = g.group.length; g.text = `created ${g.count} tasks`; g.id = `${g.id}-x${g.count}`; }
+        delete g.lastAt;
+      });
+      list = grouped;
+      const total = list.length;
+      const rows = list.slice((page - 1) * pageSize, page * pageSize).map(x => {
+        const i = issueByKey.get(x.issueKey) || {};
+        let labels = i.labels; if (typeof labels === 'string') { try { labels = JSON.parse(labels); } catch (e) { labels = []; } }
+        return {
+          ...x,
+          group: x.group ? x.group.slice(0, 300).map(k => { const gi = issueByKey.get(k) || {}; return { key: k, title: gi.title, project: gi.project, status: gi.status }; }) : undefined,
+          issue: {
+            title: i.title, type: i.type, status: i.status, priority: i.priority, assignee: i.assignee, due: i.due,
+            sprint: i.sprint, project: i.project, department: i.department,
+            labels: (Array.isArray(labels) ? labels : []).filter(l => !['content-calendar', 'not-in-performance'].includes(String(l).toLowerCase()))
+          }
+        };
+      });
+
+      res.json({ rows, total, page, pageSize, pages: Math.max(1, Math.ceil(total / pageSize)), kpis, users, kinds: KINDS, range: { from, to, prevFrom, prevTo } });
     } catch (error) {
-      console.error('Failed to fetch IT activities', error);
+      console.error('Failed to fetch activities', error);
       res.status(500).json({ error: 'Failed to fetch activities' });
     }
   });
@@ -1544,6 +1664,20 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         [key]
       );
       if (!curRow) return res.status(404).json({ error: 'Issue not found' });
+      // Starting work (moving into In Progress) needs a planned time: either one already on
+      // the ticket, one sent with this move, or one waiting for a manager's approval.
+      {
+        const isActiveSt = (s) => ['IN PROGRESS', 'IN-PROGRESS', 'IN_PROGRESS'].includes(String(s || '').toUpperCase().trim());
+        if (updates.status !== undefined && isActiveSt(updates.status) && !isActiveSt(curRow.status)) {
+          const planned = parseDurationToSeconds(updates.original_estimate !== undefined ? updates.original_estimate : curRow.original_estimate);
+          if (!planned) {
+            const [[pending]] = await db.query('SELECT requested_estimate FROM it_kanban_issues WHERE issue_key = ?', [key]).catch(() => [[null]]);
+            if (!parseDurationToSeconds(pending?.requested_estimate)) {
+              return res.status(400).json({ error: 'Add the estimated time (e.g. 2h or 45m) before starting this task.', code: 'PLAN_REQUIRED' });
+            }
+          }
+        }
+      }
       // Timer bookkeeping is the server's job, never the browser's.
       delete updates.is_timer_running; delete updates.timer_owner; delete updates.timer_source;
       delete updates.estimate_approved; delete updates.requested_estimate; delete updates.estimate_requested_by;
@@ -1634,6 +1768,61 @@ app.get('/api/it-kanban/labels', async (req, res) => {
             code: 'SUBTASKS_INCOMPLETE',
             openSubtasks: open.map(s => s.title).filter(Boolean)
           });
+        }
+      }
+
+      // Proof of work. Moving into In Review means "I have finished": it needs evidence (a
+      // note, links or screenshots). Moving to Done is the reporting manager's sign-off: it
+      // needs their comment. Both are saved as comments on the ticket. Without them the move
+      // is refused with 428 PROOF_REQUIRED; the app asks for the proof and sends it again.
+      {
+        const isReviewSt = (s) => ['IN REVIEW', 'REVIEW'].includes(String(s || '').toUpperCase().trim());
+        const proof = updates.transition_proof;
+        delete updates.transition_proof;
+        const toReview = updates.status !== undefined && isReviewSt(updates.status) && !isReviewSt(curRow.status);
+        const toDone = updates.status !== undefined && isDoneStatus(updates.status) && !isDoneStatus(curRow.status);
+        if (toReview || toDone) {
+          const kind = toReview ? 'evidence' : 'approval';
+          const note = String(proof?.note || '').trim().slice(0, 5000);
+          const links = (Array.isArray(proof?.links) ? proof.links : [])
+            .map(l => String(l || '').trim()).filter(l => /^https?:\/\/\S+$/i.test(l)).slice(0, 10);
+          const files = (Array.isArray(proof?.files) ? proof.files : [])
+            .filter(f => f && /^(\/api\/uploads\/|\/uploads\/|https?:\/\/)/i.test(String(f.url || '')))
+            .map(f => ({ name: String(f.name || 'file').slice(0, 200), url: String(f.url).slice(0, 500), isImage: Boolean(f.isImage) }))
+            .slice(0, 10);
+          const enough = toReview ? Boolean(note || links.length || files.length) : note.length >= 3;
+
+          const [[full]] = await db.query('SELECT id, title, comments FROM it_kanban_issues WHERE issue_key = ?', [key]);
+          let existing = updates.comments !== undefined ? updates.comments : full?.comments;
+          if (typeof existing === 'string') { try { existing = JSON.parse(existing); } catch (e) { existing = []; } }
+          if (!Array.isArray(existing)) existing = [];
+
+          if (!enough) {
+            // For sign-off, show the reviewer the evidence that was submitted.
+            const evidence = toDone ? [...existing].reverse().find(c => c && c.kind === 'evidence') || null : null;
+            return res.status(428).json({
+              code: 'PROOF_REQUIRED', kind, issueKey: key, title: full?.title || '',
+              from: curRow.status, to: updates.status, reporter: curRow.reporter || '', assignee: curRow.assignee || '',
+              evidence,
+              error: toReview
+                ? 'Add proof of work (a note, a link or a screenshot) before moving this to In Review.'
+                : 'Add a comment on the finished work before moving it to Done.'
+            });
+          }
+
+          const actor = req.user?.name || req.headers['x-user-name'] || 'User';
+          existing.push({
+            author: actor, text: note || (toReview ? 'Submitted for review.' : ''), time: new Date().toISOString(),
+            kind, links, files, status_from: curRow.status || '', status_to: updates.status
+          });
+          updates.comments = existing;
+          // Screenshots and files also appear in the ticket's Attachments.
+          for (const f of files) {
+            await db.query(
+              'INSERT INTO it_kanban_attachments (issue_key, issue_id, file_name, file_path, file_size, file_type) VALUES (?, ?, ?, ?, ?, ?)',
+              [key, full?.id || null, f.name.slice(0, 255), f.url, '', f.isImage ? 'image/png' : 'document']
+            ).catch(e => console.error('proof attachment:', e.message));
+          }
         }
       }
 
@@ -2250,8 +2439,12 @@ app.get('/api/it-kanban/labels', async (req, res) => {
     try {
       const { key } = req.params;
       const actor = actorOf(req);
-      const [[cur]] = await db.query('SELECT status, is_timer_running, timer_owner FROM it_kanban_issues WHERE issue_key = ?', [key]);
+      const [[cur]] = await db.query('SELECT status, is_timer_running, timer_owner, original_estimate FROM it_kanban_issues WHERE issue_key = ?', [key]);
       if (!cur) return res.status(404).json({ error: 'Issue not found' });
+      const curStatus = String(cur.status || '').toUpperCase();
+      if (!['IN PROGRESS', 'IN-PROGRESS', 'IN_PROGRESS', 'DONE', 'COMPLETED', 'CLOSED'].includes(curStatus) && !parseDurationToSeconds(cur.original_estimate)) {
+        return res.status(400).json({ error: 'Add the estimated time (planned time) before starting this task.', code: 'PLAN_REQUIRED' });
+      }
       if (cur.is_timer_running) {
         return res.status(409).json({ error: `The timer is already running for ${cur.timer_owner || 'someone'}` });
       }

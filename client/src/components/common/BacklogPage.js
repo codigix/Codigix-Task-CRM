@@ -15,6 +15,7 @@ import CreateSprintModal from './CreateSprintModal';
 import CompleteSprintModal from './CompleteSprintModal';
 import RenewSprintModal from './RenewSprintModal';
 import ImportCalendarModal from './ImportCalendarModal';
+import SheetSyncBar from './SheetSyncBar';
 import ITIssueDetailsPanel from '../it/ITIssueDetailsPanel';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
@@ -532,6 +533,19 @@ const BacklogPage = ({ department }) => {
   const [importSprintId, setImportSprintId] = useState(null);
   const [projects, setProjects] = useState([]);
   const [selectedKey, setSelectedKey] = useState(null);
+  // Moving an item to In Review / Done needs proof: open that item with a proof box in it.
+  const [proofRequest, setProofRequest] = useState(null);
+  useEffect(() => {
+    const onNeeded = (e) => {
+      const d = e.detail || {};
+      if (!d.issueKey) return;
+      d.handled = true;
+      setSelectedKey(d.issueKey);
+      setProofRequest(d);
+    };
+    window.addEventListener('crm-proof-needed', onNeeded);
+    return () => window.removeEventListener('crm-proof-needed', onNeeded);
+  }, []);
   const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState('ALL');
 
   const load = useCallback(async () => {
@@ -551,6 +565,11 @@ const BacklogPage = ({ department }) => {
   }, [currentDept, isManager, user?.role, designation]);
 
   useEffect(() => { load(); }, [load]);
+  // Proof of work / sign-off comments are saved by the server; reload so they show up.
+  useEffect(() => {
+    window.addEventListener('crm-issue-proof-saved', load);
+    return () => window.removeEventListener('crm-issue-proof-saved', load);
+  }, [load]);
 
   // Projects a sprint can belong to, scoped to all accessible projects for managers.
   useEffect(() => {
@@ -659,6 +678,7 @@ const BacklogPage = ({ department }) => {
         const data = await res.json().catch(() => ({}));
         const err = new Error(data.error || 'Update rejected by the server');
         err.openSubtasks = data.openSubtasks;
+        err.code = data.code;
         throw err;
       }
       if (updates.assignee !== undefined) {
@@ -678,7 +698,7 @@ const BacklogPage = ({ department }) => {
                    </ul>
                  </div>`
         });
-      } else {
+      } else if (err.code !== 'PROOF_PENDING' && err.code !== 'PROOF_CANCELLED') {
         showErrorToast(err.message || 'Could not save the change');
       }
       load(); // Roll the optimistic edit back to what the server actually has.
@@ -1083,6 +1103,7 @@ const BacklogPage = ({ department }) => {
 
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="p-6">
+          <SheetSyncBar department={currentDept} onSynced={load} />
 
           {/* Department Filter Toolbar for Managers */}
           {isManager && (
@@ -1296,8 +1317,10 @@ const BacklogPage = ({ department }) => {
         issue={selectedIssue}
         updateIssue={updateItem}
         deleteIssue={canDelete ? deleteItem : undefined}
-        onClose={() => setSelectedKey(null)}
+        onClose={() => { setSelectedKey(null); setProofRequest(null); }}
         onIssueCreated={load}
+        proofRequest={proofRequest && proofRequest.issueKey === selectedKey ? proofRequest : null}
+        onProofClose={() => setProofRequest(null)}
       />
     </div>
   );

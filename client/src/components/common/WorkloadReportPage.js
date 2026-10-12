@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config/environment';
 import { isManagerDesignation } from '../../utils/access';
 import BoardTabs from './BoardTabs';
+import DailyReport from './DailyReport';
 
 /**
  * How much work each person is carrying, and where it has got to.
@@ -54,6 +55,7 @@ const WorkloadReportPage = ({ department }) => {
     ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username)
     : (username || '');
 
+  const [view, setView] = useState('daily');
   const [issues, setIssues] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -230,6 +232,16 @@ const WorkloadReportPage = ({ department }) => {
       <BoardTabs department={currentDept} spaceName={`${currentDept} Workspace`} />
 
       <div className="p-6">
+        <div className="flex items-center gap-1 mb-5 border-b border-gray-200">
+          {[['daily', 'Daily report'], ['monthly', 'Monthly workload']].map(([k, l]) => (
+            <button key={k} onClick={() => setView(k)}
+              className={`px-3 py-2 text-[13px] font-medium -mb-px border-b-2 cursor-pointer ${view === k ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        {view === 'daily' ? <DailyReport department={currentDept} /> : (<>
         <div className="flex items-start justify-between gap-4 mb-5">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -343,6 +355,7 @@ const WorkloadReportPage = ({ department }) => {
             </div>
           </div>
         )}
+        </>)}
       </div>
     </div>
   );
