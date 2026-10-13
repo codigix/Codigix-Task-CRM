@@ -15,7 +15,7 @@ const crypto = require('crypto');
  */
 
 const TYPES = ['note', 'link', 'credential', 'document'];
-const VISIBILITY = ['team', 'managers', 'private'];
+const VISIBILITY = ['team', 'department', 'managers', 'specific', 'private'];
 
 const vaultKey = () => crypto.createHash('sha256')
   .update(process.env.VAULT_KEY || `${process.env.JWT_SECRET || 'codigix'}:kb-vault`)
@@ -55,6 +55,25 @@ const cleanUrl = (u) => {
   const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : `https://${s}`;
   return /^https?:\/\/\S+$/i.test(withScheme) ? withScheme.slice(0, 1000) : null;
 };
+const cleanSharedWith = (val) => {
+  if (!val) return [];
+  const raw = Array.isArray(val) ? val : parseJson(val, []);
+  if (!Array.isArray(raw)) return [];
+  return raw.map(u => {
+    if (typeof u === 'number' || typeof u === 'string') {
+      const id = Number(u);
+      return id ? { id, name: `User #${id}` } : null;
+    }
+    if (typeof u === 'object' && u) {
+      return {
+        id: Number(u.id) || null,
+        name: String(u.name || '').slice(0, 120),
+        email: String(u.email || '').slice(0, 150)
+      };
+    }
+    return null;
+  }).filter(Boolean).slice(0, 50);
+};
 
 module.exports = function setupKnowledgeRoutes(app, pool) {
   const q = async (sql, params = []) => (await pool.query(sql, params))[0];
@@ -70,10 +89,12 @@ module.exports = function setupKnowledgeRoutes(app, pool) {
       email VARCHAR(255) NULL,
       secret_enc TEXT NULL,
       project_id INT NULL,
+      department VARCHAR(80) NULL,
       category VARCHAR(80) NULL,
       tags JSON NULL,
       files JSON NULL,
-      visibility VARCHAR(12) NOT NULL DEFAULT 'team',
+      visibility VARCHAR(20) NOT NULL DEFAULT 'team',
+      shared_with JSON NULL,
       pinned TINYINT(1) NOT NULL DEFAULT 0,
       created_by_id INT NULL,
       created_by VARCHAR(120) NULL,
@@ -84,6 +105,21 @@ module.exports = function setupKnowledgeRoutes(app, pool) {
       KEY idx_kb_project (project_id),
       KEY idx_kb_type (type)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+    try {
+      const [deptCols] = await pool.query("SHOW COLUMNS FROM kb_items LIKE 'department'");
+      if (!deptCols.length) {
+        await pool.query("ALTER TABLE kb_items ADD COLUMN department VARCHAR(80) NULL AFTER project_id");
+      }
+      const [sharedCols] = await pool.query("SHOW COLUMNS FROM kb_items LIKE 'shared_with'");
+      if (!sharedCols.length) {
+        await pool.query("ALTER TABLE kb_items ADD COLUMN shared_with JSON NULL AFTER visibility");
+      }
+      await pool.query("ALTER TABLE kb_items MODIFY COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'team'");
+    } catch (migErr) {
+      console.warn('kb_items column migration note:', migErr.message);
+    }
+
     await pool.query(`CREATE TABLE IF NOT EXISTS kb_access_log (
       id INT AUTO_INCREMENT PRIMARY KEY,
       item_id INT NOT NULL,
@@ -97,17 +133,56 @@ module.exports = function setupKnowledgeRoutes(app, pool) {
 
   const isMgr = (req) => Boolean(req.user?.isManager || req.user?.isAdmin);
   const isAuthor = (item, req) => Number(item.created_by_id) === Number(req.user?.id);
-  const canSee = (item, req) => item.visibility === 'team'
-    || (item.visibility === 'managers' && (isMgr(req) || isAuthor(item, req)))
-    || (item.visibility === 'private' && isAuthor(item, req));
-  // Private items are the author's alone; anything else the author or a manager may change.
-  const canEdit = (item, req) => isAuthor(item, req) || (item.visibility !== 'private' && isMgr(req));
+
+  const isSharedWithUser = (item, req) => {
+    if (!req.user?.id) return false;
+    const list = parseJson(item.shared_with, []);
+    if (!Array.isArray(list)) return false;
+    const uid = Number(req.user.id);
+    const uEmail = String(req.user.email || '').toLowerCase().trim();
+    return list.some(x => {
+      if (typeof x === 'number') return x === uid;
+      if (typeof x === 'string') return x.toLowerCase().trim() === uEmail;
+      if (typeof x === 'object' && x) {
+        return Number(x.id) === uid || (x.email && String(x.email).toLowerCase().trim() === uEmail);
+      }
+      return false;
+    });
+  };
+
+  const isDepartmentMember = (item, req) => {
+    if (!item.department || item.department === 'All Departments') return true;
+    const userDept = String(req.user?.department || '').toLowerCase().trim();
+    const itemDept = String(item.department).toLowerCase().trim().replace(/\s*department\s*$/i, '');
+    return userDept.includes(itemDept) || itemDept.includes(userDept.replace(/\s*department\s*$/i, ''));
+  };
+
+  const canSee = (item, req) => {
+    if (isAuthor(item, req)) return true;
+    if (isMgr(req)) return true;
+    if (item.visibility === 'private') return false;
+    if (item.visibility === 'specific') return isSharedWithUser(item, req);
+    if (item.visibility === 'managers') return false;
+    if (item.visibility === 'department') return isDepartmentMember(item, req);
+    if (item.visibility === 'team') return true;
+    return false;
+  };
+
+  // Private items are the author's alone; anything else the author, manager, or specifically shared recipient can edit.
+  const canEdit = (item, req) => {
+    if (isAuthor(item, req)) return true;
+    if (item.visibility === 'private') return false;
+    if (isMgr(req)) return true;
+    if (item.visibility === 'specific' && isSharedWithUser(item, req)) return true;
+    return false;
+  };
 
   const shape = (row, req) => ({
     id: row.id, type: row.type, title: row.title, body: row.body || '', url: row.url || '',
     username: row.username || '', email: row.email || '', hasSecret: Boolean(row.secret_enc),
-    projectId: row.project_id, project: row.project_name || '', category: row.category || '',
-    tags: parseJson(row.tags, []), files: parseJson(row.files, []), visibility: row.visibility,
+    projectId: row.project_id, project: row.project_name || '', department: row.department || 'All Departments',
+    category: row.category || '', tags: parseJson(row.tags, []), files: parseJson(row.files, []),
+    visibility: row.visibility, sharedWith: cleanSharedWith(row.shared_with),
     pinned: Boolean(row.pinned), createdBy: row.created_by || '', createdById: row.created_by_id,
     updatedBy: row.updated_by || row.created_by || '', createdAt: row.created_at, updatedAt: row.updated_at,
     deletedAt: row.deleted_at, canEdit: canEdit(row, req)
@@ -141,25 +216,35 @@ module.exports = function setupKnowledgeRoutes(app, pool) {
       if (view === 'pinned') list = list.filter(r => r.pinned);
       if (view === 'mine') list = list.filter(r => isAuthor(r, req));
       if (TYPES.includes(req.query.type)) list = list.filter(r => r.type === req.query.type);
+      if (req.query.department && req.query.department !== 'all') {
+        const d = String(req.query.department).trim();
+        list = list.filter(r => {
+          const itemDept = r.department || 'All Departments';
+          return itemDept === d || (d === 'All Departments' ? true : itemDept === 'All Departments');
+        });
+      }
       if (req.query.project_id) list = list.filter(r => String(r.project_id || '') === String(req.query.project_id === 'none' ? '' : req.query.project_id));
       if (req.query.category) list = list.filter(r => (r.category || '') === req.query.category);
       if (req.query.tag) list = list.filter(r => parseJson(r.tags, []).includes(req.query.tag));
       const term = String(req.query.q || '').trim().toLowerCase();
       if (term) {
-        list = list.filter(r => [r.title, r.body, r.url, r.username, r.email, r.category, r.project_name, parseJson(r.tags, []).join(' '),
+        list = list.filter(r => [r.title, r.body, r.url, r.username, r.email, r.category, r.department, r.project_name, parseJson(r.tags, []).join(' '),
           parseJson(r.files, []).map(f => f.name).join(' ')].some(v => String(v || '').toLowerCase().includes(term)));
       }
       // Counts for the sidebar, over everything the user can see (not the filtered list).
       const counts = { all: all.length, pinned: all.filter(r => r.pinned).length, mine: all.filter(r => isAuthor(r, req)).length,
         byType: Object.fromEntries(TYPES.map(t => [t, all.filter(r => r.type === t).length])) };
-      const projects = {}; const categories = {}; const tags = {};
+      const projects = {}; const categories = {}; const tags = {}; const departments = {};
       all.forEach(r => {
+        const deptKey = r.department || 'All Departments';
+        departments[deptKey] = (departments[deptKey] || 0) + 1;
         if (r.project_id) projects[r.project_id] = { id: r.project_id, name: r.project_name || `Project ${r.project_id}`, count: (projects[r.project_id]?.count || 0) + 1 };
         if (r.category) categories[r.category] = (categories[r.category] || 0) + 1;
         parseJson(r.tags, []).forEach(t => { tags[t] = (tags[t] || 0) + 1; });
       });
       res.json({
         items: list.map(r => shape(r, req)), counts,
+        departments: Object.entries(departments).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)),
         projects: Object.values(projects).sort((a, b) => a.name.localeCompare(b.name)),
         categories: Object.entries(categories).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)),
         tags: Object.entries(tags).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
@@ -183,6 +268,8 @@ module.exports = function setupKnowledgeRoutes(app, pool) {
     if (b.category !== undefined) out.category = String(b.category || '').trim().slice(0, 80) || null;
     if (b.tags !== undefined) out.tags = JSON.stringify(cleanTags(b.tags));
     if (b.files !== undefined) out.files = JSON.stringify(cleanFiles(b.files));
+    if (b.department !== undefined) out.department = String(b.department || '').trim().slice(0, 80) || null;
+    if (b.sharedWith !== undefined) out.shared_with = JSON.stringify(cleanSharedWith(b.sharedWith));
     if (b.visibility !== undefined) out.visibility = VISIBILITY.includes(b.visibility) ? b.visibility : 'team';
     if (b.pinned !== undefined) out.pinned = b.pinned ? 1 : 0;
     // secret: undefined keeps it, '' clears it, text replaces it.

@@ -5,7 +5,7 @@ import AddNewContractModal from './AddNewContractModal';
 import ContractDetailsPage from './ContractDetailsPage';
 import { contractsAPI, createContract } from '../../services/api';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../config/environment';
 
 const ContractsPage = () => {
   const [viewMode, setViewMode] = useState('grid');
@@ -149,13 +149,7 @@ const ContractsPage = () => {
   };
 
   const handleDownloadContract = (contract) => {
-    const element = document.createElement('a');
-    const file = new Blob([`Contract: ${contract.subject}\n\nDetails:\n${JSON.stringify(contract, null, 2)}`], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `contract-${contract.id}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    window.open(`${API_BASE_URL}/sales-pdf/contract/${contract.id}?download=1`, '_blank', 'noopener');
   };
 
   const getFilteredContracts = () => {

@@ -81,7 +81,7 @@ const InvoiceActionDropdown = ({ invoice, onEdit, onDelete, onPreview, onStatusC
             className="w-full flex items-center gap-2 p-2  text-xs  text-gray-700 hover:bg-gray-50 transition border-b border-[#E5E7EB]"
           >
             <Printer size={14} strokeWidth={2} />
-            Print
+            PDF / Print
           </button>
 
           <div className="border-t border-[#E5E7EB] py-1">

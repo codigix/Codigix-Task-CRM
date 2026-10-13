@@ -556,7 +556,7 @@ async function initializeDatabase() {
         company VARCHAR(255),
         company_id INT,
         lead_source VARCHAR(100),
-        lead_status ENUM('New', 'Qualified', 'Contacted', 'Unqualified', 'Not Contacted', 'Closed', 'Lost', 'Converted to Deal', 'Quotation', 'Revised Quotation') DEFAULT 'New',
+        lead_status ENUM('New', 'Qualified', 'Contacted', 'Unqualified', 'Not Contacted', 'Closed', 'Lost', 'Converted to Deal', 'Quotation', 'Revised Quotation', 'On Hold') DEFAULT 'New',
         business_type VARCHAR(100),
         marketing_services JSON,
         it_services VARCHAR(255),
@@ -577,7 +577,7 @@ async function initializeDatabase() {
 
     try {
       await connection.query(`
-        ALTER TABLE leads MODIFY COLUMN lead_status ENUM('New', 'Qualified', 'Contacted', 'Unqualified', 'Not Contacted', 'Closed', 'Lost', 'Converted to Deal', 'Quotation', 'Revised Quotation') DEFAULT 'New'
+        ALTER TABLE leads MODIFY COLUMN lead_status ENUM('New', 'Qualified', 'Contacted', 'Unqualified', 'Not Contacted', 'Closed', 'Lost', 'Converted to Deal', 'Quotation', 'Revised Quotation', 'On Hold') DEFAULT 'New'
       `);
       console.log('✓ Updated lead_status ENUM in leads');
     } catch (err) {
@@ -878,7 +878,7 @@ async function initializeDatabase() {
         currency VARCHAR(10) DEFAULT 'INR',
         estimate_date DATE,
         expiry_date DATE,
-        status ENUM('Draft', 'Sent', 'Accepted', 'Declined', 'Revised', 'Finalized') DEFAULT 'Draft',
+        status ENUM('Draft', 'Pending Approval', 'Approved', 'Sent', 'Accepted', 'Declined', 'Revised', 'Finalized', 'Expired') DEFAULT 'Draft',
         description LONGTEXT,
         tags JSON,
         estimate_by INT,
@@ -954,7 +954,7 @@ async function initializeDatabase() {
       }
 
       // Update status ENUM if necessary
-      await connection.query("ALTER TABLE estimations MODIFY COLUMN status ENUM('Draft', 'Sent', 'Accepted', 'Declined', 'Revised', 'Finalized') DEFAULT 'Draft'");
+      await connection.query("ALTER TABLE estimations MODIFY COLUMN status ENUM('Draft', 'Pending Approval', 'Approved', 'Sent', 'Accepted', 'Declined', 'Revised', 'Finalized', 'Expired') DEFAULT 'Draft'");
 
       // Make client_id nullable if lead_id is present
       await connection.query("ALTER TABLE estimations MODIFY COLUMN client_id INT NULL");

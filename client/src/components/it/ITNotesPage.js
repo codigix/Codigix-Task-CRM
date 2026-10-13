@@ -3,9 +3,10 @@ import Swal from 'sweetalert2';
 import {
   Search, Plus, Pin, X, FileText, Link2, KeyRound, FileArchive, FolderOpen, Trash2, RotateCcw,
   Eye, EyeOff, Copy, ExternalLink, Loader2, Pencil, Paperclip, Layers, User, ChevronDown,
-  Lock, Users, ShieldCheck, Download, History, Wand2
+  Lock, Users, ShieldCheck, Download, History, Wand2, Building2, UserCheck, Check, Sparkles
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config/environment';
+import { useAuth } from '../../hooks/useAuth';
 import { uploadDescriptionFile, toAbsoluteFileUrl, formatFileSize } from '../../utils/descriptionFiles';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
@@ -15,6 +16,15 @@ import { showSuccessToast, showErrorToast } from '../../utils/toast';
  * projects and tickets. Passwords are stored encrypted and fetched only on Reveal / Copy.
  */
 
+const DEPARTMENTS_LIST = [
+  'All Departments',
+  'IT Department',
+  'Marketing Department',
+  'Sales Department',
+  'HR Department',
+  'SEO & GMB Department'
+];
+
 const TYPE_META = {
   note: { label: 'Note', plural: 'Notes', icon: FileText, tone: 'bg-emerald-50 text-emerald-700' },
   link: { label: 'Link', plural: 'Links', icon: Link2, tone: 'bg-blue-50 text-blue-700' },
@@ -22,9 +32,11 @@ const TYPE_META = {
   document: { label: 'Document', plural: 'Documents', icon: FileArchive, tone: 'bg-violet-50 text-violet-700' }
 };
 const VIS_META = {
-  team: { label: 'Everyone in the team', short: 'Team', icon: Users },
-  managers: { label: 'Managers only (and you)', short: 'Managers', icon: ShieldCheck },
-  private: { label: 'Only me', short: 'Private', icon: Lock }
+  team: { label: 'Everyone in company', short: 'All Team', desc: 'Accessible to all employees in every department', icon: Users, tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  department: { label: 'Department members only', short: 'Department', desc: 'Accessible only to people in the selected department & managers', icon: Building2, tone: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  managers: { label: 'Managers & Admins only', short: 'Managers', desc: 'Restricted to administrators, HR and managers', icon: ShieldCheck, tone: 'bg-purple-50 text-purple-700 border-purple-200' },
+  specific: { label: 'Specific people (given access)', short: 'Specific', desc: 'Restricted to particular colleagues you choose', icon: UserCheck, tone: 'bg-amber-50 text-amber-700 border-amber-200' },
+  private: { label: 'Only me (Private)', short: 'Private', desc: 'Visible and editable only by you', icon: Lock, tone: 'bg-gray-100 text-gray-700 border-gray-200' }
 };
 const VIEWS = [
   { key: 'all', label: 'All items', icon: Layers },
@@ -146,20 +158,46 @@ const CopyField = ({ value, label, href }) => (
 );
 
 // ── Create / edit form ───────────────────────────────────────────────────
-function ItemForm({ initial, projects, categories, onSaved, onCancel }) {
+function ItemForm({ initial, projects, categories, allUsers = [], defaultDepartment = 'All Departments', onSaved, onCancel }) {
   const isNew = !initial.id;
   const [f, setF] = useState(() => ({
     type: initial.type || 'note', title: initial.title || '', body: initial.body || '', url: initial.url || '',
     username: initial.username || '', email: initial.email || '', secret: '', projectId: initial.projectId || '',
+    department: initial.department || defaultDepartment || 'All Departments',
     category: initial.category || '', tags: (initial.tags || []).join(', '), files: initial.files || [],
-    visibility: initial.visibility || (initial.type === 'credential' ? 'managers' : 'team'), pinned: Boolean(initial.pinned)
+    visibility: initial.visibility || (initial.type === 'credential' ? 'managers' : 'team'),
+    sharedWith: Array.isArray(initial.sharedWith) ? initial.sharedWith : [],
+    pinned: Boolean(initial.pinned)
   }));
+  const [userSearch, setUserSearch] = useState('');
   const [showSecret, setShowSecret] = useState(false);
   const [uploading, setUploading] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const fileInput = useRef(null);
   const set = (k, v) => { setF(prev => ({ ...prev, [k]: v })); setError(''); };
+
+  const toggleSharedUser = (user) => {
+    setF(prev => {
+      const exists = (prev.sharedWith || []).some(u => String(u.id) === String(user.id));
+      const nextShared = exists
+        ? prev.sharedWith.filter(u => String(u.id) !== String(user.id))
+        : [...(prev.sharedWith || []), {
+            id: user.id,
+            name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username,
+            email: user.email || '',
+            department: user.department || ''
+          }];
+      return { ...prev, sharedWith: nextShared };
+    });
+  };
+
+  const removeSharedUser = (userId) => {
+    setF(prev => ({
+      ...prev,
+      sharedWith: (prev.sharedWith || []).filter(u => String(u.id) !== String(userId))
+    }));
+  };
 
   const addFiles = async (list) => {
     for (const file of Array.from(list || [])) {
@@ -183,7 +221,9 @@ function ItemForm({ initial, projects, categories, onSaved, onCancel }) {
     try {
       const body = {
         type: f.type, title: f.title, body: f.body, url: f.url, username: f.username, email: f.email,
-        projectId: f.projectId || null, category: f.category, tags: f.tags, files: f.files, visibility: f.visibility, pinned: f.pinned
+        projectId: f.projectId || null, department: f.department || 'All Departments', category: f.category,
+        tags: f.tags, files: f.files, visibility: f.visibility,
+        sharedWith: f.visibility === 'specific' ? f.sharedWith : [], pinned: f.pinned
       };
       // An empty password field when editing keeps the saved password.
       if (f.secret || isNew) body.secret = f.secret;
@@ -198,6 +238,14 @@ function ItemForm({ initial, projects, categories, onSaved, onCancel }) {
 
   const label = 'block text-xs font-semibold text-gray-700 mb-1';
   const input = 'w-full h-9 text-[13px] border border-gray-300 rounded px-2.5 outline-none focus:border-blue-500 bg-white';
+
+  const filteredUsers = allUsers.filter(u => {
+    if (!userSearch) return true;
+    const term = userSearch.toLowerCase();
+    return (u.name || '').toLowerCase().includes(term) ||
+      (u.email || '').toLowerCase().includes(term) ||
+      (u.department || '').toLowerCase().includes(term);
+  });
 
   return (
     <div className="space-y-4" onPaste={e => { const files = Array.from(e.clipboardData?.files || []); if (files.length) { e.preventDefault(); addFiles(files); } }}>
@@ -274,31 +322,103 @@ function ItemForm({ initial, projects, categories, onSaved, onCancel }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
+          <label className={label}>Department</label>
+          <select value={f.department || 'All Departments'} onChange={e => set('department', e.target.value)} className={input}>
+            {DEPARTMENTS_LIST.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+        <div>
           <label className={label}>Project</label>
           <select value={f.projectId || ''} onChange={e => set('projectId', e.target.value)} className={input}>
             <option value="">No project (general)</option>
             {projects.map(p => <option key={p.id} value={p.id}>{p.name || p.title}</option>)}
           </select>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={label}>Category</label>
           <input value={f.category} onChange={e => set('category', e.target.value)} list="kb-categories" className={input} placeholder="e.g. Process, Client access" />
           <datalist id="kb-categories">{categories.map(c => <option key={c.name} value={c.name} />)}</datalist>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={label}>Tags</label>
           <input value={f.tags} onChange={e => set('tags', e.target.value)} className={input} placeholder="gmb, seo, hosting" />
         </div>
-        <div>
-          <label className={label}>Who can see it</label>
-          <select value={f.visibility} onChange={e => set('visibility', e.target.value)} className={input}>
-            {Object.entries(VIS_META).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
-          </select>
-        </div>
       </div>
+
+      <div>
+        <label className={label}>Access & Visibility</label>
+        <select value={f.visibility} onChange={e => set('visibility', e.target.value)} className={input}>
+          {Object.entries(VIS_META).map(([k, m]) => <option key={k} value={k}>{m.label} – {m.desc}</option>)}
+        </select>
+        <p className="text-[11px] text-gray-500 mt-1">{VIS_META[f.visibility]?.desc}</p>
+      </div>
+
+      {f.visibility === 'specific' && (
+        <div className="bg-amber-50/70 border border-amber-200 rounded-lg p-3 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-amber-900 flex items-center gap-1.5">
+              <UserCheck size={14} className="text-amber-700" />
+              Particular Colleagues Granted Access ({f.sharedWith?.length || 0})
+            </label>
+            <span className="text-[10px] text-amber-700">Author & managers always have access</span>
+          </div>
+
+          {f.sharedWith?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1.5 bg-white border border-amber-200 rounded">
+              {f.sharedWith.map(u => (
+                <span key={u.id} className="inline-flex items-center gap-1 text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-medium">
+                  <span>{u.name || u.email}</span>
+                  <button type="button" onClick={() => removeSharedUser(u.id)} className="text-amber-700 hover:text-amber-950 cursor-pointer" title="Remove">
+                    <X size={11} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="relative">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={userSearch}
+              onChange={e => setUserSearch(e.target.value)}
+              placeholder="Search colleagues to give access..."
+              className="w-full h-8 pl-8 pr-2.5 text-xs border border-gray-300 rounded bg-white outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div className="max-h-36 overflow-y-auto border border-gray-200 rounded bg-white divide-y divide-gray-100 text-xs">
+            {filteredUsers.length === 0 ? (
+              <div className="p-2 text-center text-gray-400">No colleagues found</div>
+            ) : (
+              filteredUsers.slice(0, 30).map(u => {
+                const isSelected = f.sharedWith?.some(s => String(s.id) === String(u.id));
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => toggleSharedUser(u)}
+                    className={`w-full flex items-center justify-between p-2 text-left cursor-pointer transition-colors ${isSelected ? 'bg-amber-50 text-amber-900 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
+                  >
+                    <div className="min-w-0 flex items-center gap-2">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isSelected ? 'bg-amber-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                        {(u.name || u.first_name || 'U').charAt(0).toUpperCase()}
+                      </span>
+                      <div className="truncate">
+                        <div className="truncate font-medium">{u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username}</div>
+                        <div className="text-[10px] text-gray-400 truncate">{u.email} {u.department ? `· ${u.department}` : ''}</div>
+                      </div>
+                    </div>
+                    {isSelected ? <Check size={14} className="text-amber-600 shrink-0" /> : <Plus size={13} className="text-gray-400 shrink-0" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
 
       <label className="flex items-center gap-2 text-[13px] text-gray-700 cursor-pointer">
         <input type="checkbox" checked={f.pinned} onChange={e => set('pinned', e.target.checked)} /> Pin to the top
@@ -352,11 +472,49 @@ function ItemDetails({ item, onEdit, onChanged, isTrash }) {
           <h2 className="text-[16px] font-semibold text-gray-900 leading-snug break-words">{item.title}</h2>
           <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-gray-500">
             <span>{TYPE_META[item.type]?.label}</span>
+            <span>·</span>
+            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-medium">
+              <Building2 size={11} /> {item.department || 'All Departments'}
+            </span>
             {item.project && <><span>·</span><span className="flex items-center gap-1"><FolderOpen size={11} /> {item.project}</span></>}
-            <span>·</span><span className="flex items-center gap-1"><VisIcon size={11} /> {Vis.short}</span>
+            <span>·</span>
+            <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded font-medium ${Vis.tone || 'text-gray-600'}`}>
+              <VisIcon size={11} /> {Vis.label}
+            </span>
           </div>
         </div>
       </div>
+
+      {item.visibility === 'specific' && (
+        <div className="bg-amber-50/70 border border-amber-200/80 rounded-lg p-3">
+          <div className="text-xs font-semibold text-amber-900 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <UserCheck size={14} className="text-amber-700" /> Particular People With Access ({item.sharedWith?.length || 0})
+            </span>
+            <span className="text-[10px] text-amber-700/90 font-normal">Author & managers also have access</span>
+          </div>
+          {(!item.sharedWith || item.sharedWith.length === 0) ? (
+            <div className="text-xs text-amber-800 mt-1">No particular users designated yet. Only author and managers can access.</div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {item.sharedWith.map(u => (
+                <span key={u.id || u.email} className="inline-flex items-center gap-1.5 text-xs bg-white border border-amber-200 px-2.5 py-1 rounded-full text-gray-800 shadow-xs">
+                  <User size={12} className="text-amber-600" />
+                  <span className="font-medium">{u.name || u.email}</span>
+                  {u.department && <span className="text-[10px] text-gray-400">· {u.department}</span>}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {item.visibility === 'department' && (
+        <div className="bg-indigo-50/60 border border-indigo-200/70 rounded-lg p-2.5 text-xs text-indigo-900 flex items-center gap-2">
+          <Building2 size={14} className="text-indigo-600 shrink-0" />
+          <span>Restricted to members of <strong>{item.department || 'the specified department'}</strong> and management.</span>
+        </div>
+      )}
 
       {!isTrash && item.canEdit && (
         <div className="flex flex-wrap gap-2">
@@ -418,8 +576,10 @@ function ItemDetails({ item, onEdit, onChanged, isTrash }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────
 export default function ITNotesPage() {
+  const { user: currentUser } = useAuth();
   const [view, setView] = useState('all');
   const [type, setType] = useState('');          // note | link | credential | document | files
+  const [departmentFilter, setDepartmentFilter] = useState('');
   const [projectId, setProjectId] = useState('');
   const [category, setCategory] = useState('');
   const [tag, setTag] = useState('');
@@ -430,6 +590,7 @@ export default function ITNotesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [projects, setProjects] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [panel, setPanel] = useState(null);       // { mode: 'view' | 'edit' | 'new', item }
   const [newMenu, setNewMenu] = useState(false);
 
@@ -438,6 +599,18 @@ export default function ITNotesPage() {
   useEffect(() => {
     fetch(`${API_BASE_URL}/projects`).then(r => r.json())
       .then(d => setProjects((Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []).filter(p => p.name || p.title).sort((a, b) => String(a.name || a.title).localeCompare(String(b.name || b.title)))))
+      .catch(() => { });
+    fetch(`${API_BASE_URL}/users?limit=300&excludeSystem=true`).then(r => r.json())
+      .then(d => {
+        const list = Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : [];
+        setAllUsers(list.map(u => ({
+          id: u.id,
+          name: u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'User',
+          email: u.email || '',
+          department: u.department || '',
+          role: u.role_name || u.role || ''
+        })));
+      })
       .catch(() => { });
   }, []);
 
@@ -451,13 +624,17 @@ export default function ITNotesPage() {
         if (!data) setData(await api('/kb/items'));
       } else {
         const p = new URLSearchParams({ view });
-        if (type) p.set('type', type); if (projectId) p.set('project_id', projectId);
-        if (category) p.set('category', category); if (tag) p.set('tag', tag); if (q) p.set('q', q);
+        if (type) p.set('type', type);
+        if (departmentFilter) p.set('department', departmentFilter);
+        if (projectId) p.set('project_id', projectId);
+        if (category) p.set('category', category);
+        if (tag) p.set('tag', tag);
+        if (q) p.set('q', q);
         setData(await api(`/kb/items?${p}`));
       }
     } catch (e) { setError(e.message); } finally { setLoading(false); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, type, projectId, category, tag, q]);
+  }, [view, type, departmentFilter, projectId, category, tag, q]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -465,9 +642,19 @@ export default function ITNotesPage() {
   const counts = data?.counts;
   const selectedId = panel?.item?.id;
 
-  const openNew = (t) => { setNewMenu(false); setPanel({ mode: 'new', item: { type: t, projectId: projectId || '' } }); };
+  const openNew = (t) => {
+    setNewMenu(false);
+    setPanel({
+      mode: 'new',
+      item: {
+        type: t,
+        projectId: projectId || '',
+        department: departmentFilter || currentUser?.department || 'All Departments'
+      }
+    });
+  };
   const afterSave = (item) => { setPanel(item ? { mode: 'view', item } : null); load(); };
-  const resetFilters = () => { setView('all'); setType(''); setProjectId(''); setCategory(''); setTag(''); setSearch(''); };
+  const resetFilters = () => { setView('all'); setType(''); setDepartmentFilter(''); setProjectId(''); setCategory(''); setTag(''); setSearch(''); };
 
   const navBtn = (active) => `w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-[13px] cursor-pointer ${active ? 'bg-red-50 text-red-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`;
   const projectName = projects.find(p => String(p.id) === String(projectId))?.name || data?.projects?.find(p => String(p.id) === String(projectId))?.name;
@@ -495,12 +682,34 @@ export default function ITNotesPage() {
               const Icon = v.icon;
               const n = v.key === 'all' ? counts?.all : v.key === 'pinned' ? counts?.pinned : v.key === 'mine' ? counts?.mine : null;
               return (
-                <button key={v.key} onClick={() => { setView(v.key); if (type === 'files') setType(''); }} className={navBtn(view === v.key && type !== 'files' && !type && !projectId && !category && !tag)}>
+                <button key={v.key} onClick={() => { setView(v.key); if (type === 'files') setType(''); }} className={navBtn(view === v.key && type !== 'files' && !type && !departmentFilter && !projectId && !category && !tag)}>
                   <span className="flex items-center gap-2"><Icon size={14} /> {v.label}</span>{n != null && <span className="text-[11px] text-gray-400">{n}</span>}
                 </button>
               );
             })}
           </div>
+
+          <div>
+            <div className="px-2.5 pb-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Departments</div>
+            <button
+              onClick={() => setDepartmentFilter('')}
+              className={navBtn(!departmentFilter && view !== 'trash' && type !== 'files' && !type && !projectId && !category && !tag)}
+            >
+              <span className="flex items-center gap-2"><Layers size={14} /> All Departments</span>
+              <span className="text-[11px] text-gray-400">{counts?.all ?? ''}</span>
+            </button>
+            {DEPARTMENTS_LIST.filter(d => d !== 'All Departments').map(d => {
+              const count = data?.departments?.find(x => x.name === d)?.count ?? 0;
+              const short = d.replace(/\s*Department\s*$/i, '');
+              return (
+                <button key={d} onClick={() => setDepartmentFilter(departmentFilter === d ? '' : d)} className={navBtn(departmentFilter === d)}>
+                  <span className="truncate flex items-center gap-2"><Building2 size={13} /> {short}</span>
+                  {count > 0 && <span className="text-[11px] text-gray-400 shrink-0">{count}</span>}
+                </button>
+              );
+            })}
+          </div>
+
           <div>
             <div className="px-2.5 pb-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Type</div>
             {Object.entries(TYPE_META).map(([k, m]) => {
@@ -555,7 +764,7 @@ export default function ITNotesPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-[20px] font-semibold">Notes & Wiki</h1>
-              <p className="text-[12px] text-gray-500 mt-0.5">Notes, links, logins and documents for the team and each project, plus every file uploaded to projects and tickets.</p>
+              <p className="text-[12px] text-gray-500 mt-0.5">Notes, links, logins and documents for each department and project, properly structured with granular access control.</p>
             </div>
             <div className="relative w-full sm:w-80">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -564,10 +773,11 @@ export default function ITNotesPage() {
               {search && <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Clear"><X size={14} /></button>}
             </div>
           </div>
-          {(type || projectId || category || tag || view !== 'all') && (
+          {(type || departmentFilter || projectId || category || tag || view !== 'all') && (
             <div className="flex flex-wrap items-center gap-1.5 mt-3 text-[12px]">
               <span className="text-gray-500">Showing:</span>
               {view !== 'all' && <span className="px-2 py-0.5 rounded bg-gray-100">{VIEWS.find(v => v.key === view)?.label}</span>}
+              {departmentFilter && <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-medium flex items-center gap-1"><Building2 size={11} /> {departmentFilter}</span>}
               {type && <span className="px-2 py-0.5 rounded bg-gray-100">{type === 'files' ? 'Project files' : TYPE_META[type].plural}</span>}
               {projectId && <span className="px-2 py-0.5 rounded bg-gray-100">{projectName || 'Project'}</span>}
               {category && <span className="px-2 py-0.5 rounded bg-gray-100">{category}</span>}
@@ -609,7 +819,7 @@ export default function ITNotesPage() {
               ))
           ) : data && (items.length === 0 ? (
             <div className="py-16 text-center bg-white border border-gray-200 rounded">
-              <div className="text-sm text-gray-600">{view === 'trash' ? 'Trash is empty.' : q || type || projectId || category || tag ? 'Nothing matches these filters.' : 'Nothing saved yet.'}</div>
+              <div className="text-sm text-gray-600">{view === 'trash' ? 'Trash is empty.' : q || type || departmentFilter || projectId || category || tag ? 'Nothing matches these filters.' : 'Nothing saved yet.'}</div>
               {view !== 'trash' && (
                 <div className="flex flex-wrap justify-center gap-2 mt-4">
                   {Object.entries(TYPE_META).map(([k, m]) => {
@@ -637,6 +847,16 @@ export default function ITNotesPage() {
                         <span className="text-[13px] font-medium text-gray-900 truncate">{it.title}</span>
                         {it.pinned && <Pin size={12} className="text-red-500 fill-red-500 shrink-0" />}
                         {it.files?.length > 0 && it.type !== 'document' && <Paperclip size={12} className="text-gray-400 shrink-0" />}
+                        {it.department && it.department !== 'All Departments' && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100 font-medium shrink-0 flex items-center gap-0.5">
+                            <Building2 size={9} /> {it.department.replace(/\s*Department\s*$/i, '')}
+                          </span>
+                        )}
+                        {it.visibility === 'specific' && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-medium shrink-0 flex items-center gap-0.5" title={`Restricted to ${it.sharedWith?.length || 0} designated users`}>
+                            <UserCheck size={9} /> {it.sharedWith?.length || 0} user{it.sharedWith?.length === 1 ? '' : 's'}
+                          </span>
+                        )}
                       </div>
                       <div className="text-[12px] text-gray-500 truncate">{sub || '—'}</div>
                       {(it.project || it.tags.length > 0) && (
@@ -654,7 +874,7 @@ export default function ITNotesPage() {
                           className="p-1.5 rounded hover:bg-gray-100 text-gray-500 cursor-pointer" title="Copy password (logged)"><KeyRound size={14} /></button>
                       )}
                     </div>
-                    <div className="hidden lg:block w-44 shrink-0 text-right">
+                    <div className="hidden lg:block w-48 shrink-0 text-right">
                       <div className="text-[12px] text-gray-700 truncate">{it.updatedBy || it.createdBy}</div>
                       <div className="text-[11px] text-gray-400 flex items-center justify-end gap-1"><VisIcon size={10} /> {Vis.short} · {fmtDay(it.updatedAt)}</div>
                     </div>
@@ -680,6 +900,7 @@ export default function ITNotesPage() {
             {panel.mode === 'view'
               ? <ItemDetails item={panel.item} isTrash={view === 'trash'} onEdit={() => setPanel({ mode: 'edit', item: panel.item })} onChanged={(it) => { setPanel(it ? { mode: 'view', item: it } : null); load(); }} />
               : <ItemForm key={`${panel.mode}-${panel.item.id || panel.item.type}`} initial={panel.item} projects={projects} categories={data?.categories || []}
+                allUsers={allUsers} defaultDepartment={departmentFilter || currentUser?.department || 'All Departments'}
                 onSaved={afterSave} onCancel={() => setPanel(panel.mode === 'edit' ? { mode: 'view', item: panel.item } : null)} />}
           </div>
         </aside>

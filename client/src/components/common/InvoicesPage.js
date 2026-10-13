@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Layout as LayoutIcon, Grid3x3 } from 'lucide-react';
+import { API_BASE_URL } from '../../config/environment';
 import AddNewInvoiceModal from './AddNewInvoiceModal';
 import EditInvoiceModal from './EditInvoiceModal';
 import InvoiceDetailPage from './InvoiceDetailPage';
@@ -212,8 +213,9 @@ const InvoicesPage = () => {
     });
   };
 
+  // The tax invoice PDF (same letterhead as quotations), not a print of this page.
   const handlePrintInvoice = (invoice) => {
-    window.print();
+    window.open(`${API_BASE_URL}/sales-pdf/invoice/${invoice.id}`, '_blank', 'noopener');
   };
 
   const handleSendInvoice = (invoice) => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MoreVertical, Plus, Grid3x3, List, Download, Send, CheckCircle, XCircle, Edit2, Eye } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { API_BASE_URL } from '../../config/environment';
 import { proposalsAPI, companiesAPI, contactsAPI, dealsAPI, leadsAPI } from '../../services/api';
 import AddNewProposalModal from './AddNewProposalModal';
 import ProposalDetailsPage from './ProposalDetailsPage';
@@ -339,6 +340,13 @@ const ProposalsPage = ({ onViewDetails }) => {
                   >
                     <Eye size={14} className="text-blue-600" /> View Details
                   </button>
+                  <a
+                    href={`${API_BASE_URL}/sales-pdf/proposal/${proposal.id}?download=1`}
+                    onClick={() => setShowActionMenu(null)}
+                    className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                  >
+                    <Download size={14} className="text-gray-600" /> Download PDF
+                  </a>
                   {proposal.status === 'Approved' && (
                     <button
                       onClick={() => handleSendProposal(proposal.id)}
@@ -538,6 +546,13 @@ const ProposalsPage = ({ onViewDetails }) => {
                 >
                   <Eye size={14} className="text-blue-600" /> View Details
                 </button>
+                <a
+                  href={`${API_BASE_URL}/sales-pdf/proposal/${proposal.id}?download=1`}
+                  onClick={() => setShowActionMenu(null)}
+                  className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                >
+                  <Download size={14} className="text-gray-600" /> Download PDF
+                </a>
                 {proposal.status === 'Approved' && (
                   <button
                     onClick={() => handleSendProposal(proposal.id)}

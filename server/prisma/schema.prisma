@@ -295,6 +295,7 @@ model companies {
   visibility                                  companies_visibility? @default(Private)
   people_assigned                             String?               @db.LongText
   deals_text                                  String?               @db.Text
+  gstin                                       String?               @db.VarChar(20)
   activities                                  activities[]
   contacts                                    contacts[]
   contracts                                   contracts[]
@@ -523,6 +524,13 @@ model deals {
   discount_approved_by Int?
   discount_status      deals_discount_status? @default(None)
   services             Json?
+  on_hold              Boolean                @default(false)
+  hold_until           DateTime?              @db.Date
+  hold_reason          String?                @db.VarChar(255)
+  lost_reason          String?                @db.VarChar(255)
+  won_value            Decimal?               @db.Decimal(15, 2)
+  closed_at            DateTime?              @db.DateTime(0)
+  lead_id              Int?
   activities           activities[]
   commissions          commissions[]
   pipeline_stages      pipeline_stages?       @relation(fields: [pipeline_stage_id], references: [id], onUpdate: NoAction, map: "FK_deal_pipeline_stage")
@@ -699,6 +707,9 @@ model estimation_line_items {
   total            Decimal?    @db.Decimal(15, 2)
   created_at       DateTime    @default(now()) @db.Timestamp(0)
   updated_at       DateTime    @default(now()) @db.Timestamp(0)
+  hsn_sac          String?     @db.VarChar(20)
+  unit             String?     @db.VarChar(20)
+  position         Int         @default(0)
   estimations      estimations @relation(fields: [estimation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "estimation_line_items_ibfk_1")
 
   @@index([estimation_id], map: "idx_estimation_id")
@@ -733,6 +744,35 @@ model estimations {
   total                 Decimal?                @db.Decimal(15, 2)
   discount_amount       Decimal?                @default(0.00) @db.Decimal(15, 2)
   tax_amount            Decimal?                @default(0.00) @db.Decimal(15, 2)
+  quote_base            String?                 @db.VarChar(40)
+  subject               String?                 @db.VarChar(255)
+  gst_mode              String                  @default("intra") @db.VarChar(10)
+  cgst_amount           Decimal                 @default(0.00) @db.Decimal(15, 2)
+  sgst_amount           Decimal                 @default(0.00) @db.Decimal(15, 2)
+  igst_amount           Decimal                 @default(0.00) @db.Decimal(15, 2)
+  terms                 String?                 @db.Text
+  notes                 String?                 @db.Text
+  revision_note         String?                 @db.VarChar(500)
+  approval_status       String?                 @db.VarChar(20)
+  approval_note         String?                 @db.VarChar(500)
+  approval_requested_by String?                 @db.VarChar(120)
+  approved_by           String?                 @db.VarChar(120)
+  approved_at           DateTime?               @db.DateTime(0)
+  max_discount_pct      Decimal?                @db.Decimal(5, 2)
+  sent_at               DateTime?               @db.DateTime(0)
+  sent_to               String?                 @db.VarChar(500)
+  responded_at          DateTime?               @db.DateTime(0)
+  decline_reason        String?                 @db.VarChar(500)
+  created_by_name       String?                 @db.VarChar(120)
+  client_name           String?                 @db.VarChar(255)
+  client_contact        String?                 @db.VarChar(255)
+  client_email          String?                 @db.VarChar(255)
+  client_phone          String?                 @db.VarChar(50)
+  client_address        String?                 @db.Text
+  client_gstin          String?                 @db.VarChar(20)
+  client_state          String?                 @db.VarChar(60)
+  quote_type            String?                 @db.VarChar(20)
+  plan                  Json?
   estimation_line_items estimation_line_items[]
   deals                 deals?                  @relation(fields: [deal_id], references: [id], onUpdate: NoAction, map: "FK_estimation_deal")
   companies             companies?              @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "estimations_ibfk_1")
@@ -1057,6 +1097,9 @@ model invoice_items {
   amount              Decimal? @db.Decimal(15, 2)
   created_at          DateTime @default(now()) @db.Timestamp(0)
   updated_at          DateTime @default(now()) @db.Timestamp(0)
+  hsn_sac             String?  @db.VarChar(20)
+  unit                String?  @db.VarChar(20)
+  position            Int      @default(0)
   invoices            invoices @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "invoice_items_ibfk_1")
 
   @@index([invoice_id], map: "idx_invoice_id")
@@ -1095,6 +1138,21 @@ model invoices {
   approval_status           invoices_approval_status? @default(Pending)
   approved_by               Int?
   created_by                Int?
+  gst_mode                  String                    @default("intra") @db.VarChar(10)
+  cgst_amount               Decimal                   @default(0.00) @db.Decimal(15, 2)
+  sgst_amount               Decimal                   @default(0.00) @db.Decimal(15, 2)
+  igst_amount               Decimal                   @default(0.00) @db.Decimal(15, 2)
+  client_gstin              String?                   @db.VarChar(20)
+  client_address            String?                   @db.Text
+  client_state              String?                   @db.VarChar(60)
+  client_email              String?                   @db.VarChar(255)
+  client_phone              String?                   @db.VarChar(50)
+  sent_at                   DateTime?                 @db.DateTime(0)
+  sent_to                   String?                   @db.VarChar(500)
+  subject                   String?                   @db.VarChar(255)
+  service_month             String?                   @db.Char(7)
+  milestone_no              Int?
+  milestone_name            String?                   @db.VarChar(120)
   commissions               commissions[]
   followups                 followups[]
   invoice_items             invoice_items[]
@@ -1305,6 +1363,10 @@ model leads {
   converted_contact_id                            Int?
   converted_deal_id                               Int?
   it_services_other                               String?             @db.VarChar(255)
+  hold_until                                      DateTime?           @db.Date
+  hold_reason                                     String?             @db.VarChar(255)
+  lost_reason                                     String?             @db.VarChar(255)
+  status_changed_at                               DateTime?           @db.DateTime(0)
   activities                                      activities[]
   entity_notes                                    entity_notes[]
   estimations                                     estimations[]
@@ -2501,6 +2563,7 @@ enum leads_lead_status {
   Converted_to_Deal @map("Converted to Deal")
   Quotation
   Revised_Quotation @map("Revised Quotation")
+  On_Hold           @map("On Hold")
 }
 
 enum projects_status {
@@ -2523,11 +2586,14 @@ enum invoices_status {
 
 enum estimations_status {
   Draft
+  Pending_Approval @map("Pending Approval")
+  Approved
   Sent
   Accepted
   Declined
   Revised
   Finalized
+  Expired
 }
 
 enum users_status {
@@ -2737,4 +2803,92 @@ model push_vapid_keys {
   public_key  String    @db.VarChar(200)
   private_key String    @db.VarChar(200)
   created_at  DateTime? @default(now()) @db.DateTime(0)
+}
+
+model sales_settings {
+  id         Int       @id
+  data       Json?
+  updated_by String?   @db.VarChar(120)
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+}
+
+model sales_events {
+  id           Int       @id @default(autoincrement())
+  lead_id      Int?
+  deal_id      Int?
+  quotation_id Int?
+  kind         String    @db.VarChar(30)
+  title        String    @db.VarChar(300)
+  body         String?   @db.Text
+  meta         Json?
+  by_id        Int?
+  by_name      String?   @db.VarChar(120)
+  happened_at  DateTime? @default(now()) @db.DateTime(0)
+  created_at   DateTime? @default(now()) @db.DateTime(0)
+
+  invoice_id   Int?
+  company_id   Int?
+  @@index([deal_id], map: "idx_se_deal")
+  @@index([lead_id], map: "idx_se_lead")
+  @@index([quotation_id], map: "idx_se_quote")
+}
+
+model sales_payments {
+  id             Int       @id @default(autoincrement())
+  receipt_number String?   @db.VarChar(40)
+  invoice_id     Int?
+  company_id     Int?
+  deal_id        Int?
+  amount         Decimal   @db.Decimal(15, 2)
+  paid_on        DateTime  @db.Date
+  mode           String?   @db.VarChar(30)
+  reference      String?   @db.VarChar(120)
+  notes          String?   @db.VarChar(500)
+  by_id          Int?
+  by_name        String?   @db.VarChar(120)
+  created_at     DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([company_id], map: "idx_sp_company")
+  @@index([invoice_id], map: "idx_sp_invoice")
+  @@index([paid_on], map: "idx_sp_paid_on")
+}
+
+model sales_targets {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  month      String    @db.Char(7)
+  won_value  Decimal   @default(0.00) @db.Decimal(15, 2)
+  collection Decimal   @default(0.00) @db.Decimal(15, 2)
+  deals_won  Int       @default(0)
+  enquiries  Int       @default(0)
+  activities Int       @default(0)
+  updated_by String?   @db.VarChar(120)
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+
+  @@unique([user_id, month], map: "uq_st_user_month")
+}
+
+model sales_proposals {
+  id              Int       @id @default(autoincrement())
+  proposal_number String    @unique(map: "uq_sprop_number") @db.VarChar(40)
+  kind            String    @default("it") @db.VarChar(20)
+  title           String?   @db.VarChar(255)
+  status          String    @default("Draft") @db.VarChar(20)
+  deal_id         Int?
+  company_id      Int?
+  lead_id         Int?
+  content         Json?
+  chosen_option   String?   @db.VarChar(10)
+  quotation_id    Int?
+  sent_at         DateTime? @db.DateTime(0)
+  sent_to         String?   @db.VarChar(500)
+  responded_at    DateTime? @db.DateTime(0)
+  decline_reason  String?   @db.VarChar(500)
+  created_by      Int?
+  created_by_name String?   @db.VarChar(120)
+  created_at      DateTime? @default(now()) @db.DateTime(0)
+  updated_at      DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([company_id], map: "idx_sprop_company")
+  @@index([deal_id], map: "idx_sprop_deal")
 }

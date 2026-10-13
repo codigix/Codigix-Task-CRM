@@ -72,7 +72,6 @@ const Header = ({ toggleSidebar }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [devicePermission, setDevicePermission] = useState(getNotificationPermission());
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
-  const [dismissBanner, setDismissBanner] = useState(false);
   const seenNotificationIdsRef = useRef(new Set());
   const isInitialLoadRef = useRef(true);
 
@@ -703,33 +702,6 @@ const Header = ({ toggleSidebar }) => {
         </div>
       </div>
 
-      {/* Floating Device Alert Activation Banner (shows if not yet enabled and not dismissed) */}
-      {devicePermission === 'default' && !dismissBanner && (
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white p-2 text-xs flex items-center justify-between shadow-md">
-          <div className="flex items-center gap-2">
-            <span className="p-1 bg-white/20 rounded-full flex items-center justify-center">
-              <Bell size={13} className="text-white animate-bounce" />
-            </span>
-            <span>
-              <strong className="">Enable System Notifications:</strong> Get real-time alerts on your Windows screen whenever tasks are assigned or updated.
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleEnableDeviceAlerts}
-              className="px-3 py-1 bg-white text-blue-700  rounded shadow-xs hover:bg-blue-50 active:scale-95 transition-all text-xs"
-            >
-              Allow Notifications
-            </button>
-            <button
-              onClick={() => setDismissBanner(true)}
-              className="text-white/80 hover:text-white p-1 text-xs"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
     </header>
   );
 };

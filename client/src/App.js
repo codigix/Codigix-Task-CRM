@@ -4,6 +4,25 @@ import './App.css';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import ChatNotifier from './components/common/ChatNotifier';
+import SalesPipelinePage from './components/sales/flow/SalesPipelinePage';
+import SalesRecordPage from './components/sales/flow/SalesRecordPage';
+import QuotationEditorPage from './components/sales/flow/QuotationEditorPage';
+import QuotationRegisterPage from './components/sales/flow/QuotationRegisterPage';
+import SalesAgendaPage from './components/sales/flow/SalesAgendaPage';
+import SalesSettingsPage from './components/sales/flow/SalesSettingsPage';
+import SalesHomePage from './components/sales/flow/SalesHomePage';
+import SalesCustomersPage from './components/sales/flow/CustomersPage';
+import CustomerRecordPage from './components/sales/flow/CustomerRecordPage';
+import SalesInvoiceListPage from './components/sales/flow/InvoiceListPage';
+import SalesInvoicePage from './components/sales/flow/InvoicePage';
+import SalesPaymentsPage from './components/sales/flow/PaymentsPage';
+import SalesTeamPage from './components/sales/flow/SalesTeamPage';
+import SalesDeskTargetsPage from './components/sales/flow/SalesTargetsPage';
+import SalesDeskReportsPage from './components/sales/flow/SalesReportsPage';
+import SalesDeskDistributionPage from './components/sales/flow/LeadDistributionPage';
+import SalesApprovalsPage from './components/sales/flow/SalesApprovalsPage';
+import SalesProposalListPage from './components/sales/flow/ProposalListPage';
+import ProposalBuilderPage from './components/sales/flow/ProposalBuilderPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import DepartmentRoute from './components/common/DepartmentRoute';
 import LoginPage from './components/common/LoginPage';
@@ -49,7 +68,7 @@ import TodoPage from './components/common/TodoPage';
 import TasksPage from './components/common/TasksPage';
 import ProposalsPage from './components/common/ProposalsPage';
 import ContractsPage from './components/common/ContractsPage';
-import NotesPage from './components/common/NotesPage';
+import NotesPage from './components/it/ITNotesPage';
 import FileManagerPage from './components/common/FileManagerPage';
 import SocialFeedPage from './components/common/SocialFeedPage';
 import KanbanPage from './components/common/KanbanPage';
@@ -96,8 +115,6 @@ import CustomersPage from './components/common/CustomersPage';
 import SalesTargetsPage from './components/sales/SalesTargetsPage';
 import PerformancePage from './components/sales/PerformancePage';
 import CommissionPage from './components/sales/CommissionPage';
-import ApprovalsPage from './components/sales/ApprovalsPage';
-import SalesReportsPage from './components/sales/SalesReportsPage';
 import NotificationsPage from './components/common/NotificationsPage';
 import BacklogPage from './components/common/BacklogPage';
 import AdminDashboard from './components/common/AdminDashboard';
@@ -282,7 +299,7 @@ const SalesOrAdminDashboard = () => {
   const role = String(user?.role || user?.role_name || '');
   const wantsSales = new URLSearchParams(window.location.search).get('view') === 'sales';
   const isAdmin = role === 'Admin' || role === 'Super Admin';
-  return isAdmin && !wantsSales ? <AdminDashboard /> : <SalesDashboard />;
+  return isAdmin && !wantsSales ? <AdminDashboard /> : <SalesHomePage />;
 };
 
 const DashboardRouter = () => {
@@ -449,19 +466,33 @@ function AppContent() {
         <Route path="/sales/:designation/:username/dashboard" element={<SalesOrAdminDashboard />} />
         <Route path="/sales/quotations" element={<QuotationsPage />} />
         <Route path="/sales/:designation/:username/quotations" element={<QuotationsPage />} />
-        <Route path="/sales/:designation/:username/customers" element={<CustomersPage />} />
-        <Route path="/sales/:designation/:username/targets" element={<SalesTargetsPage />} />
-        <Route path="/sales/:designation/:username/performance" element={<PerformancePage />} />
-        <Route path="/sales/:designation/:username/commission" element={<CommissionPage />} />
-        <Route path="/sales/:designation/:username/approvals" element={<ApprovalsPage />} />
-        <Route path="/sales/:designation/:username/reports" element={<SalesReportsPage />} />
+        <Route path="/sales/:designation/:username/customers" element={<SalesCustomersPage />} />
+        <Route path="/sales/:designation/:username/customer/:id" element={<CustomerRecordPage />} />
+        <Route path="/sales/:designation/:username/invoices" element={<SalesInvoiceListPage />} />
+        <Route path="/sales/:designation/:username/invoice/:id" element={<SalesInvoicePage />} />
+        <Route path="/sales/:designation/:username/payments" element={<SalesPaymentsPage />} />
+        <Route path="/sales/:designation/:username/proposals" element={<SalesProposalListPage />} />
+        <Route path="/sales/:designation/:username/proposal/:id" element={<ProposalBuilderPage />} />
+        <Route path="/sales/:designation/:username/targets" element={<SalesDeskTargetsPage />} />
+        <Route path="/sales/:designation/:username/performance" element={<SalesTeamPage />} />
+        <Route path="/sales/:designation/:username/commission" element={<SalesTeamPage mode="commission" />} />
+        <Route path="/sales/:designation/:username/approvals" element={<SalesApprovalsPage />} />
+        <Route path="/sales/:designation/:username/reports" element={<SalesDeskReportsPage />} />
         <Route path="/sales/:designation/:username/leads" element={<CrmLeadsPage />} />
         <Route path="/sales/:designation/:username/deals-list" element={<CrmDealsPage />} />
         <Route path="/sales/:designation/:username/contacts" element={<ContactsPage />} />
-        <Route path="/sales/:designation/:username/distribution" element={<LeadDistributionPage />} />
+        <Route path="/sales/:designation/:username/distribution" element={<SalesDeskDistributionPage />} />
         <Route path="/sales/:designation/:username/followups" element={<FollowupsPage />} />
         <Route path="/sales/:designation/:username/activities" element={<ActivitiesPage />} />
         <Route path="/sales/:designation/:username/chat" element={<ITChatPage />} />
+        {/* Sales flow: enquiry -> deal -> quotation -> won / lost / on hold */}
+        <Route path="/sales/:designation/:username/pipeline" element={<SalesPipelinePage />} />
+        <Route path="/sales/:designation/:username/enquiry/:id" element={<SalesRecordPage kind="lead" />} />
+        <Route path="/sales/:designation/:username/opportunity/:id" element={<SalesRecordPage kind="deal" />} />
+        <Route path="/sales/:designation/:username/quotation/:id" element={<QuotationEditorPage />} />
+        <Route path="/sales/:designation/:username/quotes" element={<QuotationRegisterPage />} />
+        <Route path="/sales/:designation/:username/agenda" element={<SalesAgendaPage />} />
+        <Route path="/sales/:designation/:username/sales-settings" element={<SalesSettingsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/profile-settings" element={<ProfileSettingsPage />} />
         <Route path="/departments" element={<DepartmentsPage />} />
@@ -576,6 +607,15 @@ function AppContent() {
         <Route path="/leads/:designation/:username/chat" element={<ITChatPage />} />
         <Route path="/projects/:designation/:username/chat" element={<ITChatPage />} />
         <Route path="/it/:designation/:username/notes" element={<ITNotesPage />} />
+        <Route path="/sales/:designation/:username/notes" element={<ITNotesPage />} />
+        <Route path="/marketing/:designation/:username/notes" element={<ITNotesPage />} />
+        <Route path="/seo-gmb/:designation/:username/notes" element={<ITNotesPage />} />
+        <Route path="/hr/:designation/:username/notes" element={<ITNotesPage />} />
+        <Route path="/deals/:designation/:username/notes" element={<ITNotesPage />} />
+        <Route path="/leads/:designation/:username/notes" element={<ITNotesPage />} />
+        <Route path="/projects/:designation/:username/notes" element={<ITNotesPage />} />
+        <Route path="/super-admin/notes" element={<ITNotesPage />} />
+        <Route path="/:dept/:designation/:username/notes" element={<ITNotesPage />} />
         <Route path="/:dept/:designation/:username/notes/create" element={<CreateNotePage />} />
         <Route path="/it/:designation/:username/teams" element={<ITTeamsPage />} />
         <Route path="/it/:designation/:username/manager-dashboard" element={<ITManagerDashboard />} />
@@ -614,7 +654,7 @@ function AppContent() {
         <Route path="/deals/:designation/:username/reports" element={<AnalyticsPage />} />
         <Route path="/leads/:designation/:username/reports" element={<AnalyticsPage />} />
         <Route path="/projects/:designation/:username/reports" element={<AnalyticsPage />} />
-        <Route path="/sales/:designation/:username/reports" element={<SalesReportsPage />} />
+        <Route path="/sales/:designation/:username/reports" element={<SalesDeskReportsPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         
         {/* Dynamic routes for shared modules across departments */}
