@@ -570,6 +570,7 @@ require('./routes/daily-report-routes')(app, pool);
 require('./routes/knowledge-routes')(app, pool);
 require('./routes/chat-routes')(app, pool);
 require('./routes/push-routes')(app, pool);
+require('./routes/meetings-routes')(app, pool);
 require('./routes/sales-flow-routes')(app, pool);
 require('./routes/sales-pdf-routes')(app, pool);
 require('./routes/sales-desk-routes')(app, pool);

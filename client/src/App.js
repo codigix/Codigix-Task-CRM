@@ -84,6 +84,7 @@ import PurchaseTransaction from './components/super-admin/PurchaseTransaction';
 import EstimationsPage from './components/common/EstimationsPage';
 import ActivitiesPage from './components/common/ActivitiesPage';
 import FollowupsPage from './components/common/FollowupsPage';
+import MeetingsPage from './components/meetings/MeetingsPage';
 import AnalyticsPage from './components/common/AnalyticsPage';
 import WorkloadReportPage from './components/common/WorkloadReportPage';
 import LeadReport from './components/sales/LeadReport';
@@ -639,7 +640,16 @@ function AppContent() {
         <Route path="/projects/:designation/:username/tasks" element={<TasksPage />} />
         <Route path="/sales/:designation/:username/tasks" element={<TasksPage />} />
         <Route path="/tasks" element={<TasksPage />} />
-        
+
+        {/* Meetings: schedule, track and MOM */}
+        <Route path="/meetings" element={<MeetingsPage />} />
+        <Route path="/sales/:designation/:username/meetings" element={<MeetingsPage />} />
+        <Route path="/marketing/:designation/:username/meetings" element={<MeetingsPage />} />
+        <Route path="/it/:designation/:username/meetings" element={<MeetingsPage />} />
+        <Route path="/hr/:designation/:username/meetings" element={<MeetingsPage />} />
+        <Route path="/deals/:designation/:username/meetings" element={<MeetingsPage />} />
+        <Route path="/projects/:designation/:username/meetings" element={<MeetingsPage />} />
+
         {/* Dynamic followups routes based on department */}
         <Route path="/deals/:designation/:username/followups" element={<FollowupsPage />} />
         <Route path="/leads/:designation/:username/followups" element={<FollowupsPage />} />

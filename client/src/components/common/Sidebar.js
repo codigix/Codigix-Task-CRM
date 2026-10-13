@@ -10,7 +10,7 @@ import {
   Workflow, Zap, ShieldCheck, BarChart, HardDrive, Cpu, Bug, GitBranch,
   Rocket, Gauge, AlertTriangle, FileBarChart, CreditCard, Banknote,
   Scale, History, Eye, SearchCode, Star, Globe, Link, Image, Map, BookOpen,
-  FolderOpen, Phone, PlayCircle, User, UserCheck, ListChecks,
+  FolderOpen, Phone, PlayCircle, User, UserCheck, ListChecks, Video,
 } from 'lucide-react';
 
 import { useAuth } from '../../hooks/useAuth';
@@ -259,6 +259,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">Common Workspace</div>
       <SubmenuItem label="Dashboard" page="dashboard" icon={Layout} />
       <SubmenuItem label="Daily Task" page="tasks" icon={ClipboardList} />
+      <SubmenuItem label="Meetings" page="meetings" icon={Video} />
       <SubmenuItem label="Task Management" page="kanban" icon={Layers} />
       <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} />
       {isManager && <SubmenuItem label="Calendar" page="calendar" icon={Calendar} />}
