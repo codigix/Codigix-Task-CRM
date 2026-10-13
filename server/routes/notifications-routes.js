@@ -18,6 +18,8 @@
  *     entityKey: 'MKT-104'
  *   });
  */
+const push = require('../services/push');
+
 module.exports = function setupNotificationsRoutes(app, pool) {
   const db = { query: (sql, params) => pool.query(sql, params) };
 
@@ -141,6 +143,11 @@ module.exports = function setupNotificationsRoutes(app, pool) {
          VALUES ?`,
         [values]
       );
+      // Same alert on their phones / desktops. Only people who turned notifications on have a device registered.
+      push.sendToUsers(recipients, {
+        title, body: message, url: link || '/', kind: type || 'general',
+        tag: entityKey ? `${type || 'n'}-${String(entityKey).slice(0, 40)}` : undefined
+      }).catch(() => {});
       return recipients.length;
     } catch (e) {
       console.error('Failed to create notification:', e.message);

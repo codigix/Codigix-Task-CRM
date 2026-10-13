@@ -2,6 +2,7 @@ const OpenAI = require('openai');
 const nodemailer = require('nodemailer');
 const { workingSecondsBetween, parseDurationToSeconds: parseWorkDuration, formatHours } = require('../services/workTime');
 const { resolvePrefix, nextIssueKey } = require('../utils/issueKeys');
+const effort = require('../services/effort');
 
 // Matches the definition of finished work used by sprint completion and the UI.
 const isDoneStatus = (s) => ['DONE', 'COMPLETED', 'CLOSED'].includes(String(s || '').toUpperCase().trim());
@@ -13,31 +14,24 @@ const isSubtaskDone = (s) => {
   return s.completed === true || isDoneStatus(s.status);
 };
 
-// Calculates effort points based on inherent value/complexity.
-const calculateValueBasedPoints = (type, priority, subtasksCount) => {
-  // 1. Base Points by Task Type
-  let basePoints = 3; // Standard Task / Story
-  const t = String(type || '').toUpperCase().trim();
-  if (t.includes('EPIC') || t.includes('CAMPAIGN')) basePoints = 10;
-  else if (t.includes('BUG') || t.includes('HOTFIX')) basePoints = 5;
-  else if (t.includes('SUB') || t.includes('MINOR')) basePoints = 1;
-
-  // 2. Priority Multiplier
-  let multiplier = 1.2; // Medium / Not Decided
-  const p = String(priority || '').toUpperCase().trim();
-  if (p.includes('LOWEST') || (p.includes('LOW') && !p.includes('NOT'))) multiplier = 1.0;
-  else if (p.includes('HIGHEST') || p.includes('CRITICAL')) multiplier = 2.0;
-  else if (p.includes('HIGH')) multiplier = 1.5;
-
-  // 3. Subtask Bonus
-  const bonus = Number(subtasksCount) || 0;
-
-  return Math.round((basePoints * multiplier) + bonus);
-};
-
 module.exports = function setupItKanbanRoutes(app, pool) {
   const db = {
     query: (sql, params) => pool.query(sql, params)
+  };
+
+  /**
+   * What a ticket is worth: the standard size of its kind of work x priority. Never the planned or
+   * logged time, which the assignee controls. Meetings are time, not output, so they earn no points.
+   */
+  const standardPoints = async (issue) => {
+    const report = require('../services/performanceReport');
+    let labels = issue.labels;
+    if (typeof labels === 'string') { try { labels = JSON.parse(labels); } catch (e) { labels = []; } }
+    const workType = report.workTypeOf(Array.isArray(labels) ? labels : [], issue.type);
+    if (String(issue.type || '').toLowerCase() === 'meeting') return { points: 0, workType, sizeHours: 0, weight: 0, known: true };
+    const sizes = await effort.loadSizes(pool, report.DEFAULT_WORK_SIZES);
+    const size = effort.sizeOf(sizes, workType);
+    return { points: effort.pointsFor(size, issue.priority), workType, sizeHours: size ?? effort.FALLBACK_SIZE, weight: effort.weightFor(issue.priority), known: size != null };
   };
 
   // Auto-upgrade column types on boot to prevent truncation / size errors on production
@@ -1200,25 +1194,40 @@ app.get('/api/it-kanban/labels', async (req, res) => {
   });
 
   /**
-   * Effort points.
-   *  - With a planned time: points = planned working hours × priority weight
-   *    (Low 1.0 · Medium 1.2 · High 1.5 · Critical 2.0), at least 1. So points reflect how
-   *    much work was committed to, and are comparable across work types.
-   *  - Without a planned time: the older value-based formula (type, priority, subtasks).
+   * Effort points = the standard size of the ticket's kind of work x priority weight. The planned
+   * time, the logged time and who is asking make no difference, so nobody can talk their own
+   * ticket up. Pass issueKey to price a stored ticket, or type / priority / labels for a draft.
    */
-  app.post('/api/it-kanban/calculate-points', (req, res) => {
+  app.post('/api/it-kanban/calculate-points', async (req, res) => {
     try {
-      const { type, priority, subtasksCount, estimate } = req.body || {};
-      const plannedHours = parseDurationToSeconds(estimate) / 3600;
-      if (plannedHours > 0) {
-        const p = String(priority || '').toUpperCase();
-        const weight = p.includes('CRITICAL') || p.includes('HIGHEST') ? 2.0 : p.includes('HIGH') ? 1.5 : p.includes('LOW') ? 1.0 : 1.2;
-        return res.json({ points: Math.max(1, Math.round(plannedHours * weight)), basis: 'planned-time', plannedHours, weight });
+      const { type, priority, labels, issueKey } = req.body || {};
+      let issue = { type, priority, labels };
+      if (issueKey) {
+        const [[row]] = await db.query('SELECT type, priority, labels FROM it_kanban_issues WHERE issue_key = ?', [issueKey]);
+        if (row) issue = row;
       }
-      const points = calculateValueBasedPoints(type, priority, subtasksCount);
-      res.json({ points, basis: 'value' });
+      const r = await standardPoints(issue);
+      res.json({ points: r.points, basis: 'standard-size', workType: r.workType, sizeHours: r.sizeHours, weight: r.weight, sizeKnown: r.known });
     } catch (error) {
       res.status(500).json({ error: 'Failed to calculate points' });
+    }
+  });
+
+  // Fill in points for tickets that have none (or recompute all with ?overwrite=1). Admin / HR only.
+  app.post('/api/it-kanban/effort/backfill', async (req, res) => {
+    if (!effort.canSeeEffort(req.user)) return res.status(403).json({ error: 'Only admins and HR can do this.' });
+    try {
+      const overwrite = req.query.overwrite === '1';
+      const [rows] = await db.query(`SELECT issue_key, type, priority, labels, effort_points FROM it_kanban_issues${overwrite ? '' : ' WHERE COALESCE(effort_points, 0) = 0'}`);
+      let updated = 0; let unknown = 0;
+      for (const r of rows) {
+        const p = await standardPoints(r);
+        if (!p.known) unknown += 1;
+        if (Number(r.effort_points) !== p.points) { await db.query('UPDATE it_kanban_issues SET effort_points = ? WHERE issue_key = ?', [p.points, r.issue_key]); updated += 1; }
+      }
+      res.json({ checked: rows.length, updated, withoutStandardSize: unknown });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fill in points' });
     }
   });
 
@@ -1409,6 +1418,12 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         linkedJson,
         JSON.stringify([])
       ]);
+
+      // Price the ticket from its kind of work and priority, so every ticket has points from the start.
+      try {
+        const sp = await standardPoints({ type: type || 'Task', priority: priority || 'Medium', labels });
+        await db.query('UPDATE it_kanban_issues SET effort_points = ? WHERE id = ?', [sp.points, result.insertId]);
+      } catch (e) { console.error('Could not set effort points on new ticket:', e.message); }
 
       // Send assignment email notification asynchronously
       if (assignee && assignee !== 'Unassigned') {
@@ -1721,6 +1736,28 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         // date move is written to History and shows up as a reschedule in performance.
       }
 
+      // Nothing an assignee can change may raise what their own task is worth.
+      if (!isMgr) {
+        if (updates.priority !== undefined && effort.rankOf(updates.priority) > effort.rankOf(curRow.priority)) {
+          return res.status(403).json({ error: "Only a manager can raise a task's priority.", code: 'LOCKED' });
+        }
+        if (updates.type !== undefined || updates.labels !== undefined) {
+          const before = await standardPoints({ type: curRow.type, priority: curRow.priority, labels: curRow.labels });
+          const after = await standardPoints({ type: updates.type !== undefined ? updates.type : curRow.type, priority: curRow.priority, labels: updates.labels !== undefined ? updates.labels : curRow.labels });
+          if (after.sizeHours > before.sizeHours) {
+            return res.status(403).json({ error: 'Only a manager can change the work type to one with a larger standard size.', code: 'LOCKED' });
+          }
+        }
+      }
+      // Re-price when the kind of work or priority changed, unless a manager set the points themselves in this request.
+      if (updates.effort_points === undefined && (updates.type !== undefined || updates.priority !== undefined || updates.labels !== undefined)) {
+        updates.effort_points = (await standardPoints({
+          type: updates.type !== undefined ? updates.type : curRow.type,
+          priority: updates.priority !== undefined ? updates.priority : curRow.priority,
+          labels: updates.labels !== undefined ? updates.labels : curRow.labels
+        })).points;
+      }
+
       // Only the reporter of a task can move it to DONE
       if (updates.status && isDoneStatus(updates.status)) {
         const repVal = String(curRow.reporter || '').trim();
@@ -1888,6 +1925,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       const assigneeChanging = updates.assignee !== undefined;
       let pausedTimers = [];
       let pendingEstimate = null;
+      let planWarning = null;
       if (statusChanging || assigneeChanging) {
         try {
           const [[cur]] = await db.query(
@@ -1966,6 +2004,9 @@ app.get('/api/it-kanban/labels', async (req, res) => {
             updates.estimate_approved = 0;
             updates.requested_estimate = null;
             updates.estimate_requested_by = null;
+            if (secs && std.hours && secs > std.hours * 1.25 * 3600) {
+              planWarning = { workType: std.workType, standardHours: std.hours, plannedHours: Math.round((secs / 3600) * 100) / 100, times: Math.round((secs / 3600 / std.hours) * 10) / 10 };
+            }
           }
         }
       }
@@ -2355,7 +2396,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
           `Standard for ${pendingEstimate.workType} is ${pendingEstimate.standardHours} h. Approve or reject in the ticket's Details.`
         ).catch(() => { });
       }
-      res.json({ message: 'Issue updated successfully', pausedTimers, pendingEstimate });
+      res.json({ message: 'Issue updated successfully', pausedTimers, pendingEstimate, planWarning });
     } catch (error) {
       responseError(res, 500, 'Failed to update IT Kanban issue', error);
     }
@@ -2368,7 +2409,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         'SELECT id, field, old_value, new_value, changed_by, created_at FROM it_kanban_history WHERE issue_key = ? ORDER BY created_at DESC, id DESC',
         [req.params.key]
       );
-      res.json(rows);
+      const hidden = new Set(['effort_points', 'quality_rating', 'contribution_review_status', 'contribution_method']);
+      res.json(effort.canSeeEffort(req.user) ? rows : rows.filter(r => !hidden.has(r.field)));
     } catch (error) {
       responseError(res, 500, 'Failed to fetch issue history', error);
     }

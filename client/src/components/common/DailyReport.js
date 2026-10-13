@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { jsPDF } from 'jspdf';
-import { ChevronLeft, ChevronRight, ChevronDown, Download, Loader2, PauseCircle, AlertTriangle, CheckCircle2, Clock, ListTodo, Sparkles, Timer, CalendarClock, UserX, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Download, Loader2, PauseCircle, CheckCircle2, Clock, ListTodo, Sparkles, Timer, UserX, Eye } from 'lucide-react';
 import { API_BASE_URL } from '../../config/environment';
 
 /**
@@ -36,12 +36,13 @@ const COLS = [
   { key: 'review', label: 'In review', title: 'Finished by the assignee, waiting for the reporting manager to check it' },
   { key: 'remaining', label: 'Remaining', title: 'Due today, not finished and not on hold' },
   { key: 'hold', label: 'On hold', title: 'Due by today and sitting in On hold / Under discussion' },
-  { key: 'overdue', label: 'Overdue', title: 'Due before today and still open at the end of the day' },
   { key: 'extraDone', label: 'Extra done', title: 'Other work finished today (early or late)' },
-  { key: 'upcoming', label: 'Upcoming', title: 'Open work scheduled in the next 7 days' },
   { key: 'toReview', label: 'To review', title: 'As reporting manager: work in review waiting for their check' },
   { key: 'approved', label: 'Approved', title: 'As reporting manager: work they moved from review to Done that day' }
 ];
+
+// Only work that belongs to the selected day: scheduled for it, or finished / approved on it.
+const isDayTask = (k, day) => k.scheduled === day || k.bucket === 'extraDone' || k.bucket === 'approved';
 
 const Tile = ({ icon: Icon, label, value, hint, tone }) => (
   <div className="bg-white border border-gray-200 rounded p-3 min-w-0">
@@ -89,7 +90,7 @@ export default function DailyReport({ department: boardDepartment }) {
     y += 16; doc.setFontSize(10); doc.setTextColor(107, 114, 128);
     doc.text(`${longDay(data.date)} · generated ${new Date().toLocaleString('en-GB')}`, mx, y);
     y += 14;
-    doc.text(`Upcoming (7 days) ${t.upcoming} · Unassigned open ${t.unassigned || 0} · Due ${t.due} · Completed ${t.completed}${pct(t.completed, t.due) != null ? ` (${pct(t.completed, t.due)}%)` : ''} (done ${t.done}, in review ${t.review}) · To review ${t.toReview} · Approved ${t.approved} · Remaining ${t.remaining} · On hold ${t.hold} · Overdue ${t.overdue} · Extra done ${t.extraDone} · Hours logged ${t.hours}`, mx, y);
+    doc.text(`Unassigned open ${t.unassigned || 0} · Due ${t.due} · Completed ${t.completed}${pct(t.completed, t.due) != null ? ` (${pct(t.completed, t.due)}%)` : ''} (done ${t.done}, in review ${t.review}) · To review ${t.toReview} · Approved ${t.approved} · Remaining ${t.remaining} · On hold ${t.hold} · Overdue ${t.overdue} · Extra done ${t.extraDone} · Hours logged ${t.hours}`, mx, y);
 
     const headers = ['Person', ...COLS.map(c => c.label), 'Done %', 'Hours'];
     const nameW = 200; const cw = (W - mx * 2 - nameW) / (headers.length - 1);
@@ -161,15 +162,13 @@ export default function DailyReport({ department: boardDepartment }) {
 
       {data && (
         <div className={state.loading ? 'opacity-60 transition-opacity' : ''}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
             <Tile icon={ListTodo} label="Due today" value={t.due} hint="Scheduled for the day" />
             <Tile icon={CheckCircle2} tone="text-emerald-600" label="Completed" value={t.completed} hint={pct(t.completed, t.due) != null ? `${pct(t.completed, t.due)}% of due · ${t.done} done, ${t.review} in review` : 'Nothing was due'} />
             <Tile icon={Eye} tone="text-orange-600" label="Waiting for review" value={t.toReview} hint={`Reporting managers to check · ${t.approved} approved`} />
             <Tile icon={Clock} tone="text-blue-600" label="Remaining" value={t.remaining} hint="Due today, still open" />
             <Tile icon={PauseCircle} tone="text-slate-600" label="On hold" value={t.hold} hint="Under discussion / hold" />
-            <Tile icon={AlertTriangle} tone="text-red-600" label="Overdue" value={t.overdue} hint="From earlier days" />
             <Tile icon={Sparkles} tone="text-violet-600" label="Extra done" value={t.extraDone} hint="Other work finished" />
-            <Tile icon={CalendarClock} tone="text-amber-600" label="Upcoming" value={t.upcoming} hint="Due in the next 7 days" />
             <Tile icon={UserX} tone="text-gray-500" label="Unassigned" value={t.unassigned || 0} hint="Open work nobody has picked up" />
             <Tile icon={Timer} label="Hours logged" value={t.hours} hint="Time recorded that day" />
           </div>
@@ -216,7 +215,8 @@ export default function DailyReport({ department: boardDepartment }) {
                     const isOpen = open[r.person] !== undefined;
                     const filter = open[r.person] || '';
                     const p = pct(r.completed, r.due);
-                    const tasks = filter ? r.tasks.filter(k => k.bucket === filter) : r.tasks;
+                    const dayTasks = r.tasks.filter(k => isDayTask(k, data.date));
+                    const tasks = filter ? dayTasks.filter(k => k.bucket === filter) : dayTasks;
                     return (
                       <React.Fragment key={r.person}>
                         <tr className={`border-b border-gray-100 cursor-pointer ${isOpen ? 'bg-blue-50/40' : 'hover:bg-gray-50'}`} onClick={() => toggle(r.person)}>
@@ -251,14 +251,14 @@ export default function DailyReport({ department: boardDepartment }) {
                           <tr className="bg-gray-50/60 border-b border-gray-200">
                             <td colSpan={COLS.length + 3} className="px-4 py-3 whitespace-normal">
                               <div className="flex flex-wrap gap-1.5 mb-2">
-                                {['', ...Object.keys(BUCKETS)].filter(b => !b || r.tasks.some(k => k.bucket === b)).map(b => (
+                                {['', ...Object.keys(BUCKETS)].filter(b => !b || dayTasks.some(k => k.bucket === b)).map(b => (
                                   <button key={b || 'all'} onClick={() => setOpen(o => ({ ...o, [r.person]: b }))}
                                     className={`h-7 px-2.5 text-xs rounded border cursor-pointer ${filter === b ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
-                                    {b ? BUCKETS[b].label : 'All'} <span className="opacity-70 tabular-nums">{b ? r.tasks.filter(k => k.bucket === b).length : r.tasks.length}</span>
+                                    {b ? BUCKETS[b].label : 'All'} <span className="opacity-70 tabular-nums">{b ? dayTasks.filter(k => k.bucket === b).length : dayTasks.length}</span>
                                   </button>
                                 ))}
                               </div>
-                              {tasks.length === 0 ? <div className="text-xs text-gray-500">No tasks.</div> : (
+                              {tasks.length === 0 ? <div className="text-xs text-gray-500">No tasks for this day.</div> : (
                                 <div className="divide-y divide-gray-100 bg-white border border-gray-200 rounded">
                                   {tasks.map(k => (
                                     <div key={k.key} className="flex items-center gap-3 px-3 py-1.5 text-xs">
@@ -268,7 +268,6 @@ export default function DailyReport({ department: boardDepartment }) {
                                       {k.workType && <span className="shrink-0 text-[10px] uppercase tracking-wide text-gray-500 max-w-[120px] truncate">{k.workType}</span>}
                                       {(k.bucket === 'toReview' || k.bucket === 'approved') && <span className="shrink-0 text-[11px] text-gray-500 max-w-[140px] truncate" title="Assignee">by {k.assignee}</span>}
                                       {k.bucket === 'review' && k.reporter && <span className="shrink-0 text-[11px] text-gray-500 max-w-[140px] truncate" title="Reporting manager who has to check it">with {k.reporter}</span>}
-                                      <span className={`shrink-0 tabular-nums w-14 text-right ${k.bucket === 'overdue' ? 'text-red-700' : 'text-gray-500'}`} title="Scheduled day">{shortDay(k.scheduled)}</span>
                                     </div>
                                   ))}
                                 </div>

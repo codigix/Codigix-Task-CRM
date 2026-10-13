@@ -1,4 +1,5 @@
 import React from 'react';
+import { canSeeEffort } from '../../../utils/access';
 import {
   Eye, Share2, MoreHorizontal, Lock, Paperclip, Check,
   Minimize2, Maximize2, X, Folder
@@ -36,12 +37,8 @@ const ITIssueHeaderBar = ({
 
   // Review Gate approves performance points, which the server only allows for managers and
   // admins — matching on "contains" so roles like "IT Manager" and "Super Admin" count.
-  const isManagerOrAdmin = Boolean(currentUser) && [
-    currentUser.role, currentUser.role_name, currentUser.department_role, currentUser.job_title
-  ].some(v => {
-    const r = String(v || '').toLowerCase();
-    return r.includes('manager') || r.includes('admin');
-  });
+  // Approving points shows and records effort points, so it is limited to admins and HR (the server enforces it too).
+  const isManagerOrAdmin = canSeeEffort(currentUser);
 
   const [linkCopied, setLinkCopied] = React.useState(false);
   // The board opens a ticket from ?ticketKey=, so the link points at the board of the

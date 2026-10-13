@@ -1,4 +1,5 @@
 const express = require('express');
+const effort = require('../services/effort');
 
 module.exports = function setupPerformanceEngineRoutes(app, pool) {
   const router = express.Router();
@@ -254,6 +255,27 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
     };
   };
 
+  // Quality factor for a finished board ticket, from what the history recorded (see services/effort.js).
+  const taskQuality = async (task) => {
+    const [hist] = await db.query('SELECT field, old_value, new_value, changed_by, created_at FROM it_kanban_history WHERE issue_key = ? ORDER BY created_at ASC, id ASC', [task.issue_key]);
+    const done = (v) => ['DONE', 'COMPLETED', 'CLOSED', 'RESOLVED'].includes(String(v || '').toUpperCase().trim());
+    const statuses = hist.filter(h => h.field === 'status');
+    const lastDone = [...statuses].reverse().find(h => done(h.new_value));
+    const reopened = statuses.filter(h => done(h.old_value) && !done(h.new_value)).length;
+    const assignee = String(task.assignee || '').trim().toLowerCase();
+    const dueEvents = hist.filter(h => h.field === 'due_date').map(h => ({ old_value: h.old_value, new_value: h.new_value, changed_by: h.changed_by, at: h.created_at }));
+    const due = effort.effectiveDue(task.due_date ? new Date(task.due_date) : null, dueEvents, (n) => String(n || '').trim().toLowerCase() === assignee);
+    const rating = [...hist].reverse().find(h => h.field === 'quality_rating');
+    return effort.qualityFactor({ dueAt: due.dueAt, completedAt: lastDone ? new Date(lastDone.created_at) : null, selfMoves: due.selfMoves, reopened, rating: rating ? rating.new_value : null });
+  };
+
+  // Effort points are for admins and HR only.
+  const adminOrHr = (req, res) => {
+    if (effort.canSeeEffort(req.user)) return true;
+    res.status(403).json({ success: false, error: 'Only admins and HR can see or approve effort points.' });
+    return false;
+  };
+
   const isUnassigned = (name) => !name || ['unassigned', 'none'].includes(String(name).trim().toLowerCase());
 
   const isManagerUser = async (userId) => {
@@ -267,6 +289,7 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
   };
 
   router.post('/tasks/:taskId/contribution/recalculate', async (req, res) => {
+    if (!adminOrHr(req, res)) return;
     const { taskId } = req.params;
 
     try {
@@ -275,13 +298,25 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
       const { kind, task, ledgerId } = resolved;
 
       const contributionMethod = task.contribution_method || 'WORK_BREAKDOWN';
-      const effortPoints = kind === 'it_kanban'
-        ? (parseInt(task.effort_points, 10) || parseInt(task.story_points, 10) || 0)
-        : (task.effort_points || 0);
+      let effortPoints = kind === 'it_kanban' ? (parseInt(task.effort_points, 10) || 0) : (task.effort_points || 0);
+      let quality = null;
+      if (kind === 'it_kanban') {
+        if (!effortPoints) {
+          const report = require('../services/performanceReport');
+          let labels = task.labels; if (typeof labels === 'string') { try { labels = JSON.parse(labels); } catch (e) { labels = []; } }
+          const sizes = await effort.loadSizes(pool, report.DEFAULT_WORK_SIZES);
+          effortPoints = effort.pointsFor(effort.sizeOf(sizes, report.workTypeOf(Array.isArray(labels) ? labels : [], task.type)), task.priority);
+        }
+        quality = await taskQuality(task);
+        effortPoints = Math.max(1, Math.round(effortPoints * quality.factor));
+      }
       const directory = await loadUserDirectory();
 
       let proposedContributions = [];
       const notes = [];
+      if (quality && quality.parts.length) {
+        notes.push(`Quality adjustment x${quality.factor}: ${quality.parts.map(p => `${p.label} (${p.delta > 0 ? '+' : ''}${Math.round(p.delta * 100)}%)`).join(', ')}${quality.capped ? ' (capped at +/-25%)' : ''}.`);
+      }
 
       if (kind === 'general_tasks') {
         if (contributionMethod === 'WORK_BREAKDOWN') {
@@ -401,6 +436,8 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
         success: true,
         taskKey: ledgerId,
         effortPoints,
+        qualityFactor: quality ? quality.factor : null,
+        qualityParts: quality ? quality.parts : [],
         contributionMethod,
         reviewStatus: task.contribution_review_status || 'Pending',
         proposedContributions,
@@ -414,12 +451,11 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
 
   router.post('/tasks/:taskId/contribution/approve', async (req, res) => {
     const { taskId } = req.params;
-    const { contributions } = req.body || {};
+    const { contributions, quality } = req.body || {};
     const managerId = req.headers['x-user-id'];
 
-    if (!(await isManagerUser(managerId).catch(() => false))) {
-      return res.status(403).json({ success: false, error: 'Only managers can approve performance points.' });
-    }
+    if (!adminOrHr(req, res)) return;
+    const rating = ['excellent', 'good', 'needs_work'].includes(String(quality || '').toLowerCase()) ? String(quality).toLowerCase() : null;
     if (!Array.isArray(contributions) || contributions.length === 0) {
       return res.status(400).json({ success: false, error: 'There are no contributions to approve.' });
     }
@@ -452,6 +488,9 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
         );
       }
 
+      if (kind === 'it_kanban' && rating) {
+        await connection.query('INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)', [ledgerId, 'quality_rating', null, rating, req.user && req.user.name ? req.user.name : String(managerId || '')]);
+      }
       if (kind === 'general_tasks') {
         await connection.query("UPDATE general_tasks SET contribution_review_status = 'Approved', status = 'Completed' WHERE id = ?", [task.id]);
       } else {

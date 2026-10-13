@@ -13,6 +13,7 @@ import DataTable from '../common/DataTable';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser } from '../../utils/access';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -142,6 +143,8 @@ const ITTasksPage = () => {
   }, [usersList]);
 
   const currentDept = window.location.pathname.toLowerCase().includes('/marketing') ? 'Marketing' : 'IT';
+
+  useLiveRefresh(['work'], () => fetchTasks());
 
   const fetchTasks = async () => {
     try {

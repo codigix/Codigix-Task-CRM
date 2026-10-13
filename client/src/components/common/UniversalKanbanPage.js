@@ -14,6 +14,7 @@ import { API_BASE_URL } from '../../config/environment';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isUserTaskReporter } from '../../utils/access';
 import Swal from 'sweetalert2';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 function BookmarkIcon(props) {
   return <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" {...props}><path d="M5 3v18l7-4.5 7 4.5V3z" /></svg>;
@@ -331,6 +332,8 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
       showErrorToast('Failed to update assignee');
     }
   };
+
+  useLiveRefresh(['work'], () => fetchKanbanData());
 
   const fetchKanbanData = () => {
     fetch(`${API_BASE_URL}/it-kanban/issues?_t=${Date.now()}`, { cache: 'no-store' })

@@ -69,16 +69,34 @@ const unsubscribe = async (userId, endpoint) => {
   await pool.query('DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint = ?', [userId, endpoint]);
 };
 
+const plain = (v, max) => String(v == null ? '' : v)
+  .replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  .replace(/[ \t\r\n]+/g, ' ').trim().slice(0, max);
+
+/**
+ * One format for every notification, whatever raised it: a short plain-text title and body,
+ * a same-site link, and the Codigix icon unless a small sender picture was supplied. (A push
+ * message is capped at about 4 KB, so an embedded avatar image would make it fail to send.)
+ */
+const shape = (p = {}) => {
+  const kind = String(p.kind || 'general').slice(0, 20);
+  const url = typeof p.url === 'string' && (p.url.startsWith('/') || /^https?:\/\//i.test(p.url)) ? p.url.slice(0, 500) : '/';
+  const icon = typeof p.icon === 'string' && p.icon.length <= 300 && /^(\/|https?:\/\/)/i.test(p.icon) ? p.icon : '/logo192.png';
+  const tag = p.tag ? String(p.tag).slice(0, 64) : `${kind}-${Date.now()}`;
+  return { ...p, title: plain(p.title, 80) || 'Codigix', body: plain(p.body, 180), url, icon, tag, kind };
+};
+
 /**
  * Send one notification to every device of these people. payload: { title, body, url, tag,
  * icon, roomId, kind }. Never throws; dead subscriptions (410/404) are removed.
  */
-const sendToUsers = async (userIds, payload) => {
+const sendToUsers = async (userIds, rawPayload) => {
   try {
     await ready;
     if (!keys || !userIds?.length) return 0;
     const ids = [...new Set(userIds.map(Number).filter(Boolean))];
     if (!ids.length) return 0;
+    const payload = shape(rawPayload);
     const [subs] = await pool.query('SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id IN (?)', [ids]);
     const body = JSON.stringify(payload);
     let sent = 0;
@@ -99,4 +117,4 @@ const sendToUsers = async (userIds, payload) => {
   }
 };
 
-module.exports = { init, publicKey, subscribe, unsubscribe, sendToUsers };
+module.exports = { init, publicKey, subscribe, unsubscribe, sendToUsers, shape };

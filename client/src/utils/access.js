@@ -126,3 +126,20 @@ export const isUserTaskReporter = (reporter, user, myIdentities = []) => {
 export default isManagerDesignation;
 
 
+
+/**
+ * Effort points (and the figures computed from them) are for admins and HR only.
+ * Mirrors services/effort.js on the server, which is what actually enforces it: the API
+ * leaves these fields out of its replies for everyone else.
+ */
+export const canSeeEffort = (user) => {
+  const u = user || (() => {
+    try { return JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('user') || 'null'); } catch (e) { return null; }
+  })();
+  if (!u) return false;
+  const hr = /\bhr\b|human resource/;
+  const role = String(u.role || u.role_name || '').toLowerCase();
+  const dept = String(u.department || '').toLowerCase();
+  const title = String(u.job_title || '').toLowerCase();
+  return role.includes('admin') || hr.test(role) || hr.test(dept) || hr.test(title);
+};

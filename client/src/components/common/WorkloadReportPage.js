@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../../config/environment';
 import { isManagerDesignation } from '../../utils/access';
 import BoardTabs from './BoardTabs';
 import DailyReport from './DailyReport';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 /**
  * How much work each person is carrying, and where it has got to.
@@ -59,13 +60,16 @@ const WorkloadReportPage = ({ department }) => {
   const [issues, setIssues] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [liveTick, setLiveTick] = useState(0);
+  useLiveRefresh(['work'], () => setLiveTick(t => t + 1));
+
   useEffect(() => {
     fetch(`${API_BASE_URL}/it-kanban/issues?department=${encodeURIComponent(currentDept)}`)
       .then(res => res.json())
       .then(data => setIssues(Array.isArray(data) ? data : []))
       .catch(err => console.error('Failed to load issues for the report:', err))
       .finally(() => setIsLoading(false));
-  }, [currentDept]);
+  }, [currentDept, liveTick]);
 
   // Months that actually have work, newest first, so the picker never offers empty months.
   const months = useMemo(() => {

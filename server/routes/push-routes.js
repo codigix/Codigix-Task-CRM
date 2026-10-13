@@ -31,7 +31,7 @@ module.exports = function setupPushRoutes(app, pool) {
   // "Send me a test" from the notification settings card.
   app.post('/api/push/test', async (req, res) => {
     if (!req.user?.id) return res.status(401).json({ error: 'Please sign in again.' });
-    const sent = await push.sendToUsers([req.user.id], { title: 'Notifications are on', body: 'You will see new chat messages here.', tag: 'push-test', url: '/', kind: 'test' });
+    const sent = await push.sendToUsers([req.user.id], { title: 'Notifications are on', body: 'Chat, task, meeting and sales alerts will appear on this device.', tag: 'push-test', url: '/', kind: 'test' });
     res.json({ sent });
   });
 };

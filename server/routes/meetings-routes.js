@@ -28,6 +28,7 @@
 const crypto = require('crypto');
 const { google } = require('googleapis');
 const { resolvePrefix, nextIssueKey } = require('../utils/issueKeys');
+const push = require('../services/push');
 
 module.exports = (app, pool) => {
   // ── tiny helpers ───────────────────────────────────────────────────────────
@@ -178,6 +179,8 @@ module.exports = (app, pool) => {
         ids.flatMap((id) => [id, 'meeting', str(title, 255), message || null, `/meetings?open=${meetingId}`, actor || null, 'meeting', String(meetingId)])
       );
     } catch (e) { console.warn('[meetings] notify failed:', e.message); }
+    // Also to their phones / desktops (only people who turned notifications on have a device registered).
+    push.sendToUsers(ids, { title, body: message, url: `/meetings?open=${meetingId}`, kind: 'meeting', tag: `meeting-${meetingId}` }).catch(() => { });
   };
 
   // ── Google Calendar / Meet ─────────────────────────────────────────────────
@@ -256,7 +259,7 @@ module.exports = (app, pool) => {
    * Create or update the Google Calendar event as `owner`. Tries the full request first, then drops attendees,
    * then the Meet request, so the meeting is always saved. Returns { eventId, meetLink, warning, owner }.
    */
-  const syncGoogle = async (m, emails, { wantMeet, owner, fallbackLink }) => {
+  const syncGoogle = async (m, emails, { wantMeet, owner, fallbackLink, host }) => {
     const g = await clientByOwner(owner);
     if (!g) return { eventId: null, meetLink: null, warning: null, owner: null };
 
@@ -275,15 +278,29 @@ module.exports = (app, pool) => {
     for (let i = 0; i < attempts.length; i++) {
       const a = attempts[i];
       const joinLine = !a.meet && fallbackLink ? `Join: ${fallbackLink}` : '';
+      // Google always sends the invitation as the connected account, so the real host is named in the title,
+      // at the top of the description and in the guest list.
+      const hostName = host?.name || m.host_name || '';
+      const hostEmail = String(host?.email || '').trim().toLowerCase();
+      const hostLine = hostName ? `<b>Hosted by ${esc(hostName)}</b>${hostEmail ? ` (${esc(hostEmail)})` : ''}` : '';
       const resource = {
-        summary: m.title,
-        description: [m.agenda || '', joinLine, !a.attendees && invitees.length ? `Invitees: ${invitees.join(', ')}` : ''].filter(Boolean).join('\n\n'),
+        summary: hostName ? `${m.title} — hosted by ${hostName}` : m.title,
+        description: [hostLine, esc(m.agenda || '').split('\n').join('<br>'), esc(joinLine), !a.attendees && invitees.length ? `Invitees: ${esc(invitees.join(', '))}` : ''].filter(Boolean).join('<br><br>'),
         location: m.kind === 'offline' ? (m.location || '') : (!a.meet && fallbackLink ? fallbackLink : ''),
         start: { dateTime: start.toISOString(), timeZone: TZ },
         end: { dateTime: end.toISOString(), timeZone: TZ },
         reminders: { useDefault: false, overrides: [{ method: 'email', minutes: 60 }, { method: 'popup', minutes: 10 }] }
       };
-      if (a.attendees) resource.attendees = invitees.map((email) => ({ email }));
+      if (a.attendees) {
+        const names = host?.names || new Map();
+        resource.attendees = invitees.map((email) => {
+          const att = { email };
+          const nm = names.get(email);
+          if (email === hostEmail) { att.displayName = `${hostName || nm || email} (Host)`; att.responseStatus = 'accepted'; }
+          else if (nm) att.displayName = nm;
+          return att;
+        });
+      }
       if (a.meet) resource.conferenceData = { createRequest: { requestId: `mtg-${m.id}-${Date.now()}`, conferenceSolutionKey: { type: 'hangoutsMeet' } } };
       const params = { calendarId: g.calendarId, resource, conferenceDataVersion: a.meet ? 1 : 0, sendUpdates: a.attendees ? 'all' : 'none' };
       try {
@@ -408,18 +425,20 @@ module.exports = (app, pool) => {
     const dept = normDept(sprint?.department || m.department) || 'IT';
     const estimate = `${Math.max(1, m.duration_min || 60)}m`;
     const wanted = attendees.filter((a) => Number(a.user_id) !== Number(m.host_id)).map((a) => attendSubtask(m, a, dateStr));
-    const labels = JSON.stringify(['Meeting', `meeting:${m.id}`]);
+    const labels = JSON.stringify(['Meeting']);
 
     if (m.issue_key) {
-      const [row] = await q('SELECT issue_key, subtasks FROM it_kanban_issues WHERE issue_key = ?', [m.issue_key]);
+      const [row] = await q('SELECT issue_key, subtasks, labels FROM it_kanban_issues WHERE issue_key = ?', [m.issue_key]);
       if (row) {
+        const keptLabels = (Array.isArray(parseJson(row.labels, [])) ? parseJson(row.labels, []) : []).filter((l) => l && !/^meeting(:[0-9]+|-action)?$/i.test(String(l)));
+        const issueLabels = JSON.stringify(['Meeting', ...keptLabels]);
         const existing = parseJson(row.subtasks, []);
         const byId = new Map((Array.isArray(existing) ? existing : []).map((s) => [String(s.id), s]));
         const merged = wanted.map((w) => ({ ...w, ...(byId.get(String(w.id)) || {}), title: w.title, assignee: w.assignee, due_date: dateStr, start_date: dateStr }));
         await q(`UPDATE it_kanban_issues SET title=?, description=?, due_date=?, start_date=?, project_id=?, sprint_id=?, sprint=?, department=?,
                  original_estimate=?, remaining_estimate=?, subtasks=?, labels=?, updated_at=NOW() WHERE issue_key=?`,
           [`Meeting: ${m.title}`, issueDescription(m, attendees, guests), dateStr, dateStr, projectId, m.sprint_id || null, sprint?.name || null, dept,
-            estimate, estimate, JSON.stringify(merged), labels, m.issue_key]);
+            estimate, estimate, JSON.stringify(merged), issueLabels, m.issue_key]);
         return m.issue_key;
       }
     }
@@ -472,7 +491,9 @@ module.exports = (app, pool) => {
       let owner = await pickOwner(m.host_id);
       let g = null; let dropNote = null;
       for (let i = 0; owner && i < 3; i++) {
-        g = await syncGoogle({ ...m, meet_link: meetLink }, emails, { wantMeet, owner, fallbackLink });
+        const hostEmail = String(host.email || '').trim().toLowerCase();
+        const names = new Map(attendees.filter((x) => x.email && x.name).map((x) => [String(x.email).trim().toLowerCase(), x.name]));
+        g = await syncGoogle({ ...m, meet_link: meetLink }, [...emails, hostEmail].filter(Boolean), { wantMeet, owner, fallbackLink, host: { name: host.name || m.host_name, email: hostEmail, names } });
         if (!g.retry) break;
         dropNote = g.warning; g = null; owner = await pickOwner(m.host_id);
       }
@@ -661,6 +682,26 @@ module.exports = (app, pool) => {
       ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
       ORDER BY m.scheduled_at DESC LIMIT 300`, params);
     res.json({ meetings: rows.map(shape), me: user.id });
+  }));
+
+  const joinPayload = async (req, user, m) => (!canManage(req, m) && !(await isAttendee(m.id, user.id)))
+    ? { allowed: false }
+    : { allowed: true, id: m.id, title: m.title, kind: m.kind, status: m.status, scheduled_at: m.scheduled_at, meet_link: m.meet_link || null, provider: m.meet_provider || null, location: m.location || null };
+
+  app.get('/api/meetings/by-issue/:key', route(async (req, res, user) => {
+    const [m] = await q('SELECT * FROM meetings WHERE issue_key = ?', [req.params.key]);
+    if (!m) return res.json({ found: false });
+    res.json({ found: true, ...(await joinPayload(req, user, m)) });
+  }));
+
+  // ── join details (used by the task panel's Join / Share link buttons) ──────
+  app.get('/api/meetings/:id/join', route(async (req, res, user) => {
+    const m = await getMeeting(req.params.id);
+    if (!canManage(req, m) && !(await isAttendee(m.id, user.id))) return res.json({ allowed: false });
+    res.json({
+      allowed: true, id: m.id, title: m.title, kind: m.kind, status: m.status, scheduled_at: m.scheduled_at,
+      meet_link: m.meet_link || null, provider: m.meet_provider || null, location: m.location || null
+    });
   }));
 
   // ── detail ─────────────────────────────────────────────────────────────────
@@ -861,7 +902,7 @@ module.exports = (app, pool) => {
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,'0h','0h','0h','','','')`,
               [key, str(a.title, 250), 'Task', 'Medium', 'TO DO', assigneeName, fresh.host_name || assigneeName, 'None', m.project_id || sprint?.project_id || null,
                 `<p>Action item from meeting <strong>${esc(m.title)}</strong> (${esc(fmtWhen(m.scheduled_at))}).</p>`, dept, due,
-                JSON.stringify(['meeting-action', `meeting:${m.id}`]), '[]', '[]', '[]']
+                JSON.stringify(['Meeting']), '[]', '[]', '[]']
             );
             newKeys.push(key);
             if (who && Number(who.id) !== Number(user.id)) await notify([who.id], { title: `Action item: ${str(a.title, 120)}`, message: `${user.name} assigned you "${str(a.title, 120)}" from meeting "${m.title}" (${key}).`, meetingId: m.id, actor: user.name });

@@ -13,6 +13,7 @@ import {
   setSoundEnabled,
   sendTestDeviceNotification
 } from '../../services/deviceNotification';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 // "5 minutes ago" style stamps for the notification list.
 const relativeTime = (value) => {
@@ -129,6 +130,8 @@ const Header = ({ toggleSidebar }) => {
       console.error('Failed to load notifications:', err);
     }
   }, [user?.id]);
+
+  useLiveRefresh(['notifications'], () => loadNotifications(), { wait: 300 });
 
   useEffect(() => {
     loadNotifications();

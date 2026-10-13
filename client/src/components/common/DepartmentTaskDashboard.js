@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle, AlertCircle, Clock, Users, Filter } from 'lucide-react';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const DepartmentTaskDashboard = () => {
   const [tasks, setTasks] = useState([]);
@@ -12,9 +13,11 @@ const DepartmentTaskDashboard = () => {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  useLiveRefresh(['work'], () => fetchData(true));
+
+  const fetchData = async (silent) => {
     try {
-      setLoading(true);
+      if (silent !== true) setLoading(true);
       const [tasksRes, deptRes] = await Promise.all([
         fetch('/api/tasks'),
         fetch('/api/departments')
@@ -25,7 +28,7 @@ const DepartmentTaskDashboard = () => {
 
       setTasks(tasksData);
       setDepartments(deptData);
-      if (deptData.length > 0) setSelectedDept(deptData[0].id);
+      if (silent !== true && deptData.length > 0) setSelectedDept(deptData[0].id);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {

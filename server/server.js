@@ -435,6 +435,31 @@ authRouter.post('/check-permission', async (req, res) => {
 // Every /api request below needs a valid login session (see middleware/session.js).
 app.use(createSessionMiddleware(pool));
 
+// Live updates: any successful change under /api tells every open page which area changed (see services/live.js).
+{
+  const live = require('./services/live');
+  app.get('/api/live/stream', live.stream);
+  app.use('/api', live.announceChanges);
+}
+
+// Effort points (and everything computed from them) are for admins and HR only. For anyone else the
+// fields are left out of every JSON reply, so they cannot be read by calling the API directly either.
+// The reply is rebuilt as text, so objects held in memory by a route are never changed.
+{
+  const { canSeeEffort, EFFORT_KEYS } = require('./services/effort');
+  const dropEffort = (key, value) => (EFFORT_KEYS.has(key) ? undefined : value);
+  app.use('/api', (req, res, next) => {
+    if (canSeeEffort(req.user)) return next();
+    const sendJson = res.json.bind(res);
+    res.json = (body) => {
+      if (body === undefined || body === null || typeof body !== 'object') return sendJson(body);
+      res.type('json');
+      return res.send(JSON.stringify(body, dropEffort));
+    };
+    next();
+  });
+}
+
 // Register Auth Router
 app.use('/api/auth', authRouter);
 app.use('/api/it-documents', require('./routes/it-documents-routes'));

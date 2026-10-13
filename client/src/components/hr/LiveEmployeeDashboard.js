@@ -4,6 +4,7 @@ import axios from 'axios';
 import { X, Download, AlertTriangle } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -64,6 +65,9 @@ const LiveEmployeeDashboard = ({ employeeId, onClose, autoDownload }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const dashboardRef = useRef(null);
 
+  const [liveTick, setLiveTick] = useState(0);
+  useLiveRefresh(['work'], () => setLiveTick(t => t + 1));
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
@@ -76,7 +80,7 @@ const LiveEmployeeDashboard = ({ employeeId, onClose, autoDownload }) => {
       }
     };
     if (employeeId) fetchDashboard();
-  }, [employeeId]);
+  }, [employeeId, liveTick]);
 
   useEffect(() => {
     if (data && autoDownload && !isDownloading) {

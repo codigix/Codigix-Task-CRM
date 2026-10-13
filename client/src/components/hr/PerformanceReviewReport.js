@@ -8,6 +8,7 @@ import { jsPDF } from 'jspdf';
 import { API_BASE_URL } from '../../config/environment';
 import { CODIGIX_LOGO_B64 } from '../../utils/codigixLogoB64';
 import { showErrorToast, showSuccessToast } from '../../utils/toast';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 /**
  * Review-meeting report: a printable A4 document built from the employee's live report
@@ -136,8 +137,8 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
   const [notes, setNotes] = useState({ discussion: '', goals: '', support: '', employee: '' });
   const docRef = useRef(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent) => {
+    if (silent !== true) setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/hr/performance/report/employee/${employeeId}?${query}`);
       const json = await res.json().catch(() => ({}));
@@ -152,6 +153,7 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
 
   // Live: refresh every minute while the report is open (not while exporting).
   useEffect(() => { load(); }, [load]);
+  useLiveRefresh(['work'], () => load(true), { wait: 1500, maxWait: 10000, enabled: !exporting });
   useEffect(() => {
     if (exporting) return undefined;
     const t = setInterval(load, 60000);
@@ -303,7 +305,7 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
 
         <H2 sub="Recorded in the system for the review period">Key results</H2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-          <Kpi label="Effort delivered" value={`${m.effortHours || 0} h`} hint={`${m.tasksCompleted} tasks · ${fmt(m.productivity, '%')} of hours available`} tone={m.effortExceedsCapacity ? AMBER : undefined} />
+          <Kpi label="Effort delivered" value={`${m.effortHours || 0} h`} hint={`${m.tasksCompleted} tasks · standard size ${m.effortSizeHours ?? 0} h · ${fmt(m.productivity, '%')} of hours available`} tone={m.effortExceedsCapacity ? AMBER : undefined} />
           <Kpi label="On-time delivery" value={fmt(m.onTimeRate, '%')} hint={`${m.onTimeCompleted} on time · ${m.lateCompleted} late`} tone={m.onTimeRate != null && m.onTimeRate < 60 ? RED : undefined} />
           <Kpi label="Hours worked" value={fmt(m.hoursLogged || 0, ' h')} hint="Recorded working hours" />
           <Kpi label="Avg time per task" value={fmt(m.avgHoursPerTask, ' h')} hint={m.avgCycleDays != null ? `${m.avgCycleDays} days start → done` : 'No timed tasks'} />
@@ -315,9 +317,23 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
             hint={m.reschedules ? `${m.rescheduledTasks} tasks · ${m.reschedulesBySelf} by self · +${m.postponedDays} d` : 'No due dates moved'} />
           <Kpi label="Own plans vs standard" value={fmt(m.planVsStandard, '%')} tone={m.planVsStandard >= 150 ? AMBER : undefined}
             hint={m.ownPlansCount ? `${m.ownPlansCount} tasks · 100% = normal · not scored` : 'No own planned times'} />
-          <Kpi label="Efficiency" value={fmt(m.efficiency, '%')} tone={m.efficiency != null && m.efficiency < 75 ? RED : undefined} hint={m.plannedHours ? `Planned ${m.plannedHours} h · took ${m.actualHoursOnPlanned} h` : 'No planned time on tasks'} />
+          <Kpi label="Plan efficiency (not scored)" value={fmt(m.efficiency, '%')} tone={m.efficiency != null && m.efficiency < 75 ? RED : undefined} hint={m.plannedHours ? `Planned ${m.plannedHours} h · took ${m.actualHoursOnPlanned} h` : 'No planned time on tasks'} />
+          <Kpi label="Speed vs standard" value={m.speedVsStandard != null ? `${m.speedVsStandard}%` : '—'} tone={m.speedVsStandard != null && m.speedVsStandard < 60 ? AMBER : undefined}
+            hint={m.speedActualHours ? `${m.speedStandardHours} h standard took ${m.speedActualHours} h · 100% = standard` : 'No timed tasks'} />
+          <Kpi label="Quality factor" value={m.qualityFactor != null ? `x${m.qualityFactor}` : '—'} tone={m.qualityFactor != null && m.qualityFactor < 0.95 ? AMBER : undefined}
+            hint="Deadline, rework and review move credit by at most 25%" />
           <Kpi label="Within plan" value={m.tasksWithPlan ? `${m.tasksWithinPlan} / ${m.tasksWithPlan}` : '—'} hint="Tasks within 10% of plan" />
         </div>
+
+        {(m.effortFlags || []).length > 0 && (
+          <div style={{ marginTop: 12, border: '1px solid #fcd34d', background: '#fffbeb', borderRadius: 8, padding: '10px 12px' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>Checks for HR to look at</div>
+            <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>Credit never uses the planned or logged time, so these do not change anyone's points. They only point at patterns worth a conversation.</div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: INK }}>
+              {m.effortFlags.map(fl => <li key={fl.code} style={{ marginBottom: 2 }}>{fl.text}</li>)}
+            </ul>
+          </div>
+        )}
 
         <H2>Summary</H2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
@@ -450,7 +466,7 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
           ])}
         />
 
-        <H2 sub="Plan used = manager-approved plan, else the standard size · efficiency = plan ÷ actual">Planned vs actual time</H2>
+        <H2 sub="Shown for information, not scored: plan and time are typed in by the employee · efficiency = plan ÷ actual">Planned vs actual time</H2>
         <Table
           head={['Task', 'Planned', 'Actual', 'Difference', 'Efficiency', 'Result']}
           align={['left', 'right', 'right', 'right', 'right', 'left']}

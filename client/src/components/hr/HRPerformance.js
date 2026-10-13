@@ -9,6 +9,7 @@ import Swal from 'sweetalert2';
 import { API_BASE_URL } from '../../config/environment';
 import { useAuth } from '../../hooks/useAuth';
 import PerformanceReviewReport from './PerformanceReviewReport';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 /* ───────────────────────── constants & helpers ───────────────────────── */
 
@@ -27,7 +28,7 @@ const COMPONENT_LABELS = {
   utilisation: 'Hours recorded vs hours available',
   onTime: 'On-time delivery',
   engagement: 'Days active vs working days',
-  efficiency: 'Efficiency (planned ÷ actual time)',
+  efficiency: 'Plan efficiency (planned ÷ actual time; information only, not scored)',
   review: 'Manager review score',
   // older reports
   completion: 'Completion rate',
@@ -76,9 +77,9 @@ const downloadCsv = (filename, header, rows) => {
 
 const useReport = (url) => {
   const [state, setState] = useState({ loading: true, error: '', data: null, status: 0 });
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent) => {
     if (!url) return;
-    setState(s => ({ ...s, loading: true, error: '' }));
+    if (silent !== true) setState(s => ({ ...s, loading: true, error: '' }));
     try {
       const res = await fetch(url);
       const data = await res.json().catch(() => ({}));
@@ -89,7 +90,8 @@ const useReport = (url) => {
     }
   }, [url]);
   useEffect(() => { load(); }, [load]);
-  return { ...state, reload: load };
+  useLiveRefresh(['work'], () => load(true), { wait: 1500, maxWait: 10000 });
+  return { ...state, reload: () => load() };
 };
 
 /* ───────────────────────── small building blocks ───────────────────────── */
@@ -199,9 +201,11 @@ const ScoreExplainer = ({ weights }) => (
   <details className="text-xs text-gray-600 mt-2">
     <summary className="cursor-pointer text-blue-700 font-medium select-none">How is the score calculated?</summary>
     <div className="mt-2 space-y-1 leading-relaxed">
-      <p>The score (0–100) measures <strong>work, not ticket counts</strong>. Every finished task is worth its size in standard
-        hours: its own planned time, or the standard size for its kind of work (set in the Work types tab), × a small
-        priority weight. So 20 quick GMB posts don't outweigh 3 videos. Parts of the score:</p>
+      <p>The score (0–100) measures <strong>work, not ticket counts</strong>. Every finished task is worth the <strong>standard size
+        for its kind of work</strong> (set in the Work types tab) × a small priority weight × a <strong>quality factor</strong>
+        (at most ±25%, from finishing by the deadline, deadlines moved by the assignee, reopened work and the reviewer's rating).
+        The employee's own planned or logged time never changes it, so a padded plan earns nothing. 20 quick GMB posts don't
+        outweigh 3 videos. Parts of the score:</p>
       <ul className="list-disc pl-5 space-y-0.5">
         {Object.entries(weights || {}).map(([k, w]) => (
           <li key={k}><strong>{COMPONENT_LABELS[k]}</strong> — weight {w}</li>
@@ -209,7 +213,9 @@ const ScoreExplainer = ({ weights }) => (
       </ul>
       <p>Parts with no data (no due dates, no time recorded by anyone, no review) are left out and the rest re-weighted.
         With no finished work, no recorded time and no review, the grade is <em>Not enough data</em> rather than a guess.
-        Effort over ~110% of available hours is flagged: sizes are too high, or work was closed in bulk.
+        Effort over ~110% of available hours is flagged: sizes are too high, or work was closed in bulk. Work closed in one go by
+        the "Bulk update" actor, and meeting tickets, are left out. "Speed vs standard" and the "Checks" column are for you to look at;
+        they never change anyone's points.
         Grades: 85+ Excellent · 70+ Good · 50+ Fair · below 50 Needs attention.</p>
     </div>
   </details>
@@ -253,7 +259,8 @@ const COMPARE_ROWS = [
   ['tasksCompleted', 'Tasks completed (count only)', '', 'neutral'],
   ['onTimeRate', 'On-time delivery', '%', 'up'],
   ['avgHoursPerTask', 'Avg hours per task', ' h', 'down'],
-  ['efficiency', 'Efficiency (planned ÷ actual)', '%', 'up'],
+  ['speedVsStandard', 'Speed vs standard (100% = standard)', '%', 'neutral'],
+  ['qualityFactor', 'Quality factor', '', 'up'],
   ['avgCycleDays', 'Avg days start → done', ' d', 'down'],
   ['hoursLogged', 'Hours logged', ' h', 'up'],
   ['activeDays', 'Active days', '', 'up'],
@@ -305,6 +312,8 @@ const WorkTypeTable = ({ rows, team = false }) => {
             <th className="py-2 px-3 font-medium text-right">Finished</th>
             {team && <th className="py-2 px-3 font-medium text-right">People</th>}
             <th className="py-2 px-3 font-medium text-right">Avg hours / task</th>
+            {team && <th className="py-2 px-3 font-medium text-right">Standard</th>}
+            <th className="py-2 px-3 font-medium text-right">Speed vs std</th>
             {!team && <th className="py-2 px-3 font-medium text-right">Team avg hours</th>}
             <th className="py-2 px-3 font-medium text-right">{team ? 'Avg days start → done' : 'On-time'}</th>
             {team && <th className="py-2 pl-3 font-medium text-right">Tasks with time</th>}
@@ -320,6 +329,8 @@ const WorkTypeTable = ({ rows, team = false }) => {
                 <td className="py-2 px-3 text-right tabular-nums">{r.completed}</td>
                 {team && <td className="py-2 px-3 text-right tabular-nums">{r.people}</td>}
                 <td className={`py-2 px-3 text-right tabular-nums ${faster ? 'text-green-700 ' : slower ? 'text-red-700 ' : ''}`}>{fmtNum(r.avgHours, ' h')}</td>
+                {team && <td className="py-2 px-3 text-right tabular-nums text-gray-600">{fmtNum(r.standardHours, ' h')}</td>}
+                <td className="py-2 px-3 text-right tabular-nums" title="Standard size ÷ average recorded time. Far above 100% on most work types usually means the standard is set too high.">{(team ? (r.standardHours && r.avgHours ? Math.round((r.standardHours / r.avgHours) * 100) : null) : r.speedVsStandard) != null ? `${team ? Math.round((r.standardHours / r.avgHours) * 100) : r.speedVsStandard}%` : '—'}</td>
                 {!team && <td className="py-2 px-3 text-right tabular-nums text-gray-600">{fmtNum(r.teamAvgHours, ' h')}</td>}
                 <td className="py-2 px-3 text-right tabular-nums">{team ? fmtNum(r.avgDays, ' d') : fmtNum(r.onTimeRate, '%')}</td>
                 {team && <td className="py-2 pl-3 text-right tabular-nums text-gray-600">{r.tasksWithTime}</td>}
@@ -347,7 +358,7 @@ const ScorecardTable = ({ rows, quarter = false }) => (
           <th className="py-2 px-3 font-medium text-right">Tasks</th>
           <th className="py-2 px-3 font-medium text-right">Hours</th>
           <th className="py-2 px-3 font-medium text-right">Avg h / task</th>
-          <th className="py-2 px-3 font-medium text-right">Efficiency</th>
+          <th className="py-2 px-3 font-medium text-right">Speed vs std</th>
           <th className="py-2 px-3 font-medium text-right">On-time</th>
           <th className="py-2 px-3 font-medium text-right">Avg days</th>
           {!quarter && <th className="py-2 px-3 font-medium text-right">Active days</th>}
@@ -365,7 +376,7 @@ const ScorecardTable = ({ rows, quarter = false }) => (
               <td className="py-2 px-3 text-right tabular-nums">{r.tasksCompleted}</td>
               <td className="py-2 px-3 text-right tabular-nums">{r.hoursLogged || 0}</td>
               <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.avgHoursPerTask)}</td>
-              <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.efficiency, '%')}</td>
+              <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.speedVsStandard, '%')}</td>
               <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.onTimeRate, '%')}</td>
               <td className="py-2 px-3 text-right tabular-nums">{fmtNum(r.avgCycleDays)}</td>
               {!quarter && <td className="py-2 px-3 text-right tabular-nums">{r.activeDays}</td>}
@@ -579,7 +590,7 @@ const TeamOverview = ({ data, onOpenEmployee }) => {
         <StatTile icon={Award} label="Effort delivered" value={`${t.effortHours || 0} h`} hint={`from ${t.tasksCompleted} finished tasks`} />
         <StatTile icon={Clock} label="Hours logged" value={t.hoursLogged || 0} hint={noTime ? 'No time was logged' : `${fmtNum(t.utilisation, '%')} of ${t.availableHours} h available`} />
         <StatTile icon={Timer} label="Avg hours / task" value={t.avgHoursPerTask != null ? `${t.avgHoursPerTask} h` : '—'} hint="Recorded time per finished task" />
-        <StatTile icon={Zap} label="Efficiency" value={fmtNum(t.efficiency, '%')} hint={t.plannedHours ? `Planned ${t.plannedHours} h · took ${t.actualHoursOnPlanned} h` : 'Needs planned time on tasks'} />
+        <StatTile icon={Zap} label="Speed vs standard" value={fmtNum(t.speedVsStandard, '%')} hint={t.speedActualHours ? `Standard work took ${t.speedActualHours} h of ${t.speedStandardHours} h · 100% = standard` : 'Needs time on finished tasks'} />
         <StatTile icon={Target} label="On-time delivery" value={fmtNum(t.onTimeRate, '%')} hint="Finished tasks that had a due date" />
         <StatTile icon={Timer} label="Avg completion time" value={t.avgCycleDays != null ? `${t.avgCycleDays} d` : '—'} hint="Start → done, per task" />
         <StatTile icon={Video} label="Meetings" value={t.meetings} hint={t.meetingHours ? `${t.meetingHours} h in meetings` : 'Meetings & calls'} />
@@ -606,9 +617,9 @@ const TeamOverview = ({ data, onOpenEmployee }) => {
           <LeaderCard icon={Target} label="Best on-time rate" leader={data.leaders.bestOnTime} unit="%" onOpen={onOpenEmployee} />
           <LeaderCard icon={Zap} label="Fastest avg completion" leader={data.leaders.fastestCycle} unit=" days" onOpen={onOpenEmployee} />
           <LeaderCard icon={Video} label="Most meetings" leader={data.leaders.mostMeetings} unit="" onOpen={onOpenEmployee} />
-          <LeaderCard icon={Zap} label="Best efficiency" leader={data.leaders.bestEfficiency} unit="%" onOpen={onOpenEmployee} />
+          <LeaderCard icon={Zap} label="Best speed vs standard" leader={data.leaders.bestSpeed} unit="%" onOpen={onOpenEmployee} />
         </div>
-        <p className="text-[11px] text-gray-500 mt-2">On-time, speed and efficiency records need at least 3 finished tasks, so one quick task doesn't top the list.</p>
+        <p className="text-[11px] text-gray-500 mt-2">On-time and speed records need at least 3 finished tasks, and anyone with a padding warning is left out, so one quick task or a padded plan doesn't top the list.</p>
       </Section>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -653,12 +664,14 @@ const COLUMNS = [
   { key: 'cycle', label: 'Avg days', get: r => r.metrics.avgCycleDays ?? 9999 },
   { key: 'hours', label: 'Hours', get: r => r.metrics.hoursLogged ?? 0 },
   { key: 'perTask', label: 'Avg h / task', get: r => r.metrics.avgHoursPerTask ?? -1 },
-  { key: 'efficiency', label: 'Efficiency', get: r => r.metrics.efficiency ?? -1 },
+  { key: 'speed', label: 'Speed vs std', get: r => r.metrics.speedVsStandard ?? -1 },
   { key: 'perTicket', label: 'h / task', get: r => r.metrics.avgEffortPerTask ?? -1 },
   { key: 'meetings', label: 'Meetings', get: r => r.metrics.meetings },
   { key: 'activeDays', label: 'Active days', get: r => r.metrics.activeDays },
   { key: 'rescheduled', label: 'Rescheduled', get: r => r.metrics.reschedules || 0 },
   { key: 'planVsStd', label: 'Own plans vs std', get: r => r.metrics.planVsStandard ?? -1 },
+  { key: 'quality', label: 'Quality factor', get: r => r.metrics.qualityFactor ?? -1 },
+  { key: 'checks', label: 'Checks', get: r => (r.metrics.effortFlags || []).length },
   { key: 'overdue', label: 'Overdue', get: r => r.metrics.overdueOpen }
 ];
 
@@ -735,7 +748,7 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
                 <td className="py-2.5 px-3 text-right tabular-nums">{fmtNum(r.metrics.avgCycleDays)}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.hoursLogged || 0}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{fmtNum(r.metrics.avgHoursPerTask)}</td>
-                <td className={`py-2.5 px-3 text-right tabular-nums ${r.metrics.efficiency == null ? '' : r.metrics.efficiency >= 90 ? 'text-green-700' : r.metrics.efficiency < 75 ? 'text-red-700' : 'text-amber-700'}`}>{fmtNum(r.metrics.efficiency, '%')}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums" title="Standard size of the finished work ÷ time actually recorded. 100% = as long as the standard. Not affected by the person's own plan.">{fmtNum(r.metrics.speedVsStandard, '%')}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{fmtNum(r.metrics.avgEffortPerTask)}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.meetings}</td>
                 <td className="py-2.5 px-3 text-right tabular-nums">{r.metrics.activeDays}</td>
@@ -746,6 +759,14 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
                 <td className={`py-2.5 px-3 text-right tabular-nums ${r.metrics.planVsStandard >= 150 ? 'text-amber-700 font-semibold' : ''}`}
                   title={r.metrics.ownPlansCount ? `Average of the person's own planned times vs the standard size, over ${r.metrics.ownPlansCount} task(s). Not used in the score.` : 'No own planned times'}>
                   {fmtNum(r.metrics.planVsStandard, '%')}
+                </td>
+                <td className={`py-2.5 px-3 text-right tabular-nums ${r.metrics.qualityFactor != null && r.metrics.qualityFactor < 0.95 ? 'text-amber-700' : ''}`} title="Credit adjustment from deadline, rework and review (0.75 to 1.25)">
+                  {r.metrics.qualityFactor != null ? `x${r.metrics.qualityFactor}` : '—'}
+                </td>
+                <td className="py-2.5 px-3 text-right tabular-nums" title={(r.metrics.effortFlags || []).map(f => f.text).join('\n') || 'Nothing to look at'}>
+                  {(r.metrics.effortFlags || []).length
+                    ? <span className={`inline-flex items-center gap-1 ${(r.metrics.effortFlags || []).some(f => f.level === 'warn') ? 'text-amber-700 font-semibold' : 'text-gray-500'}`}><AlertTriangle size={12} aria-hidden="true" />{r.metrics.effortFlags.length}</span>
+                    : <span className="text-gray-300">0</span>}
                 </td>
                 <td className={`py-2.5 px-3 pr-4 text-right tabular-nums ${r.metrics.overdueOpen > 0 ? 'text-red-700 ' : ''}`}>{r.metrics.overdueOpen}</td>
               </tr>
@@ -904,11 +925,11 @@ const PlannedVsActual = ({ metrics: m, tasks }) => {
   const chart = rows.filter(t => t.hoursLogged).slice(0, 12).reverse()
     .map(t => ({ label: t.key, Planned: Math.round(t.planHours * 10) / 10, Actual: t.hoursLogged }));
   return (
-    <Section title="Planned vs actual time" subtitle="Plan used = a manager-approved planned time, else the standard size for the work. An employee's own estimate is shown but never scored. Efficiency = plan ÷ actual (100% = on plan).">
+    <Section title="Planned vs actual time (information only, not scored)" subtitle="Planned and logged time are typed in by the employee, so they never change points or the score. Plan used here = a manager-approved planned time, else the standard size for the work. Efficiency = plan ÷ actual (100% = on plan).">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
         <StatTile icon={Target} label="Planned" value={fmtNum(m.plannedHours, ' h')} />
         <StatTile icon={Clock} label="Actual" value={fmtNum(m.actualHoursOnPlanned, ' h')} />
-        <StatTile icon={Zap} label="Efficiency" value={fmtNum(m.efficiency, '%')} tone={m.efficiency != null && m.efficiency < 75 ? 'warn' : 'default'} />
+        <StatTile icon={Zap} label="Plan efficiency" value={fmtNum(m.efficiency, '%')} hint="not scored" />
         <StatTile icon={CheckCircle2} label="Within plan" value={m.tasksWithPlan ? `${m.tasksWithinPlan} / ${m.tasksWithPlan}` : '—'} hint="Up to 10% over counts as within" />
         <StatTile icon={Info} label="Tasks with a plan" value={fmtNum(m.planCoverage, '%')} hint="of finished tasks" />
       </div>
@@ -1202,7 +1223,8 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
         <StatTile icon={Clock} label="Hours logged" value={m.hoursLogged || 0} hint="Working hours recorded" />
         <StatTile icon={Timer} label="Avg hours / task" value={m.avgHoursPerTask != null ? `${m.avgHoursPerTask} h` : '—'} hint={m.tasksWithTimeLogged ? `From ${m.tasksWithTimeLogged} finished task${m.tasksWithTimeLogged > 1 ? 's' : ''}` : 'No time on finished tasks'} />
         <StatTile icon={Users} label="Active days" value={m.activeDays} hint="Days with any recorded work" />
-        <StatTile icon={Zap} label="Efficiency" value={fmtNum(m.efficiency, '%')} hint={m.tasksWithPlan ? `${m.tasksWithinPlan} of ${m.tasksWithPlan} tasks within plan` : 'No finished task with a plan'} tone={m.efficiency != null && m.efficiency < 75 ? 'warn' : 'default'} />
+        <StatTile icon={Zap} label="Speed vs standard" value={fmtNum(m.speedVsStandard, '%')} tone={m.speedVsStandard != null && m.speedVsStandard < 60 ? 'warn' : 'default'} hint={m.speedActualHours ? `${m.speedStandardHours} h standard took ${m.speedActualHours} h · 100% = standard` : 'No timed tasks'} />
+        <StatTile icon={Star} label="Quality factor" value={m.qualityFactor != null ? `x${m.qualityFactor}` : '—'} tone={m.qualityFactor != null && m.qualityFactor < 0.95 ? 'warn' : 'default'} hint="Deadline, rework, review: at most ±25%" />
         <StatTile icon={Star} label="Points" value={m.pointsEarned} hint={m.pointsApproved ? `${m.pointsApproved} approved` : 'From finished tasks'} />
         <StatTile icon={Video} label="Meetings" value={m.meetings} hint={m.meetingHours ? `${m.meetingHours} h${m.avgMeetingMinutes ? ` · avg ${m.avgMeetingMinutes} min` : ''}` : undefined} />
         <StatTile icon={AlertTriangle} label="Overdue now" value={m.overdueOpen} tone="warn" />
@@ -1213,6 +1235,14 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
           hint={m.ownPlansCount ? `${m.ownPlansCount} task${m.ownPlansCount > 1 ? 's' : ''} · 100% = normal · not scored` : 'No own planned times'}
           tone={m.planVsStandard >= 150 ? 'warn' : 'default'} />
       </div>
+
+      {(m.effortFlags || []).length > 0 && (
+        <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <p className="font-semibold flex items-center gap-1.5"><AlertTriangle size={14} aria-hidden="true" /> Checks to look at</p>
+          <p className="text-xs text-amber-800/80 mb-1.5">Points never use the planned or logged time, so these do not change anyone's credit. They point at patterns worth a conversation.</p>
+          <ul className="list-disc pl-5 space-y-0.5 text-xs">{m.effortFlags.map(f => <li key={f.code}>{f.text}</li>)}</ul>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <InsightsCard insights={data.insights} />
@@ -1454,12 +1484,15 @@ const HRPerformance = () => {
       `team-performance-${data.range.label.replace(/\s+/g, '-')}.csv`,
       ['Rank', 'Employee', 'Role', 'Department', 'Score', 'Grade', 'Tasks assigned', 'Tasks completed', 'Completion %', 'Subtasks done',
         'On-time %', 'Late', 'Overdue now', 'Avg days per task', 'Hours logged', 'Avg hours per task', 'Points earned',
-        'Points approved', 'Meetings', 'Meeting hours', 'Ticket updates', 'Comments', 'Review score', 'Active days'],
+        'Points approved', 'Meetings', 'Meeting hours', 'Ticket updates', 'Comments', 'Review score', 'Active days',
+        'Effort hours', 'Standard size hours', 'Speed vs standard %', 'Quality factor', 'Checks'],
       data.employees.map(r => [r.rank ?? '', r.name, r.role, r.department, r.score ?? '', r.grade, r.metrics.tasksAssigned, r.metrics.tasksCompleted,
       r.metrics.completionRate ?? '', r.metrics.subtasksCompleted, r.metrics.onTimeRate ?? '', r.metrics.lateCompleted,
       r.metrics.overdueOpen, r.metrics.avgCycleDays ?? '', r.metrics.hoursLogged || 0, r.metrics.avgHoursPerTask ?? '',
       r.metrics.pointsEarned, r.metrics.pointsApproved, r.metrics.meetings, r.metrics.meetingHours || 0,
-      r.metrics.updates, r.metrics.comments, r.metrics.reviewScore ?? '', r.metrics.activeDays])
+      r.metrics.updates, r.metrics.comments, r.metrics.reviewScore ?? '', r.metrics.activeDays,
+      r.metrics.effortHours ?? '', r.metrics.effortSizeHours ?? '', r.metrics.speedVsStandard ?? '', r.metrics.qualityFactor ?? '',
+      (r.metrics.effortFlags || []).map(f => f.text).join(' | ')])
     );
   };
 

@@ -15,6 +15,7 @@ import AddTeamMemberModal from './AddTeamMemberModal';
 import AddTimeLogModal from './AddTimeLogModal';
 import ITCreateIssueDrawer from '../it/ITCreateIssueDrawer';
 import ITIssueDetailsPanel from '../it/ITIssueDetailsPanel';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -267,6 +268,8 @@ const ProjectDetailsPage = () => {
       alert(err.message);
     }
   };
+
+  useLiveRefresh(['work'], () => fetchTasks());
 
   const fetchTasks = async () => {
     try {

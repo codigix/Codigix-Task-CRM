@@ -6,6 +6,7 @@ import {
   FileText, AlertCircle, FolderKanban, Layers, ChevronDown, RefreshCw, Mail, Pencil, CalendarClock,
   Trash2, ExternalLink, ListChecks, History, Link2, Check, X, HelpCircle
 } from 'lucide-react';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const mApi = async (path, opts = {}) => {
@@ -35,7 +36,7 @@ const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).trim());
 const inputCls = 'w-full h-9 border border-gray-300 rounded px-3 text-sm outline-none focus:border-blue-500 bg-white';
 const labelCls = 'block text-xs font-medium text-gray-700 mb-1';
 const btn = {
-  primary: 'h-9 px-4 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5',
+  primary: 'h-9 px-4 text-sm font-medium rounded bg-red-600 text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5',
   ghost: 'h-9 px-3 text-sm font-medium rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5',
   danger: 'h-9 px-4 text-sm font-medium rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5',
   small: 'h-8 px-2.5 text-xs font-medium rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1',
@@ -499,6 +500,7 @@ function MeetingDetail({ meetingId, me, onClose, onRefresh, onFlash }) {
 
   const load = useCallback(() => mApi(`/${meetingId}`).then(d => { setData(d); setError(''); }).catch(e => setError(e.message)), [meetingId]);
   useEffect(() => { load(); }, [load]);
+  useLiveRefresh(['meetings'], () => load());
 
   if (!data) return (
     <Modal title="Meeting" onClose={onClose}>
@@ -722,6 +724,7 @@ function GoogleConnect({ onFlash, refreshKey }) {
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
   const [help, setHelp] = useState(false);
+  const [showManage, setShowManage] = useState(false);
   const load = useCallback(() => mApi('/google/status').then(setStatus).catch(() => setStatus(null)), []);
   useEffect(() => { load(); }, [load, refreshKey]);
   if (!status) return null;
@@ -749,12 +752,19 @@ function GoogleConnect({ onFlash, refreshKey }) {
   const who = status.connected ? status.email : status.orgEmail ? status.orgEmail : status.delegation ? 'workspace account' : null;
   return (
     <>
-      {status.active ? (
+      {/* Once Google is connected and shared there is nothing left to do, so the bar is hidden.
+          A manager keeps a small muted icon to open it again (to disconnect or switch account). */}
+      {status.active && !(status.connected && status.canConnectOrg && !status.shared) && !showManage ? (
+        status.canConnectOrg ? (
+          <button onClick={() => setShowManage(true)} className="h-9 w-9 inline-flex items-center justify-center text-gray-300 hover:text-gray-600 cursor-pointer" title={`Google Meet is automatic${who ? ` (${who})` : ''}. Click to manage.`}><Link2 size={15} /></button>
+        ) : null
+      ) : status.active ? (
         <div className="inline-flex items-center gap-2 h-9 pl-3 pr-2 rounded border border-emerald-200 bg-emerald-50 text-xs text-emerald-800" title="Meetings are created on this Google Calendar with a Meet link, and attendees are invited automatically">
           <CheckCircle2 size={13} /> Google Meet automatic{who ? ` · ${who}` : ''}
           {status.connected && status.canConnectOrg && !status.shared && <button onClick={() => share(true)} disabled={busy} className="ml-1 px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" title="Use this Google account for every employee's meetings">Use for everyone</button>}
           {status.connected && status.shared && <span className="ml-1 text-emerald-700">· shared with everyone</span>}
           {status.connected && <button onClick={disconnect} disabled={busy} className="ml-1 text-emerald-700 hover:underline cursor-pointer">Disconnect</button>}
+          {showManage && <button onClick={() => setShowManage(false)} className="ml-1 text-emerald-700/70 hover:text-emerald-900 cursor-pointer" title="Hide">×</button>}
         </div>
       ) : status.canConnectOrg ? (
         <div className="inline-flex items-center gap-1">
@@ -809,6 +819,7 @@ export default function MeetingsPage() {
     mApi(`?scope=${scope}`).then(d => { setData(d); setError(''); }).catch(e => setError(e.message));
   }, [scope]);
   useEffect(() => { load(); }, [load]);
+  useLiveRefresh(['meetings', 'work'], () => load());
   useEffect(() => { if (!flash) return undefined; const t = setTimeout(() => setFlash(null), 9000); return () => clearTimeout(t); }, [flash]);
 
   const all = useMemo(() => data?.meetings || [], [data]);

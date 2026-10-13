@@ -13,17 +13,27 @@ self.addEventListener('activate', (event) => {
 
 const isIOS = /iPad|iPhone|iPod/.test(self.navigator.userAgent) || (self.navigator.platform === 'MacIntel' && self.navigator.maxTouchPoints > 1);
 
+// Every notification (desktop toast, Android shade, iPhone banner) is built here the same way:
+// Codigix mark as the icon, a monochrome mark as the Android status-bar badge, a short plain-text
+// title and body, one tap target. iOS ignores the badge/vibrate/image fields and needs every push shown.
+const ICON = '/logo192.png';
+const BADGE = '/notification-badge.png';
+const plain = (v, max) => String(v == null ? '' : v).replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/[ \t\r\n]+/g, ' ').trim().slice(0, max);
+
 self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: 'Codigix', body: event.data ? event.data.text() : '' }; }
-  const title = data.title || 'Codigix';
+  const title = plain(data.title, 80) || 'Codigix';
+  const kind = data.kind || 'general';
   const options = {
-    body: data.body || '',
-    icon: data.icon || '/logo192.png',
-    badge: '/logo192.png',
+    body: plain(data.body, 180),
+    icon: data.icon || ICON,
+    badge: BADGE,
     tag: data.tag || undefined,
     renotify: Boolean(data.tag),
-    data: { url: data.url || '/', roomId: data.roomId || null },
+    vibrate: [120, 60, 120],
+    lang: 'en',
+    data: { url: data.url || '/', roomId: data.roomId || null, kind },
     timestamp: Date.now()
   };
 

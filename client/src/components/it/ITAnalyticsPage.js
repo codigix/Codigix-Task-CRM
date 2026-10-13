@@ -12,6 +12,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { useAuth } from '../../hooks/useAuth';
 import { projectAPI, taskAPI, activitiesAPI } from '../../services/api';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const ITAnalyticsPage = () => {
   const { user } = useAuth();
@@ -22,10 +23,15 @@ const ITAnalyticsPage = () => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [liveTick, setLiveTick] = useState(0);
+  const loadedOnce = React.useRef(false);
+  useLiveRefresh(['work'], () => setLiveTick(t => t + 1));
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
+        if (!loadedOnce.current) setLoading(true);
+        loadedOnce.current = true;
         const [projRes, tasksRes] = await Promise.all([
           projectAPI.getAll({ department: 'IT' }),
           taskAPI.getAllGeneral()
@@ -53,7 +59,7 @@ const ITAnalyticsPage = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [liveTick]);
 
   const handleExportPDF = async () => {
     const element = document.getElementById('report-content');

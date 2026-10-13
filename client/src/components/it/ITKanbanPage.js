@@ -20,6 +20,7 @@ import TimeTrackingModal from '../common/TimeTrackingModal';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser, isUserTaskReporter } from '../../utils/access';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -775,6 +776,8 @@ const ITKanbanPage = ({ department }) => {
       showErrorToast('Failed to update assignee');
     }
   };
+
+  useLiveRefresh(['work'], () => fetchKanbanData());
 
   const fetchKanbanData = () => {
     const bust = Date.now();
@@ -2628,7 +2631,7 @@ const ITKanbanPage = ({ department }) => {
                                                         <div className="relative card-assignee-dropdown">
                                                           <button
                                                             onClick={(e) => handleOpenCardAssignee(e, card.key)}
-                                                            className={`w-6 h-6 rounded flex items-center justify-center text-[9px]  border border-white shrink-0 cursor-pointer transition-transform hover:scale-110 ${card.assignee === 'Unassigned' || !card.assignee
+                                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px]  border border-white shrink-0 cursor-pointer transition-transform hover:scale-110 ${card.assignee === 'Unassigned' || !card.assignee
                                                               ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                                               : 'bg-red-600 text-white shadow-sm'
                                                               }`}

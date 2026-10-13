@@ -56,6 +56,7 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, onReviewComplete }) => {
     if (isOpen) recalculate();
   }, [isOpen, recalculate]);
 
+  const [quality, setQuality] = useState('');
   const totalPoints = Number(result?.effortPoints ?? issue?.effort_points ?? 0);
   const allocated = rows.reduce((sum, r) => sum + (Number(r.effort_points) || 0), 0);
   const alreadyApproved = (result?.reviewStatus || issue?.contribution_review_status) === 'Approved';
@@ -95,7 +96,8 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, onReviewComplete }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...ticketDeleteHeaders() },
         body: JSON.stringify({
-          contributions: rows.map(r => ({ ...r, effort_points: Number(r.effort_points) || 0 }))
+          contributions: rows.map(r => ({ ...r, effort_points: Number(r.effort_points) || 0 })),
+          quality: quality || undefined
         })
       });
       const data = await res.json().catch(() => ({}));
@@ -231,6 +233,17 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, onReviewComplete }) => {
               Nobody to credit yet. Mark subtasks complete with an assignee, log time, or assign the ticket, then recalculate.
             </div>
           )}
+
+          <div className="border border-gray-200 rounded p-4 text-sm">
+            <p className="text-gray-700 font-medium">Quality of the finished work</p>
+            <p className="mt-1 text-gray-500 text-xs">Your rating adjusts the points by up to 10%. Points never depend on the planned or logged time.</p>
+            <div className="mt-2 flex gap-2 flex-wrap">
+              {[['', 'No rating'], ['excellent', 'Excellent (+10%)'], ['good', 'Good'], ['needs_work', 'Needs improvement (-15%)']].map(([v, l]) => (
+                <button key={v || 'none'} type="button" onClick={() => setQuality(v)}
+                  className={`px-3 py-1.5 rounded border text-xs cursor-pointer ${quality === v ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>{l}</button>
+              ))}
+            </div>
+          </div>
 
           <div className="bg-gray-50 border border-gray-200 rounded p-4 flex gap-3 text-sm text-gray-600">
             <History size={16} className="shrink-0 mt-0.5 text-gray-500" />

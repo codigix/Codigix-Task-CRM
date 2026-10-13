@@ -3,6 +3,7 @@ import { Plus, ChevronDown, MoreVertical, X, Calendar, Star, GripVertical, Alert
 import { taskAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import SetReminderModal from './SetReminderModal';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const TodoPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -15,9 +16,11 @@ const TodoPage = () => {
 
   const tabs = ['All Reminders', "Today's", 'Overdue', 'Upcoming'];
 
+  const loadedOnce = React.useRef(false);
   const fetchTasks = useCallback(async () => {
     try {
-      setLoading(true);
+      if (!loadedOnce.current) setLoading(true);
+      loadedOnce.current = true;
       const allTasks = await taskAPI.getAllGeneral();
       const userTasks = allTasks.filter(task => (task.assigned_to || []).includes(user.id));
       setTodos(userTasks);
@@ -29,6 +32,8 @@ const TodoPage = () => {
       setLoading(false);
     }
   }, [user]);
+
+  useLiveRefresh(['work'], () => { if (isAuthenticated && user) return fetchTasks(); });
 
   useEffect(() => {
     if (isAuthenticated && user) {

@@ -12,6 +12,7 @@ import { useAuth } from '../../hooks/useAuth';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE } from '../../utils/access';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 // Matches the server's definition of finished work.
 const isDoneStatus = (s) => ['DONE', 'COMPLETED', 'CLOSED'].includes(String(s || '').toUpperCase().trim());
@@ -87,6 +88,8 @@ const TasksPage = ({ department }) => {
   // Issues live in it_kanban_issues (the same source as the Kanban board). The old
   // /api/tasks call read project_tasks, which is empty, so this page always showed
   // an empty table beneath hardcoded totals.
+  useLiveRefresh(['work'], () => fetchTasks());
+
   const fetchTasks = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/it-kanban/issues`);

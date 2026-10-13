@@ -110,14 +110,31 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   const navigate = useNavigate();
   const loggedUser = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username : 'Current User';
 
-  // A meeting work item carries a "meeting:<id>" label; it is completed from the Meetings page.
-  const meetingId = (() => {
-    if (String(issue?.type || '').toLowerCase() !== 'meeting') return null;
-    let labels = issue.labels;
-    if (typeof labels === 'string') { try { labels = JSON.parse(labels); } catch { labels = []; } }
-    const hit = (Array.isArray(labels) ? labels : []).find(l => /^meeting:\d+$/.test(String(l)));
-    return hit ? Number(String(hit).split(':')[1]) : null;
-  })();
+  // A meeting work item (type "Meeting") is completed from the Meetings page; its meeting is found by this task's key.
+  const isMeetingIssue = String(issue?.type || '').toLowerCase() === 'meeting';
+  const issueKeyForMeeting = isMeetingIssue ? (issue.issue_key || issue.key) : null;
+
+  // Join / share details for a meeting work item (only the host, invitees and managers get them)
+  const [meetInfo, setMeetInfo] = useState(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  useEffect(() => {
+    setMeetInfo(null); setLinkCopied(false);
+    if (!issueKeyForMeeting) return undefined;
+    let cancelled = false;
+    fetch(`${API_BASE_URL}/meetings/by-issue/${encodeURIComponent(issueKeyForMeeting)}`, { credentials: 'include' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled) setMeetInfo(d && d.found ? d : null); })
+      .catch(() => { if (!cancelled) setMeetInfo(null); });
+    return () => { cancelled = true; };
+  }, [issueKeyForMeeting]);
+  const shareMeeting = async () => {
+    if (!meetInfo) return;
+    const when = meetInfo.scheduled_at ? new Date(meetInfo.scheduled_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    const text = meetInfo.meet_link || [meetInfo.title, when, meetInfo.location].filter(Boolean).join(' · ');
+    try { await navigator.clipboard.writeText(text); }
+    catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch { } document.body.removeChild(ta); }
+    setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000);
+  };
 
   // Core issue state
   const [title, setTitle] = useState('');
@@ -295,6 +312,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   }, [showSubtaskAiModal, showReviewGate, isExpanded, onClose]);
 
   const prevIssueKeyRef = useRef(null);
+  const lastSyncSigRef = useRef('');
   const prevInitialSubtaskKeyRef = useRef(initialSubtaskKey);
 
   useEffect(() => {
@@ -302,6 +320,12 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     const currentKey = issue.issue_key || issue.key;
     const isNewParentIssue = prevIssueKeyRef.current !== currentKey;
     prevIssueKeyRef.current = currentKey;
+
+    // The page behind this panel reloads itself when anything changes anywhere. If the ticket's data is the
+    // same as last time, leave the fields alone so a title or description being typed is not wiped.
+    const syncSig = `${JSON.stringify(issue)}|${initialSubtaskKey}`;
+    if (!isNewParentIssue && lastSyncSigRef.current === syncSig) return;
+    lastSyncSigRef.current = syncSig;
 
     setTitle(issue.title || '');
     setType(issue.type || 'Task');
@@ -1094,16 +1118,39 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
         <div className="flex-1 min-h-0 p-5 flex gap-6 overflow-hidden">
           {/* Left Column (Main Content - Independent Scroll) */}
           <div ref={leftColumnRef} className="flex-1 min-w-0 overflow-y-auto pr-3 custom-scrollbar space-y-6">
-            {meetingId && (
-              <div className="rounded border border-indigo-200 bg-indigo-50 px-4 py-3 flex items-center gap-3">
+            {isMeetingIssue && (
+              <div className="rounded border border-indigo-200 bg-indigo-50 px-4 py-3 flex items-center gap-3 flex-wrap">
                 <Video size={18} className="text-indigo-500 flex-shrink-0" />
-                <div className="flex-1 min-w-0 text-sm text-indigo-900">
-                  This is a meeting. It can only be completed by submitting the Minutes of Meeting (MOM); reschedule, edit attendees or cancel it from the meeting.
+                <div className="flex-1 min-w-[220px] text-sm text-indigo-900">
+                  <div className="font-medium">{meetInfo?.title ? `Meeting: ${meetInfo.title}` : 'This is a meeting'}</div>
+                  <div className="text-xs text-indigo-800/80 mt-0.5">
+                    {meetInfo && meetInfo.allowed === false
+                      ? 'Only invited people can join. It is completed by submitting the Minutes of Meeting (MOM).'
+                      : meetInfo?.status === 'Completed' ? 'Meeting completed. The Minutes of Meeting (MOM) are submitted.'
+                        : meetInfo?.status === 'Cancelled' ? 'This meeting was cancelled.'
+                          : meetInfo?.kind === 'offline' && meetInfo?.location ? `In person · ${meetInfo.location}`
+                            : 'It is completed by submitting the Minutes of Meeting (MOM).'}
+                  </div>
                 </div>
-                <button
-                  onClick={() => { onClose?.(); navigate(`/meetings?open=${meetingId}`); }}
-                  className="h-8 px-3 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer whitespace-nowrap"
-                >Open meeting</button>
+                {meetInfo?.allowed && meetInfo.status === 'Scheduled' && meetInfo.meet_link && (
+                  <a href={meetInfo.meet_link} target="_blank" rel="noopener noreferrer"
+                    className="h-8 px-4 inline-flex items-center gap-1.5 text-xs font-semibold rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer whitespace-nowrap">
+                    <Video size={13} /> Join
+                  </a>
+                )}
+                {meetInfo?.allowed && meetInfo.status === 'Scheduled' && !meetInfo.meet_link && meetInfo.kind === 'online' && (
+                  <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">Link pending</span>
+                )}
+                {meetInfo?.allowed && meetInfo.status !== 'Cancelled' && (meetInfo.meet_link || meetInfo.location) && (
+                  <button onClick={shareMeeting}
+                    className="h-8 px-3 text-xs font-medium rounded border border-indigo-300 bg-white text-indigo-700 hover:bg-indigo-100 cursor-pointer whitespace-nowrap">
+                    {linkCopied ? 'Copied' : 'Share link'}
+                  </button>
+                )}
+                {meetInfo?.allowed && (
+                  <button onClick={() => { onClose?.(); navigate(`/meetings?open=${meetInfo.id}`); }}
+                    className="text-xs text-indigo-600 hover:underline cursor-pointer whitespace-nowrap" title="Reschedule, edit attendees, add MOM or cancel">Details</button>
+                )}
               </div>
             )}
             {activeProof && (

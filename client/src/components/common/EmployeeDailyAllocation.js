@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const EmployeeDailyAllocation = () => {
   const [employees, setEmployees] = useState([]);
@@ -13,9 +14,11 @@ const EmployeeDailyAllocation = () => {
     fetchData();
   }, [selectedDate]);
 
-  const fetchData = async () => {
+  useLiveRefresh(['work'], () => fetchData(true));
+
+  const fetchData = async (silent) => {
     try {
-      setLoading(true);
+      if (silent !== true) setLoading(true);
       const [empRes, taskRes, deptRes] = await Promise.all([
         fetch('/api/users'),
         fetch(`/api/tasks?skip=0&limit=1000`),
@@ -29,7 +32,7 @@ const EmployeeDailyAllocation = () => {
       setEmployees(empData);
       setTasks(taskData);
       setDepartments(deptData);
-      if (deptData.length > 0) setSelectedDept(deptData[0].id);
+      if (silent !== true && deptData.length > 0) setSelectedDept(deptData[0].id);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {

@@ -19,6 +19,7 @@ import SheetSyncBar from './SheetSyncBar';
 import ITIssueDetailsPanel from '../it/ITIssueDetailsPanel';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const PRIORITY_ICONS = {
   Critical: <ArrowUp size={13} className="text-red-600" />,
@@ -182,7 +183,7 @@ const AssigneePicker = ({ assignee, users, currentUserName, onChange }) => {
           setQuery('');
         }}
         title={name || 'Unassigned'}
-        className={`w-6 h-6 rounded flex items-center justify-center text-[9px]  ring-1 ring-white hover:ring-blue-400 transition ${name ? `${avatarColor(name)} text-white` : 'bg-gray-200 text-gray-500'
+        className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px]  ring-1 ring-white hover:ring-blue-400 transition ${name ? `${avatarColor(name)} text-white` : 'bg-gray-200 text-gray-500'
           }`}
       >
         {name ? initials(name) : '?'}
@@ -565,6 +566,7 @@ const BacklogPage = ({ department }) => {
   }, [currentDept, isManager, user?.role, designation]);
 
   useEffect(() => { load(); }, [load]);
+  useLiveRefresh(['work'], () => load());
   // Proof of work / sign-off comments are saved by the server; reload so they show up.
   useEffect(() => {
     window.addEventListener('crm-issue-proof-saved', load);

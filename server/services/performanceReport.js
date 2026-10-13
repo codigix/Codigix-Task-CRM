@@ -17,6 +17,7 @@
  */
 
 const { parseDurationToSeconds: parseWorkDuration, workingSecondsBetween, workingDaysBetween } = require('./workTime');
+const effort = require('./effort');
 
 const DAY = 24 * 60 * 60 * 1000;
 const DONE = new Set(['DONE', 'COMPLETED', 'CLOSED', 'RESOLVED']);
@@ -33,10 +34,12 @@ const SYSTEM_USERNAMES = new Set(['admin', 'leads', 'deals', 'sales', 'marketing
 //   utilisation hours actually recorded vs working hours available
 //   onTime      finished by the due date
 //   engagement  days with recorded activity vs working days available
-//   efficiency  planned ÷ actual time on tasks that had a plan
+//   (efficiency  planned ÷ actual time is shown for information only)
 //   review      manager review score
 // Parts without data are left out and the rest re-weighted.
-const SCORE_WEIGHTS = { output: 35, utilisation: 20, onTime: 15, engagement: 10, efficiency: 10, review: 10 };
+// Planned-vs-actual efficiency is still reported but no longer scored: both numbers are typed in by the
+// employee, so a padded plan finished in the same time would look perfect.
+const SCORE_WEIGHTS = { output: 40, onTime: 20, engagement: 15, review: 15, utilisation: 10 };
 
 // Standard size of each kind of work, in hours, when a ticket has no planned time of its
 // own. HR/managers edit these on the performance page (stored in work_type_sizes); these
@@ -49,8 +52,6 @@ const DEFAULT_WORK_SIZES = {
   'Project task': 2, 'General task': 2
 };
 const FALLBACK_SIZE = 1;
-// Harder priorities count for a little more of the same work.
-const PRIORITY_WEIGHT = { low: 1, medium: 1, high: 1.25, highest: 1.5, critical: 1.5 };
 
 const isDone = (s) => DONE.has(String(s || '').toUpperCase().trim());
 const isActive = (s) => IN_PROGRESS.has(String(s || '').toUpperCase().trim());
@@ -229,13 +230,31 @@ const buildFacts = (data) => {
     statusEvents.get(h.issue_key).push({ to: h.new_value, from: h.old_value, at: toDate(h.created_at), by: h.changed_by });
   });
 
+  // Deadline changes and the reviewer's quality rating, per ticket (history is oldest first).
+  const dueEvents = new Map();
+  const ratings = new Map();
+  data.history.forEach(h => {
+    if (h.field === 'due_date') {
+      if (!dueEvents.has(h.issue_key)) dueEvents.set(h.issue_key, []);
+      dueEvents.get(h.issue_key).push({ old_value: h.old_value, new_value: h.new_value, changed_by: h.changed_by, at: toDate(h.created_at) });
+    } else if (h.field === 'quality_rating') ratings.set(h.issue_key, h.new_value);
+  });
+
   const tasks = []; // unified task facts
   const subtaskFacts = [];
 
   // Tickets labelled 'not-in-performance' (e.g. old work closed in bulk) are left out of
   // every figure: not assigned work, not completed work, no time, no activity.
   const excludedKeys = new Set(data.issues
-    .filter(i => (parseJson(i.labels, []) || []).map(l => String(l).toLowerCase()).includes(EXCLUDE_LABEL))
+    .filter(i => String(i.type || '').toLowerCase() === 'meeting'
+      || (parseJson(i.labels, []) || []).map(l => String(l).toLowerCase()).includes(EXCLUDE_LABEL)
+      // Past work closed in one go by the "Bulk update" actor (not a person) is history being tidied up,
+      // not work anyone did in this period. Without this it counted as full effort for whoever owned it.
+      || (isDone(i.status) && (() => {
+        const evs = statusEvents.get(i.issue_key) || [];
+        const last = [...evs].reverse().find(e => isDone(e.to));
+        return Boolean(last && /^bulk update/i.test(String(last.by || '')));
+      })()))
     .map(i => i.issue_key));
   if (excludedKeys.size) {
     data.issues = data.issues.filter(i => !excludedKeys.has(i.issue_key));
@@ -255,6 +274,8 @@ const buildFacts = (data) => {
     // Finished work belongs to whoever held it when it was finished, so reassigning a Done
     // ticket afterwards doesn't move the credit.
     const userId = idForName(done && lastDone ? assigneeAt(i, lastDone.at) : i.assignee);
+    // The deadline to hold the person to: moves they made themselves don't count.
+    const due = effort.effectiveDue(toDate(i.due_date), dueEvents.get(i.issue_key), (n) => userId != null && idForName(n) === userId);
 
     tasks.push({
       source: 'Ticket',
@@ -266,7 +287,9 @@ const buildFacts = (data) => {
       userId,
       createdAt: toDate(i.created_at),
       startedAt,
-      dueAt: toDate(i.due_date),
+      dueAt: due.dueAt,
+      selfMoves: due.selfMoves,
+      rating: ratings.get(i.issue_key) || null,
       completedAt,
       completionEstimated: done && !lastDone, // no history row: date taken from last update
       points: Number(i.effort_points) || Number(i.story_points) || 0,
@@ -347,12 +370,20 @@ const buildFacts = (data) => {
     const approved = t.estimateApproved && t.estimateHours > 0;
     t.planHours = approved ? t.estimateHours : (std != null ? std : null);
     t.planBasis = approved ? 'approved plan' : (std != null ? 'standard size' : null);
-    const base = t.planHours != null ? t.planHours : FALLBACK_SIZE;
-    t.effortBasis = approved ? 'approved' : (std != null ? 'standard' : 'default');
     // How the employee's own plan (or pending request) compares with the standard.
     const own = !t.estimateApproved && t.estimateHours > 0 ? t.estimateHours : (t.requestedHours > 0 ? t.requestedHours : null);
     t.planVsStandard = own != null && std ? own / std : null;
-    t.effortHours = round(base * (PRIORITY_WEIGHT[String(t.priority || 'medium').toLowerCase()] || 1), 2);
+    // Credit never uses the employee's plan or logged time: standard size x priority x a factor built
+    // from recorded facts (deadline, rework, reviewer rating). The plan above only feeds the efficiency
+    // figure and the padding checks.
+    const stdSize = std != null ? std : FALLBACK_SIZE;
+    const q = effort.qualityFactor({ dueAt: t.dueAt, completedAt: t.completedAt, selfMoves: t.selfMoves || 0, reopened: t.reopened || 0, rating: t.rating });
+    t.sizeHours = stdSize;
+    t.effortBasis = std != null ? 'standard' : 'default';
+    t.qualityFactor = q.factor;
+    t.qualityParts = q.parts;
+    t.planRatio = t.estimateHours > 0 && std ? t.estimateHours / std : null;
+    t.effortHours = round(stdSize * effort.weightFor(t.priority) * (t.completedAt ? q.factor : 1), 2);
   });
 
   // Time entries (hours), each attributed to a user id with a date and optionally a task key.
@@ -535,6 +566,7 @@ const computeMetrics = (facts, userId, from, to) => {
     const h = myTimeByTask.get(t.key) || 0;
     if (h > 0) { row.withTime += 1; row.hours += h; }
     if (h > 0 && t.estimateHours > 0) { row.withPlan += 1; row.planned += t.estimateHours; row.plannedActual += h; }
+    if (h > 0) row.stdTotal = (row.stdTotal || 0) + (t.sizeHours || 0);
     if (t.dueAt) { row.withDue += 1; if (t.completedAt <= endOfDay(t.dueAt)) row.onTime += 1; }
   });
   const byWorkType = [...typeMap.values()]
@@ -542,6 +574,7 @@ const computeMetrics = (facts, userId, from, to) => {
       workType: r.workType, completed: r.completed, hours: round(r.hours), avgHours: r.withTime ? round(r.hours / r.withTime) : null,
       onTimeRate: pct(r.onTime, r.withDue),
       avgPlannedHours: r.withPlan ? round(r.planned / r.withPlan) : null,
+      speedVsStandard: r.hours > 0 && r.stdTotal ? round((r.stdTotal / r.hours) * 100, 0) : null,
       efficiency: r.plannedActual > 0 ? round((r.planned / r.plannedActual) * 100, 0) : null
     }))
     .sort((a, b) => b.completed - a.completed);
@@ -567,11 +600,38 @@ const computeMetrics = (facts, userId, from, to) => {
   const planVsStandard = ownPlans.length ? round((ownPlans.reduce((sum, t) => sum + t.planVsStandard, 0) / ownPlans.length) * 100, 0) : null;
   completed.forEach(t => { effortByBasis[t.effortBasis || 'default'] += 1; });
   const groundActivity = activity.length + meetings.length + subtasks.length;
+  // Padding checks (shown to HR, never change credit): timer vs typed-in time, long days, time with no work activity.
+  const timerHours = timeInRange.filter(e => /^Automatic/.test(e.source || '')).reduce((s, e) => s + e.hours, 0);
+  const manualHours = timeInRange.filter(e => !/^Automatic/.test(e.source || '')).reduce((s, e) => s + e.hours, 0);
+  const hoursByDay = new Map();
+  timeInRange.forEach(e => { if (e.at) hoursByDay.set(dayKey(e.at), (hoursByDay.get(dayKey(e.at)) || 0) + e.hours); });
+  const workDays = new Set([...completed.map(t => t.completedAt), ...activity.filter(a => a.kind === 'update' && a.field === 'status').map(a => a.at), ...meetings.map(m => m.at)].filter(Boolean).map(dayKey));
+  const daysWithTimeNoActivity = [...hoursByDay.entries()].filter(([k, h]) => h >= 2 && !workDays.has(k)).length;
+  const effortFlags = effort.detectFlags({
+    plannedVsActual: completedWithLogs.filter(t => t.estimateHours > 0).map(t => ({ plan: t.estimateHours, actual: myTimeByTask.get(t.key) })),
+    planRatios: completed.map(t => t.planRatio).filter(r => r != null),
+    manualHours, timerHours, hoursLogged, availableHours,
+    longestDayHours: hoursByDay.size ? Math.max(...hoursByDay.values()) : 0,
+    daysWithTimeNoActivity, effortHours
+  });
+  const factorTasks = completed.filter(t => t.qualityFactor != null);
+  const effortSizeHours = completed.reduce((s, t) => s + (t.sizeHours || 0), 0);
+  // Speed = standard size of the finished tasks that have recorded time / the time actually recorded. Only the
+  // standard and the real time count, so a padded plan cannot move it.
+  const speedStandardHours = completedWithLogs.reduce((s, t) => s + (t.sizeHours || 0), 0);
   const moved = (facts.reschedules || []).filter(r => Number(r.userId) === uid && inRange(r.at, from, to));
   const postponed = moved.filter(r => r.shiftDays > 0);
 
   return {
     effortHours: round(effortHours),
+    effortSizeHours: round(effortSizeHours),
+    speedStandardHours: round(speedStandardHours),
+    speedActualHours: round(hoursOnCompleted),
+    speedVsStandard: hoursOnCompleted > 0 ? round((speedStandardHours / hoursOnCompleted) * 100, 0) : null,
+    qualityFactor: factorTasks.length ? round(factorTasks.reduce((s, t) => s + t.qualityFactor, 0) / factorTasks.length, 3) : null,
+    effortFlags,
+    timerHours: round(timerHours),
+    manualHours: round(manualHours),
     effortPerDay: workingDays ? round(effortHours / workingDays, 2) : null,
     // Effort delivered vs time available. Over ~110% is not physically possible and means
     // sizes are set too high or work was closed in bulk without being done in this period.
@@ -638,7 +698,6 @@ const scoreMetrics = (m, ctx = {}) => {
   if (enough && ctx.teamHasTime && m.utilisation != null) parts.push(['utilisation', Math.min(100, m.utilisation)]);
   if (m.onTimeRate != null) parts.push(['onTime', m.onTimeRate]);
   if (enough && m.activeDayRate != null) parts.push(['engagement', m.activeDayRate]);
-  if (m.efficiency != null && m.tasksWithPlan > 0) parts.push(['efficiency', Math.min(100, m.efficiency)]);
   if (m.reviewScore != null) parts.push(['review', m.reviewScore]);
 
   if (!enough || parts.length === 0) return { score: null, grade: 'Not enough data', breakdown: [] };
@@ -931,12 +990,11 @@ const insightsFor = (m, { rank, rankedOutOf, benchmarks = [], pace = 0 } = {}) =
   if (m.tasksCompleted >= 3 && m.loggingRate != null && m.loggingRate < 50) {
     attention.push(`Time was recorded on only ${m.loggingRate}% of finished tasks, so hours are understated.`);
   }
-  if (m.tasksWithPlan >= 3 && m.efficiency != null) {
-    if (m.efficiency >= 95) strengths.push(`Efficiency ${m.efficiency}%: planned ${m.plannedHours} h, took ${m.actualHoursOnPlanned} h (${m.tasksWithinPlan} of ${m.tasksWithPlan} tasks within plan).`);
-    else if (m.efficiency < 75) attention.push(`Efficiency ${m.efficiency}%: planned ${m.plannedHours} h but took ${m.actualHoursOnPlanned} h (${m.tasksOverPlan} of ${m.tasksWithPlan} tasks over plan).`);
-  } else if (m.estimateAccuracy != null && m.estimateAccuracy > 150) {
-    attention.push(`Tasks took ${m.estimateAccuracy}% of their planned time on average.`);
+  if (m.speedVsStandard != null && m.tasksWithTimeLogged >= 3) {
+    if (m.speedVsStandard >= 130) strengths.push(`Quick against the standard: ${m.speedStandardHours} h of standard work took ${m.speedActualHours} h (${m.speedVsStandard}%).`);
+    else if (m.speedVsStandard < 60) attention.push(`Slow against the standard: ${m.speedStandardHours} h of standard work took ${m.speedActualHours} h (${m.speedVsStandard}%).`);
   }
+  (m.effortFlags || []).filter(f => f.level === 'warn').forEach(f => attention.push(f.text));
   if (m.tasksCompleted >= 3 && m.planCoverage != null && m.planCoverage < 50) {
     attention.push(`Only ${m.planCoverage}% of finished tasks had a planned time, so efficiency can't be judged well.`);
   }
@@ -989,6 +1047,7 @@ const buildTeamReport = async (pool, query = {}) => {
       plannedHours: round(sum('plannedHours')),
       actualHoursOnPlanned: round(sum('actualHoursOnPlanned')),
       efficiency: sum('actualHoursOnPlanned') > 0 ? round((sum('plannedHours') / sum('actualHoursOnPlanned')) * 100, 0) : null,
+      speedVsStandard: sum('speedActualHours') > 0 ? round((sum('speedStandardHours') / sum('speedActualHours')) * 100, 0) : null,
       tasksWithinPlan: sum('tasksWithinPlan'),
       tasksOverPlan: sum('tasksOverPlan'),
       gradeCounts: ['Excellent', 'Good', 'Fair', 'Needs attention', 'Not enough data'].map(g => ({ grade: g, count: rows.filter(r => r.grade === g).length }))
@@ -1002,7 +1061,8 @@ const buildTeamReport = async (pool, query = {}) => {
       mostPoints: pickTop(rows, 'pointsEarned'),
       bestOnTime: pickTop(rows, 'onTimeRate', { minCompleted: 3 }),
       fastestCycle: pickTop(rows, 'avgCycleDays', { minCompleted: 3, lowest: true }),
-      bestEfficiency: (() => { const c = rows.filter(r => r.metrics.tasksWithPlan >= 3 && r.metrics.efficiency != null).sort((a, b) => b.metrics.efficiency - a.metrics.efficiency)[0]; return c ? { id: c.id, name: c.name, value: c.metrics.efficiency } : null; })(),
+      // quickest against the standard size; needs time on 3+ tasks and no padding warning, so one lucky task or a padded plan cannot top it
+      bestSpeed: (() => { const c = rows.filter(r => r.metrics.tasksWithTimeLogged >= 3 && r.metrics.speedVsStandard != null && !(r.metrics.effortFlags || []).some(f => f.level === 'warn')).sort((x, y) => y.metrics.speedVsStandard - x.metrics.speedVsStandard)[0]; return c ? { id: c.id, name: c.name, value: c.metrics.speedVsStandard } : null; })(),
       mostMeetings: pickTop(rows, 'meetings')
     },
     monthly: seriesFor(facts, ids, monthsBack(trendEnd(range), 12)),
@@ -1052,6 +1112,8 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
     utilisation: avgOf('utilisation'),
     activeDayRate: avgOf('activeDayRate'),
     efficiency: avgOf('efficiency'),
+    speedVsStandard: avgOf('speedVsStandard'),
+    qualityFactor: avgOf('qualityFactor'),
     score: avgOf('score') // not in metrics; filled below
   };
   const scores = peerRows.map(r => r.score).filter(v => v != null);
@@ -1069,6 +1131,7 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
       avgCycleDays: r.metrics.avgCycleDays, meetings: r.metrics.meetings, activeDays: r.metrics.activeDays,
       pointsEarned: r.metrics.pointsEarned, efficiency: r.metrics.efficiency, plannedHours: r.metrics.plannedHours, actualHoursOnPlanned: r.metrics.actualHoursOnPlanned,
       efficiency: r.metrics.efficiency,
+      speedVsStandard: r.metrics.speedVsStandard, qualityFactor: r.metrics.qualityFactor,
       score: r.score, grade: r.grade, rank: r.rank, rankedOutOf: r.rankedOutOf
     };
   }).reverse();
@@ -1154,4 +1217,4 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
   };
 };
 
-module.exports = { buildTeamReport, buildEmployeeReport, resolveRange, parseDurationHours, SCORE_WEIGHTS, DEFAULT_WORK_SIZES };
+module.exports = { buildTeamReport, buildEmployeeReport, resolveRange, parseDurationHours, SCORE_WEIGHTS, DEFAULT_WORK_SIZES, workTypeOf };

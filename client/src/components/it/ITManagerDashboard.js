@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Folder, ClipboardCheck, FileText, Bug, Cloud, Clock,
@@ -10,6 +10,7 @@ import BoardTabs from '../common/BoardTabs';
 import { useAuth } from '../../hooks/useAuth';
 import { projectAPI, itKanbanAPI, activitiesAPI } from '../../services/api';
 import { API_BASE_URL } from '../../config/environment';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const ITManagerDashboard = () => {
   const { user } = useAuth();
@@ -41,10 +42,16 @@ const ITManagerDashboard = () => {
     ticketList: true
   });
 
+  const [liveTick, setLiveTick] = useState(0);
+  const loadedOnce = useRef(false);
+  useLiveRefresh(['work'], () => setLiveTick(t => t + 1));
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
+        // Only the first load shows the spinner; later reloads (live updates) are quiet.
+        if (!loadedOnce.current) setLoading(true);
+        loadedOnce.current = true;
         const [projRes, tasksRes] = await Promise.all([
           projectAPI.getAll({ department: 'IT' }),
           itKanbanAPI.getIssues()
@@ -114,7 +121,7 @@ const ITManagerDashboard = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [liveTick]);
 
   // Compute KPI Data
   const activeProjectsCount = projects.filter(p => p.status === 'Active' || p.status === 'In Progress').length;

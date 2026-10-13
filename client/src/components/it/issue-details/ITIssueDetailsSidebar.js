@@ -6,7 +6,7 @@ import {
   RefreshCw, CheckCircle, ExternalLink, X, Copy, Terminal, User, Search, Lock
 } from 'lucide-react';
 import { normalizeLabel } from '../../../utils/labels';
-import { hasWorkStarted, isUserTaskReporter } from '../../../utils/access';
+import { hasWorkStarted, isUserTaskReporter, canSeeEffort } from '../../../utils/access';
 import Swal from 'sweetalert2';
 import { API_BASE_URL } from '../../../config/environment';
 
@@ -130,17 +130,11 @@ const ITIssueDetailsSidebar = ({
   const handleAutoCalculatePoints = async () => {
     try {
       setLoadingPoints(true);
-      const subtasksList = typeof issue.subtasks === 'string' ? JSON.parse(issue.subtasks) : (issue.subtasks || []);
       const res = await fetch(`${API_BASE_URL}/it-kanban/calculate-points`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: issue.type,
-          priority: issue.priority,
-          subtasksCount: subtasksList.length,
-          // With a planned time, points = planned hours × priority weight.
-          estimate: issue.original_estimate
-        })
+        // Points come from the standard size of this kind of work and the priority, never from the plan.
+        body: JSON.stringify({ issueKey: issue.issue_key || issue.key, type: issue.type, priority: issue.priority, labels: issue.labels })
       });
       const data = await res.json();
       if (res.ok && data.points !== undefined && data.points !== Number(effortPoints)) {
@@ -219,6 +213,13 @@ const ITIssueDetailsSidebar = ({
         'It will be sent to your manager for approval and the planned time stays as it is until then. Send the request?'
       );
       if (!ok) { setEstimateDraft(issue?.original_estimate || ''); return; }
+    }
+    if (!canManage && standard?.hours && hours > standard.hours * 1.25 && (!standard.limitHours || hours <= standard.limitHours)) {
+      const keep = window.confirm(
+        `The standard for ${standard.workType} is ${standard.hours} h and you are planning ${v} (${Math.round((hours / standard.hours) * 10) / 10}x).\n\n` +
+        'Points never depend on the planned time. HR can see plans that are well above the standard, and tasks finished far under their own plan are flagged. Keep this plan?'
+      );
+      if (!keep) { setEstimateDraft(issue?.original_estimate || ''); return; }
     }
     handleUpdate({ original_estimate: v });
   };
@@ -824,6 +825,9 @@ const ITIssueDetailsSidebar = ({
                   <div className="text-[10px] text-gray-500 mt-1 leading-snug">
                     Standard for {standard.workType}: {standard.hours} h
                     {!canManage && <> · up to {Math.round(standard.limitHours * 100) / 100} h without approval</>}
+                    {!canManage && toHours(estimateDraft) > standard.hours * 1.25 && (
+                      <span className="text-amber-600"> · above the standard: HR sees plans well over it</span>
+                    )}
                     {issue?.original_estimate && !Number(issue?.estimate_approved) && toHours(issue.original_estimate) > 0 && (
                       <> · scored on the standard until a manager sets the plan</>
                     )}
@@ -859,6 +863,9 @@ const ITIssueDetailsSidebar = ({
               </div>
             )}
 
+            {/* Effort points, method and review status: admins and HR only */}
+            {canSeeEffort() && (
+              <>
             {/* Effort Points */}
             <div className="flex items-center min-h-[32px] gap-2">
               <span className="w-24 shrink-0 text-gray-500 font-medium text-xs flex items-center justify-between" title="Total performance value of this task">
@@ -919,6 +926,9 @@ const ITIssueDetailsSidebar = ({
                 </div>
               </div>
             </div>
+
+              </>
+            )}
 
             {/* Work type */}
             <div className="flex items-center min-h-[32px] gap-2">

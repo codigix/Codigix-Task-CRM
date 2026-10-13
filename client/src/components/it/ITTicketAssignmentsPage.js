@@ -9,6 +9,7 @@ import {
   CheckCircle2, AlertCircle, Clock3, UserCheck, UserX, ExternalLink,
   Layers, ArrowUpRight
 } from 'lucide-react';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 const ITTicketAssignmentsPage = () => {
   const { username, designation } = useParams();
@@ -36,10 +37,15 @@ const ITTicketAssignmentsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
+  const [liveTick, setLiveTick] = useState(0);
+  const loadedOnce = React.useRef(false);
+  useLiveRefresh(['work'], () => setLiveTick(t => t + 1));
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
+        if (!loadedOnce.current) setLoading(true);
+        loadedOnce.current = true;
 
         const authParams = {
           user_id: user?.id || '',
@@ -192,7 +198,7 @@ const ITTicketAssignmentsPage = () => {
     };
 
     fetchData();
-  }, [user?.id, user?.role, designation]);
+  }, [user?.id, user?.role, designation, liveTick]);
 
   // Derived unique filter options
   const uniqueStatuses = useMemo(() => {

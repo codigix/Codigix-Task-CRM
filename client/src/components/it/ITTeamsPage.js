@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config/environment';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 /**
  * Team: who is carrying what right now, from real ticket and time data
@@ -264,6 +265,7 @@ const ITTeamsPage = ({ department }) => {
     api('/team-overview').then(d => { setData(d); setError(''); }).catch(e => setError(e.message));
   }, []);
   useEffect(() => { load(); }, [load]);
+  useLiveRefresh(['work'], () => load());
   // Keep "working now" and counts fresh.
   useEffect(() => { const t = setInterval(load, 60000); return () => clearInterval(t); }, [load]);
   useEffect(() => {

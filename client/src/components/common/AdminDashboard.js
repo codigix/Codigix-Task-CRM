@@ -10,6 +10,7 @@ import {
 import { API_BASE_URL } from '../../config/environment';
 import { useAuth } from '../../hooks/useAuth';
 import AdminDetailPanel from './AdminDetailPanel';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 /* Palette (validated: categorical slots 1–4 adjacent, light surface). Text never uses series colors. */
 const C = {
@@ -94,8 +95,8 @@ export default function AdminDashboard() {
   const [detail, setDetail] = useState(null);
   const open = (title, params, subtitle) => () => setDetail({ title, params, subtitle });
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent) => {
+    if (silent !== true) setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/admin/overview`);
       const json = await res.json().catch(() => ({}));
@@ -108,6 +109,8 @@ export default function AdminDashboard() {
     }
   }, []);
   useEffect(() => { load(); }, [load]);
+  // Anything saved anywhere refreshes the overview quietly (at most every few seconds).
+  useLiveRefresh(['*'], () => load(true), { wait: 1500, maxWait: 10000 });
   // Live: refresh every 2 minutes while open.
   useEffect(() => { const t = setInterval(load, 120000); return () => clearInterval(t); }, [load]);
 

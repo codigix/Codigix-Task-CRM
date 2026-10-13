@@ -106,7 +106,7 @@ export default function ChatNotifier() {
     if (document.visibilityState === 'visible') chime();
     // With push on, the server's push puts it in the notification bar; nothing more to do.
     if (pushOnRef.current) return;
-    const shown = await showLocalNotification(title, { body, icon: icon || '/logo192.png', badge: '/logo192.png', tag: tag || `chat-room-${roomId}`, renotify: true, data: { url: chatPath(roomId), roomId } });
+    const shown = await showLocalNotification(title, { body, icon: icon || '/logo192.png', badge: '/notification-badge.png', tag: tag || `chat-room-${roomId}`, renotify: true, data: { url: chatPath(roomId), roomId } });
     if (!shown) addCard(title, body, icon, roomId);
   }, [chatPath, addCard]);
 
