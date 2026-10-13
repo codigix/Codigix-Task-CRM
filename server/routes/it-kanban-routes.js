@@ -1157,7 +1157,7 @@ Acceptance Criteria
         };
       });
 
-      res.json({ rows, total, page, pageSize, pages: Math.max(1, Math.ceil(total / pageSize)), kpis, users, kinds: KINDS, range: { from, to, prevFrom, prevTo } });
+      res.json({ rows, total, page, pageSize, pages: Math.max(1, Math.ceil(total / pageSize)), kpis, users, departments: [...new Set(issues.map(i => String(i.department || '').replace(/\s*department\s*$/i, '').trim()).filter(Boolean))].sort(), kinds: KINDS, range: { from, to, prevFrom, prevTo } });
     } catch (error) {
       console.error('Failed to fetch activities', error);
       res.status(500).json({ error: 'Failed to fetch activities' });
@@ -1287,6 +1287,13 @@ app.get('/api/it-kanban/labels', async (req, res) => {
           )
         `;
         params.push(deptPattern, deptNorm, deptPattern, deptPattern);
+      }
+      // Sales staff work in Sales, not in other departments' task boards: they see Sales tasks and anything
+      // assigned to or reported by them. Managers and admins keep the full view.
+      if (req.user && !req.user.isManager && !req.user.isAdmin && /sales/i.test(String(req.user.department || ''))) {
+        const me = String(req.user.name || '').trim().toLowerCase();
+        query += ((department && req.query.strict === 'true') ? ' AND ' : ' WHERE ') + "(LOWER(COALESCE(i.department, '')) LIKE '%sales%' OR LOWER(TRIM(i.assignee)) = ? OR LOWER(TRIM(i.reporter)) = ?)";
+        params.push(me, me);
       }
       // Rank first, so the List and Board show the priority order set by dragging in the
       // Backlog. Unranked rows keep the old newest-first behaviour at the end.

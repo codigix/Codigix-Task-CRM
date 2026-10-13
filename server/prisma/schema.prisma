@@ -2827,6 +2827,28 @@ model google_oauth {
   connected_at  DateTime @default(now()) @db.DateTime(0)
 }
 
+model leave_requests {
+  id              Int       @id @default(autoincrement())
+  user_id         Int
+  leave_type      String    @db.VarChar(20)
+  start_date      DateTime  @db.Date
+  end_date        DateTime  @db.Date
+  days            Decimal   @db.Decimal(4, 1)
+  half_day        Boolean   @default(false)
+  reason          String?   @db.VarChar(500)
+  status          String    @default("Pending") @db.VarChar(12)
+  decided_by      Int?
+  decided_by_name String?   @db.VarChar(120)
+  decision_note   String?   @db.VarChar(500)
+  decided_at      DateTime? @db.DateTime(0)
+  created_by      Int?
+  created_at      DateTime  @default(now()) @db.DateTime(0)
+
+  @@index([start_date, end_date], map: "idx_leave_dates")
+  @@index([status], map: "idx_leave_status")
+  @@index([user_id], map: "idx_leave_user")
+}
+
 model sheet_sync_items {
   id         Int       @id @default(autoincrement())
   source_id  Int

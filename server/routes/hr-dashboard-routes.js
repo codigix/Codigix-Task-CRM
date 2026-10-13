@@ -150,5 +150,103 @@ module.exports = (pool) => {
     }
   });
 
+  // ── Overview: everything on the HR dashboard, from the system's own records (nothing invented) ──────────
+  router.get('/overview', async (req, res) => {
+    const q = async (sql, p = []) => (await pool.query(sql, p))[0];
+    const safe = async (fn, fallback) => { try { return await fn(); } catch (e) { console.error('hr overview:', e.message); return fallback; } };
+    const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+    try {
+      const people = await q('SELECT u.id, u.first_name, u.last_name, u.email, u.department, u.status, u.created_at, r.name AS role FROM users u LEFT JOIN roles r ON r.id = u.role_id');
+      const active = people.filter(p => String(p.status || 'Active').toLowerCase() === 'active');
+      const deptName = (d) => String(d || 'Unassigned').replace(/ Department$/i, '');
+      const byDept = {};
+      active.forEach(p => { const d = deptName(p.department); byDept[d] = (byDept[d] || 0) + 1; });
+      const day = 86400000; const now = Date.now();
+      const fullName = (p) => `${p.first_name || ''} ${p.last_name || ''}`.trim();
+      const newJoiners = active.filter(p => p.created_at && now - new Date(p.created_at) < 30 * day)
+        .map(p => ({ id: p.id, name: fullName(p), department: deptName(p.department), role: p.role, joined: p.created_at })).slice(0, 8);
+
+      const pendingRegistrations = await safe(() => q("SELECT id, first_name, last_name, department, role_name, created_at FROM registration_requests WHERE status = 'Pending' ORDER BY created_at DESC LIMIT 6"), []);
+      const pendingDeletes = await safe(async () => Number((await q("SELECT COUNT(*) n FROM delete_requests WHERE status = 'Pending'"))[0].n), 0);
+      const pendingApprovals = await safe(async () => Number((await q("SELECT COUNT(*) n FROM approvals WHERE status = 'Pending'"))[0].n), 0);
+
+      // Records HR should clean up
+      const placeholder = new RegExp('@(example[.](com|org|net)|test[.]|localhost)', 'i');
+      const nameCount = {};
+      active.forEach(p => { const k = fullName(p).toLowerCase(); nameCount[k] = (nameCount[k] || 0) + 1; });
+      const dataIssues = [];
+      active.forEach(p => {
+        if (!p.email || placeholder.test(p.email)) dataIssues.push({ id: p.id, name: fullName(p), issue: 'Placeholder or missing email' });
+        if (!p.department) dataIssues.push({ id: p.id, name: fullName(p), issue: 'No department' });
+        if (nameCount[fullName(p).toLowerCase()] > 1) dataIssues.push({ id: p.id, name: fullName(p), issue: 'Same name as another account' });
+      });
+
+      const work = await safe(async () => {
+        const rows = await q("SELECT department, status, due_date FROM it_kanban_issues WHERE LOWER(COALESCE(type,'')) <> 'meeting'");
+        const done = (s) => ['DONE', 'COMPLETED', 'CLOSED'].includes(String(s || '').toUpperCase());
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const out = { open: 0, overdue: 0 }; const by = {};
+        rows.forEach(r => {
+          if (done(r.status)) return;
+          const d = deptName(r.department || 'Other');
+          const e = by[d] || (by[d] = { open: 0, overdue: 0 });
+          e.open += 1; out.open += 1;
+          if (r.due_date && new Date(r.due_date) < today) { e.overdue += 1; out.overdue += 1; }
+        });
+        out.byDepartment = Object.entries(by).map(([department, v]) => ({ department, ...v })).sort((x, y) => y.open - x.open);
+        return out;
+      }, { open: 0, overdue: 0, byDepartment: [] });
+
+      const meetings = await safe(async () => {
+        const m = (await q("SELECT SUM(DATE(scheduled_at) = CURDATE() AND status = 'Scheduled') today, SUM(scheduled_at > NOW() AND scheduled_at < NOW() + INTERVAL 7 DAY AND status = 'Scheduled') week, SUM(status = 'Scheduled' AND scheduled_at < NOW()) momPending FROM meetings"))[0];
+        return { today: Number(m.today) || 0, week: Number(m.week) || 0, momPending: Number(m.momPending) || 0 };
+      }, { today: 0, week: 0, momPending: 0 });
+
+      const performance = await safe(async () => {
+        const { buildTeamReport } = require('../services/performanceReport');
+        const rep = await buildTeamReport(pool, { period: 'month' });
+        const all = rep.employees || [];
+        const rows = all.filter(e => e.score != null);
+        const grades = {}; rows.forEach(e => { grades[e.grade] = (grades[e.grade] || 0) + 1; });
+        const pick = (e) => ({ id: e.id, name: e.name, department: deptName(e.department), score: e.score, grade: e.grade });
+        const sorted = [...rows].sort((x, y) => y.score - x.score);
+        return {
+          period: rep.range && rep.range.label,
+          avgScore: rows.length ? Math.round(rows.reduce((t, e) => t + e.score, 0) / rows.length) : null,
+          scored: rows.length, grades, top: sorted.slice(0, 3).map(pick),
+          needsAttention: sorted.filter(e => e.score < 50).slice(-3).reverse().map(pick),
+          withChecks: all.filter(e => ((e.metrics || {}).effortFlags || []).some(f => f.level === 'warn')).length
+        };
+      }, null);
+
+      const leaves = await safe(async () => {
+        const t = new Date(); const day = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+        const away = await q("SELECT COUNT(*) n FROM leave_requests WHERE status = 'Approved' AND start_date <= ? AND end_date >= ?", [day, day]);
+        const pend = await q("SELECT l.id, l.leave_type, l.start_date, l.end_date, l.days, u.first_name, u.last_name FROM leave_requests l JOIN users u ON u.id = l.user_id WHERE l.status = 'Pending' ORDER BY l.start_date LIMIT 5");
+        const [cnt] = await q("SELECT COUNT(*) n FROM leave_requests WHERE status = 'Pending'");
+        return { awayToday: Number(away[0].n), pending: Number(cnt.n), pendingList: pend.map(p => ({ id: p.id, name: `${p.first_name || ''} ${p.last_name || ''}`.trim(), type: p.leave_type, from: p.start_date, to: p.end_date, days: Number(p.days) })) };
+      }, { awayToday: 0, pending: 0, pendingList: [] });
+
+      const attention = [];
+      if (leaves.pending) attention.push({ tone: 'amber', text: plural(leaves.pending, 'leave request', 'leave requests') + ' waiting for approval', link: 'leaves' });
+      if (pendingRegistrations.length) attention.push({ tone: 'amber', text: `${plural(pendingRegistrations.length, 'registration request', 'registration requests')} waiting`, link: 'registration-requests' });
+      if (pendingDeletes) attention.push({ tone: 'amber', text: `${plural(pendingDeletes, 'account deletion request', 'account deletion requests')} waiting`, link: null });
+      if (pendingApprovals) attention.push({ tone: 'amber', text: `${plural(pendingApprovals, 'approval', 'approvals')} pending`, link: null });
+      if (work.overdue) attention.push({ tone: 'red', text: `${plural(work.overdue, 'task is', 'tasks are')} overdue across departments`, link: 'performance' });
+      if (meetings.momPending) attention.push({ tone: 'amber', text: `${plural(meetings.momPending, 'meeting', 'meetings')} started without minutes (MOM)`, link: null });
+      if (dataIssues.length) attention.push({ tone: 'blue', text: `${plural(dataIssues.length, 'employee record', 'employee records')} to clean up`, link: 'employees' });
+      if (performance && performance.withChecks) attention.push({ tone: 'blue', text: `${plural(performance.withChecks, 'employee has', 'employees have')} performance checks to look at`, link: 'performance' });
+
+      res.json({
+        headcount: { total: active.length, byDepartment: Object.entries(byDept).map(([department, count]) => ({ department, count })).sort((x, y) => y.count - x.count), newJoiners },
+        requests: { registrations: pendingRegistrations, deletes: pendingDeletes, approvals: pendingApprovals },
+        dataIssues: dataIssues.slice(0, 12), leaves, work, meetings, performance, attention
+      });
+    } catch (error) {
+      console.error('HR overview error:', error);
+      res.status(500).json({ error: 'Failed to build the HR dashboard' });
+    }
+  });
+
   return router;
 };

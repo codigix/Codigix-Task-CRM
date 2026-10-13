@@ -206,6 +206,18 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
 
+  // Add a column of your own; it goes just before DONE so finished work stays last.
+  const handleAddColumn = () => {
+    const name = newColumnName.trim().toUpperCase();
+    if (!name || columnOrder.some(c => c.toUpperCase() === name)) { setNewColumnName(''); setIsAddingColumn(false); return; }
+    const doneAt = columnOrder.findIndex(c => c.toUpperCase() === 'DONE');
+    const next = [...columnOrder];
+    next.splice(doneAt >= 0 ? doneAt : next.length, 0, name);
+    setColumnOrder(next);
+    setNewColumnName('');
+    setIsAddingColumn(false);
+  };
+
   useEffect(() => {
     localStorage.setItem(`${department}_kanbanColumnOrder`, JSON.stringify(columnOrder));
   }, [columnOrder, department]);
@@ -533,8 +545,8 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
       const destItems = Array.from(boardData[destination.droppableId] || []);
       const [removed] = sourceItems.splice(source.index, 1);
 
-      removed.status = destination.droppableId;
-      destItems.splice(destination.index, 0, removed);
+      const moved = { ...removed, status: destination.droppableId };
+      destItems.splice(destination.index, 0, moved);
 
       setBoardData(prev => ({
         ...prev,
@@ -542,11 +554,21 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
         [destination.droppableId]: destItems
       }));
 
+      // Save the move. If the server refuses it (a plan is needed, subtasks are unfinished, it is a meeting that
+      // needs its MOM...), say why and reload so the card goes back to the column it really is in.
+      const who = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : 'System';
       fetch(`${API_BASE_URL}/it-kanban/issues/${removed.issue_key || removed.key}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-user-name': who },
         body: JSON.stringify({ status: destination.droppableId })
-      }).catch(err => console.error('Failed to update status on server:', err));
+      })
+        .then(async (res) => {
+          if (res.ok) return;
+          const data = await res.json().catch(() => ({}));
+          showErrorToast(data.error || 'That move was not allowed.');
+          fetchKanbanData();
+        })
+        .catch(err => { console.error('Failed to update status on server:', err); showErrorToast('Could not save the move. Reloading the board.'); fetchKanbanData(); });
     }
   };
 

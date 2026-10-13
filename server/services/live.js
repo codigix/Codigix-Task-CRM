@@ -47,6 +47,9 @@ const announceChanges = (req, res, next) => {
   next();
 };
 
+/** Let another open stream (the chat stream) carry the live-change messages too. Returns a function that detaches it. */
+const attach = (res, userId) => { const client = { res, userId }; clients.add(client); return () => clients.delete(client); };
+
 /** GET /api/live/stream */
 const stream = (req, res) => {
   if (!req.user || !req.user.id) return res.status(401).json({ error: 'Please log in' });
@@ -58,4 +61,4 @@ const stream = (req, res) => {
   req.on('close', () => { clearInterval(ping); clients.delete(client); });
 };
 
-module.exports = { publish, announceChanges, stream, topicOf, connected: () => clients.size };
+module.exports = { attach, publish, announceChanges, stream, topicOf, connected: () => clients.size };

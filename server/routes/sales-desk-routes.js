@@ -21,7 +21,7 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
   } = app.locals.salesFlow;
   // Presentation quotations (decks) count as quotations everywhere on the desk.
   const decksOf = async () => (app.locals.salesFlow.deckRows ? app.locals.salesFlow.deckRows() : []);
-  const qLink = (x) => (x.deck ? { proposal: x.id } : qLink(x));
+  const qLink = (x) => (x.deck ? { proposal: x.id } : { quotation: x.id });
 
   // ── Helpers ───────────────────────────────────────────────────────────
   const today = () => ymd(new Date());
@@ -111,10 +111,31 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     try { if (!needUser(req, res)) return; await ready; await fn(req, res); } catch (e) { fail(res, e, msg); }
   });
 
+  // Billing is for sales executives and managers; a sales employee can read but not create or change it.
+  app.use('/api/sales-desk', (req, res, next) => {
+    if (req.method === 'GET' || !req.user || isMgr(req) || /executive/i.test(String(req.user.role || ''))) return next();
+    const p = String(req.originalUrl || '').split('?')[0].replace('/api/sales-desk', '');
+    const seg = p.split('/').filter(Boolean);
+    if (['invoices', 'payments', 'quotations'].includes(seg[0]) || (seg[0] === 'customers' && (seg[2] === 'advance' || seg[2] === 'deals'))) {
+      return res.status(403).json({ error: 'Quotations, deals and invoices are handled by a sales executive.' });
+    }
+    next();
+  });
+
+  // An executive can open, edit, send or take payment on only their own invoices (the list is already limited the same way).
+  app.use('/api/sales-desk/invoices/:id', async (req, res, next) => {
+    try {
+      if (!req.user || isMgr(req) || !/^[0-9]+$/.test(req.params.id)) return next();
+      const [inv] = await invoiceRows('i.id = ?', [req.params.id]);
+      if (inv && !ownsInvoice(inv, Number(req.user.id))) return res.status(403).json({ error: 'This invoice belongs to someone else. Ask a manager if you need access.' });
+      next();
+    } catch (e) { next(e); }
+  });
+
   // ── Home ──────────────────────────────────────────────────────────────
   route('get', '/home', 'Could not load your sales home', async (req, res) => {
     const uid = Number(req.user.id);
-    const team = req.query.scope === 'team';
+    const team = req.query.scope === 'team' && isMgr(req);
     const names = await usersById();
     const now = new Date(); const t = today(); const month = monthOf(now); const mr = monthRange(month);
 
@@ -270,7 +291,7 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     const live = (x) => (x.openDeals || x.outstanding > 0 || x.openQuotes ? 1 : 0);
     list.sort((p, q) => live(q) - live(p) || new Date(q.lastActivity || 0) - new Date(p.lastActivity || 0) || p.name.localeCompare(q.name));
     const counts = { all: list.length, Customer: list.filter(x => x.type === 'Customer').length, Prospect: list.filter(x => x.type === 'Prospect').length, Inactive: list.filter(x => x.type === 'Inactive').length, dues: list.filter(x => x.outstanding > 0).length };
-    if (req.query.scope === 'mine') list = list.filter(x => x.mine);
+    if (req.query.scope === 'mine' || !isMgr(req)) list = list.filter(x => x.mine);
     if (req.query.type === 'dues') list = list.filter(x => x.outstanding > 0);
     else if (req.query.type) list = list.filter(x => x.type === req.query.type);
     const term = String(req.query.q || '').trim().toLowerCase();
@@ -410,7 +431,7 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     const uid = Number(req.user.id);
     const names = await usersById();
     let rows = await invoiceRows();
-    if (req.query.scope === 'mine') rows = rows.filter(r => ownsInvoice(r, uid));
+    if (req.query.scope === 'mine' || !isMgr(req)) rows = rows.filter(r => ownsInvoice(r, uid));
     const all = rows.map(r => shapeInvoice(r, names));
     const issued = all.filter(i => i.status !== 'Draft');
     const r = { from: isDay(req.query.from) ? req.query.from : null, to: isDay(req.query.to) ? req.query.to : null };
@@ -764,7 +785,7 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     let rows = await q(`SELECT p.*, i.invoice_number, i.total AS invoice_total, i.amount_paid AS invoice_paid, i.created_by, c.company_name, d.deal_name, d.assignee_id
       FROM sales_payments p LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN companies c ON c.id = COALESCE(p.company_id, i.client_id) LEFT JOIN deals d ON d.id = COALESCE(p.deal_id, i.deal_id)
       WHERE p.paid_on BETWEEN ? AND ? ORDER BY p.paid_on DESC, p.id DESC`, [r.from, r.to]);
-    if (req.query.scope === 'mine') rows = rows.filter(p => Number(p.assignee_id) === uid || (!p.assignee_id && Number(p.created_by) === uid));
+    if (req.query.scope === 'mine' || !isMgr(req)) rows = rows.filter(p => Number(p.assignee_id) === uid || (!p.assignee_id && Number(p.created_by) === uid));
     if (req.query.mode) rows = rows.filter(p => p.mode === req.query.mode);
     const term = String(req.query.q || '').trim().toLowerCase();
     if (term) rows = rows.filter(p => [p.receipt_number, p.invoice_number, p.company_name, p.reference, p.deal_name].some(v => String(v || '').toLowerCase().includes(term)));

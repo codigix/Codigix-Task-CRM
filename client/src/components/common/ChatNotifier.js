@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { openChatStream } from '../../services/chatStream';
 import { useNavigate } from 'react-router-dom';
 import { Bell, X, MessageSquare, Share, PlusSquare, Loader2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -135,7 +136,7 @@ export default function ChatNotifier() {
     fetch(`${API_BASE_URL}/chat/bootstrap`).then(r => (r.ok ? r.json() : null))
       .then(d => { if (d?.people) people.current = new Map(d.people.map(p => [p.id, p])); }).catch(() => { });
 
-    const es = new EventSource(`${API_BASE_URL}/chat/stream`, { withCredentials: true });
+    const es = openChatStream();
     const looking = (roomId) => getActiveChatRoom() === Number(roomId) && document.visibilityState === 'visible' && document.hasFocus();
     const avatarOf = (id) => { const a = people.current.get(Number(id))?.avatar; return a ? toAbsoluteFileUrl(a) : null; };
 
@@ -171,6 +172,7 @@ export default function ChatNotifier() {
     });
 
     es.addEventListener('rooms', () => loadRooms());
+    es.addEventListener('resync', () => loadRooms());
     const onFocus = () => loadRooms();
     window.addEventListener('focus', onFocus);
     return () => { closed = true; es.close(); window.removeEventListener('focus', onFocus); };

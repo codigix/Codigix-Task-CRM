@@ -6,7 +6,6 @@ import { X, Download, Printer, RefreshCw, Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { API_BASE_URL } from '../../config/environment';
-import { CODIGIX_LOGO_B64 } from '../../utils/codigixLogoB64';
 import { showErrorToast, showSuccessToast } from '../../utils/toast';
 import useLiveRefresh from '../../hooks/useLiveRefresh';
 
@@ -25,11 +24,11 @@ const AMBER = '#b45309';
 const GRID = '#e5e7eb';
 const PAGE_W = 794; // A4 at 96 dpi
 const CHART_W = PAGE_W - 2 * 48;
+const INNER_W = CHART_W - 26; // inside a card
+const HALF_W = Math.floor((CHART_W - 12) / 2) - 26; // inside a half-width card
 
 const GRADE_COLOR = { Excellent: GREEN, Good: BLUE, Fair: AMBER, 'Needs attention': RED, 'Not enough data': MUTED };
 const fmt = (v, s = '') => (v == null ? '—' : `${v}${s}`);
-const fmtDate = (v) => (v ? new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
-const monthLabel = (k) => { if (!k) return '—'; const [y, m] = k.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleString('en-GB', { month: 'long', year: 'numeric' }); };
 
 /* ───────────── document building blocks (inline styles so the PDF matches the screen) ───────────── */
 
@@ -47,38 +46,21 @@ const Page = ({ children, n, total, name, period }) => (
   </div>
 );
 
-const H2 = ({ children, sub }) => (
-  <div style={{ margin: '22px 0 10px' }}>
-    <div style={{ fontSize: 14, fontWeight: 700, color: INK, borderLeft: `3px solid ${BLUE}`, paddingLeft: 8 }}>{children}</div>
-    {sub && <div style={{ fontSize: 10.5, color: MUTED, paddingLeft: 11, marginTop: 2 }}>{sub}</div>}
+const CARD = { background: '#f8fafc', border: `1px solid ${GRID}`, borderRadius: 10, padding: 12 };
+
+const H2 = ({ children, sub, first }) => (
+  <div style={{ margin: first ? '0 0 8px' : '18px 0 8px' }}>
+    <div style={{ fontSize: 14, fontWeight: 700, color: INK, paddingLeft: 0 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: BLUE, marginRight: 7 }} />{children}</div>
+    {sub && <div style={{ fontSize: 10.5, color: MUTED, paddingLeft: 15, marginTop: 1 }}>{sub}</div>}
   </div>
 );
 
 const Kpi = ({ label, value, hint, tone }) => (
-  <div style={{ border: `1px solid ${GRID}`, borderRadius: 6, padding: '8px 10px' }}>
+  <div style={{ border: `1px solid ${GRID}`, borderTop: `3px solid ${tone || BLUE}`, borderRadius: 8, padding: '8px 10px', background: '#fff' }}>
     <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: 0.4 }}>{label}</div>
-    <div style={{ fontSize: 20, fontWeight: 700, color: tone || INK, marginTop: 2 }}>{value}</div>
+    <div style={{ fontSize: 22, fontWeight: 800, color: tone || INK, marginTop: 2 }}>{value}</div>
     {hint && <div style={{ fontSize: 10, color: MUTED }}>{hint}</div>}
   </div>
-);
-
-const Table = ({ head, rows, align = [] }) => (
-  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
-    <thead>
-      <tr>{head.map((h, i) => (
-        <th key={i} style={{ textAlign: align[i] || 'left', padding: '6px 8px', background: '#f3f4f6', color: '#374151', fontWeight: 600, borderBottom: `1px solid ${GRID}` }}>{h}</th>
-      ))}</tr>
-    </thead>
-    <tbody>
-      {rows.length === 0 ? (
-        <tr><td colSpan={head.length} style={{ padding: 10, color: MUTED, textAlign: 'center' }}>Nothing recorded.</td></tr>
-      ) : rows.map((r, i) => (
-        <tr key={i}>{r.map((c, j) => (
-          <td key={j} style={{ textAlign: align[j] || 'left', padding: '5px 8px', borderBottom: `1px solid ${GRID}`, verticalAlign: 'top' }}>{c}</td>
-        ))}</tr>
-      ))}
-    </tbody>
-  </table>
 );
 
 const ScoreRing = ({ score, grade }) => {
@@ -109,6 +91,28 @@ const Bars = ({ data, dataKey, color = BLUE, unit = '', height = 170, width = CH
     </BarChart>
   );
 };
+
+const Legend = () => (
+  <div style={{ display: 'flex', gap: 14, fontSize: 10.5, color: MUTED, marginBottom: 4 }}>
+    <span><span style={{ display: 'inline-block', width: 9, height: 9, background: BLUE, borderRadius: 2, marginRight: 5 }} />This employee</span>
+    <span><span style={{ display: 'inline-block', width: 9, height: 9, background: '#9ca3af', borderRadius: 2, marginRight: 5 }} />Department average</span>
+  </div>
+);
+
+// Employee next to the department average, one pair of bars per measure.
+const Pair = ({ data, width, height = 170 }) => (
+  <BarChart width={width} height={height} data={data} margin={{ top: 16, right: 8, left: -14, bottom: 0 }}>
+    <CartesianGrid vertical={false} stroke={GRID} />
+    <XAxis dataKey="label" tick={{ fontSize: 9.5, fill: MUTED }} tickLine={false} axisLine={{ stroke: GRID }} interval={0} />
+    <YAxis tick={{ fontSize: 10, fill: MUTED }} tickLine={false} axisLine={false} />
+    <Bar dataKey="me" fill={BLUE} radius={[3, 3, 0, 0]} maxBarSize={26} isAnimationActive={false}>
+      <LabelList dataKey="me" position="top" style={{ fontSize: 9, fill: INK }} />
+    </Bar>
+    <Bar dataKey="team" fill="#9ca3af" radius={[3, 3, 0, 0]} maxBarSize={26} isAnimationActive={false}>
+      <LabelList dataKey="team" position="top" style={{ fontSize: 9, fill: MUTED }} />
+    </Bar>
+  </BarChart>
+);
 
 // Meeting notes: editable on screen, plain text while the PDF is being captured.
 // Defined outside the report so typing doesn't remount the textarea (which loses focus).
@@ -156,7 +160,7 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
   useLiveRefresh(['work'], () => load(true), { wait: 1500, maxWait: 10000, enabled: !exporting });
   useEffect(() => {
     if (exporting) return undefined;
-    const t = setInterval(load, 60000);
+    const t = setInterval(() => load(true), 20000);
     return () => clearInterval(t);
   }, [load, exporting]);
 
@@ -177,7 +181,8 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
     if (!docRef.current || !data) return;
     setExporting(true);
     try {
-      await new Promise(r => setTimeout(r, 50)); // let "exporting" layout settle (textareas → text)
+      await load(true); // the PDF carries the figures as they are right now
+      await new Promise(r => setTimeout(r, 400)); // let "exporting" layout settle (textareas → text)
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
       const pageW = 210; const pageH = 297;
       const pages = [...docRef.current.querySelectorAll('.review-page')];
@@ -212,10 +217,11 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
       <strong style={{ fontSize: 14 }}>Review meeting report</strong>
       <span style={{ fontSize: 12, opacity: 0.8 }}>
         {data ? `${data.employee.name} · ${data.range.label}` : ''}
-        {updatedAt && ` · live, updated ${updatedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`}
+        {updatedAt && ` · updated ${updatedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
       </span>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#86efac' }}><span className="animate-pulse" style={{ width: 8, height: 8, borderRadius: 4, background: '#22c55e' }} />LIVE until you download</span>
       <div style={{ flex: 1 }} />
-      <button onClick={load} disabled={loading || exporting} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded bg-white/10 hover:bg-white/20 disabled:opacity-50 cursor-pointer">
+      <button onClick={() => load()} disabled={loading || exporting} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded bg-white/10 hover:bg-white/20 disabled:opacity-50 cursor-pointer">
         <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Refresh
       </button>
       <button onClick={() => window.print()} disabled={!data || exporting} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded bg-white/10 hover:bg-white/20 disabled:opacity-50 cursor-pointer">
@@ -253,289 +259,172 @@ export default function PerformanceReviewReport({ employeeId, query, onClose }) 
     );
   }
 
-  const e = data.employee; const m = data.metrics; const b = data.bests || {};
+  const e = data.employee; const m = data.metrics;
   const team = data.teamAverage || {};
   const name = e.name; const period = data.range.label;
   const chrono = [...(data.scorecard || [])].reverse(); // oldest → newest
-  const scoreTrend = chrono.map(s => ({ label: s.label, score: s.score }));
+  const short = chrono.map(c => ({ ...c, label: String(c.label).slice(0, 3) }));
+  const scoreTrend = chrono.map(c => ({ ...c, label: String(c.label).slice(0, 3) })).map(s => ({ label: s.label, score: s.score }));
   const onTimeData = [
     { name: 'On time', value: m.onTimeCompleted, color: GREEN },
     { name: 'Late', value: m.lateCompleted, color: RED }
   ].filter(x => x.value > 0);
   const completedNoDue = Math.max(0, m.tasksCompleted - m.onTimeCompleted - m.lateCompleted);
-  const pctDiff = (mine, avg, better = 'up') => {
-    if (mine == null || avg == null || avg === 0) return '—';
-    const d = Math.round(((mine - avg) / Math.abs(avg)) * 100);
-    if (Math.abs(d) < 5) return <span style={{ color: MUTED }}>On par</span>;
-    const good = better === 'up' ? d > 0 : d < 0;
-    return <span style={{ color: good ? GREEN : RED, fontWeight: 600 }}>{d > 0 ? '+' : ''}{d}%</span>;
-  };
-  const completed = data.tasks?.completed || [];
-  const open = data.tasks?.open || [];
-  const TOTAL = 4;
+  const rateVs = [
+    { label: 'Score', me: data.score, team: team.score },
+    { label: 'On-time %', me: m.onTimeRate, team: team.onTimeRate },
+    { label: 'Hours vs available %', me: m.utilisation, team: team.utilisation }
+  ];
+  const volumeVs = [
+    { label: 'Effort (h)', me: m.effortHours, team: team.effortHours },
+    { label: 'Hours worked', me: m.hoursLogged, team: team.hoursLogged },
+    { label: 'Active days', me: m.activeDays, team: team.activeDays }
+  ];
+  const typeVs = (data.workTypes || []).filter(w => w.avgHours != null).slice(0, 6).map(w => ({ label: String(w.workType).slice(0, 14), me: w.avgHours, team: w.teamAvgHours }));
+  const TOTAL = 2;
 
   return shell(
     <div ref={docRef}>
-      {/* ───────── Page 1: summary ───────── */}
+      {/* ───────── Page 1: score, results and trend ───────── */}
       <Page n={1} total={TOTAL} name={name} period={period}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `2px solid ${INK}`, paddingBottom: 12 }}>
-          <img src={CODIGIX_LOGO_B64} alt="Codigix Infotech" style={{ height: 40, objectFit: 'contain' }} />
+        <div style={{ margin: '-40px -48px 0', padding: '20px 48px', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 8, padding: '6px 14px' }}><img src={`${process.env.PUBLIC_URL || ""}/codigix-logo.png`} alt="Codigix Infotech" style={{ height: 40, objectFit: 'contain', display: 'block' }} /></div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: 0.5 }}>PERFORMANCE REVIEW</div>
-            <div style={{ fontSize: 11, color: MUTED }}>Review period: <strong style={{ color: INK }}>{period}</strong></div>
-            <div style={{ fontSize: 11, color: MUTED }}>Generated {new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: 1.5 }}>PERFORMANCE REVIEW</div>
+            <div style={{ fontSize: 11, opacity: 0.85 }}>{period}</div>
+            <div style={{ fontSize: 10, opacity: 0.7 }}>Live data as of {(updatedAt || new Date()).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginTop: 18 }}>
+        <div style={{ ...CARD, display: 'flex', gap: 20, alignItems: 'center', marginTop: 16, padding: '14px 18px' }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 22, fontWeight: 700 }}>{name}</div>
             <div style={{ fontSize: 12, color: '#374151' }}>{e.role} · {e.department}</div>
-            <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>Employee since {fmtDate(e.joinedAt)} · Reviewer: ____________________</div>
             <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: GRADE_COLOR[data.grade] || MUTED, borderRadius: 12, padding: '3px 10px' }}>{data.grade}</span>
               <span style={{ fontSize: 11, fontWeight: 600, color: INK, background: '#f3f4f6', borderRadius: 12, padding: '3px 10px' }}>
                 {data.rank ? `Rank #${data.rank} of ${data.rankedOutOf} in ${e.department}` : 'Not ranked this period'}
               </span>
-              {team.score != null && <span style={{ fontSize: 11, color: INK, background: '#f3f4f6', borderRadius: 12, padding: '3px 10px' }}>Department average score {team.score}</span>}
             </div>
           </div>
           <ScoreRing score={data.score} grade={data.grade} />
         </div>
 
-        <H2 sub="Recorded in the system for the review period">Key results</H2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-          <Kpi label="Effort delivered" value={`${m.effortHours || 0} h`} hint={`${m.tasksCompleted} tasks · standard size ${m.effortSizeHours ?? 0} h · ${fmt(m.productivity, '%')} of hours available`} tone={m.effortExceedsCapacity ? AMBER : undefined} />
-          <Kpi label="On-time delivery" value={fmt(m.onTimeRate, '%')} hint={`${m.onTimeCompleted} on time · ${m.lateCompleted} late`} tone={m.onTimeRate != null && m.onTimeRate < 60 ? RED : undefined} />
-          <Kpi label="Hours worked" value={fmt(m.hoursLogged || 0, ' h')} hint="Recorded working hours" />
-          <Kpi label="Avg time per task" value={fmt(m.avgHoursPerTask, ' h')} hint={m.avgCycleDays != null ? `${m.avgCycleDays} days start → done` : 'No timed tasks'} />
-          <Kpi label="Active days" value={m.activeDays} hint="Days with recorded work" />
-          <Kpi label="Meetings" value={m.meetings} hint={m.meetingHours ? `${m.meetingHours} h total` : '—'} />
-          <Kpi label="Points earned" value={m.pointsEarned} hint={m.pointsApproved ? `${m.pointsApproved} approved` : 'From finished tasks'} />
-          <Kpi label="Overdue now" value={m.overdueOpen} tone={m.overdueOpen > 0 ? RED : undefined} hint={m.reopened ? `${m.reopened} reopened` : 'Open past due date'} />
-          <Kpi label="Rescheduled" value={m.reschedules || 0} tone={m.reschedules >= 3 ? AMBER : undefined}
-            hint={m.reschedules ? `${m.rescheduledTasks} tasks · ${m.reschedulesBySelf} by self · +${m.postponedDays} d` : 'No due dates moved'} />
-          <Kpi label="Own plans vs standard" value={fmt(m.planVsStandard, '%')} tone={m.planVsStandard >= 150 ? AMBER : undefined}
-            hint={m.ownPlansCount ? `${m.ownPlansCount} tasks · 100% = normal · not scored` : 'No own planned times'} />
-          <Kpi label="Plan efficiency (not scored)" value={fmt(m.efficiency, '%')} tone={m.efficiency != null && m.efficiency < 75 ? RED : undefined} hint={m.plannedHours ? `Planned ${m.plannedHours} h · took ${m.actualHoursOnPlanned} h` : 'No planned time on tasks'} />
-          <Kpi label="Speed vs standard" value={m.speedVsStandard != null ? `${m.speedVsStandard}%` : '—'} tone={m.speedVsStandard != null && m.speedVsStandard < 60 ? AMBER : undefined}
-            hint={m.speedActualHours ? `${m.speedStandardHours} h standard took ${m.speedActualHours} h · 100% = standard` : 'No timed tasks'} />
-          <Kpi label="Quality factor" value={m.qualityFactor != null ? `x${m.qualityFactor}` : '—'} tone={m.qualityFactor != null && m.qualityFactor < 0.95 ? AMBER : undefined}
-            hint="Deadline, rework and review move credit by at most 25%" />
-          <Kpi label="Within plan" value={m.tasksWithPlan ? `${m.tasksWithinPlan} / ${m.tasksWithPlan}` : '—'} hint="Tasks within 10% of plan" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 16 }}>
+          <Kpi label="Effort delivered" value={`${m.effortHours || 0} h`} hint={`${m.tasksCompleted} tasks done`} />
+          <Kpi label="On-time delivery" value={fmt(m.onTimeRate, '%')} tone={m.onTimeRate != null && m.onTimeRate < 60 ? RED : undefined} hint={`${m.onTimeCompleted} on time · ${m.lateCompleted} late`} />
+          <Kpi label="Hours worked" value={fmt(m.hoursLogged || 0, ' h')} hint={`${m.activeDays} active days`} />
+          <Kpi label="Overdue now" value={m.overdueOpen} tone={m.overdueOpen > 0 ? RED : undefined} hint="Open past due date" />
         </div>
 
-        {(m.effortFlags || []).length > 0 && (
-          <div style={{ marginTop: 12, border: '1px solid #fcd34d', background: '#fffbeb', borderRadius: 8, padding: '10px 12px' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>Checks for HR to look at</div>
-            <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>Credit never uses the planned or logged time, so these do not change anyone's points. They only point at patterns worth a conversation.</div>
-            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: INK }}>
-              {m.effortFlags.map(fl => <li key={fl.code} style={{ marginBottom: 2 }}>{fl.text}</li>)}
-            </ul>
-          </div>
-        )}
-
-        <H2>Summary</H2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: GREEN, marginBottom: 4 }}>STRENGTHS</div>
-            {(data.insights?.strengths || []).length ? data.insights.strengths.map((t, i) => (
-              <div key={i} style={{ borderLeft: `2px solid #86efac`, paddingLeft: 8, marginBottom: 5 }}>{t}</div>
-            )) : <div style={{ color: MUTED }}>None stand out from the recorded data.</div>}
-          </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: RED, marginBottom: 4 }}>NEEDS ATTENTION</div>
-            {(data.insights?.attention || []).length ? data.insights.attention.map((t, i) => (
-              <div key={i} style={{ borderLeft: `2px solid #fca5a5`, paddingLeft: 8, marginBottom: 5 }}>{t}</div>
-            )) : <div style={{ color: MUTED }}>Nothing flagged.</div>}
-          </div>
-        </div>
-
-        <H2 sub="Parts without data are left out and the rest re-weighted">How the score is made up</H2>
-        {(data.breakdown || []).length === 0 ? <div style={{ color: MUTED }}>Not enough recorded work to score this period.</div> : data.breakdown.map(p => (
-          <div key={p.component} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <div style={{ width: 210, fontSize: 11 }}>{({ output: 'Effort vs hours available', utilisation: 'Hours recorded vs available', onTime: 'On-time delivery', engagement: 'Days active', efficiency: 'Efficiency (planned ÷ actual)', review: 'Manager review', completion: 'Completion rate', logging: 'Time recorded on tasks' })[p.component]} <span style={{ color: MUTED }}>({p.weight}%)</span></div>
-            <div style={{ flex: 1, height: 8, background: '#f3f4f6', borderRadius: 4 }}>
-              <div style={{ width: `${p.value}%`, height: 8, background: BLUE, borderRadius: 4 }} />
-            </div>
-            <div style={{ width: 30, textAlign: 'right', fontWeight: 600 }}>{p.value}</div>
-          </div>
-        ))}
-
-        <H2 sub={`Compared with the ${e.department} average for ${period}`}>Versus the team</H2>
-        <Table
-          head={['Measure', name.split(' ')[0], 'Dept. average', 'Difference']}
-          align={['left', 'right', 'right', 'right']}
-          rows={[
-            ['Score', fmt(data.score), fmt(team.score), pctDiff(data.score, team.score)],
-            ['Effort delivered', fmt(m.effortHours, ' h'), fmt(team.effortHours, ' h'), pctDiff(m.effortHours, team.effortHours)],
-            ['Hours recorded vs available', fmt(m.utilisation, '%'), fmt(team.utilisation, '%'), pctDiff(m.utilisation, team.utilisation)],
-            ['Tasks completed (count only)', m.tasksCompleted, fmt(team.tasksCompleted), <span style={{ color: MUTED }}>not scored</span>],
-            ['On-time delivery', fmt(m.onTimeRate, '%'), fmt(team.onTimeRate, '%'), pctDiff(m.onTimeRate, team.onTimeRate)],
-            ['Avg hours per task', fmt(m.avgHoursPerTask, ' h'), fmt(team.avgHoursPerTask, ' h'), pctDiff(m.avgHoursPerTask, team.avgHoursPerTask, 'down')],
-            ['Efficiency', fmt(m.efficiency, '%'), fmt(team.efficiency, '%'), pctDiff(m.efficiency, team.efficiency)],
-            ['Avg days start → done', fmt(m.avgCycleDays), fmt(team.avgCycleDays), pctDiff(m.avgCycleDays, team.avgCycleDays, 'down')],
-            ['Hours worked', fmt(m.hoursLogged || 0), fmt(team.hoursLogged), pctDiff(m.hoursLogged, team.hoursLogged)],
-            ['Active days', m.activeDays, fmt(team.activeDays), pctDiff(m.activeDays, team.activeDays)]
-          ]}
-        />
-      </Page>
-
-      {/* ───────── Page 2: analytics ───────── */}
-      <Page n={2} total={TOTAL} name={name} period={period}>
-        <H2 sub="Score each month (0–100), last 12 months">Performance trend</H2>
+        <div style={{ ...CARD, marginTop: 16 }}>
+        <H2 first sub="Score each month (0–100), last 12 months">Score trend</H2>
         {scoreTrend.some(s => s.score != null) ? (
-          <LineChart width={CHART_W} height={180} data={scoreTrend} margin={{ top: 16, right: 12, left: -14, bottom: 0 }}>
+          <LineChart width={INNER_W} height={170} data={scoreTrend} margin={{ top: 16, right: 22, left: -14, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke={GRID} />
             <XAxis dataKey="label" tick={{ fontSize: 10, fill: MUTED }} tickLine={false} axisLine={{ stroke: GRID }} interval={0} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: MUTED }} tickLine={false} axisLine={false} />
-            <Tooltip />
             <Line type="monotone" dataKey="score" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3, fill: BLUE }} connectNulls isAnimationActive={false}>
               <LabelList dataKey="score" position="top" style={{ fontSize: 9, fill: MUTED }} />
             </Line>
           </LineChart>
         ) : <div style={{ color: MUTED }}>No scored months yet.</div>}
+        </div>
 
-        <H2 sub="Last 12 months">Tasks completed per month</H2>
-        <Bars data={chrono} dataKey="tasksCompleted" unit=" tasks" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+          <div style={CARD}>
+            <H2 first sub="Last 12 months">Tasks completed</H2>
+            <Bars data={short} dataKey="tasksCompleted" unit=" tasks" width={HALF_W} height={150} />
+          </div>
+          <div style={CARD}>
+            <H2 first sub="Last 12 months">Hours worked</H2>
+            <Bars data={short} dataKey="hoursLogged" unit=" h" color="#0f766e" width={HALF_W} height={150} />
+          </div>
+        </div>
 
-        <H2 sub="Last 12 months, working hours only">Hours worked per month</H2>
-        <Bars data={chrono} dataKey="hoursLogged" unit=" h" color="#0f766e" />
-
-        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 18, alignItems: 'start' }}>
-          <div>
-            <H2 sub={period}>Delivery against due dates</H2>
+        <div style={{ display: 'grid', gridTemplateColumns: '230px 1fr', gap: 12, alignItems: 'stretch', marginTop: 12 }}>
+          <div style={CARD}>
+            <H2 first sub={period}>Delivery against due dates</H2>
             {onTimeData.length ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ position: 'relative', width: 110, height: 110 }}>
                 <PieChart width={110} height={110}>
                   <Pie data={onTimeData} dataKey="value" innerRadius={32} outerRadius={50} paddingAngle={2} isAnimationActive={false} stroke="none">
                     {onTimeData.map(d => <Cell key={d.name} fill={d.color} />)}
                   </Pie>
                 </PieChart>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800 }}>{fmt(m.onTimeRate, '%')}</div>
+                </div>
                 <div style={{ fontSize: 11 }}>
                   {onTimeData.map(d => <div key={d.name}><span style={{ display: 'inline-block', width: 8, height: 8, background: d.color, borderRadius: 2, marginRight: 5 }} />{d.name}: <strong>{d.value}</strong></div>)}
                   {completedNoDue > 0 && <div style={{ color: MUTED }}>No due date: {completedNoDue}</div>}
                 </div>
               </div>
-            ) : <div style={{ color: MUTED }}>No finished tasks with due dates.</div>}
+            ) : <div style={{ color: MUTED, fontSize: 11 }}>No finished tasks with due dates.</div>}
           </div>
-          <div>
-            <H2 sub="Average hours per finished task vs the department's average for the same work">Work by type</H2>
-            <Table
-              head={['Work type', 'Done', 'Avg h', 'Team avg h', 'On-time']}
-              align={['left', 'right', 'right', 'right', 'right']}
-              rows={(data.workTypes || []).map(w => [
-                w.workType, w.completed,
-                <span style={{ color: w.avgHours != null && w.teamAvgHours != null ? (w.avgHours < w.teamAvgHours * 0.95 ? GREEN : w.avgHours > w.teamAvgHours * 1.05 ? RED : INK) : INK, fontWeight: 600 }}>{fmt(w.avgHours)}</span>,
-                fmt(w.teamAvgHours), fmt(w.onTimeRate, '%')
-              ])}
-            />
+          <div style={CARD}>
+            <H2 first sub="Parts without data are left out and the rest re-weighted">What makes up the score</H2>
+            {(data.breakdown || []).length === 0 ? <div style={{ color: MUTED }}>Not enough recorded work to score this period.</div> : data.breakdown.map(p => (
+              <div key={p.component} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                <div style={{ width: 150, fontSize: 10.5 }}>{({ output: 'Effort vs hours available', utilisation: 'Hours recorded', onTime: 'On-time delivery', engagement: 'Days active', efficiency: 'Efficiency', review: 'Manager review', completion: 'Completion rate', logging: 'Time recorded' })[p.component] || p.component} <span style={{ color: MUTED }}>({p.weight}%)</span></div>
+                <div style={{ flex: 1, height: 8, background: '#f3f4f6', borderRadius: 4 }}>
+                  <div style={{ width: `${p.value}%`, height: 8, background: p.value >= 75 ? GREEN : p.value >= 50 ? BLUE : p.value >= 30 ? AMBER : RED, borderRadius: 4 }} />
+                </div>
+                <div style={{ width: 26, textAlign: 'right', fontWeight: 600, fontSize: 11 }}>{p.value}</div>
+              </div>
+            ))}
           </div>
-        </div>
-
-        <H2 sub="All recorded history">Personal best records</H2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-          <Kpi label="Best month (tasks)" value={b.bestMonthTasks ? `${b.bestMonthTasks.value} tasks` : '—'} hint={b.bestMonthTasks ? monthLabel(b.bestMonthTasks.month) : 'No finished tasks yet'} />
-          <Kpi label="Best month (hours)" value={b.bestMonthHours ? `${b.bestMonthHours.value} h` : '—'} hint={b.bestMonthHours ? monthLabel(b.bestMonthHours.month) : 'No time recorded yet'} />
-          <Kpi label="Longest on-time run" value={b.longestOnTimeStreak ? `${b.longestOnTimeStreak} in a row` : '—'} hint="Tasks finished by their due date" />
-          <Kpi label="Fastest task" value={b.fastestTask ? `${b.fastestTask.days} days` : '—'} hint={b.fastestTask ? b.fastestTask.key : undefined} />
-          <Kpi label="Biggest task" value={b.biggestTask ? `${b.biggestTask.points} pts` : '—'} hint={b.biggestTask ? b.biggestTask.key : undefined} />
-          <Kpi label="Total completed" value={b.totalCompleted ?? 0} hint="All time" />
         </div>
       </Page>
 
-      {/* ───────── Page 3: scorecards & work ───────── */}
-      <Page n={3} total={TOTAL} name={name} period={period}>
-        <H2 sub="Score and rank are within the department for each month">Monthly scorecard</H2>
-        <Table
-          head={['Month', 'Score', 'Grade', 'Rank', 'Tasks', 'Hours', 'Avg h/task', 'Efficiency', 'On-time', 'Meetings']}
-          align={['left', 'right', 'left', 'right', 'right', 'right', 'right', 'right', 'right', 'right']}
-          rows={(data.scorecard || []).filter(s => s.score != null || s.tasksCompleted || s.hoursLogged || s.meetings).map(s => [
-            s.label, fmt(s.score), s.score != null ? <span style={{ color: GRADE_COLOR[s.grade], fontWeight: 600 }}>{s.grade}</span> : '—',
-            s.rank ? `#${s.rank}/${s.rankedOutOf}` : '—', s.tasksCompleted, s.hoursLogged || 0, fmt(s.avgHoursPerTask), fmt(s.efficiency, '%'), fmt(s.onTimeRate, '%'), s.meetings
-          ])}
-        />
+      {/* ───────── Page 2: comparison, notes, sign-off ───────── */}
+      <Page n={2} total={TOTAL} name={name} period={period}>
+        <div style={CARD}>
+        <H2 first sub={`${name.split(' ')[0]} compared with the ${e.department} average for ${period}`}>Versus the department</H2>
+        <Legend />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <Pair data={rateVs} width={Math.floor((INNER_W - 12) / 2)} />
+          <Pair data={volumeVs} width={Math.floor((INNER_W - 12) / 2)} />
+        </div>
+        </div>
 
-        <H2>Quarterly scorecard</H2>
-        <Table
-          head={['Quarter', 'Score', 'Grade', 'Rank', 'Tasks', 'Hours', 'Avg h/task', 'On-time', 'Meetings']}
-          align={['left', 'right', 'left', 'right', 'right', 'right', 'right', 'right', 'right']}
-          rows={(data.quarterCard || []).map(s => [
-            s.label, fmt(s.score), s.score != null ? <span style={{ color: GRADE_COLOR[s.grade], fontWeight: 600 }}>{s.grade}</span> : '—',
-            s.rank ? `#${s.rank}/${s.rankedOutOf}` : '—', s.tasksCompleted, s.hoursLogged || 0, fmt(s.avgHoursPerTask), fmt(s.onTimeRate, '%'), s.meetings
-          ])}
-        />
+        {typeVs.length > 0 && (
+          <div style={{ ...CARD, marginTop: 12 }}>
+            <H2 first sub="Average hours per finished task, against the department for the same work">Time per task by work type</H2>
+            <Pair data={typeVs} width={INNER_W} height={170} />
+          </div>
+        )}
 
-        <H2 sub="Shown for information, not scored: plan and time are typed in by the employee · efficiency = plan ÷ actual">Planned vs actual time</H2>
-        <Table
-          head={['Task', 'Planned', 'Actual', 'Difference', 'Efficiency', 'Result']}
-          align={['left', 'right', 'right', 'right', 'right', 'left']}
-          rows={completed.filter(t => t.planHours).slice(0, 12).map(t => [
-            <span><strong>{t.key}</strong> {String(t.title).slice(0, 48)}</span>,
-            `${Math.round(t.planHours * 10) / 10} h`, t.hoursLogged ? `${t.hoursLogged} h` : '—',
-            t.varianceHours == null ? '—' : <span style={{ color: t.varianceHours > 0 ? RED : t.varianceHours < 0 ? GREEN : INK }}>{t.varianceHours > 0 ? '+' : ''}{t.varianceHours} h</span>,
-            fmt(t.efficiency, '%'),
-            <span style={{ color: t.planVerdict === 'Over plan' ? RED : t.planVerdict === 'No time recorded' ? MUTED : GREEN, fontWeight: 600 }}>{t.planVerdict}</span>
-          ])}
-        />
-
-        <H2 sub={`${completed.length} finished in ${period}${completed.length > 15 ? ' · most recent 15 shown' : ''}`}>Completed work</H2>
-        <Table
-          head={['Task', 'Type', 'Due', 'Finished', 'Days', 'Hours', 'Result']}
-          align={['left', 'left', 'left', 'left', 'right', 'right', 'left']}
-          rows={completed.slice(0, 15).map(t => [
-            <span><strong>{t.key}</strong> {String(t.title).slice(0, 60)}</span>, t.workType || t.type, fmtDate(t.dueAt), fmtDate(t.completedAt),
-            fmt(t.cycleDays), t.hoursLogged || '—',
-            t.onTime == null ? <span style={{ color: MUTED }}>No due date</span> : t.onTime ? <span style={{ color: GREEN }}>On time</span> : <span style={{ color: RED }}>Late</span>
-          ])}
-        />
-
-        <H2 sub="Open now, earliest due first">Open work</H2>
-        <Table
-          head={['Task', 'Status', 'Due', 'Hours so far']}
-          align={['left', 'left', 'left', 'right']}
-          rows={open.slice(0, 10).map(t => [
-            <span><strong>{t.key}</strong> {String(t.title).slice(0, 70)}</span>,
-            t.overdue ? <span style={{ color: RED, fontWeight: 600 }}>Overdue · {t.status}</span> : t.status,
-            fmtDate(t.dueAt), t.hoursLogged || '—'
-          ])}
-        />
-      </Page>
-
-      {/* ───────── Page 4: meetings, reviews, discussion, sign-off ───────── */}
-      <Page n={4} total={TOTAL} name={name} period={period}>
-        <H2 sub={`${m.meetings} attended in ${period}${m.avgMeetingMinutes ? ` · average ${m.avgMeetingMinutes} min` : ''}`}>Meetings</H2>
-        <Table
-          head={['Date', 'Meeting', 'Type', 'Minutes', 'Status']}
-          align={['left', 'left', 'left', 'right', 'left']}
-          rows={(data.meetings || []).slice(0, 10).map(mt => [fmtDate(mt.at), String(mt.title).slice(0, 60), mt.source, fmt(mt.minutes), mt.status || '—'])}
-        />
-
-        <H2>Previous manager reviews</H2>
-        <Table
-          head={['Date', 'Reviewer', 'Score', 'Feedback']}
-          align={['left', 'left', 'right', 'left']}
-          rows={(data.reviews || []).slice(0, 4).map(r => [fmtDate(r.at), r.reviewer || '—', fmt(r.score), String(r.feedback || '').slice(0, 160)])}
-        />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+          <div style={{ ...CARD, background: '#f0fdf4' }}>
+            <H2 first>Strengths</H2>
+            {(data.insights?.strengths || []).slice(0, 3).map((t, i) => (
+              <div key={i} style={{ borderLeft: '2px solid #86efac', paddingLeft: 8, marginBottom: 5 }}>{t}</div>
+            ))}
+            {!(data.insights?.strengths || []).length && <div style={{ color: MUTED }}>None stand out.</div>}
+          </div>
+          <div style={{ ...CARD, background: '#fef2f2' }}>
+            <H2 first>Needs attention</H2>
+            {(data.insights?.attention || []).slice(0, 3).map((t, i) => (
+              <div key={i} style={{ borderLeft: '2px solid #fca5a5', paddingLeft: 8, marginBottom: 5 }}>{t}</div>
+            ))}
+            {!(data.insights?.attention || []).length && <div style={{ color: MUTED }}>Nothing flagged.</div>}
+          </div>
+        </div>
 
         <H2 sub="Filled in during the meeting; included in the PDF">Review discussion</H2>
         <NoteField label="Discussion points" placeholder="What went well, what was difficult, context behind the numbers…" value={notes.discussion} asText={exporting} onChange={v => setNotes(n => ({ ...n, discussion: v }))} />
-        <NoteField label="Goals agreed for the next period" placeholder="e.g. Keep on-time delivery above 90%; bring blog-banner time to under 18 h…" value={notes.goals} asText={exporting} onChange={v => setNotes(n => ({ ...n, goals: v }))} />
+        <NoteField label="Goals agreed for the next period" placeholder="e.g. Keep on-time delivery above 90%" value={notes.goals} asText={exporting} onChange={v => setNotes(n => ({ ...n, goals: v }))} />
         <NoteField label="Support / training needed" placeholder="Tools, training, workload changes…" value={notes.support} asText={exporting} onChange={v => setNotes(n => ({ ...n, support: v }))} />
-        <NoteField label="Employee comments" placeholder="The employee's own view" value={notes.employee} asText={exporting} onChange={v => setNotes(n => ({ ...n, employee: v }))} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 34 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 26 }}>
           {['Employee', 'Reviewing manager', 'HR'].map(l => (
             <div key={l}>
-              <div style={{ height: 34 }} />
+              <div style={{ height: 30 }} />
               <div style={{ borderTop: `1px solid ${INK}`, paddingTop: 4, fontSize: 11 }}>{l}</div>
               <div style={{ fontSize: 10, color: MUTED }}>Signature &amp; date</div>
             </div>
           ))}
-        </div>
-        <div style={{ fontSize: 10, color: MUTED, marginTop: 18 }}>
-          All figures are calculated from work recorded in the Codigix CRM (tickets, status history, time tracked while tickets are In Progress
-          during working hours, work logs, meetings and manager reviews). Nothing is estimated.
         </div>
       </Page>
     </div>

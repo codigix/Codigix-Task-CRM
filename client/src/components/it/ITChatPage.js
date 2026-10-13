@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { openChatStream } from '../../services/chatStream';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import {
@@ -544,10 +545,22 @@ export default function ITChatPage() {
   // Live updates.
   useEffect(() => {
     if (!me) return undefined;
-    const es = new EventSource(`${API_BASE_URL}/chat/stream`, { withCredentials: true });
+    const es = openChatStream();
     es.addEventListener('hello', () => setConnected(true));
     es.onerror = () => setConnected(false);
     es.onopen = () => setConnected(true);
+    // After a dropped connection, fetch what was missed while it was down.
+    es.addEventListener('resync', async () => {
+      refreshRooms();
+      const id = activeRef.current;
+      if (!id) return;
+      try {
+        const d = await api(`/chat/rooms/${id}/messages`);
+        if (activeRef.current !== id) return;
+        setMessages(ms => { const have = new Set(ms.map(m => m.id)); const add = d.messages.filter(m => !have.has(m.id)); return add.length ? [...ms, ...add].sort((a, b) => a.id - b.id) : ms; });
+        setPinned(d.pinned);
+      } catch (e) { /* the next event or refresh will catch up */ }
+    });
     es.addEventListener('message', (e) => {
       const msg = JSON.parse(e.data);
       const mine = msg.senderId === meRef.current?.id;

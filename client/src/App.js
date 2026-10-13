@@ -87,6 +87,7 @@ import FollowupsPage from './components/common/FollowupsPage';
 import MeetingsPage from './components/meetings/MeetingsPage';
 import AnalyticsPage from './components/common/AnalyticsPage';
 import WorkloadReportPage from './components/common/WorkloadReportPage';
+import UniversalKanbanPage from './components/common/UniversalKanbanPage';
 import LeadReport from './components/sales/LeadReport';
 import DealReport from './components/sales/DealReport';
 import ContactReportsPage from './components/common/ContactReportsPage';
@@ -151,7 +152,6 @@ import ITTestCasesPage from './components/it/ITTestCasesPage';
 import ITRepositoriesPage from './components/it/ITRepositoriesPage';
 import HRDashboard from './components/hr/HRDashboard';
 import HREmployees from './components/hr/HREmployees';
-import HRLeaveRequests from './components/hr/HRLeaveRequests';
 import HRRecruitment from './components/hr/HRRecruitment';
 import HRPerformance from './components/hr/HRPerformance';
 import HRPayroll from './components/hr/HRPayroll';
@@ -626,18 +626,19 @@ function AppContent() {
         <Route path="/hr/:designation/:username/dashboard" element={<HRDashboard />} />
         <Route path="/hr/:designation/:username/employees" element={<HREmployees />} />
         <Route path="/hr/:designation/:username/attendance" element={<HRAttendance />} />
-        <Route path="/hr/:designation/:username/leaves" element={<HRLeaveRequests />} />
         <Route path="/hr/:designation/:username/recruitment" element={<HRRecruitment />} />
         <Route path="/hr/:designation/:username/performance" element={<HRPerformance />} />
         <Route path="/hr/:designation/:username/payroll" element={<HRPayroll />} />
         <Route path="/hr/:designation/:username/registration-requests" element={<RegistrationRequestsPage />} />
         <Route path="/hr/registration-requests" element={<RegistrationRequestsPage />} />
+        <Route path="/hr/:designation/:username/activities" element={<ITActivitiesPage />} />
         <Route path="/hr/:designation/:username/tasks" element={<TasksPage department="HR" />} />
         
         {/* Dynamic tasks routes based on department */}
         <Route path="/deals/:designation/:username/tasks" element={<TasksPage />} />
         <Route path="/leads/:designation/:username/tasks" element={<TasksPage />} />
         <Route path="/projects/:designation/:username/tasks" element={<TasksPage />} />
+        <Route path="/sales/:designation/:username/kanban" element={<UniversalKanbanPage department="Sales" />} />
         <Route path="/sales/:designation/:username/tasks" element={<TasksPage />} />
         <Route path="/tasks" element={<TasksPage />} />
 

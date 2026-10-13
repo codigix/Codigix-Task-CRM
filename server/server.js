@@ -466,6 +466,7 @@ app.use('/api/it-documents', require('./routes/it-documents-routes'));
 app.use('/api/seo-gmb', require('./routes/seo-gmb-routes')(pool));
 
 app.use('/api/hr/dashboard', require('./routes/hr-dashboard-routes')(pool));
+app.use('/api/hr/employees', require('./routes/hr-employees-routes')(pool));
 app.use('/api/hr/attendance', require('./routes/hr-attendance-routes')(pool));
 app.use('/api/hr/performance', require('./routes/hr-performance-routes')(pool));
 app.use('/api/hr/registration-requests', require('./routes/hr-registration-requests-routes')(pool));
@@ -596,6 +597,7 @@ require('./routes/knowledge-routes')(app, pool);
 require('./routes/chat-routes')(app, pool);
 require('./routes/push-routes')(app, pool);
 require('./routes/meetings-routes')(app, pool);
+require('./routes/leave-routes')(app, pool);
 require('./routes/sales-flow-routes')(app, pool);
 require('./routes/sales-pdf-routes')(app, pool);
 require('./routes/sales-desk-routes')(app, pool);

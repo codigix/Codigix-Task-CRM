@@ -188,6 +188,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     return deepMerge(DEFAULT_SETTINGS, parseJson(row?.data, {}));
   };
   const isMgr = (req) => Boolean(req.user?.isManager || req.user?.isAdmin);
+  const canQuote = (req) => isMgr(req) || /executive/i.test(String(req.user?.role || ''));
   const who = (req) => ({ id: req.user?.id || null, name: req.user?.name || 'Someone' });
   const event = async (req, { leadId = null, dealId = null, quotationId = null, invoiceId = null, companyId = null, kind, title, body = null, meta = null, at = null }) => {
     const u = who(req);
@@ -222,6 +223,50 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
   const fail = (res, e, msg) => { console.error(`sales flow: ${msg}:`, e.message); res.status(500).json({ error: msg }); };
 
   // ── Meta + settings ───────────────────────────────────────────────────
+  // ── Who may touch what ───────────────────────────────────────────────
+  // Managers and admins: everything. Sales executives: only their own enquiries, deals, quotations and
+  // follow-ups (and what belongs to them through those). This is checked here on the server, so asking the
+  // API directly for someone else's record, or for scope=all, gets a refusal instead of the data.
+  const ownsEntity = async (kind, id, req) => {
+    const uid = Number(req.user.id); const me = String(req.user.name || '').trim().toLowerCase();
+    const [lead] = kind === 'leads' ? await q('SELECT owner_id FROM leads WHERE id = ?', [id]) : [];
+    if (kind === 'leads') return lead ? { found: true, ok: Number(lead.owner_id) === uid } : { found: false };
+    const [deal] = kind === 'deals' ? await q('SELECT assignee_id FROM deals WHERE id = ?', [id]) : [];
+    if (kind === 'deals') return deal ? { found: true, ok: Number(deal.assignee_id) === uid } : { found: false };
+    let row;
+    if (kind === 'quotations') [row] = await q('SELECT created_by_name, estimate_by, deal_id, lead_id FROM estimations WHERE id = ?', [id]);
+    else [row] = await q('SELECT assigned_to, deal_id, lead_id FROM followups WHERE id = ?', [id]);
+    if (!row) return { found: false };
+    if (Number(row.estimate_by) === uid || Number(row.assigned_to) === uid || String(row.created_by_name || '').trim().toLowerCase() === me) return { found: true, ok: true };
+    if (row.deal_id) { const [d] = await q('SELECT assignee_id FROM deals WHERE id = ?', [row.deal_id]); if (d && Number(d.assignee_id) === uid) return { found: true, ok: true }; }
+    if (row.lead_id) { const [l] = await q('SELECT owner_id FROM leads WHERE id = ?', [row.lead_id]); if (l && Number(l.owner_id) === uid) return { found: true, ok: true }; }
+    return { found: true, ok: false };
+  };
+  // Two sales roles. A sales employee adds enquiries, records calls and handles follow-ups. Creating deals,
+  // quotations and billing is for sales executives (and managers), so those writes are refused for everyone else.
+  app.use('/api/sales-flow', (req, res, next) => {
+    if (req.method === 'GET' || !req.user || canQuote(req)) return next();
+    const p = String(req.originalUrl || '').split('?')[0].replace('/api/sales-flow', '');
+    const seg = p.split('/').filter(Boolean);
+    if (seg[0] === 'deals' || seg[0] === 'quotations' || (seg[0] === 'leads' && seg[2] === 'convert')) {
+      return res.status(403).json({ error: 'Deals and quotations are created by a sales executive. Add the enquiry and its follow-ups, and pass it on.' });
+    }
+    next();
+  });
+  app.use('/api/sales-flow/:kind/:id', async (req, res, next) => {
+    try {
+      if (!['leads', 'deals', 'quotations', 'followups'].includes(req.params.kind) || !req.user || isMgr(req)) return next();
+      const r = await ownsEntity(req.params.kind, req.params.id, req);
+      if (r.found && !r.ok) return res.status(403).json({ error: 'This belongs to someone else. Ask a manager if you need access.' });
+      next();
+    } catch (e) { next(e); }
+  });
+  const onlyManagerAssigns = (req, res, ownerId) => {
+    if (ownerId === undefined || ownerId === null || ownerId === '' || isMgr(req) || Number(ownerId) === Number(req.user.id)) return false;
+    res.status(403).json({ error: 'Only a manager can assign work to someone else.' });
+    return true;
+  };
+
   app.get('/api/sales-flow/meta', async (req, res) => {
     try {
       if (!needUser(req, res)) return;
@@ -275,7 +320,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     try {
       if (!needUser(req, res)) return;
       await ready;
-      const mine = req.query.scope === 'mine';
+      const mine = req.query.scope === 'mine' || !isMgr(req);
       const uid = Number(req.user.id);
       const names = await usersById();
       const term = String(req.query.q || '').trim().toLowerCase();
@@ -397,6 +442,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     try {
       if (!needUser(req, res)) return;
       await ready;
+      if (onlyManagerAssigns(req, res, (req.body || {}).owner_id)) return;
       const b = req.body || {};
       const name = String(b.lead_name || '').trim();
       if (!name) return res.status(400).json({ error: 'Enter the contact or company name.' });
@@ -421,6 +467,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
   app.put('/api/sales-flow/leads/:id', async (req, res) => {
     try {
       if (!needUser(req, res)) return;
+      if (onlyManagerAssigns(req, res, req.body?.owner_id)) return;
       const allowed = ['lead_name', 'project_name', 'company', 'email', 'phone', 'lead_source', 'value', 'currency', 'notes', 'industry', 'owner_id', 'rating'];
       const sets = []; const vals = [];
       allowed.forEach(k => { if (req.body?.[k] !== undefined) { sets.push(`${k} = ?`); vals.push(req.body[k] === '' ? null : req.body[k]); } });
@@ -472,6 +519,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       if (!lead) { await conn.rollback(); return res.status(404).json({ error: 'Lead not found' }); }
       if (lead.converted_deal_id) { await conn.rollback(); return res.json({ dealId: lead.converted_deal_id, already: true }); }
       const b = req.body || {};
+      if (!isMgr(req) && b.assignee_id && Number(b.assignee_id) !== Number(req.user.id)) { await conn.rollback(); return res.status(403).json({ error: 'Only a manager can assign work to someone else.' }); }
       const dealName = String(b.deal_name || lead.project_name || lead.company || lead.lead_name).trim();
       let companyId = lead.company_id || lead.converted_company_id || null;
       const companyName = String(b.company || lead.company || lead.lead_name || '').trim();
@@ -549,6 +597,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
   app.put('/api/sales-flow/deals/:id', async (req, res) => {
     try {
       if (!needUser(req, res)) return;
+      if (onlyManagerAssigns(req, res, req.body?.assignee_id)) return;
       const allowed = ['deal_name', 'deal_value', 'currency', 'expected_close_date', 'assignee_id', 'priority', 'description', 'company_id', 'contact_id', 'source'];
       const sets = []; const vals = [];
       allowed.forEach(k => { if (req.body?.[k] !== undefined) { sets.push(`${k} = ?`); vals.push(req.body[k] === '' ? null : req.body[k]); } });
@@ -736,7 +785,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     try {
       if (!needUser(req, res)) return;
       await ready;
-      const mine = req.query.scope !== 'all';
+      const mine = req.query.scope !== 'all' || !isMgr(req);
       const uid = Number(req.user.id);
       const rows = await q(`SELECT f.*, l.lead_name, l.phone AS lead_phone, l.email AS lead_email, l.lead_status, d.deal_name, d.deal_stage, c.company_name, c.phone AS company_phone
         FROM followups f LEFT JOIN leads l ON l.id = f.lead_id LEFT JOIN deals d ON d.id = f.deal_id LEFT JOIN companies c ON c.id = d.company_id
@@ -843,7 +892,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       const dterm = String(req.query.q || '').trim().toLowerCase();
       if (dterm) decks = decks.filter(x => [x.number, x.title, x.client, x.dealName].some(v => String(v || '').toLowerCase().includes(dterm)));
       let list = rows;
-      if (req.query.scope === 'mine') list = list.filter(r => Number(r.assignee_id) === Number(req.user.id) || r.created_by_name === req.user.name);
+      if (req.query.scope === 'mine' || !isMgr(req)) list = list.filter(r => Number(r.assignee_id) === Number(req.user.id) || r.created_by_name === req.user.name);
       if (req.query.status) list = list.filter(r => r.status === req.query.status);
       const term = String(req.query.q || '').trim().toLowerCase();
       if (term) list = list.filter(r => [r.estimation_number, r.subject, r.client_name, r.deal_name, r.company_name].some(v => String(v || '').toLowerCase().includes(term)));

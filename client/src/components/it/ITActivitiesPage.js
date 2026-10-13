@@ -127,7 +127,7 @@ export default function ITActivitiesPage() {
           <p className="text-sm text-gray-500 mt-1">Who created, moved, reassigned, rescheduled or logged time on which work item.</p>
         </div>
         <div className="flex items-center gap-1 bg-white border border-gray-200 rounded p-0.5">
-          {['All', 'IT', 'Marketing'].map(d => (
+          {['All', ...(data?.departments?.length ? data.departments : ['IT', 'Marketing'])].map(d => (
             <button key={d} onClick={() => setDepartment(d)}
               className={`px-3 h-7 text-xs font-medium rounded cursor-pointer ${department === d ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
               {d === 'All' ? 'All departments' : d}

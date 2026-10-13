@@ -230,10 +230,15 @@ module.exports = function setupChatRoutes(app, pool) {
   app.get('/api/chat/stream', async (req, res) => {
     const uid = auth(req, res); if (!uid) return;
     await ready;
+    // Long-lived stream: never time it out, send small writes at once, and tell proxies not to buffer or compress it.
+    req.socket.setTimeout(0); req.socket.setNoDelay(true); req.socket.setKeepAlive(true);
     res.writeHead(200, {
-      'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no'
+      'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no', 'Content-Encoding': 'identity'
     });
+    // A 2 KB comment pushes past proxies that hold back the first bytes; 'retry' sets how soon the browser reconnects.
+    res.write(`retry: 3000\n: ${' '.repeat(2048)}\n\n`);
     res.write(`event: hello\ndata: ${JSON.stringify({ userId: uid })}\n\n`);
+    const detachLive = require('../services/live').attach(res, uid);
     const wasOnline = isOnline(uid);
     if (!streams.has(uid)) streams.set(uid, new Set());
     streams.get(uid).add(res);
@@ -242,6 +247,7 @@ module.exports = function setupChatRoutes(app, pool) {
     const ping = setInterval(() => { try { res.write(': ping\n\n'); } catch (e) { /* closed */ } }, 25000);
     req.on('close', () => {
       clearInterval(ping);
+      detachLive();
       streams.get(uid)?.delete(res);
       lastActive.set(uid, new Date());
       if (!isOnline(uid)) send(everyoneOnline(), 'presence', { userId: uid, online: false, lastActive: new Date() });

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package,
   ChevronDown, X, Home, Users, Building2, Settings, BarChart3, FileText,
@@ -18,6 +19,7 @@ import { isSidebarItemVisible, isModuleAccessible, getMenuItemAccess } from '../
 
 const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const { user } = useAuth();
+  const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState({
     admin: true,
     leads: true,
@@ -61,12 +63,9 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       return null;
     }
 
-    const handleClick = () => {
-      if (to) {
-        onNavigate(to);
-        if (toggleSidebar) toggleSidebar();
-        return;
-      }
+    // The address this item opens. Clicking and "is this the page I am on" both use it, so they can never disagree.
+    const computeTarget = () => {
+      if (to) return to;
       let finalPage = page;
 
       // Helper to determine department prefix based on current context
@@ -108,7 +107,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
         'graphics-video', 'content-calendar', 'blogs-calendar', 'marketing-drive',
         'it-inventory', 'it-ticketing', 'seo-', 'gmb-', 'teams',
         'documents', 'projects', 'leads', 'bugs', 'test-cases', 'repositories', 'backlog', 'ticket-assignments',
-        'registration-requests', 'pipeline', 'agenda', 'quotes', 'sales-settings', 'approvals'
+        'registration-requests', 'employees', 'pipeline', 'agenda', 'quotes', 'sales-settings', 'approvals'
       ];
 
       const userNameValue = user?.username || user?.first_name || user?.name || 'user';
@@ -168,21 +167,40 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       // Ensure no double slashes and handles roots
       if (finalPage.startsWith('//')) finalPage = finalPage.substring(1);
       if (query) finalPage = `${finalPage}${query}`;
-
-      onNavigate(finalPage);
+      return finalPage;
+    };
+    const handleClick = () => {
+      onNavigate(computeTarget());
       if (toggleSidebar) toggleSidebar();
     };
+
+    // Active = the address bar is on this item's page (or one of its detail pages, e.g. a single quotation
+    // under Quotations). Items that share a page and differ by ?tab= (enquiries / deals) are told apart by the tab.
+    const DETAIL_PAGES = { quotes: ['quotation', 'quotations', 'proposal'], customers: ['customer'], invoices: ['invoice'], pipeline: ['enquiry', 'opportunity'] };
+    const trimSlash = (p) => (p.length > 1 && p.endsWith('/') ? p.slice(0, -1) : p);
+    const [targetPath, targetQuery = ''] = computeTarget().split('?');
+    const hereSeg = trimSlash(location.pathname).split('/');
+    const baseSeg = trimSlash(targetPath).split('/');
+    const lastSeg = baseSeg[baseSeg.length - 1];
+    const sameFolder = hereSeg.length >= baseSeg.length && baseSeg.slice(0, -1).every((seg, i) => seg === hereSeg[i]);
+    const onPage = sameFolder && ([lastSeg, ...(DETAIL_PAGES[lastSeg] || [])].includes(hereSeg[baseSeg.length - 1]));
+    const hereTab = new URLSearchParams(location.search).get('tab');
+    const wantTab = new URLSearchParams(targetQuery).get('tab');
+    const sharesPipeline = lastSeg === 'pipeline';
+    const urlActive = onPage && (!sharesPipeline || (wantTab ? hereTab === wantTab : !hereTab));
+    // Pipeline links are decided by the address alone; everything else also keeps the old page-name match.
+    const isOn = sharesPipeline ? urlActive : (urlActive || currentPage === page);
 
     return (
       <button
         onClick={handleClick}
         title={isViewOnly ? 'View-only access' : ''}
-        className={`menu-item w-full flex items-center gap-3 p-2 text-xs rounded transition-all duration-200 ${currentPage === page
+        className={`menu-item w-full flex items-center gap-3 p-2 text-xs rounded transition-all duration-200 ${isOn
           ? 'bg-[#1e2b4a] text-white border border-[#1e2b4a]'
           : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
           }`}
       >
-        {Icon ? <Icon size={14} className={currentPage === page ? 'text-white' : ''} /> : <span className={`w-1 h-1 rounded bg-current transition-transform ${currentPage === page ? 'scale-125' : ''}`}></span>}
+        {Icon ? <Icon size={14} className={isOn ? 'text-white' : ''} /> : <span className={`w-1 h-1 rounded bg-current transition-transform ${isOn ? 'scale-125' : ''}`}></span>}
         <span className="flex-1 text-left text-sm">{label}</span>
         {isViewOnly && <Lock size={14} className="opacity-60" title="View-only" />}
       </button>
@@ -294,46 +312,61 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   );
 
   // Sales, in the order the work happens: enquiry -> deal -> quotation -> customer & billing.
+  // A sales employee adds enquiries and handles follow-ups; deals, quotations and billing are for sales executives and managers.
+  const canQuote = !salesOnly || isManager || userRole.toLowerCase().includes('executive');
+
   const renderSalesPages = () => (
     <>
-      {/* ── Overview ─────────────────────────────────────────────────── */}
+      {/* ── Today ───────────────────────────────────────────────────── */}
+      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">Today</div>
       {salesOnly && <SubmenuItem label="Sales Home" page="dashboard" icon={Layout} />}
-      <SubmenuItem label="Sales Pipeline" page="pipeline" icon={Workflow} prefix="/sales" />
-      <SubmenuItem label="Follow-ups & Meetings" page="agenda" icon={Calendar} prefix="/sales" />
+      <SubmenuItem label="Follow-ups & Calls" page="agenda" icon={Calendar} prefix="/sales" />
+      {salesOnly && <SubmenuItem label="Meetings" page="meetings" icon={Video} to="/meetings" />}
+      {salesOnly && <SubmenuItem label="Calendar" page="calendar" icon={Calendar} prefix="/sales" />}
 
-      {/* ── 1 · Enquiries & Deals ───────────────────────────────────── */}
-      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">1 · Enquiries & Deals</div>
+      {/* ── 1 · Pipeline: enquiries to deals ────────────────────────── */}
+      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">1 · Pipeline</div>
+      <SubmenuItem label="Sales Pipeline" page="pipeline" icon={Workflow} prefix="/sales" />
       <SubmenuItem label="All Enquiries" page="pipeline-enquiries" icon={Users} prefix="/sales" query="?tab=leads" />
-      <SubmenuItem label="Active Deals" page="pipeline-deals" icon={Briefcase} prefix="/sales" query="?tab=deals" />
+      {canQuote && <SubmenuItem label="Active Deals" page="pipeline-deals" icon={Briefcase} prefix="/sales" query="?tab=deals" />}
       {isManager && <SubmenuItem label="Lead Distribution" page="distribution" icon={Users2} prefix="/sales" />}
 
-      {/* ── 2 · Quotations (standard + presentation decks in one list) ─ */}
-      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">2 · Quotations</div>
-      <SubmenuItem label="Quotations" page="quotes" icon={FileStack} prefix="/sales" />
-      {isManager && <SubmenuItem label="Approvals" page="approvals" icon={ShieldCheck} prefix="/sales" />}
+      {canQuote && (
+        <>
+        {/* ── 2 · Quotations (standard + presentation decks in one list) ─ */}
+        <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">2 · Quotations</div>
+        <SubmenuItem label="Quotations" page="quotes" icon={FileStack} prefix="/sales" />
+        {isManager && <SubmenuItem label="Approvals" page="approvals" icon={ShieldCheck} prefix="/sales" />}
+  
+        {/* ── 3 · Customers & Billing ─────────────────────────────────── */}
+        <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">3 · Customers & Billing</div>
+        <SubmenuItem label="Customers" page="customers" icon={UserCircle} prefix="/sales" />
+        <SubmenuItem label="Invoices" page="invoices" icon={CreditCard} prefix="/sales" />
+        <SubmenuItem label="Payments" page="payments" icon={Banknote} prefix="/sales" />
+  
+          </>
+      )}
 
-      {/* ── 3 · Customers & Billing ─────────────────────────────────── */}
-      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">3 · Customers & Billing</div>
-      <SubmenuItem label="Customers" page="customers" icon={UserCircle} prefix="/sales" />
-      <SubmenuItem label="Invoices" page="invoices" icon={CreditCard} prefix="/sales" />
-      <SubmenuItem label="Payments" page="payments" icon={Banknote} prefix="/sales" />
-
-      {/* ── 4 · Performance & Results ───────────────────────────────── */}
-      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">4 · Performance</div>
+      {/* ── 4 · Results ─────────────────────────────────────────────── */}
+      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">4 · Targets & Results</div>
       <SubmenuItem label="Targets" page="targets" icon={Target} prefix="/sales" />
-      {!salesOnly && <SubmenuItem label="Reports" page="reports" icon={BarChart3} prefix="/sales" />}
-      {isManager && <SubmenuItem label="Sales Settings" page="sales-settings" icon={Settings} prefix="/sales" />}
+      {isManager && <SubmenuItem label="Team Performance" page="performance" icon={Gauge} prefix="/sales" />}
+      {isManager && <SubmenuItem label="Commission" page="commission" icon={Banknote} prefix="/sales" />}
 
-      {/* ── Team ────────────────────────────────────────────────────── */}
-      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">Team</div>
-      <SubmenuItem label="Team Chat" page="chat" icon={MessageCircle} prefix="/sales" />
-      <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} prefix="/sales" />
+      {/* ── My work (sales-only staff; others have these under Common Workspace) ── */}
       {salesOnly && (
         <>
+        <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">My Work</div>
           <SubmenuItem label="My Daily Tasks" page="tasks" icon={ClipboardList} />
           <SubmenuItem label="Task Board" page="kanban" icon={Layers} />
         </>
       )}
+
+      {/* ── Team & setup ────────────────────────────────────────────── */}
+      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">Team & Setup</div>
+      {!seesAllSections && <SubmenuItem label="Team Chat" page="chat" icon={MessageCircle} prefix="/sales" />}
+      {salesOnly && <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} prefix="/sales" />}
+      {isManager && <SubmenuItem label="Sales Settings" page="sales-settings" icon={Settings} prefix="/sales" />}
     </>
   );
 
@@ -343,9 +376,8 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       {!isSalesUser && <SubmenuItem label="All Projects" page="projects" icon={Briefcase} prefix="/it" />}
       <SubmenuItem label="Repositories" page="repositories" icon={GitBranch} prefix="/it" />
       <SubmenuItem label="Activity Stream" page="activities" icon={Activity} prefix="/it" />
-      <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} prefix="/it" />
       <SubmenuItem label="Team Chat" page="it-chat" icon={MessageCircle} prefix="/it" />
-      {isManager && <SubmenuItem label="Team Management" page="it-teams" icon={Users2} prefix="/it" />}
+      {isManager && !seesAllSections && <SubmenuItem label="Team Management" page="it-teams" icon={Users2} prefix="/it" />}
 
       {userRole === 'DevOps Engineer' && (
         <>
@@ -383,7 +415,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
     return (
       <>
         <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Marketing Operations</div>
-        {!isSalesUser && !isSEOUser && <SubmenuItem label="All Projects" page="projects" icon={FolderOpen} prefix="/marketing" />}
+        {!seesAllSections && !isSalesUser && !isSEOUser && <SubmenuItem label="All Projects" page="projects" icon={FolderOpen} prefix="/marketing" />}
 
         {/* HIDDEN FOR THE MARKETING MANAGER ONLY (hideForMarketingManager).
             Every other role — Graphics Designer, Video Editor, Social Media Marketing,
@@ -429,8 +461,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
 
         {/* Everyone in Marketing gets Team Chat. It used to live inside the Wordpress block,
             so only Wordpress Developers, managers and Super Admin could reach it. */}
-        <SubmenuItem label="Team Chat" page="chat" icon={MessageCircle} prefix="/marketing" />
-        <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} prefix="/marketing" />
+        {!seesAllSections && <SubmenuItem label="Team Chat" page="chat" icon={MessageCircle} prefix="/marketing" />}
 
         {isManager && (
           <>
@@ -445,8 +476,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const renderSEOGMBPages = () => (
     <>
       <div className="p-2 text-xs  text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">SEO Management</div>
-      {!isSalesUser && <SubmenuItem label="All Projects" page="projects" icon={Briefcase} prefix="/seo-gmb" />}
-      <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} prefix="/seo-gmb" />
+      {!seesAllSections && !isSalesUser && <SubmenuItem label="All Projects" page="projects" icon={Briefcase} prefix="/seo-gmb" />}
 
       {/* Pages hidden from sidebar as requested:
           - Project Setup
@@ -460,14 +490,12 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const renderHRPages = () => (
     <>
       <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">HR Management</div>
-      {/* <SubmenuItem label="Employees" page="employees" icon={Users} prefix="/hr" /> */}
+      <SubmenuItem label="Employees" page="employees" icon={Users} prefix="/hr" />
       <SubmenuItem label="Attendance" page="attendance" icon={Calendar} prefix="/hr" />
-      <SubmenuItem label="Registration Requests" page="registration-requests" icon={UserCheck} prefix="/hr" />
-      {/* <SubmenuItem label="Leave Requests" page="leaves" icon={FileCheck} prefix="/hr" /> */}
+      {!seesAllSections && <SubmenuItem label="Registration Requests" page="registration-requests" icon={UserCheck} prefix="/hr" />}
 
-      <SubmenuItem label="Team Chat" page="chat" icon={MessageCircle} prefix="/hr" />
-      <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} prefix="/hr" />
-      <SubmenuItem label="Activities" page="activities" icon={Activity} prefix="/hr" />
+      {!seesAllSections && <SubmenuItem label="Team Chat" page="chat" icon={MessageCircle} prefix="/hr" />}
+      {!seesAllSections && <SubmenuItem label="Activities" page="activities" icon={Activity} prefix="/hr" />}
       {/* <SubmenuItem label="Recruitment" page="recruitment" icon={Briefcase} prefix="/hr" /> */}
       <SubmenuItem label="Performance" page="performance" icon={TrendingUp} prefix="/hr" />
       {/* <SubmenuItem label="Payroll" page="payroll" icon={Banknote} prefix="/hr" /> */}
