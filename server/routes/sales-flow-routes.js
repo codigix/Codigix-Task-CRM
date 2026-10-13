@@ -174,6 +174,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
     // Plans (retainer / project), monthly + milestone billing, advance payments (no invoice yet).
     await addCol('estimations', 'quote_type', 'VARCHAR(20) NULL');
+    await addCol('estimations', 'proposal_id', 'INT NULL');
     await addCol('estimations', 'plan', 'JSON NULL');
     await addCol('invoices', 'service_month', 'CHAR(7) NULL');
     await addCol('invoices', 'milestone_no', 'INT NULL');
@@ -295,8 +296,10 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
         lastContacts('lead_id', leads.map(l => l.id)), lastContacts('deal_id', deals.map(d => d.id))
       ]);
       const quotes = deals.length ? await q(`SELECT e.id, e.deal_id, e.estimation_number, e.quote_base, e.version, e.status, e.total FROM estimations e
-        JOIN (SELECT deal_id, MAX(id) mid FROM estimations WHERE deal_id IN (?) AND status <> 'Revised' GROUP BY deal_id) t ON t.mid = e.id`, [deals.map(d => d.id)]) : [];
+        JOIN (SELECT deal_id, MAX(id) mid FROM estimations WHERE deal_id IN (?) AND status <> 'Revised' AND proposal_id IS NULL GROUP BY deal_id) t ON t.mid = e.id`, [deals.map(d => d.id)]) : [];
       const quoteBy = new Map(quotes.map(x => [Number(x.deal_id), x]));
+      const decks = await deckRows();
+      const deckBy = new Map(); decks.forEach(dk => { if (dk.dealId && !deckBy.has(Number(dk.dealId))) deckBy.set(Number(dk.dealId), dk); });
       const stageList = await stages();
 
       const leadCards = leads.map(l => ({
@@ -312,7 +315,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
         owner: names.get(Number(d.assignee_id)) || '', ownerId: d.assignee_id, expectedClose: d.expected_close_date,
         onHold: Boolean(d.on_hold), holdUntil: d.hold_until, holdReason: d.hold_reason, lostReason: d.lost_reason, wonValue: d.won_value, closedAt: d.closed_at,
         leadId: d.lead_id, nextFollowup: nfD.get(d.id) || null, lastContact: lcD.get(d.id) || null,
-        quotation: quoteBy.get(d.id) ? { id: quoteBy.get(d.id).id, number: quoteBy.get(d.id).estimation_number, version: quoteBy.get(d.id).version, status: quoteBy.get(d.id).status, total: Number(quoteBy.get(d.id).total) || 0 } : null,
+        quotation: deckBy.get(d.id) ? { id: deckBy.get(d.id).id, deck: true, number: deckBy.get(d.id).number, version: 1, status: deckBy.get(d.id).status, total: deckBy.get(d.id).total } : quoteBy.get(d.id) ? { id: quoteBy.get(d.id).id, number: quoteBy.get(d.id).estimation_number, version: quoteBy.get(d.id).version, status: quoteBy.get(d.id).status, total: Number(quoteBy.get(d.id).total) || 0 } : null,
         createdAt: d.created_at, updatedAt: d.updated_at
       }));
 
@@ -323,8 +326,8 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       const fuRows = await q(`SELECT f.scheduled_date d, f.lead_id, f.deal_id, f.assigned_to FROM followups f WHERE f.status IN (?) AND (f.lead_id IS NOT NULL OR f.deal_id IS NOT NULL)`, [OPEN_FU]);
       const fu = mine ? fuRows.filter(r => Number(r.assigned_to) === uid) : fuRows;
       const today = ymd(now);
-      const qs = await q("SELECT status, COUNT(*) n FROM estimations WHERE quote_base IS NOT NULL GROUP BY status");
-      const qCount = (s) => Number(qs.find(x => x.status === s)?.n || 0);
+      const qs = await q("SELECT status, COUNT(*) n FROM estimations WHERE quote_base IS NOT NULL AND proposal_id IS NULL GROUP BY status");
+      const qCount = (s) => Number(qs.find(x => x.status === s)?.n || 0) + decks.filter(x => x.status === s).length;
       const won90 = dealCards.filter(d => isWon(d) && d.closedAt && new Date(d.closedAt) >= d90).length;
       const lost90 = dealCards.filter(d => isLost(d) && d.closedAt && new Date(d.closedAt) >= d90).length;
       res.json({
@@ -501,8 +504,10 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
   });
 
   // ── Deals ─────────────────────────────────────────────────────────────
+  /** Presentation-style quotations (proposal decks); the same documents as quotations, in another format. */
+  const deckRows = async () => (app.locals.salesProposals ? app.locals.salesProposals.rows() : []);
   const loadQuotations = async (dealId) => {
-    const rows = await q('SELECT * FROM estimations WHERE deal_id = ? ORDER BY COALESCE(quote_base, estimation_number), version DESC, id DESC', [dealId]);
+    const rows = await q('SELECT * FROM estimations WHERE deal_id = ? AND proposal_id IS NULL ORDER BY COALESCE(quote_base, estimation_number), version DESC, id DESC', [dealId]);
     return rows.map(shapeQuote);
   };
   const shapeQuote = (e) => ({
@@ -513,7 +518,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     maxDiscountPct: Number(e.max_discount_pct) || 0, revisionNote: e.revision_note, approvalStatus: e.approval_status, approvalNote: e.approval_note,
     approvalRequestedBy: e.approval_requested_by, approvedBy: e.approved_by, approvedAt: e.approved_at, sentAt: e.sent_at, sentTo: e.sent_to,
     respondedAt: e.responded_at, declineReason: e.decline_reason, createdBy: e.created_by_name, dealId: e.deal_id, leadId: e.lead_id,
-    terms: e.terms, notes: e.notes, parentId: e.parent_id, quoteType: e.quote_type || 'general', plan: parseJson(e.plan, null),
+    terms: e.terms, notes: e.notes, parentId: e.parent_id, proposalId: e.proposal_id || null, quoteType: e.quote_type || 'general', plan: parseJson(e.plan, null),
     client: { name: e.client_name || e.bill_to || '', contact: e.client_contact || '', email: e.client_email || '', phone: e.client_phone || '', address: e.client_address || '', gstin: e.client_gstin || '', state: e.client_state || '' },
     createdAt: e.created_at, updatedAt: e.updated_at
   });
@@ -536,7 +541,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
           contact: contact ? { ...contact, name: `${contact.first_name || ''} ${contact.last_name || ''}`.trim() } : null
         },
         lead: lead ? { id: lead.id, name: lead.lead_name, email: lead.email, phone: lead.phone, company: lead.company, source: lead.lead_source } : null,
-        stages: await stages(), quotations: await loadQuotations(deal.id), timeline: t.items, followups: t.followups
+        stages: await stages(), quotations: await loadQuotations(deal.id), decks: (await deckRows()).filter(x => Number(x.dealId) === Number(deal.id)), timeline: t.items, followups: t.followups
       });
     } catch (e) { fail(res, e, 'Could not load the deal'); }
   });
@@ -759,7 +764,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
   const nextBase = async (prefix) => {
     const year = new Date().getFullYear();
     const like = `${prefix}-${year}-%`;
-    const rows = await q('SELECT quote_base FROM estimations WHERE quote_base LIKE ?', [like]);
+    const rows = [...await q('SELECT quote_base FROM estimations WHERE quote_base LIKE ?', [like]), ...(await q('SELECT proposal_number AS quote_base FROM sales_proposals WHERE proposal_number LIKE ?', [like]).catch(() => []))];
     const max = rows.reduce((m, r) => Math.max(m, parseInt(String(r.quote_base).split('-').pop(), 10) || 0), 0);
     return `${prefix}-${year}-${String(max + 1).padStart(4, '0')}`;
   };
@@ -830,7 +835,13 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       const rows = await q(`SELECT e.*, d.deal_name, d.assignee_id, c.company_name,
           (SELECT COUNT(*) FROM estimations v WHERE v.quote_base = e.quote_base) AS version_count
         FROM estimations e LEFT JOIN deals d ON d.id = e.deal_id LEFT JOIN companies c ON c.id = d.company_id
-        WHERE e.quote_base IS NOT NULL AND e.status <> 'Revised' ORDER BY e.updated_at DESC`);
+        WHERE e.quote_base IS NOT NULL AND e.status <> 'Revised' AND e.proposal_id IS NULL ORDER BY e.updated_at DESC`);
+      const allDecks = await deckRows();
+      let decks = allDecks;
+      if (req.query.scope === 'mine') decks = decks.filter(x => Number(x.ownerId) === Number(req.user.id) || x.createdBy === req.user.name);
+      if (req.query.status) decks = decks.filter(x => x.status === req.query.status);
+      const dterm = String(req.query.q || '').trim().toLowerCase();
+      if (dterm) decks = decks.filter(x => [x.number, x.title, x.client, x.dealName].some(v => String(v || '').toLowerCase().includes(dterm)));
       let list = rows;
       if (req.query.scope === 'mine') list = list.filter(r => Number(r.assignee_id) === Number(req.user.id) || r.created_by_name === req.user.name);
       if (req.query.status) list = list.filter(r => r.status === req.query.status);
@@ -839,7 +850,8 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       const today = ymd(new Date());
       res.json({
         quotations: list.map(r => ({ ...shapeQuote(r), dealName: r.deal_name, company: r.company_name, versionCount: Number(r.version_count) || 1, expired: r.status === 'Sent' && r.expiry_date && ymd(r.expiry_date) < today })),
-        counts: ['Draft', 'Pending Approval', 'Approved', 'Sent', 'Accepted', 'Declined'].reduce((o, s) => ({ ...o, [s]: rows.filter(r => r.status === s).length }), {})
+        decks,
+        counts: ['Draft', 'Pending Approval', 'Approved', 'Sent', 'Accepted', 'Declined'].reduce((o, s) => ({ ...o, [s]: rows.filter(r => r.status === s).length + allDecks.filter(x => x.status === s).length }), {})
       });
     } catch (e) { fail(res, e, 'Could not load quotations'); }
   });
@@ -1196,5 +1208,5 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
   app.post('/api/sales-flow/quotations/:id/decline', respond(false));
 
   // Shared with routes/sales-desk-routes.js (customers, billing, targets, reports).
-  app.locals.salesFlow = { monthName, shiftMonth, loadQuote, cleanItems, planProblem, cleanPlan, ready, getSettings, event, notify, usersById, userName, salesManagers, isMgr, stages, createFollowup, nextInvoiceNumber, needUser, fail, OPEN_FU, ymd, isDay, fill, parseJson };
+  app.locals.salesFlow = { saveQuote, quoteInput, shapeQuote, deckRows, monthName, shiftMonth, loadQuote, cleanItems, planProblem, cleanPlan, ready, getSettings, event, notify, usersById, userName, salesManagers, isMgr, stages, createFollowup, nextInvoiceNumber, needUser, fail, OPEN_FU, ymd, isDay, fill, parseJson };
 };

@@ -162,7 +162,7 @@ const SHARED_MODULES = [
   'calendar', 'tasks', 'followups', 'analytics', 'reports', 
   'dashboard', 'list', 'details', 'kanban', 'quotations', 
   'customers', 'targets', 'performance', 'commission', 'leads-distribution',
-  'contacts', 'companies', 'campaign', 'proposals', 'contracts', 
+  'contacts', 'companies', 'campaign', 'contracts',
   'estimations', 'invoices', 'payments', 'activities', 'chat',
   'video-call', 'audio-call', 'call-history', 'email', 'todo', 
   'notes', 'file-manager', 'social-feed', 'seo-gmb', 'registration-requests'
@@ -471,7 +471,7 @@ function AppContent() {
         <Route path="/sales/:designation/:username/invoices" element={<SalesInvoiceListPage />} />
         <Route path="/sales/:designation/:username/invoice/:id" element={<SalesInvoicePage />} />
         <Route path="/sales/:designation/:username/payments" element={<SalesPaymentsPage />} />
-        <Route path="/sales/:designation/:username/proposals" element={<SalesProposalListPage />} />
+        <Route path="/sales/:designation/:username/proposals" element={<Navigate to="quotes" replace />} />
         <Route path="/sales/:designation/:username/proposal/:id" element={<ProposalBuilderPage />} />
         <Route path="/sales/:designation/:username/targets" element={<SalesDeskTargetsPage />} />
         <Route path="/sales/:designation/:username/performance" element={<SalesTeamPage />} />

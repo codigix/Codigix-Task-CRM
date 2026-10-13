@@ -121,18 +121,25 @@ module.exports = function setupSalesProposalRoutes(app, pool) {
     const priced = mk ? [] : (content.options || []).map(priceOption);
     const totals = mk ? mk.options.map(o => o.total).filter(x => x > 0) : priced.map(o => o.totals.total).filter(x => x > 0);
     const client = await clientOf(p);
+    let total = 0;
+    if (mk) { const ch = content.chosen || []; total = ch.length ? round2(mk.options.filter(o => ch.includes(o.key)).reduce((t, o) => t + o.total, 0)) : mk.packageTotal; }
+    else { const co = priced.find(o => o.key === p.chosen_option); total = co ? co.totals.total : (totals.length ? Math.max(...totals) : 0); }
     return {
+      total, ownerId: p.assignee_id || p.created_by || null, createdById: p.created_by || null, dealName: p.deal_name || '',
       id: p.id, number: p.proposal_number, kind: p.kind, title: p.title, status: p.status, dealId: p.deal_id, companyId: p.company_id, leadId: p.lead_id,
       client: client.name, clientEmail: client.email, chosenOption: p.chosen_option, quotationId: p.quotation_id, sentAt: p.sent_at, sentTo: p.sent_to, respondedAt: p.responded_at, declineReason: p.decline_reason,
       createdBy: p.created_by_name, createdAt: p.created_at, updatedAt: p.updated_at, content,
       options: mk ? mk.options : priced.map(o => ({ key: o.key, name: o.name, ...o.totals })), minTotal: totals.length ? Math.min(...totals) : 0, maxTotal: mk ? mk.packageTotal : (totals.length ? Math.max(...totals) : 0)
     };
   };
+  // Decks and plain quotations share one number series (QT-2026-0007 ...).
   const nextNumber = async () => {
     const year = new Date().getFullYear();
-    const rows = await q('SELECT proposal_number FROM sales_proposals WHERE proposal_number LIKE ?', [`PR-${year}-%`]);
-    const n = rows.reduce((m, r) => Math.max(m, parseInt(String(r.proposal_number).split('-').pop(), 10) || 0), 0) + 1;
-    return `PR-${year}-${String(n).padStart(4, '0')}`;
+    const prefix = (await getSettings()).quotation?.prefix || 'QT';
+    const like = `${prefix}-${year}-%`;
+    const rows = [...await q('SELECT proposal_number AS n FROM sales_proposals WHERE proposal_number LIKE ?', [like]), ...await q('SELECT quote_base AS n FROM estimations WHERE quote_base LIKE ?', [like])];
+    const n = rows.reduce((m, r) => Math.max(m, parseInt(String(r.n).split('-').pop(), 10) || 0), 0) + 1;
+    return `${prefix}-${year}-${String(n).padStart(4, '0')}`;
   };
   const load = async (id) => { const [p] = await q('SELECT * FROM sales_proposals WHERE id = ?', [id]); return p || null; };
 
@@ -165,10 +172,19 @@ module.exports = function setupSalesProposalRoutes(app, pool) {
     };
   };
 
+  // For the quotation register, deal page, home and reports: every deck without its content.
+  app.locals.salesProposals = {
+    rows: async () => {
+      await schema;
+      const rows = await q('SELECT p.*, d.assignee_id, d.deal_name FROM sales_proposals p LEFT JOIN deals d ON d.id = p.deal_id ORDER BY p.updated_at DESC');
+      return Promise.all(rows.map(async r => { const { content, ...rest } = await shape(r); return rest; }));
+    }
+  };
+
   // ── list ──────────────────────────────────────────────────────────────
   route('get', '', 'Could not load proposals', async (req, res) => {
     const uid = Number(req.user.id);
-    let rows = await q(`SELECT p.*, d.assignee_id FROM sales_proposals p LEFT JOIN deals d ON d.id = p.deal_id ORDER BY p.updated_at DESC`);
+    let rows = await q(`SELECT p.*, d.assignee_id, d.deal_name FROM sales_proposals p LEFT JOIN deals d ON d.id = p.deal_id ORDER BY p.updated_at DESC`);
     if (req.query.scope === 'mine') rows = rows.filter(r => Number(r.created_by) === uid || Number(r.assignee_id) === uid);
     const shaped = await Promise.all(rows.map(shape));
     const counts = ['Draft', 'Sent', 'Accepted', 'Declined'].reduce((o, s) => ({ ...o, [s]: shaped.filter(x => x.status === s).length }), {});
@@ -292,26 +308,76 @@ module.exports = function setupSalesProposalRoutes(app, pool) {
     await event(req, { leadId: p.lead_id, dealId: p.deal_id, companyId: p.company_id, kind: 'communication', title: `Email to client · Proposal ${p.proposal_number} sent`, body: `To: ${to.join(', ')}\nSubject: ${subject}`, meta: { channel: 'Email', direction: 'out' } });
     res.json({ ok: true });
   });
+  // One document: accepting the quotation (deck) sets up what billing needs. That is a hidden, already accepted
+  // GST quotation (monthly months or payment milestones) behind this one; people only ever see this document.
+  const billingQuotation = async (req, p, content, opts) => {
+    const settings = await getSettings();
+    const tax = Number(content.gstPct ?? 18) || 18;
+    let items = []; let plan; let quoteType;
+    const nm = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+    const nextMonth = `${nm.getFullYear()}-${String(nm.getMonth() + 1).padStart(2, '0')}`;
+    if (p.kind === 'marketing') {
+      items = (content.chosen || []).map(key => {
+        const m = String(key).match(/^b(\d+)v(\d+)$/); const b = m && content.blocks?.[Number(m[1])]; const v = b?.variants?.[Number(m[2])];
+        if (!v) return null;
+        return { name: `${b.title}${v.label ? ` (${v.label})` : ''}`, description: (v.rows || []).map(r => `${r.description}: ${r.activities}${r.platform ? ` (${r.platform})` : ''}`).join('\n'), hsn: '998361', unit: 'month', qty: 1, rate: variantBase(v), discountPct: 0, taxPct: tax };
+      }).filter(Boolean);
+      const paid = (content.blocks || []).find(b => b.type === 'paid');
+      const sections = (content.blocks || []).filter(b => b.type === 'service').flatMap(b => (b.groups || []).map(g => ({ title: `${b.title}: ${g.title}`, items: [g.text, ...(g.items || [])].filter(Boolean).slice(0, 60) }))).filter(g => g.items.length).slice(0, 18);
+      quoteType = 'retainer';
+      plan = { months: Math.max(1, parseInt(opts.months, 10) || 6), startMonth: /^\d{4}-\d{2}$/.test(opts.startMonth || '') ? opts.startMonth : nextMonth, adSpendNote: paid ? [paid.fee, paid.note].filter(Boolean).join('. ') : '', sections };
+    } else {
+      const opt = (content.options || []).map(priceOption).find(o => o.key === opts.option);
+      if (!opt) throw new Error('Choose the option the client picked.');
+      const hsnOf = (name) => settings.services?.find(x => String(x.name).trim().toLowerCase() === String(name).trim().toLowerCase())?.hsn || '998314';
+      items = opt.priceMode === 'lines' && opt.lines.length
+        ? opt.lines.filter(l => l.qty > 0).map(l => ({ name: l.name, unit: l.unit, hsn: hsnOf(l.name), qty: l.qty, rate: l.rate, discountPct: l.discountPct || 0, taxPct: opt.gstPct }))
+        : [{ name: opt.name, description: p.title, hsn: '998314', unit: '', qty: 1, rate: opt.totals.base, discountPct: 0, taxPct: opt.gstPct }];
+      const sections = (opt.groups || []).filter(g => g.title && (g.items || []).length).slice(0, 18).map(g => ({ title: `Scope: ${g.title}`, items: g.items.slice(0, 60) }));
+      if (opt.billing === 'monthly') { quoteType = 'retainer'; plan = { months: opt.months || Math.max(1, parseInt(opts.months, 10) || 6), startMonth: opt.startMonth || (/^\d{4}-\d{2}$/.test(opts.startMonth || '') ? opts.startMonth : nextMonth), adSpendNote: '', sections }; }
+      else { quoteType = 'project'; plan = { timeline: opt.deadline || '', milestones: (content.payment?.milestones || []).filter(m => m.name && m.pct > 0), sections }; }
+    }
+    const cleaned = flow.cleanItems(items, settings.quotation.defaultTaxPct);
+    if (!cleaned.length) throw new Error('There is nothing to bill: add a price first.');
+    const [co] = p.company_id ? await q('SELECT * FROM companies WHERE id = ?', [p.company_id]) : [];
+    const fallback = { name: co?.company_name || '', contact: '', email: co?.email || '', phone: co?.phone || '', address: [co?.address, co?.city].filter(Boolean).join(', '), state: co?.state || '', gstin: co?.gstin || '' };
+    const data = flow.quoteInput({ subject: p.title, quoteType, plan }, settings, fallback);
+    const problem = flow.planProblem(data);
+    if (problem) throw new Error(problem);
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      const [ins] = await conn.query(`INSERT INTO estimations (estimation_number, quote_base, version, client_id, lead_id, deal_id, status, currency, estimate_by, created_by_name, amount, sent_at, responded_at, proposal_id, created_at, updated_at)
+        VALUES (?, ?, 1, ?, ?, ?, 'Accepted', 'INR', ?, ?, 0, NOW(), NOW(), ?, NOW(), NOW())`, [p.proposal_number, p.proposal_number, p.company_id || null, p.lead_id || null, p.deal_id || null, p.created_by || req.user.id, p.created_by_name || req.user.name, p.id]);
+      await flow.saveQuote(conn, ins.insertId, data, cleaned);
+      await conn.commit();
+      return ins.insertId;
+    } catch (e) { await conn.rollback().catch(() => {}); throw e; } finally { conn.release(); }
+  };
+
   route('post', '/:id/respond', 'Could not save the answer', async (req, res) => {
     const p = await load(req.params.id);
-    if (!p) return res.status(404).json({ error: 'Proposal not found' });
-    if (!['Sent', 'Draft'].includes(p.status)) return res.status(400).json({ error: `This proposal is already ${p.status.toLowerCase()}.` });
+    if (!p) return res.status(404).json({ error: 'Quotation not found' });
+    if (!['Sent', 'Draft'].includes(p.status)) return res.status(400).json({ error: `This quotation is already ${p.status.toLowerCase()}.` });
     const accepted = Boolean(req.body?.accepted);
     const content = parseJson(p.content, {});
-    let option = String(req.body?.option || '');
-    if (p.kind === 'marketing') {
-      const valid = marketingOptions(content).options.map(o => o.key);
-      const chosen = (Array.isArray(req.body?.variants) ? req.body.variants : []).filter(k => valid.includes(k));
-      if (accepted && !chosen.length) return res.status(400).json({ error: 'Choose the services the client agreed to.' });
-      content.chosen = chosen; option = 'Selected';
-      await pool.query('UPDATE sales_proposals SET content = ? WHERE id = ?', [JSON.stringify(content), p.id]);
-    } else if (accepted && !(content.options || []).some(o => o.key === option)) return res.status(400).json({ error: 'Choose the option the client picked.' });
     const reason = str(req.body?.reason, 500);
     if (!accepted && !reason) return res.status(400).json({ error: 'Give the reason the client declined.' });
-    await pool.query('UPDATE sales_proposals SET status = ?, chosen_option = ?, responded_at = NOW(), decline_reason = ?, updated_at = NOW() WHERE id = ?', [accepted ? 'Accepted' : 'Declined', accepted ? option : null, accepted ? null : reason, p.id]);
+    let option = String(req.body?.option || ''); let quotationId = null;
+    if (accepted) {
+      if (p.kind === 'marketing') {
+        const valid = marketingOptions(content).options.map(o => o.key);
+        const chosen = (Array.isArray(req.body?.variants) ? req.body.variants : []).filter(k => valid.includes(k));
+        if (!chosen.length) return res.status(400).json({ error: 'Choose the services the client agreed to.' });
+        content.chosen = chosen; option = 'Selected';
+      } else if (!(content.options || []).some(o => o.key === option)) return res.status(400).json({ error: 'Choose the option the client picked.' });
+      try { quotationId = await billingQuotation(req, p, content, { option, months: req.body?.months, startMonth: req.body?.startMonth }); } catch (e) { return res.status(400).json({ error: e.message }); }
+      if (p.kind === 'marketing') await pool.query('UPDATE sales_proposals SET content = ? WHERE id = ?', [JSON.stringify(content), p.id]);
+    }
+    await pool.query('UPDATE sales_proposals SET status = ?, chosen_option = ?, quotation_id = ?, responded_at = NOW(), decline_reason = ?, updated_at = NOW() WHERE id = ?', [accepted ? 'Accepted' : 'Declined', accepted ? option : null, quotationId, accepted ? null : reason, p.id]);
     const name = p.kind === 'marketing' ? `${(content.chosen || []).length} service${(content.chosen || []).length === 1 ? '' : 's'}` : ((content.options || []).find(o => o.key === option)?.name || option);
-    await event(req, { leadId: p.lead_id, dealId: p.deal_id, companyId: p.company_id, kind: accepted ? 'accepted' : 'declined', title: `Client ${accepted ? `accepted ${name}` : 'declined'} · Proposal ${p.proposal_number}`, body: reason || null });
-    res.json({ ok: true });
+    await event(req, { leadId: p.lead_id, dealId: p.deal_id, companyId: p.company_id, kind: accepted ? 'accepted' : 'declined', title: `Client ${accepted ? `accepted ${name}` : 'declined'} · Quotation ${p.proposal_number}`, body: reason || null });
+    res.json({ ok: true, quotationId });
   });
   route('post', '/:id/link', 'Could not link the quotation', async (req, res) => {
     const p = await load(req.params.id);

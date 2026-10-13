@@ -2,12 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, MessageSquarePlus, CalendarPlus, PauseCircle, PlayCircle, XCircle, CheckCircle2, ArrowRightCircle, Trophy, Phone, Mail,
-  FilePlus2, FileText, Download, Pencil, ChevronRight, AlertTriangle, Building2, User
+  FilePlus2, FileText, Download, Pencil, ChevronRight, AlertTriangle, Building2, User, Presentation
 } from 'lucide-react';
 import {
   api, pdfUrl, useSalesBase, useSalesMeta, money, fmtDate, Badge, LEAD_STATUS_STYLE, QUOTE_STATUS_STYLE, stageTone, Modal, inputCls, labelCls,
   btn, ErrorNote, ReasonModal, LOST_REASONS, HOLD_REASONS, LogCommunicationModal, ScheduleModal, FollowupList, Timeline, addDays
 } from './salesShared';
+import { proposalPdfUrl } from './deskShared';
+import NewQuotationModal from './NewQuotationModal';
 import { WonModal } from './SalesPipelinePage';
 
 /**
@@ -125,6 +127,7 @@ export default function SalesRecordPage({ kind }) {
   // Group quotation versions by number.
   const quoteGroups = {};
   (data.quotations || []).forEach(q => { (quoteGroups[q.base] = quoteGroups[q.base] || []).push(q); });
+  const decks = data.decks || [];
 
   return (
     <div className="p-5 bg-[#F8FAFC] min-h-screen font-sans text-gray-900">
@@ -157,8 +160,7 @@ export default function SalesRecordPage({ kind }) {
           <div className="flex flex-wrap gap-1.5">
             {!closed && <button onClick={() => setModal({ kind: 'log' })} className={btn.primary}><MessageSquarePlus size={13} /> Log communication</button>}
             {!closed && <button onClick={() => setModal({ kind: 'schedule' })} className={btn.ghost}><CalendarPlus size={13} /> Schedule</button>}
-            {!isLead && !closed && <button onClick={() => navigate(`${base}/proposals?new=1&deal=${rec.id}`)} className={btn.ghost}><FilePlus2 size={13} /> New proposal</button>}
-            {!isLead && !closed && <button onClick={newQuote} className={btn.blue}><FilePlus2 size={13} /> New quotation</button>}
+            {!isLead && !closed && <button onClick={() => setModal({ kind: 'newquote' })} className={btn.blue}><FilePlus2 size={13} /> New quotation</button>}
             {isLead && !closed && <button onClick={() => setModal({ kind: 'convert' })} className={btn.blue}><ArrowRightCircle size={13} /> Convert to deal</button>}
             {!closed && (onHold
               ? <button onClick={async () => { await api(`/${isLead ? 'leads' : 'deals'}/${id}/resume`, { method: 'POST' }); load(); }} className={btn.ghost}><PlayCircle size={13} /> Resume</button>
@@ -206,9 +208,9 @@ export default function SalesRecordPage({ kind }) {
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[13px] font-semibold text-gray-900 flex items-center gap-1.5"><FileText size={14} /> Quotations</span>
-                {!closed && <button onClick={newQuote} className={btn.ghost}><FilePlus2 size={13} /> New quotation</button>}
+                {!closed && <button onClick={() => setModal({ kind: 'newquote' })} className={btn.ghost}><FilePlus2 size={13} /> New quotation</button>}
               </div>
-              {Object.keys(quoteGroups).length === 0 ? <div className="text-xs text-gray-500">No quotation yet. Create one when the requirement is clear.</div> : (
+              {Object.keys(quoteGroups).length === 0 && decks.length === 0 ? <div className="text-xs text-gray-500">No quotation yet. Create one when the requirement is clear.</div> : (
                 <div className="space-y-2">
                   {Object.entries(quoteGroups).map(([num, versions]) => {
                     const latest = versions[0];
@@ -232,6 +234,19 @@ export default function SalesRecordPage({ kind }) {
                   })}
                 </div>
               )}
+              {decks.map(dk => (
+                <div key={`dk${dk.id}`} className="border border-gray-200 rounded-lg">
+                  <button onClick={() => navigate(`${base}/proposal/${dk.id}`)} className="w-full text-left p-3 flex flex-wrap items-center gap-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <span className="font-mono text-[12px] text-gray-700">{dk.number}</span>
+                    <span className="inline-flex items-center gap-0.5 text-[10px] text-violet-700 bg-violet-50 ring-1 ring-violet-200 rounded px-1"><Presentation size={9} /> {dk.kind === 'marketing' ? 'DM' : 'IT'}</span>
+                    <Badge text={dk.status} tone={QUOTE_STATUS_STYLE[dk.status]} />
+                    <span className="text-[12px] text-gray-600 truncate flex-1 min-w-[120px]">{dk.title || '—'}</span>
+                    {dk.total > 0 && <span className="text-[13px] font-semibold tabular-nums">{money(dk.total)}</span>}
+                    <a href={proposalPdfUrl(dk.id)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="p-1 text-gray-500 hover:text-gray-900" title="Open deck PDF"><Download size={14} /></a>
+                  </button>
+                </div>
+              ))}
+)}
             </div>
           )}
 
@@ -280,8 +295,9 @@ export default function SalesRecordPage({ kind }) {
         <ReasonModal title="Deal lost" presets={LOST_REASONS} confirmText="Mark lost" tone="danger" reasonLabel="Why was it lost?"
           onClose={() => setModal(null)} onConfirm={async ({ reason }) => { await api(`/deals/${id}/stage`, { method: 'POST', body: { stage: modal.target, reason } }); setModal(null); load(); }} />
       )}
+      {modal?.kind === 'newquote' && <NewQuotationModal preset={{ deal: rec.id }} onClose={() => setModal(null)} />}
       {modal?.kind === 'won' && (
-        <WonModal card={{ id: rec.id, name: rec.deal_name, value: Number(rec.deal_value) || 0, quotation: (data.quotations || []).find(q => q.status === 'Accepted') || null }} target={modal.target}
+        <WonModal card={{ id: rec.id, name: rec.deal_name, value: Number(rec.deal_value) || 0, quotation: (data.quotations || []).find(q => q.status === 'Accepted') || (data.decks || []).find(d => d.status === 'Accepted') || null }} target={modal.target}
           onClose={() => setModal(null)} onDone={() => { setModal(null); load(); }} />
       )}
     </div>

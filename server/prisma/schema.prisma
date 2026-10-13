@@ -773,6 +773,7 @@ model estimations {
   client_state          String?                 @db.VarChar(60)
   quote_type            String?                 @db.VarChar(20)
   plan                  Json?
+  proposal_id           Int?
   estimation_line_items estimation_line_items[]
   deals                 deals?                  @relation(fields: [deal_id], references: [id], onUpdate: NoAction, map: "FK_estimation_deal")
   companies             companies?              @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "estimations_ibfk_1")

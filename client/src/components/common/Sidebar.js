@@ -101,7 +101,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
         'calendar', 'tasks', 'followups', 'analytics', 'reports', 'attendance',
         'dashboard', 'list', 'details', 'kanban', 'quotations',
         'customers', 'targets', 'performance', 'commission', 'distribution',
-        'contacts', 'companies', 'campaign', 'proposals', 'contracts',
+        'contacts', 'companies', 'campaign', 'contracts',
         'estimations', 'invoices', 'payments', 'activities', 'chat',
         'video-call', 'audio-call', 'call-history', 'email', 'todo',
         'notes', 'file-manager', 'social-feed', 'seo-gmb', 'ppc-ads',
@@ -295,35 +295,35 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   // Sales, in the order the work happens: enquiry -> deal -> quotation -> customer & billing.
   const renderSalesPages = () => (
     <>
-      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">Sales Overview</div>
+      {/* ── Overview ─────────────────────────────────────────────────── */}
       {salesOnly && <SubmenuItem label="Sales Home" page="dashboard" icon={Layout} />}
       <SubmenuItem label="Sales Pipeline" page="pipeline" icon={Workflow} prefix="/sales" />
       <SubmenuItem label="Follow-ups & Meetings" page="agenda" icon={Calendar} prefix="/sales" />
 
+      {/* ── 1 · Enquiries & Deals ───────────────────────────────────── */}
       <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">1 · Enquiries & Deals</div>
-      <SubmenuItem label="Enquiries" page="pipeline-enquiries" icon={Users} prefix="/sales" query="?tab=leads" />
-      <SubmenuItem label="Deals" page="pipeline-deals" icon={Briefcase} prefix="/sales" query="?tab=deals" />
+      <SubmenuItem label="All Enquiries" page="pipeline-enquiries" icon={Users} prefix="/sales" query="?tab=leads" />
+      <SubmenuItem label="Active Deals" page="pipeline-deals" icon={Briefcase} prefix="/sales" query="?tab=deals" />
       {isManager && <SubmenuItem label="Lead Distribution" page="distribution" icon={Users2} prefix="/sales" />}
 
+      {/* ── 2 · Quotations (standard + presentation decks in one list) ─ */}
       <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">2 · Quotations</div>
       <SubmenuItem label="Quotations" page="quotes" icon={FileStack} prefix="/sales" />
-      <SubmenuItem label="Proposals" page="proposals" icon={FileText} prefix="/sales" />
       {isManager && <SubmenuItem label="Approvals" page="approvals" icon={ShieldCheck} prefix="/sales" />}
 
+      {/* ── 3 · Customers & Billing ─────────────────────────────────── */}
       <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">3 · Customers & Billing</div>
       <SubmenuItem label="Customers" page="customers" icon={UserCircle} prefix="/sales" />
-      <SubmenuItem label="Contacts" page="contacts" icon={Users2} prefix="/sales" />
-      <SubmenuItem label="Contracts" page="contracts" icon={ClipboardList} prefix="/sales" />
       <SubmenuItem label="Invoices" page="invoices" icon={CreditCard} prefix="/sales" />
       <SubmenuItem label="Payments" page="payments" icon={Banknote} prefix="/sales" />
 
-      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">Results</div>
+      {/* ── 4 · Performance & Results ───────────────────────────────── */}
+      <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">4 · Performance</div>
       <SubmenuItem label="Targets" page="targets" icon={Target} prefix="/sales" />
-      <SubmenuItem label="Performance" page="performance" icon={TrendingUp} prefix="/sales" />
-      <SubmenuItem label="Commission" page="commission" icon={Percent} prefix="/sales" />
-      <SubmenuItem label="Reports" page="reports" icon={BarChart3} prefix="/sales" />
+      {!salesOnly && <SubmenuItem label="Reports" page="reports" icon={BarChart3} prefix="/sales" />}
       {isManager && <SubmenuItem label="Sales Settings" page="sales-settings" icon={Settings} prefix="/sales" />}
 
+      {/* ── Team ────────────────────────────────────────────────────── */}
       <div className="p-2 text-xs text-[#1F2020]  tracking-wider bg-gray-50/50 mt-2">Team</div>
       <SubmenuItem label="Team Chat" page="chat" icon={MessageCircle} prefix="/sales" />
       <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} prefix="/sales" />

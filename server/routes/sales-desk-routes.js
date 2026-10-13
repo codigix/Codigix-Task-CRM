@@ -19,6 +19,9 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
   const {
     ready, getSettings, event, notify, usersById, userName, salesManagers, isMgr, stages, nextInvoiceNumber, needUser, fail, OPEN_FU, ymd, isDay, fill, loadQuote, monthName, shiftMonth
   } = app.locals.salesFlow;
+  // Presentation quotations (decks) count as quotations everywhere on the desk.
+  const decksOf = async () => (app.locals.salesFlow.deckRows ? app.locals.salesFlow.deckRows() : []);
+  const qLink = (x) => (x.deck ? { proposal: x.id } : qLink(x));
 
   // ── Helpers ───────────────────────────────────────────────────────────
   const today = () => ymd(new Date());
@@ -122,7 +125,8 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
       FROM followups f LEFT JOIN leads l ON l.id = f.lead_id LEFT JOIN deals d ON d.id = f.deal_id LEFT JOIN companies c ON c.id = d.company_id
       WHERE f.status IN (?) AND (f.lead_id IS NOT NULL OR f.deal_id IS NOT NULL) ORDER BY f.scheduled_date, f.scheduled_time`, [OPEN_FU]);
     let quotes = await q(`SELECT e.id, e.estimation_number, e.status, e.total, e.sent_at, e.expiry_date, e.updated_at, e.estimate_by, e.client_name, e.max_discount_pct, e.approval_requested_by,
-        d.assignee_id, d.deal_name FROM estimations e LEFT JOIN deals d ON d.id = e.deal_id WHERE e.quote_base IS NOT NULL AND e.status IN ('Draft', 'Pending Approval', 'Approved', 'Sent')`);
+        d.assignee_id, d.deal_name FROM estimations e LEFT JOIN deals d ON d.id = e.deal_id WHERE e.quote_base IS NOT NULL AND e.proposal_id IS NULL AND e.status IN ('Draft', 'Pending Approval', 'Approved', 'Sent')`);
+    quotes = quotes.concat((await decksOf()).filter(x => ['Draft', 'Sent'].includes(x.status)).map(x => ({ id: x.id, deck: true, estimation_number: x.number, status: x.status, total: x.total, sent_at: x.sentAt, expiry_date: null, updated_at: x.updatedAt, estimate_by: x.ownerId, client_name: x.client, max_discount_pct: 0, approval_requested_by: null, assignee_id: x.ownerId, deal_name: x.dealName })));
     let invs = await invoiceRows("i.status <> 'Draft'");
     let pays = await q('SELECT p.amount, p.paid_on, i.created_by, d.assignee_id FROM sales_payments p LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN deals d ON d.id = i.deal_id WHERE p.paid_on >= ?', [ymd(new Date(now.getFullYear(), now.getMonth() - 5, 1))]);
     let comms = await q("SELECT by_id FROM sales_events WHERE kind = 'communication' AND happened_at >= ?", [mr.from]);
@@ -156,11 +160,11 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     // What needs doing, most urgent first.
     const attention = [];
     const add = (tone, text, link, sub) => attention.push({ tone, text, link, sub });
-    if (isMgr(req)) quotes.filter(x => x.status === 'Pending Approval').forEach(x => add('amber', `Approve ${Number(x.max_discount_pct)}% discount on ${x.estimation_number}`, { quotation: x.id }, `${x.client_name || x.deal_name || ''} · asked by ${x.approval_requested_by || '—'}`));
+    if (isMgr(req)) quotes.filter(x => x.status === 'Pending Approval').forEach(x => add('amber', `Approve ${Number(x.max_discount_pct)}% discount on ${x.estimation_number}`, qLink(x), `${x.client_name || x.deal_name || ''} · asked by ${x.approval_requested_by || '—'}`));
     overdue.slice(0, 5).forEach(r => add('red', `${r.invoice_number} is ${daysLate(r)} day${daysLate(r) === 1 ? '' : 's'} overdue`, { invoice: r.id }, `${r.company_name || r.bill_to || ''} · balance ₹${round2(Number(r.total) - Number(r.amount_paid)).toLocaleString('en-IN')}`));
-    quotes.filter(x => x.status === 'Sent' && x.expiry_date && ymd(x.expiry_date) < t).forEach(x => add('red', `${x.estimation_number} expired without an answer`, { quotation: x.id }, `${x.client_name || ''} · revise it or mark declined`));
-    quotes.filter(x => x.status === 'Sent' && x.sent_at && (now - new Date(x.sent_at)) > 5 * 86400000 && !(x.expiry_date && ymd(x.expiry_date) < t)).forEach(x => add('amber', `No answer on ${x.estimation_number} for ${Math.floor((now - new Date(x.sent_at)) / 86400000)} days`, { quotation: x.id }, `${x.client_name || ''} · call the client`));
-    quotes.filter(x => x.status === 'Approved').forEach(x => add('blue', `${x.estimation_number} is approved but not sent`, { quotation: x.id }, x.client_name || x.deal_name || ''));
+    quotes.filter(x => x.status === 'Sent' && x.expiry_date && ymd(x.expiry_date) < t).forEach(x => add('red', `${x.estimation_number} expired without an answer`, qLink(x), `${x.client_name || ''} · revise it or mark declined`));
+    quotes.filter(x => x.status === 'Sent' && x.sent_at && (now - new Date(x.sent_at)) > 5 * 86400000 && !(x.expiry_date && ymd(x.expiry_date) < t)).forEach(x => add('amber', `No answer on ${x.estimation_number} for ${Math.floor((now - new Date(x.sent_at)) / 86400000)} days`, qLink(x), `${x.client_name || ''} · call the client`));
+    quotes.filter(x => x.status === 'Approved').forEach(x => add('blue', `${x.estimation_number} is approved but not sent`, qLink(x), x.client_name || x.deal_name || ''));
     leads.filter(l => ['New', 'Not Contacted'].includes(l.lead_status) && (now - new Date(l.created_at)) > 86400000).forEach(l => add('amber', `${l.lead_name} has not been contacted`, { lead: l.id }, `Enquiry from ${Math.floor((now - new Date(l.created_at)) / 86400000)} days ago`));
     [...leads.filter(l => l.lead_status === 'On Hold' && l.hold_until && ymd(l.hold_until) <= t).map(l => ({ text: `${l.lead_name}: hold ended`, link: { lead: l.id } })),
       ...deals.filter(d => d.on_hold && d.hold_until && ymd(d.hold_until) <= t).map(d => ({ text: `${d.deal_name}: hold ended`, link: { deal: d.id } }))].forEach(x => add('blue', x.text, x.link, 'Check in and resume or close it'));
@@ -232,7 +236,8 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     const companies = await q('SELECT * FROM companies ORDER BY company_name');
     const deals = await q('SELECT id, company_id, deal_value, won_value, status, deal_stage, on_hold, assignee_id, updated_at, closed_at FROM deals WHERE company_id IS NOT NULL ORDER BY updated_at DESC');
     const invs = await q('SELECT client_id, status, total, amount_paid, open_till FROM invoices WHERE client_id IS NOT NULL');
-    const quotes = await q(`SELECT d.company_id FROM estimations e JOIN deals d ON d.id = e.deal_id WHERE e.quote_base IS NOT NULL AND e.status IN ('Draft', 'Pending Approval', 'Approved', 'Sent')`);
+    const quotes = (await q(`SELECT d.company_id FROM estimations e JOIN deals d ON d.id = e.deal_id WHERE e.quote_base IS NOT NULL AND e.proposal_id IS NULL AND e.status IN ('Draft', 'Pending Approval', 'Approved', 'Sent')`))
+      .concat((await decksOf()).filter(x => ['Draft', 'Sent'].includes(x.status) && x.companyId).map(x => ({ company_id: x.companyId })));
     const contacts = await q('SELECT id, company_id, first_name, last_name, phone, email, position FROM contacts WHERE company_id IS NOT NULL ORDER BY id');
     const leads = await q('SELECT company_id, converted_company_id, owner_id, lead_name, phone, email FROM leads WHERE company_id IS NOT NULL OR converted_company_id IS NOT NULL ORDER BY id');
     const last = await q(`SELECT k, MAX(at) at FROM (
@@ -303,7 +308,8 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     const deals = await q('SELECT id, deal_name, deal_value, won_value, status, deal_stage, on_hold, hold_until, assignee_id, expected_close_date, closed_at, lost_reason, created_at, updated_at FROM deals WHERE company_id = ? ORDER BY updated_at DESC', [c.id]);
     const dealIds = deals.map(d => d.id); const leadIds = leads.map(l => l.id);
     const quotes = await q(`SELECT id, estimation_number, quote_base, version, status, total, subject, estimate_date, expiry_date, sent_at, deal_id FROM estimations
-      WHERE quote_base IS NOT NULL AND status <> 'Revised' AND (client_id = ? ${dealIds.length ? 'OR deal_id IN (?)' : ''}) ORDER BY updated_at DESC`, dealIds.length ? [c.id, dealIds] : [c.id]);
+      WHERE quote_base IS NOT NULL AND proposal_id IS NULL AND status <> 'Revised' AND (client_id = ? ${dealIds.length ? 'OR deal_id IN (?)' : ''}) ORDER BY updated_at DESC`, dealIds.length ? [c.id, dealIds] : [c.id]);
+    const myDecks = (await decksOf()).filter(x => Number(x.companyId) === Number(c.id) || dealIds.includes(x.dealId));
     const invs = await invoiceRows('i.client_id = ?', [c.id]);
     const invIds = invs.map(i => i.id);
     const pays = await q(`SELECT p.*, i.invoice_number FROM sales_payments p LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ? ${invIds.length ? 'OR p.invoice_id IN (?)' : ''} ORDER BY p.paid_on DESC, p.id DESC`, invIds.length ? [c.id, invIds] : [c.id]);
@@ -330,7 +336,8 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
       contacts: contacts.map(x => ({ id: x.id, name: `${x.first_name || ''} ${x.last_name || ''}`.trim(), email: x.email || '', phone: x.phone || '', position: x.position || '', notes: x.notes || '' })),
       leads: leads.map(l => ({ id: l.id, name: l.lead_name, project: l.project_name, status: l.lead_status === 'Not Contacted' ? 'New' : l.lead_status, source: l.lead_source, value: Number(l.value) || 0, owner: names.get(Number(l.owner_id)) || '', dealId: l.converted_deal_id, createdAt: l.created_at, lostReason: l.lost_reason })),
       deals: deals.map(d => ({ id: d.id, name: d.deal_name, value: Number(d.deal_value) || 0, wonValue: Number(d.won_value) || null, stage: d.deal_stage, status: d.on_hold ? 'On Hold' : isWon(d) ? 'Won' : isLost(d) ? 'Lost' : 'Open', owner: names.get(Number(d.assignee_id)) || '', expectedClose: d.expected_close_date, closedAt: d.closed_at, lostReason: d.lost_reason, updatedAt: d.updated_at })),
-      quotations: quotes.map(x => ({ id: x.id, number: x.estimation_number, base: x.quote_base, version: x.version, status: x.status, total: Number(x.total) || 0, subject: x.subject || '', date: x.estimate_date, validUntil: x.expiry_date, sentAt: x.sent_at, dealId: x.deal_id })),
+      quotations: quotes.map(x => ({ id: x.id, number: x.estimation_number, base: x.quote_base, version: x.version, status: x.status, total: Number(x.total) || 0, subject: x.subject || '', date: x.estimate_date, validUntil: x.expiry_date, sentAt: x.sent_at, dealId: x.deal_id }))
+        .concat(myDecks.map(x => ({ id: x.id, deck: true, number: x.number, base: x.number, version: 1, status: x.status, total: x.total, subject: x.title || '', date: x.createdAt, validUntil: null, sentAt: x.sentAt, dealId: x.dealId }))),
       invoices: shapedInv,
       payments: pays.map(p => ({ id: p.id, receipt: p.receipt_number, invoiceId: p.invoice_id, invoice: p.invoice_number, amount: Number(p.amount) || 0, date: p.paid_on, mode: p.mode, reference: p.reference, by: p.by_name, advance: !p.invoice_id })),
       advance: await advanceBalance(c.id),
@@ -776,7 +783,8 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     const leads = await q('SELECT id, owner_id, lead_status, created_at, status_changed_at, converted_deal_id, follow_up_count FROM leads');
     const deals = await q('SELECT id, assignee_id, deal_value, won_value, status, deal_stage, on_hold, closed_at, created_at FROM deals');
     const comms = await q("SELECT by_id, meta FROM sales_events WHERE kind = 'communication' AND happened_at BETWEEN ? AND ?", [`${r.from} 00:00:00`, `${r.to} 23:59:59`]);
-    const quotes = await q('SELECT e.estimate_by, d.assignee_id, e.sent_at, e.status, e.responded_at FROM estimations e LEFT JOIN deals d ON d.id = e.deal_id WHERE e.quote_base IS NOT NULL AND e.sent_at BETWEEN ? AND ?', [`${r.from} 00:00:00`, `${r.to} 23:59:59`]);
+    const quotes = (await q('SELECT e.estimate_by, d.assignee_id, e.sent_at, e.status, e.responded_at FROM estimations e LEFT JOIN deals d ON d.id = e.deal_id WHERE e.quote_base IS NOT NULL AND e.proposal_id IS NULL AND e.sent_at BETWEEN ? AND ?', [`${r.from} 00:00:00`, `${r.to} 23:59:59`]))
+      .concat((await decksOf()).filter(x => x.sentAt && ymd(x.sentAt) >= r.from && ymd(x.sentAt) <= r.to).map(x => ({ estimate_by: x.ownerId, assignee_id: x.ownerId, sent_at: x.sentAt, status: x.status, responded_at: x.respondedAt })));
     const pays = await q('SELECT p.amount, i.created_by, d.assignee_id FROM sales_payments p LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN deals d ON d.id = COALESCE(p.deal_id, i.deal_id) WHERE p.paid_on BETWEEN ? AND ?', [r.from, r.to]);
     const fus = await q('SELECT assigned_to, scheduled_date FROM followups WHERE status IN (?) AND (lead_id IS NOT NULL OR deal_id IS NOT NULL)', [OPEN_FU]);
     const settings = await getSettings();
@@ -883,7 +891,8 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     const names = await usersById();
     let leads = await q('SELECT id, lead_name, lead_source, lead_status, owner_id, created_at, status_changed_at, converted_deal_id, lost_reason, hold_until, hold_reason FROM leads');
     let deals = await q('SELECT d.id, d.deal_name, d.assignee_id, d.deal_value, d.won_value, d.status, d.deal_stage, d.pipeline_stage_id, d.on_hold, d.hold_until, d.hold_reason, d.lost_reason, d.closed_at, d.created_at, d.updated_at, d.lead_id, d.source, c.company_name FROM deals d LEFT JOIN companies c ON c.id = d.company_id');
-    let quotes = await q('SELECT e.id, e.status, e.total, e.max_discount_pct, e.created_at, e.sent_at, e.responded_at, e.estimate_by, d.assignee_id FROM estimations e LEFT JOIN deals d ON d.id = e.deal_id WHERE e.quote_base IS NOT NULL');
+    let quotes = await q('SELECT e.id, e.status, e.total, e.max_discount_pct, e.created_at, e.sent_at, e.responded_at, e.estimate_by, d.assignee_id FROM estimations e LEFT JOIN deals d ON d.id = e.deal_id WHERE e.quote_base IS NOT NULL AND e.proposal_id IS NULL');
+    quotes = quotes.concat((await decksOf()).map(x => ({ id: `deck-${x.id}`, status: x.status, total: x.total, max_discount_pct: 0, created_at: x.createdAt, sent_at: x.sentAt, responded_at: x.respondedAt, estimate_by: x.ownerId, assignee_id: x.ownerId })));
     let invs = await invoiceRows("i.status <> 'Draft'");
     let pays = await q('SELECT p.amount, p.paid_on, p.mode, i.created_by, d.assignee_id FROM sales_payments p LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN deals d ON d.id = COALESCE(p.deal_id, i.deal_id)');
     if (owner) {
