@@ -98,7 +98,7 @@ const GradeBadge = ({ grade, score }) => {
   const g = GRADE_STYLE[grade] || GRADE_STYLE['Not enough data'];
   const Icon = g.icon;
   return (
-    <span className={`inline-flex items-center gap-1 text-[11px]  px-2 py-0.5 rounded-full border ${g.cls}`}>
+    <span className={`inline-flex items-center gap-1 text-[11px]  px-2 py-0.5 rounded border ${g.cls}`}>
       <Icon size={12} aria-hidden="true" />
       {score != null ? `${score} · ` : ''}{grade}
     </span>
@@ -713,7 +713,7 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
                 <td className="py-2.5 px-3 text-right tabular-nums  text-gray-700">{r.rank ? `#${r.rank}` : '—'}</td>
                 <td className="py-2.5 px-3 pl-4">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-[11px]  shrink-0">{initials(r.name)}</div>
+                    <div className="w-8 h-8 rounded bg-gray-100 text-gray-700 flex items-center justify-center text-[11px]  shrink-0">{initials(r.name)}</div>
                     <div className="min-w-0">
                       <div className="font-medium text-gray-900 truncate">{r.name}</div>
                       <div className="text-[11px] text-gray-500 truncate">{r.role} · {r.department}</div>
@@ -725,8 +725,8 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
                 <td className={`py-2.5 px-3 text-right tabular-nums ${r.metrics.effortExceedsCapacity ? 'text-amber-700' : ''}`} title={r.metrics.effortExceedsCapacity ? 'More effort than hours available: check sizes or bulk-closed work' : undefined}>{fmtNum(r.metrics.productivity, '%')}{r.metrics.effortExceedsCapacity ? ' ⚠' : ''}</td>
                 <td className="py-2.5 px-3 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden hidden md:block" aria-hidden="true">
-                      <div className="h-full rounded-full" style={{ width: `${(r.metrics.tasksCompleted / maxDone) * 100}%`, background: SERIES }} />
+                    <div className="w-16 h-1.5 bg-gray-100 rounded overflow-hidden hidden md:block" aria-hidden="true">
+                      <div className="h-full rounded" style={{ width: `${(r.metrics.tasksCompleted / maxDone) * 100}%`, background: SERIES }} />
                     </div>
                     <span className="tabular-nums">{r.metrics.tasksCompleted}<span className="text-gray-400"> / {r.metrics.tasksAssigned}</span></span>
                   </div>
@@ -812,13 +812,13 @@ const WorkSizesEditor = () => {
       right={canEdit && (
         <div className="flex items-center gap-2">
           {applicable.length > 0 && (
-            <button onClick={() => applyMeasured(applicable)} className="text-xs font-medium px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-50 cursor-pointer"
+            <button onClick={() => applyMeasured(applicable)} className="text-xs font-medium px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 cursor-pointer"
               title={`Fill in the measured median for every work type with at least ${meta.minMeasuredTasks} finished tasks. Nothing is saved until you press Save.`}>
               Apply all measured ({applicable.length})
             </button>
           )}
           {changed.length > 0 && (
-            <button onClick={save} disabled={saving} className="text-xs font-semibold px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 cursor-pointer">
+            <button onClick={save} disabled={saving} className="text-xs font-semibold px-3 py-1.5 rounded bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 cursor-pointer">
               {saving ? 'Saving…' : `Save ${changed.length} change${changed.length > 1 ? 's' : ''}`}
             </button>
           )}
@@ -1169,7 +1169,7 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
 
       {/* Header */}
       <div className="bg-white border border-gray-200 rounded p-4 flex flex-wrap items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center text-lg  shrink-0">{initials(e.name)}</div>
+        <div className="w-14 h-14 rounded bg-red-600 text-white flex items-center justify-center text-lg  shrink-0">{initials(e.name)}</div>
         <div className="flex-1 min-w-[200px]">
           <h2 className="text-lg  text-gray-900">{e.name}</h2>
           <p className="text-sm text-gray-600">{e.role} · {e.department}</p>
@@ -1234,8 +1234,8 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
                     <span className="text-gray-700">{COMPONENT_LABELS[part.component]} <span className="text-gray-400">· weight {part.weight}%</span></span>
                     <span className=" tabular-nums text-gray-900">{part.value}</span>
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden" aria-hidden="true">
-                    <div className="h-full rounded-full" style={{ width: `${part.value}%`, background: SERIES }} />
+                  <div className="h-2 bg-gray-100 rounded overflow-hidden" aria-hidden="true">
+                    <div className="h-full rounded" style={{ width: `${part.value}%`, background: SERIES }} />
                   </div>
                 </li>
               ))}
@@ -1359,7 +1359,7 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
             <ol className="relative border-l border-gray-200 ml-2 space-y-3">
               {data.activity.map((a, i) => (
                 <li key={i} className="ml-4">
-                  <span className="absolute -left-1.5 mt-1.5 w-3 h-3 rounded-full border-2 border-white" style={{ background: a.kind === 'comment' ? '#77766f' : SERIES }} aria-hidden="true" />
+                  <span className="absolute -left-1.5 mt-1.5 w-3 h-3 rounded border-2 border-white" style={{ background: a.kind === 'comment' ? '#77766f' : SERIES }} aria-hidden="true" />
                   <div className="text-[11px] text-gray-500">{fmtDateTime(a.at)} · {a.kind === 'comment' ? 'Comment' : 'Update'}</div>
                   <div className="text-sm text-gray-800 break-words">{a.detail}</div>
                 </li>
@@ -1430,7 +1430,7 @@ const HRPerformance = () => {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
             <AlertTriangle size={24} />
           </div>
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Access Restricted</h2>
@@ -1439,7 +1439,7 @@ const HRPerformance = () => {
           </p>
           <button
             onClick={() => window.location.href = '/dashboard'}
-            className="px-4 py-2 bg-[#1e2b4a] hover:bg-[#151f35] text-white text-xs font-medium rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-2 bg-[#1e2b4a] hover:bg-[#151f35] text-white text-xs font-medium rounded transition-colors cursor-pointer"
           >
             Return to Dashboard
           </button>

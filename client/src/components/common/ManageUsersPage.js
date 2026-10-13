@@ -379,7 +379,7 @@ const ManageUsersPage = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl  text-gray-900">Manage Users</h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs   bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs   bg-red-100 text-red-800">
                 152
               </span>
             </div>
@@ -590,7 +590,7 @@ const ManageUsersPage = () => {
                       {visibleColumns.name && (
                         <td className="p-2 ">
                           <div className="flex items-center gap-3">
-                            <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
+                            <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded" />
                             <div>
                               <p className="  text-gray-900">{user.name}</p>
                               <p className="text-xs text-gray-500">{user.role}</p>
@@ -604,7 +604,7 @@ const ManageUsersPage = () => {
                       {visibleColumns.lastActivity && <td className="p-2  text-gray-700 text-xs ">{user.lastActivity}</td>}
                       {visibleColumns.status && (
                         <td className="p-2 ">
-                          <span className={`px-3 py-1 rounded-full text-xs  text-white ${user.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
+                          <span className={`px-3 py-1 rounded text-xs  text-white ${user.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
                             }`}>
                             {user.status}
                           </span>

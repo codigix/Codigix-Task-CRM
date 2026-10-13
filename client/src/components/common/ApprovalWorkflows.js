@@ -191,7 +191,7 @@ const ApprovalWorkflows = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     {getStatusIcon(approval.status)}
-                    <span className={`px-3 py-1 rounded-full text-sm  ${approval.status === 'Approved' ? 'bg-green-200 text-green-800' :
+                    <span className={`px-3 py-1 rounded text-sm  ${approval.status === 'Approved' ? 'bg-green-200 text-green-800' :
                       approval.status === 'Rejected' ? 'bg-red-200 text-red-800' :
                         'bg-yellow-200 text-yellow-800'
                       }`}>

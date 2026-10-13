@@ -12,7 +12,7 @@ import { desk, INVOICE_STATUS_STYLE } from './deskShared';
  * plus the billing schedule that appears once the client accepts.
  */
 
-const card = 'bg-white border border-gray-200 rounded-lg';
+const card = 'bg-white border border-gray-200 rounded';
 
 /** Sections ("Assumptions", "Exclusions"...) with one point per line. */
 export function SectionsEditor({ sections, onChange, editable, title = 'Notes and rules' }) {
@@ -25,7 +25,7 @@ export function SectionsEditor({ sections, onChange, editable, title = 'Notes an
       </div>
       <div className="grid md:grid-cols-2 gap-3">
         {sections.map((s, i) => (
-          <div key={i} className="border border-gray-200 rounded-lg p-2.5 bg-gray-50/50">
+          <div key={i} className="border border-gray-200 rounded p-2.5 bg-gray-50/50">
             <div className="flex items-center gap-2 mb-1.5">
               <input disabled={!editable} value={s.title} onChange={e => set(i, { title: e.target.value })} placeholder="Heading, e.g. Exclusions" className={`${inputCls} font-medium disabled:bg-white`} />
               {editable && <button onClick={() => onChange(sections.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-600 cursor-pointer" aria-label="Remove section"><Trash2 size={14} /></button>}
@@ -50,7 +50,7 @@ export function ScopePreview({ items, services }) {
       {open && (rows.length === 0 ? <div className="text-[12.5px] text-gray-500">Add services from the list above and their scope appears here.</div> : (
         <div className="grid md:grid-cols-2 gap-3">
           {rows.map(({ it, sv }) => (
-            <div key={it.key} className="border border-gray-200 rounded-lg p-2.5">
+            <div key={it.key} className="border border-gray-200 rounded p-2.5">
               <div className="text-[12.5px] font-semibold text-gray-900">{sv.name}{Number(it.qty) > 1 && sv.unit ? ` · ${it.qty} ${sv.unit}s` : ''}</div>
               <ul className="mt-1 space-y-0.5 text-[12px] text-gray-700 list-disc pl-4">{sv.scope.map((t, i) => <li key={i}>{t}</li>)}</ul>
             </div>

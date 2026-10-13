@@ -31,11 +31,11 @@ const HRAttendance = () => {
   const getStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
       case 'present':
-        return <span className="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium border border-green-200 flex items-center gap-1 w-max"><CheckCircle size={14} /> Present</span>;
+        return <span className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-medium border border-green-200 flex items-center gap-1 w-max"><CheckCircle size={14} /> Present</span>;
       case 'absent':
-        return <span className="px-2 py-1 bg-red-50 text-red-700 rounded-full text-xs font-medium border border-red-200 flex items-center gap-1 w-max"><XCircle size={14} /> Absent</span>;
+        return <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs font-medium border border-red-200 flex items-center gap-1 w-max"><XCircle size={14} /> Absent</span>;
       default:
-        return <span className="px-2 py-1 bg-gray-50 text-gray-700 rounded-full text-xs font-medium border border-gray-200 w-max">{status || 'Unknown'}</span>;
+        return <span className="px-2 py-1 bg-gray-50 text-gray-700 rounded text-xs font-medium border border-gray-200 w-max">{status || 'Unknown'}</span>;
     }
   };
 
@@ -76,7 +76,7 @@ const HRAttendance = () => {
         <div className="overflow-x-auto">
           {loading ? (
             <div className="p-12 text-center text-gray-500 flex flex-col items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+              <div className="animate-spin rounded h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
               Loading attendance records from Supabase...
             </div>
           ) : attendanceData.length > 0 ? (
@@ -96,7 +96,7 @@ const HRAttendance = () => {
                   <tr key={record.id || index} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center  text-xs uppercase">
+                        <div className="w-8 h-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center  text-xs uppercase">
                           {record.employee_name ? record.employee_name[0] : 'U'}
                         </div>
                         <span className="font-medium text-gray-900">{record.employee_name || 'Unknown'}</span>

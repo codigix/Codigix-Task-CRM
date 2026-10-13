@@ -297,7 +297,7 @@ const SuperAdminDashboard = () => {
                     </div>
                   </div>
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xl flex-shrink-0 ${card.circleClass}`}
+                    className={`w-7 h-7 rounded flex items-center justify-center text-xl flex-shrink-0 ${card.circleClass}`}
                   >
                     {card.icon}
                   </div>
@@ -399,21 +399,21 @@ const SuperAdminDashboard = () => {
                 <div className="mt-4 w-full">
                   <div className="flex items-center justify-between pb-2.5">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#0D6EFD]"></div>
+                      <div className="w-1.5 h-1.5 rounded bg-[#0D6EFD]"></div>
                       <span className="text-[12px] text-gray-600 font-poppins ">Basic</span>
                     </div>
                     <span className="text-xs  text-gray-800 font-poppins">60%</span>
                   </div>
                   <div className="flex items-center justify-between pb-2.5">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#FFC107]"></div>
+                      <div className="w-1.5 h-1.5 rounded bg-[#FFC107]"></div>
                       <span className="text-[12px] text-gray-600 font-poppins ">Premium</span>
                     </div>
                     <span className="text-xs  text-gray-800 font-poppins">20%</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A59]"></div>
+                      <div className="w-1.5 h-1.5 rounded bg-[#FF6A59]"></div>
                       <span className="text-[12px] text-gray-600 font-poppins ">Enterprise</span>
                     </div>
                     <span className="text-xs  text-gray-800 font-poppins">20%</span>
@@ -441,7 +441,7 @@ const SuperAdminDashboard = () => {
               <div className="flex flex-col gap-0">
                 {recentTransactions.map((tx) => (
                   <div key={tx.id} className="pb-4 border-b border-gray-100 last:border-0 last:pb-0 mb-4 last:mb-0 flex gap-3 items-start">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
+                    <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
                       {tx.avatar}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -481,7 +481,7 @@ const SuperAdminDashboard = () => {
               <div className="flex flex-col gap-0">
                 {recentlyRegistered.map((reg) => (
                   <div key={reg.id} className="pb-4 border-b border-gray-100 last:border-0 last:pb-0 mb-4 last:mb-0 flex gap-3 items-start">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
+                    <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
                       {reg.avatar}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -520,7 +520,7 @@ const SuperAdminDashboard = () => {
                 {recentlyExpired.map((exp) => (
                   <div key={exp.id} className="pb-4 border-b border-gray-100 last:border-0 last:pb-0 mb-4 last:mb-0 flex gap-3 items-start justify-between">
                     <div className="flex gap-3 flex-1 min-w-0">
-                      <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
+                      <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
                         {exp.avatar}
                       </div>
                       <div className="min-w-0">

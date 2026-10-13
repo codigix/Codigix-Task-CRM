@@ -185,13 +185,13 @@ function LeadsTable({ rows }) {
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
-                    <img src={r.avatar} alt={r.name} className="w-8 h-8 rounded-full object-cover" />
+                    <img src={r.avatar} alt={r.name} className="w-8 h-8 rounded object-cover" />
                     <span className="  text-gray-900">{r.name}</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs  text-gray-700">
+                    <div className="w-7 h-7 rounded bg-gray-200 flex items-center justify-center text-xs  text-gray-700">
                       {r.company.charAt(0)}
                     </div>
                     <div>
@@ -207,7 +207,7 @@ function LeadsTable({ rows }) {
                 <td className="py-3 px-4 text-gray-700">{r.created}</td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
-                    <img src={r.owner.avatar} alt={r.owner.name} className="w-7 h-7 rounded-full object-cover" />
+                    <img src={r.owner.avatar} alt={r.owner.name} className="w-7 h-7 rounded object-cover" />
                     <span className="text-gray-900">{r.owner.name}</span>
                   </div>
                 </td>
@@ -316,7 +316,7 @@ const LeadReport = () => {
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-xl  text-gray-900">Lead Report</h1>
-            <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs ">{leads.length}</span>
+            <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded text-xs ">{leads.length}</span>
           </div>
           <div className="flex items-center gap-2 text-xs ">
             <a href="/" className="text-orange-500 hover:text-orange-600  ">

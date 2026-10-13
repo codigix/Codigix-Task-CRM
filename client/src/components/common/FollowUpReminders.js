@@ -383,7 +383,7 @@ const FollowUpReminders = () => {
                   </div>
 
                   <div className="text-right">
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm  ${reminder.status === 'Pending' ? 'bg-yellow-200 text-yellow-800' :
+                    <span className={`inline-block px-3 py-1 rounded text-sm  ${reminder.status === 'Pending' ? 'bg-yellow-200 text-yellow-800' :
                       reminder.status === 'Sent' ? 'bg-green-200 text-green-800' :
                         'bg-blue-200 text-blue-800'
                       }`}>

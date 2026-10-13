@@ -16,9 +16,9 @@ const pagesData = [
 
 const StatusBadge = ({ status }) => {
   if (status === 'Active') {
-    return <span className="inline-flex items-center px-3 py-1 rounded-full text-xs  bg-green-100 text-green-800">Active</span>;
+    return <span className="inline-flex items-center px-3 py-1 rounded text-xs  bg-green-100 text-green-800">Active</span>;
   }
-  return <span className="inline-flex items-center px-3 py-1 rounded-full text-xs  bg-red-100 text-red-800">Inactive</span>;
+  return <span className="inline-flex items-center px-3 py-1 rounded text-xs  bg-red-100 text-red-800">Inactive</span>;
 };
 
 const PagesPage = () => {
@@ -49,7 +49,7 @@ const PagesPage = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl  text-gray-900">Pages</h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs   bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs   bg-red-100 text-red-800">
                 152
               </span>
             </div>

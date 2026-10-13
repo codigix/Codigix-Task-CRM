@@ -24,10 +24,10 @@ const DashboardMockup = () => {
           </div>
           <div className="relative">
             <AlertCircle size={14} className="text-slate-500" />
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded"></div>
           </div>
           <div className="flex items-center gap-2 ml-2 pl-3 border-l border-slate-200">
-            <div className="w-6 h-6 rounded-full bg-slate-200 overflow-hidden">
+            <div className="w-6 h-6 rounded bg-slate-200 overflow-hidden">
               <img src="https://i.pravatar.cc/100?img=47" alt="User" />
             </div>
             <span className="text-xs font-medium text-slate-700">Sarah J.</span>
@@ -200,23 +200,23 @@ const DashboardMockup = () => {
           {/* Alerts */}
           <div className="bg-white rounded border border-slate-200 shadow-sm p-4">
             <h3 className="text-sm  text-slate-800 mb-3 flex items-center gap-2">
-              Alerts <span className="bg-red-500 text-white text-[8px] px-1.5 rounded-full">1</span>
+              Alerts <span className="bg-red-500 text-white text-[8px] px-1.5 rounded">1</span>
             </h3>
             <div className="flex flex-col gap-2.5">
               <div className="flex items-start gap-2 text-[10px]">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1"></div>
+                <div className="w-1.5 h-1.5 rounded bg-green-500 mt-1"></div>
                 <span className="text-slate-600">New lead added: Lead #421</span>
               </div>
               <div className="flex items-start gap-2 text-[10px]">
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1"></div>
+                <div className="w-1.5 h-1.5 rounded bg-amber-400 mt-1"></div>
                 <span className="text-slate-600">Quote revision request from XYZ Ltd</span>
               </div>
               <div className="flex items-start gap-2 text-[10px]">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1 cursor-pointer hover:underline"></div>
+                <div className="w-1.5 h-1.5 rounded bg-red-500 mt-1 cursor-pointer hover:underline"></div>
                 <span className="text-slate-600">Target achievement below 50%</span>
               </div>
               <div className="flex items-start gap-2 text-[10px]">
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1"></div>
+                <div className="w-1.5 h-1.5 rounded bg-amber-400 mt-1"></div>
                 <span className="text-slate-600">Follow-up pending with ABC Pvt Ltd</span>
               </div>
             </div>

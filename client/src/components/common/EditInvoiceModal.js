@@ -231,7 +231,7 @@ const EditInvoiceModal = ({ isOpen, invoiceId, onClose, onSubmit, companies = []
         {isLoadingData ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              <div className="inline-block animate-spin rounded h-12 w-12 border-b-2 border-red-600"></div>
               <p className="mt-4 text-gray-600  ">Loading invoice...</p>
             </div>
           </div>

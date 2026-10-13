@@ -58,7 +58,7 @@ const chime = () => {
       o.connect(g); g.connect(ctx.destination);
       o.start(ctx.currentTime + at); o.stop(ctx.currentTime + at + 0.2);
     });
-    setTimeout(() => ctx.close().catch(() => {}), 600);
+    setTimeout(() => ctx.close().catch(() => { }), 600);
   } catch (e) { /* audio unavailable */ }
 };
 
@@ -133,7 +133,7 @@ export default function ChatNotifier() {
     let closed = false;
     loadRooms();
     fetch(`${API_BASE_URL}/chat/bootstrap`).then(r => (r.ok ? r.json() : null))
-      .then(d => { if (d?.people) people.current = new Map(d.people.map(p => [p.id, p])); }).catch(() => {});
+      .then(d => { if (d?.people) people.current = new Map(d.people.map(p => [p.id, p])); }).catch(() => { });
 
     const es = new EventSource(`${API_BASE_URL}/chat/stream`, { withCredentials: true });
     const looking = (roomId) => getActiveChatRoom() === Number(roomId) && document.visibilityState === 'visible' && document.hasFocus();
@@ -205,8 +205,8 @@ export default function ChatNotifier() {
       {cards.map(c => (
         <button key={c.id} onClick={() => { setCards(cs => cs.filter(x => x.id !== c.id)); navigate(chatPath(c.roomId)); }}
           className="pointer-events-auto w-80 max-w-full text-left bg-white border border-gray-200 rounded-xl shadow-xl p-3 flex gap-3 cursor-pointer hover:border-blue-300">
-          {c.icon ? <img src={c.icon} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
-            : <span className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0"><MessageSquare size={16} /></span>}
+          {c.icon ? <img src={c.icon} alt="" className="w-9 h-9 rounded object-cover shrink-0" />
+            : <span className="w-9 h-9 rounded bg-red-600 text-white flex items-center justify-center shrink-0"><MessageSquare size={16} /></span>}
           <span className="min-w-0 flex-1">
             <span className="block text-[13px] font-semibold text-gray-900 truncate">{c.title}</span>
             <span className="block text-[12px] text-gray-600 line-clamp-2">{c.body}</span>
@@ -217,7 +217,7 @@ export default function ChatNotifier() {
       {showIOSGuide && (
         <div className="pointer-events-auto w-80 max-w-full bg-white border border-gray-200 rounded-xl shadow-xl p-3">
           <div className="flex items-start gap-2.5">
-            <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Bell size={15} /></span>
+            <span className="w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Bell size={15} /></span>
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-semibold text-gray-900">Chat notifications on iPhone</div>
               <ol className="text-[12px] text-gray-600 mt-1 space-y-1 list-decimal pl-4">
@@ -235,13 +235,13 @@ export default function ChatNotifier() {
       {showTurnOn && (
         <div className="pointer-events-auto w-80 max-w-full bg-white border border-gray-200 rounded-xl shadow-xl p-3">
           <div className="flex items-start gap-2.5">
-            <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Bell size={15} /></span>
+            <span className="w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Bell size={15} /></span>
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-semibold text-gray-900">Get chat notifications</div>
               <div className="text-[12px] text-gray-600">Who messaged you and a preview, in your {isIOS() ? 'iPhone' : 'phone or computer'}'s notification bar, even when the CRM is closed.</div>
               {note && <div className="text-[12px] text-blue-700 mt-1">{note}</div>}
               <div className="flex gap-2 mt-2">
-                <button onClick={turnOn} disabled={busy} className="h-7 px-3 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 cursor-pointer flex items-center gap-1">{busy && <Loader2 size={12} className="animate-spin" />} Turn on</button>
+                <button onClick={turnOn} disabled={busy} className="h-7 px-3 text-xs font-medium rounded bg-red-600 text-white hover:bg-blue-700 disabled:opacity-60 cursor-pointer flex items-center gap-1">{busy && <Loader2 size={12} className="animate-spin" />} Turn on</button>
                 <button onClick={hidePrompt} className="h-7 px-3 text-xs rounded border border-gray-300 hover:bg-gray-50 cursor-pointer">Not now</button>
               </div>
             </div>

@@ -52,7 +52,7 @@ const ProjectIcon = ({ name, index }) => {
   const colors = ['#6366f1', '#0ea5e9', '#22c55e', '#ff9800', '#f43f5e', '#8b5cf6', '#ec4899', '#14b8a6'];
   const firstLetter = name ? name.charAt(0).toUpperCase() : 'P';
   return (
-    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs " style={{ backgroundColor: colors[index % colors.length] }}>
+    <div className="w-8 h-8 rounded flex items-center justify-center text-white text-xs " style={{ backgroundColor: colors[index % colors.length] }}>
       {firstLetter}
     </div>
   );
@@ -195,7 +195,7 @@ function ProjectsTable({ rows }) {
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2">
-                    <img src={r.clientLogo} alt={r.client} className="w-6 h-6 rounded-full object-cover" />
+                    <img src={r.clientLogo} alt={r.client} className="w-6 h-6 rounded object-cover" />
                     <span className="text-gray-600">{r.client}</span>
                   </div>
                 </td>
@@ -206,7 +206,7 @@ function ProjectsTable({ rows }) {
                 <td className="py-3 px-4 text-gray-600">{r.endDate}</td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: r.stageColor }}></div>
+                    <div className="w-3 h-3 rounded" style={{ backgroundColor: r.stageColor }}></div>
                     <span className="text-gray-700">{r.stage}</span>
                   </div>
                 </td>
@@ -349,7 +349,7 @@ export default function ProjectReportsPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xs  text-gray-900">Projects By Stage</h2>
               <div className="relative">
-                <button className="text-red  bg-red-50 p-2 rounded-full hover:bg-red-100">
+                <button className="text-red  bg-red-50 p-2 rounded hover:bg-red-100">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="2" />
                     <circle cx="19" cy="12" r="2" />

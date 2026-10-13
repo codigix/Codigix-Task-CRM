@@ -57,7 +57,7 @@ const FeaturesGrid = () => {
     <section id="features" className="py-24 bg-[#f8f9fa] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-100/50 text-red-600 text-xs  uppercase tracking-widest mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-red-100/50 text-red-600 text-xs  uppercase tracking-widest mb-6">
             <Shield className="w-3.5 h-3.5" /> Enterprise Grade
           </div>
           <h2 className="text-3xl md:text-4xl  text-slate-900 mb-6 tracking-tight">One platform. Every department.</h2>

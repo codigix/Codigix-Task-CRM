@@ -54,7 +54,7 @@ export default function ServicesEditor({ services, onChange, canEdit }) {
   const add = (category) => onChange([...services, { id: `svc-${Date.now()}`, name: 'New service', category, billing: category === 'Digital Marketing' ? 'monthly' : 'one-time', unit: '', rate: 0, defaultQty: 1, hsn: '998361', taxPct: 18, slabs: [], scope: [], description: '', active: true }]);
   const cats = [...new Set([...CATEGORIES, ...services.map(s => s.category)])];
   return (
-    <div className="bg-white border border-gray-200 rounded-lg">
+    <div className="bg-white border border-gray-200 rounded">
       <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
         <div><div className="text-[13px] font-semibold">Services and rates</div><div className="text-[11.5px] text-gray-500">What the salesperson picks in a quotation. Monthly services (SEO per keyword, reels, creatives) repeat every month; one-time services are projects.</div></div>
         {canEdit && <div className="flex gap-1.5">{['Digital Marketing', 'IT & Software'].map(c => <button key={c} onClick={() => add(c)} className={btn.ghost}><Plus size={13} /> {c}</button>)}</div>}

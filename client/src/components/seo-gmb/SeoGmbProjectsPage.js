@@ -241,14 +241,14 @@ export default function SeoGmbProjectsPage() {
                         </td>
                         <td className="py-3.5 px-3.5 text-center">
                           <div className="flex items-center gap-2 max-w-[100px] mx-auto">
-                            <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                              <div className="bg-blue-500 h-full rounded-full" style={{ width: `${row.progress || 0}%` }} />
+                            <div className="flex-1 bg-slate-100 rounded h-1.5 overflow-hidden">
+                              <div className="bg-blue-500 h-full rounded" style={{ width: `${row.progress || 0}%` }} />
                             </div>
                             <span className=" text-xs text-slate-600">{row.progress || 0}%</span>
                           </div>
                         </td>
                         <td className="py-3.5 px-3.5 text-center">
-                          <span className={`text-xs  px-2.5 py-0.5 rounded-full border ${row.status === 'Active' || row.status === 'Completed'
+                          <span className={`text-xs  px-2.5 py-0.5 rounded border ${row.status === 'Active' || row.status === 'Completed'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : 'bg-amber-50 text-amber-700 border-amber-200'
                             }`}>
@@ -316,7 +316,7 @@ export default function SeoGmbProjectsPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl  text-slate-900 m-0">{currentProjectName}</h1>
-                  <span className="bg-green-100 text-green-700 text-xs  px-2.5 py-0.5 rounded-full">{currentStatus}</span>
+                  <span className="bg-green-100 text-green-700 text-xs  px-2.5 py-0.5 rounded">{currentStatus}</span>
                 </div>
                 <div className="text-xs text-slate-500 flex items-center gap-3 mt-1">
                   <span>{gmb ? 'GMB Listing Active' : 'No GMB Listing'}</span>
@@ -332,7 +332,7 @@ export default function SeoGmbProjectsPage() {
               <div>
                 <div className="text-xs text-slate-500 font-medium mb-1">Project Manager</div>
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs  text-blue-700">
+                  <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-xs  text-blue-700">
                     {currentPM.split(' ').map(n => n[0]).join('')}
                   </div>
                   <span className="text-xs  text-slate-700">{currentPM}</span>
@@ -409,7 +409,7 @@ export default function SeoGmbProjectsPage() {
                       {card.text && <div className="text-xs text-green-500  mt-1">{card.text}</div>}
                       {card.progress !== undefined && (
                         <div className="mt-2">
-                          <div className="h-1 bg-slate-200 rounded-full overflow-hidden">
+                          <div className="h-1 bg-slate-200 rounded overflow-hidden">
                             <div className="h-full bg-pink-500" style={{ width: `${card.progress}%` }} />
                           </div>
                         </div>
@@ -484,7 +484,7 @@ export default function SeoGmbProjectsPage() {
                               { label: 'Avg. Position', value: '0', change: '0%', up: false, color: 'bg-red-500' },
                             ].map((m, i) => (
                               <div key={i} className="flex items-center gap-2 text-xs">
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${m.color}`} />
+                                <span className={`w-2 h-2 rounded shrink-0 ${m.color}`} />
                                 <div className="flex-1 min-w-0">
                                   <div className="text-xs text-slate-500 truncate">{m.label}</div>
                                   <div className="text-[12px]  text-slate-900 mt-0.5">{m.value}</div>
@@ -526,7 +526,7 @@ export default function SeoGmbProjectsPage() {
                                 <td className="py-2.5 px-2.5 text-slate-500">{task.module || 'General'}</td>
                                 <td className="py-2.5 px-2.5">
                                   <div className="flex items-center gap-1.5">
-                                    <div className="w-5.5 h-5.5 rounded-full flex items-center justify-center text-[9px]  text-slate-900 bg-blue-100">
+                                    <div className="w-5.5 h-5.5 rounded flex items-center justify-center text-[9px]  text-slate-900 bg-blue-100">
                                       {(task.assigned_to_name || 'U').split(' ').map(n => n[0]).join('')}
                                     </div>
                                     <span className="text-xs">{task.assigned_to_name || 'Unassigned'}</span>
@@ -577,12 +577,12 @@ export default function SeoGmbProjectsPage() {
                         </div>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                            <span className="w-1.5 h-1.5 rounded bg-green-500" />
                             <span className="text-xs text-slate-500 w-12">Completed</span>
                             <span className="text-xs  text-slate-950">{project?.progress || 0}%</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                            <span className="w-1.5 h-1.5 rounded bg-slate-200" />
                             <span className="text-xs text-slate-500 w-12">Remaining</span>
                             <span className="text-xs  text-slate-950">{100 - (project?.progress || 0)}%</span>
                           </div>
@@ -625,7 +625,7 @@ export default function SeoGmbProjectsPage() {
                           <div>
                             <p className="text-xs  text-slate-800 m-0">{step.name}</p>
                             <div className="flex items-center gap-1.5 mt-1.5">
-                              <div className="w-16 bg-slate-100 rounded-full h-1 overflow-hidden">
+                              <div className="w-16 bg-slate-100 rounded h-1 overflow-hidden">
                                 <div className={`h-full ${step.color.split(' ')[0]}`} style={{ width: `${step.progress}%` }} />
                               </div>
                               <span className="text-[9px] font-black text-slate-500">{step.progress}%</span>
@@ -669,7 +669,7 @@ export default function SeoGmbProjectsPage() {
                         project.team_members.map((member, i) => (
                           <div key={i} className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center  text-xs text-slate-600">
+                              <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center  text-xs text-slate-600">
                                 {(member.name || 'U').split(' ').map(n => n[0]).join('')}
                               </div>
                               <div>

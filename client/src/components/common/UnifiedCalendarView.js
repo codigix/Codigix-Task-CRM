@@ -150,7 +150,7 @@ const UnifiedCalendarView = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setEventType('all')}
-            className={`px-3 py-1 rounded-full text-sm  transition ${eventType === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            className={`px-3 py-1 rounded text-sm  transition ${eventType === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
           >
             All
@@ -159,7 +159,7 @@ const UnifiedCalendarView = () => {
             <button
               key={type}
               onClick={() => setEventType(type)}
-              className={`px-3 py-1 rounded-full text-sm  transition ${eventType === type ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              className={`px-3 py-1 rounded text-sm  transition ${eventType === type ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
             >
               {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -203,8 +203,8 @@ const UnifiedCalendarView = () => {
                   key={index}
                   onClick={() => date && setSelectedDate(date)}
                   className={`min-h-24 p-1 rounded  border-2 cursor-pointer transition ${isToday ? 'border-red-500 bg-red-50' :
-                      isSelected ? 'border-blue-500 bg-blue-50' :
-                        'border-gray-200 bg-white hover:border-gray-300'
+                    isSelected ? 'border-blue-500 bg-blue-50' :
+                      'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                 >
                   {date && (

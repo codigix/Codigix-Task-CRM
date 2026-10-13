@@ -100,7 +100,7 @@ const FileTiles = ({ files, onRemove }) => (
           <div className="text-[11px] text-gray-700 truncate mt-0.5" title={f.name}>{f.name}</div>
           {f.size ? <div className="text-[10px] text-gray-400">{formatFileSize(f.size)}</div> : null}
           {onRemove && (
-            <button type="button" onClick={() => onRemove(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-gray-300 text-gray-500 hover:text-red-600 flex items-center justify-center cursor-pointer" aria-label="Remove file"><X size={11} /></button>
+            <button type="button" onClick={() => onRemove(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded bg-white border border-gray-300 text-gray-500 hover:text-red-600 flex items-center justify-center cursor-pointer" aria-label="Remove file"><X size={11} /></button>
           )}
         </div>
       );
@@ -183,11 +183,11 @@ function ItemForm({ initial, projects, categories, allUsers = [], defaultDepartm
       const nextShared = exists
         ? prev.sharedWith.filter(u => String(u.id) !== String(user.id))
         : [...(prev.sharedWith || []), {
-            id: user.id,
-            name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username,
-            email: user.email || '',
-            department: user.department || ''
-          }];
+          id: user.id,
+          name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username,
+          email: user.email || '',
+          department: user.department || ''
+        }];
       return { ...prev, sharedWith: nextShared };
     });
   };
@@ -357,7 +357,7 @@ function ItemForm({ initial, projects, categories, allUsers = [], defaultDepartm
       </div>
 
       {f.visibility === 'specific' && (
-        <div className="bg-amber-50/70 border border-amber-200 rounded-lg p-3 space-y-2.5">
+        <div className="bg-amber-50/70 border border-amber-200 rounded p-3 space-y-2.5">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-amber-900 flex items-center gap-1.5">
               <UserCheck size={14} className="text-amber-700" />
@@ -369,7 +369,7 @@ function ItemForm({ initial, projects, categories, allUsers = [], defaultDepartm
           {f.sharedWith?.length > 0 && (
             <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1.5 bg-white border border-amber-200 rounded">
               {f.sharedWith.map(u => (
-                <span key={u.id} className="inline-flex items-center gap-1 text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-medium">
+                <span key={u.id} className="inline-flex items-center gap-1 text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-medium">
                   <span>{u.name || u.email}</span>
                   <button type="button" onClick={() => removeSharedUser(u.id)} className="text-amber-700 hover:text-amber-950 cursor-pointer" title="Remove">
                     <X size={11} />
@@ -403,7 +403,7 @@ function ItemForm({ initial, projects, categories, allUsers = [], defaultDepartm
                     className={`w-full flex items-center justify-between p-2 text-left cursor-pointer transition-colors ${isSelected ? 'bg-amber-50 text-amber-900 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}
                   >
                     <div className="min-w-0 flex items-center gap-2">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isSelected ? 'bg-amber-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                      <span className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold ${isSelected ? 'bg-amber-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
                         {(u.name || u.first_name || 'U').charAt(0).toUpperCase()}
                       </span>
                       <div className="truncate">
@@ -486,7 +486,7 @@ function ItemDetails({ item, onEdit, onChanged, isTrash }) {
       </div>
 
       {item.visibility === 'specific' && (
-        <div className="bg-amber-50/70 border border-amber-200/80 rounded-lg p-3">
+        <div className="bg-amber-50/70 border border-amber-200/80 rounded p-3">
           <div className="text-xs font-semibold text-amber-900 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <UserCheck size={14} className="text-amber-700" /> Particular People With Access ({item.sharedWith?.length || 0})
@@ -498,7 +498,7 @@ function ItemDetails({ item, onEdit, onChanged, isTrash }) {
           ) : (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {item.sharedWith.map(u => (
-                <span key={u.id || u.email} className="inline-flex items-center gap-1.5 text-xs bg-white border border-amber-200 px-2.5 py-1 rounded-full text-gray-800 shadow-xs">
+                <span key={u.id || u.email} className="inline-flex items-center gap-1.5 text-xs bg-white border border-amber-200 px-2.5 py-1 rounded text-gray-800 shadow-xs">
                   <User size={12} className="text-amber-600" />
                   <span className="font-medium">{u.name || u.email}</span>
                   {u.department && <span className="text-[10px] text-gray-400">· {u.department}</span>}
@@ -510,7 +510,7 @@ function ItemDetails({ item, onEdit, onChanged, isTrash }) {
       )}
 
       {item.visibility === 'department' && (
-        <div className="bg-indigo-50/60 border border-indigo-200/70 rounded-lg p-2.5 text-xs text-indigo-900 flex items-center gap-2">
+        <div className="bg-indigo-50/60 border border-indigo-200/70 rounded p-2.5 text-xs text-indigo-900 flex items-center gap-2">
           <Building2 size={14} className="text-indigo-600 shrink-0" />
           <span>Restricted to members of <strong>{item.department || 'the specified department'}</strong> and management.</span>
         </div>
@@ -551,7 +551,7 @@ function ItemDetails({ item, onEdit, onChanged, isTrash }) {
       {(item.category || item.tags?.length > 0) && (
         <div className="flex flex-wrap gap-1.5">
           {item.category && <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-700">{item.category}</span>}
-          {item.tags.map(t => <span key={t} className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">#{t}</span>)}
+          {item.tags.map(t => <span key={t} className="text-[11px] px-2 py-0.5 rounded bg-blue-50 text-blue-700">#{t}</span>)}
         </div>
       )}
 
@@ -750,7 +750,7 @@ export default function ITNotesPage() {
               <div className="px-2 flex flex-wrap gap-1">
                 {data.tags.slice(0, 30).map(t => (
                   <button key={t.name} onClick={() => setTag(tag === t.name ? '' : t.name)}
-                    className={`text-[11px] px-2 py-0.5 rounded-full cursor-pointer ${tag === t.name ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-blue-50'}`}>#{t.name}</button>
+                    className={`text-[11px] px-2 py-0.5 rounded cursor-pointer ${tag === t.name ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-blue-50'}`}>#{t.name}</button>
                 ))}
               </div>
             </div>
@@ -862,7 +862,7 @@ export default function ITNotesPage() {
                       {(it.project || it.tags.length > 0) && (
                         <div className="flex flex-wrap items-center gap-1 mt-1">
                           {it.project && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 flex items-center gap-1"><FolderOpen size={10} /> {it.project}</span>}
-                          {it.tags.slice(0, 4).map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700">#{t}</span>)}
+                          {it.tags.slice(0, 4).map(t => <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">#{t}</span>)}
                         </div>
                       )}
                     </div>

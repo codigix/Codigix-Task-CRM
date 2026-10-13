@@ -59,7 +59,7 @@ const ProposalVersionHistory = ({ proposal, versions = [] }) => {
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs   p-1  rounded-full ${getStatusColor(version.status)}`}>
+                      <span className={`text-xs   p-1  rounded ${getStatusColor(version.status)}`}>
                         {version.status}
                       </span>
                       <span className="text-xs text-gray-500">

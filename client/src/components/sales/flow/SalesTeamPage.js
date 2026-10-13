@@ -31,7 +31,7 @@ export default function SalesTeamPage({ mode = 'performance' }) {
 
   const t = data.totals; const rows = data.rows; const comm = data.commission;
   const exportCsv = () => downloadCsv(`sales-${mode}.csv`, [['Name', 'Enquiries', 'Converted', 'Calls/meetings/messages', 'Quotes sent', 'Deals won', 'Deals lost', 'Win rate %', 'Won value', 'Collected', 'Open deals', 'Pipeline', 'Commission'],
-    ...rows.map(r => [r.name, r.enquiries, r.converted, r.activities, r.quotesSent, r.dealsWon, r.dealsLost, r.winRate ?? '', r.wonValue, r.collected, r.openDeals, r.pipelineValue, r.commission ?? ''])]);
+  ...rows.map(r => [r.name, r.enquiries, r.converted, r.activities, r.quotesSent, r.dealsWon, r.dealsLost, r.winRate ?? '', r.wonValue, r.collected, r.openDeals, r.pipelineValue, r.commission ?? ''])]);
   const rangeLabel = `${new Date(`${data.range.from}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – ${new Date(`${data.range.to}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
   if (mode === 'commission') {
@@ -48,7 +48,7 @@ export default function SalesTeamPage({ mode = 'performance' }) {
               <Kpi icon={Wallet} tone="text-emerald-600" label="Collected" value={money(t.collected)} />
               <Kpi icon={Trophy} tone="text-emerald-600" label="Won value" value={money(t.wonValue)} hint={`${t.dealsWon} deals`} />
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+            <div className="bg-white border border-gray-200 rounded overflow-x-auto">
               <table className="w-full text-[13px]"><thead className="text-xs text-gray-500 bg-gray-50"><tr><th className="text-left font-medium px-4 py-2.5">Salesperson</th><th className="text-right font-medium px-2 py-2.5">Deals won</th><th className="text-right font-medium px-2 py-2.5">Won value</th><th className="text-right font-medium px-2 py-2.5">Collected</th><th className="text-right font-medium px-4 py-2.5">Commission</th></tr></thead>
                 <tbody className="divide-y divide-gray-100">{rows.map(r => <tr key={r.userId}><td className="px-4 py-2.5 font-medium">{r.name}<div className="text-[11px] text-gray-500 font-normal">{r.title}</div></td><td className="px-2 py-2.5 text-right tabular-nums">{r.dealsWon}</td><td className="px-2 py-2.5 text-right tabular-nums">{money(r.wonValue)}</td><td className="px-2 py-2.5 text-right tabular-nums">{money(r.collected)}</td><td className="px-4 py-2.5 text-right tabular-nums font-semibold">{money(r.commission)}</td></tr>)}</tbody>
               </table>
@@ -77,7 +77,7 @@ export default function SalesTeamPage({ mode = 'performance' }) {
       </div>
 
       <div className="grid xl:grid-cols-[1.6fr_1fr] gap-4">
-        <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto min-w-0">
+        <div className="bg-white border border-gray-200 rounded overflow-x-auto min-w-0">
           <table className="w-full text-[13px] min-w-[780px]">
             <thead className="text-xs text-gray-500 bg-gray-50"><tr>
               <th className="text-left font-medium px-4 py-2.5">{data.isManager ? 'Salesperson' : 'You'}</th><th className="text-right font-medium px-2 py-2.5">Enquiries</th><th className="text-right font-medium px-2 py-2.5">Touches</th>

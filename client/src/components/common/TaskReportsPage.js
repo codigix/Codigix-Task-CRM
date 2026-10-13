@@ -203,7 +203,7 @@ const TaskReportsPage = () => {
           {task.category}
         </span>
         <span className="text-xs  text-gray-500 whitespace-nowrap">{task.date}</span>
-        <img src={task.avatar} alt="avatar" className="w-8 h-8 rounded-full" onError={(e) => e.target.src = 'https://i.pravatar.cc/32?img=0'} />
+        <img src={task.avatar} alt="avatar" className="w-8 h-8 rounded" onError={(e) => e.target.src = 'https://i.pravatar.cc/32?img=0'} />
         <button className="p-1 hover:bg-gray-100 rounded transition-colors">
           <MoreVertical size={16} className="text-[#1F2020]" />
         </button>
@@ -215,7 +215,7 @@ const TaskReportsPage = () => {
     <div className="mb-8">
       <div className="flex items-center gap-2 mb-4">
         <h3 className="text-gray-700  text-xs ">{title}</h3>
-        {count > 0 && <span className="bg-red-100 text-red  text-xs p-1  rounded-full ">{count}</span>}
+        {count > 0 && <span className="bg-red-100 text-red  text-xs p-1  rounded ">{count}</span>}
       </div>
       <div className="space-y-2">
         {groupTasks.length > 0 ? (
@@ -236,7 +236,7 @@ const TaskReportsPage = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl  text-gray-900">Task Reports</h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs   bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs   bg-red-100 text-red-800">
                 {tasks.length}
               </span>
             </div>

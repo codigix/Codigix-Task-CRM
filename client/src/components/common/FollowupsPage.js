@@ -813,7 +813,7 @@ const FollowupsPage = () => {
       label: 'Client',
       render: (name, row) => (
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs  text-gray-600 overflow-hidden">
+          <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-xs  text-gray-600 overflow-hidden">
             <img src={`https://i.pravatar.cc/150?u=${name}`} alt={name} className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col">
@@ -840,7 +840,7 @@ const FollowupsPage = () => {
 
         return (
           <div className="flex flex-col gap-1">
-            <span className={`px-2 py-0.5 rounded-full text-xs font-[500] w-fit ${colorClass}`}>
+            <span className={`px-2 py-0.5 rounded text-xs font-[500] w-fit ${colorClass}`}>
               {entityStatus || 'N/A'}
             </span>
             {quotStatus && (
@@ -944,7 +944,7 @@ const FollowupsPage = () => {
       key: 'priority',
       label: 'Priority',
       render: (priority) => (
-        <span className={`px-2 py-0.5 rounded-full text-xs  ${priority === 'High' ? 'bg-orange-50 text-orange-600' :
+        <span className={`px-2 py-0.5 rounded text-xs  ${priority === 'High' ? 'bg-orange-50 text-orange-600' :
           priority === 'Medium' ? 'bg-blue-50 text-blue-600' :
             'bg-green-50 text-green-600'
           }`}>
@@ -989,7 +989,7 @@ const FollowupsPage = () => {
         }
 
         return (
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${colorClass}`}>
+          <span className={`px-2 py-0.5 rounded text-xs font-medium border ${colorClass}`}>
             {outcome}
           </span>
         );
@@ -1000,7 +1000,7 @@ const FollowupsPage = () => {
     //   label: 'Assigned To',
     //   render: (name) => (
     //     <div className="flex items-center gap-2">
-    //       <div className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-[9px] font-[500]">
+    //       <div className="w-6 h-6 rounded bg-red-100 text-red-600 flex items-center justify-center text-[9px] font-[500]">
     //         {name?.split(' ').map(n => n[0]).join('')}
     //       </div>
     //       <span className="text-xs text-gray-600">{name}</span>
@@ -1371,7 +1371,7 @@ const FollowupsPage = () => {
           <div className="flex items-center gap-2 text-gray-900 text-xs ">
             <Filter size={18} className="text-gray-700" /> Filter
           </div>
-          <button onClick={() => setOpenDropdown(null)} className="w-4 h-4 rounded-full flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
+          <button onClick={() => setOpenDropdown(null)} className="w-4 h-4 rounded flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
             <Plus size={15} className="rotate-45" />
           </button>
         </div>
@@ -1435,8 +1435,8 @@ const FollowupsPage = () => {
             <div className="flex items-center gap-2">
               <span className={`text-xs transition-colors ${visibleColumns.includes(col) ? 'text-gray-900 ' : 'text-gray-500'}`}>{columnLabels[col]}</span>
             </div>
-            <div className={`w-9 h-5 rounded-full relative transition-all duration-200 p-1 ${visibleColumns.includes(col) ? 'bg-red-600' : 'bg-gray-200'}`}>
-              <div className={`w-3 h-3 bg-white rounded-full transition-all duration-200  ${visibleColumns.includes(col) ? 'translate-x-[16px]' : 'translate-x-0'}`} />
+            <div className={`w-9 h-5 rounded relative transition-all duration-200 p-1 ${visibleColumns.includes(col) ? 'bg-red-600' : 'bg-gray-200'}`}>
+              <div className={`w-3 h-3 bg-white rounded transition-all duration-200  ${visibleColumns.includes(col) ? 'translate-x-[16px]' : 'translate-x-0'}`} />
             </div>
           </div>
         ))}
@@ -1466,9 +1466,9 @@ const FollowupsPage = () => {
         <div key={column.id} className="flex-shrink-0 w-80 flex flex-col gap-2">
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: column.color }}></div>
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: column.color }}></div>
               <h3 className="text-sm  text-gray-700">{column.name}</h3>
-              <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{column.items.length}</span>
+              <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">{column.items.length}</span>
             </div>
           </div>
           <div className="flex-1 flex flex-col gap-2">
@@ -1503,7 +1503,7 @@ const FollowupsPage = () => {
                 </div>
                 <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-[500]">
+                    <div className="w-6 h-6 rounded bg-red-100 text-red-600 flex items-center justify-center text-xs font-[500]">
                       {item.assigned_to_name?.split(' ').map(n => n[0]).join('')}
                     </div>
                     <span className="text-xs text-gray-600">{item.assigned_to_name}</span>
@@ -1709,14 +1709,14 @@ const FollowupsPage = () => {
                             </td>
                             <td className="p-2">
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-xs font-[500] text-red-600">
+                                <div className="w-8 h-8 rounded bg-red-50 flex items-center justify-center text-xs font-[500] text-red-600">
                                   {client.name?.split(' ').map(n => n[0]).join('') || '?'}
                                 </div>
                                 <span className="text-xs  text-gray-900">{client.name || 'N/A'}</span>
                               </div>
                             </td>
                             <td className="p-2">
-                              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full ">{client.type}</span>
+                              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded ">{client.type}</span>
                             </td>
                             <td className="p-2">
                               {(() => {
@@ -1735,7 +1735,7 @@ const FollowupsPage = () => {
                                 return (
                                   <div className="flex flex-col gap-1">
                                     {entityStatus && (
-                                      <span className={`px-2 py-0.5 rounded-full text-xs font-[500] w-fit ${colorClass}`}>
+                                      <span className={`px-2 py-0.5 rounded text-xs font-[500] w-fit ${colorClass}`}>
                                         {entityStatus}
                                       </span>
                                     )}
@@ -1789,9 +1789,9 @@ const FollowupsPage = () => {
                             <td className="p-2">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-700 ">{client.total_count}</span>
-                                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="w-24 h-1.5 bg-gray-100 rounded overflow-hidden">
                                   <div
-                                    className="h-full bg-green-500 rounded-full"
+                                    className="h-full bg-green-500 rounded"
                                     style={{ width: `${(client.completed_count / client.total_count) * 100}%` }}
                                   />
                                 </div>
@@ -1859,7 +1859,7 @@ const FollowupsPage = () => {
                                                     <span className="text-xs text-gray-700">{f.type}</span>
                                                     {['Google Meet', 'Zoom Meeting', 'Internal Video Call', 'Demo'].includes(f.type) && f.calendar_event_id && (
                                                       <span
-                                                        className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"
+                                                        className="w-1.5 h-1.5 rounded bg-green-500 animate-pulse"
                                                         title="Synced to Google Calendar"
                                                       />
                                                     )}

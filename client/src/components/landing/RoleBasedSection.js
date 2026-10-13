@@ -79,9 +79,9 @@ const RoleBasedSection = () => {
               {/* Browser Header */}
               <div className="bg-white/90 border-b border-slate-200/60 px-4 py-3 flex items-center gap-2 backdrop-blur-md relative z-20">
                 <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                  <div className="w-2.5 h-2.5 rounded bg-red-400"></div>
+                  <div className="w-2.5 h-2.5 rounded bg-amber-400"></div>
+                  <div className="w-2.5 h-2.5 rounded bg-green-400"></div>
                 </div>
               </div>
 

@@ -34,7 +34,7 @@ const DealsListPage = () => {
         authFilters.role = currentUserData.role_name || currentUserData.role || currentUserData.userRole;
         authFilters.department = currentUserData.department || currentUserData.department_name;
       }
-      
+
       try {
         [dealsRes, contactsRes, companiesRes] = await Promise.all([
           dealsAPI.getAll(authFilters),
@@ -48,9 +48,9 @@ const DealsListPage = () => {
         companiesRes = [];
         setError(`Failed to load deals data from server: ${apiErr.message}`);
       }
-      
+
       console.log('✅ DealsListPage - API Response:', { dealsRes, contactsRes, companiesRes });
-      
+
       let actualDeals = dealsRes || [];
       if (dealsRes && !Array.isArray(dealsRes) && typeof dealsRes === 'object') {
         if (dealsRes.data && Array.isArray(dealsRes.data)) {
@@ -61,7 +61,7 @@ const DealsListPage = () => {
           actualDeals = dealsRes.rows;
         }
       }
-      
+
       let actualContacts = contactsRes || [];
       if (contactsRes && !Array.isArray(contactsRes) && typeof contactsRes === 'object') {
         if (contactsRes.data && Array.isArray(contactsRes.data)) {
@@ -70,7 +70,7 @@ const DealsListPage = () => {
           actualContacts = contactsRes.contacts;
         }
       }
-      
+
       let actualCompanies = companiesRes || [];
       if (companiesRes && !Array.isArray(companiesRes) && typeof companiesRes === 'object') {
         if (companiesRes.data && Array.isArray(companiesRes.data)) {
@@ -79,26 +79,26 @@ const DealsListPage = () => {
           actualCompanies = companiesRes.companies;
         }
       }
-      
+
       console.log('✅ DealsListPage - Data extracted:', { actualDeals, actualContacts, actualCompanies });
-      
+
       const transformedDeals = (actualDeals || []).map(deal => {
         const company = actualCompanies?.find(c => c.id === deal.company_id);
         const contact = actualContacts?.find(c => c.id === deal.contact_id);
-        
-        const contactName = contact 
+
+        const contactName = contact
           ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim()
-          : (deal.contact_first_name && deal.contact_last_name 
-              ? `${deal.contact_first_name} ${deal.contact_last_name}`
-              : 'N/A');
-        
+          : (deal.contact_first_name && deal.contact_last_name
+            ? `${deal.contact_first_name} ${deal.contact_last_name}`
+            : 'N/A');
+
         const assignedName = deal.assignee_first_name && deal.assignee_last_name
           ? `${deal.assignee_first_name} ${deal.assignee_last_name}`
           : 'Unassigned';
-        
+
         const email = deal.contact_email || 'N/A';
         const phone = deal.contact_phone || 'N/A';
-        
+
         return {
           id: deal.id,
           name: deal.deal_name,
@@ -117,15 +117,15 @@ const DealsListPage = () => {
           ...deal
         };
       });
-      
+
       console.log('✅ DealsListPage - Transformed Deals:', transformedDeals);
-      
+
       const sortedDeals = [...transformedDeals].sort((a, b) => {
         const dateA = new Date(a.updated_at || a.created_at || 0);
         const dateB = new Date(b.updated_at || b.created_at || 0);
         return dateB - dateA;
       });
-      
+
       setDeals(sortedDeals);
       setContacts(actualContacts);
       setCompanies(actualCompanies);
@@ -145,7 +145,7 @@ const DealsListPage = () => {
   const handleCreateDeal = async (formData) => {
     try {
       const response = await dealsAPI.create(formData);
-      
+
       if (response.id) {
         setIsModalOpen(false);
         await fetchData();
@@ -253,7 +253,7 @@ const DealsListPage = () => {
       label: 'Status',
       sortable: true,
       render: (value) => (
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs   ${getStatusBadge(value)}`}>
+        <span className={`inline-flex items-center px-3 py-1 rounded text-xs   ${getStatusBadge(value)}`}>
           {value}
         </span>
       )
@@ -262,7 +262,7 @@ const DealsListPage = () => {
       key: 'id',
       label: 'Action',
       render: (value, rowData) => (
-        <ContactActionDropdown 
+        <ContactActionDropdown
           contact={{ ...rowData, name: rowData.deal_name || rowData.name }}
           entityName="deal"
           onEdit={(deal) => {
@@ -305,7 +305,7 @@ const DealsListPage = () => {
         </div>
       )}
 
-      <DataTable 
+      <DataTable
         columns={columns}
         data={deals}
         title="All Deals"

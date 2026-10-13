@@ -328,7 +328,7 @@ export default function SeoGmbRankTrackingPage() {
                   <div className="flex flex-col gap-1.5 flex-1">
                     {RANKING_DIST.map((d) => (
                       <div key={d.name} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} /><span className="text-slate-600">{d.name}</span></div>
+                        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded" style={{ backgroundColor: d.color }} /><span className="text-slate-600">{d.name}</span></div>
                         <div className="text-right"><strong className="text-slate-800">{d.value}</strong><span className="text-slate-400 ml-1">({d.pct})</span></div>
                       </div>
                     ))}

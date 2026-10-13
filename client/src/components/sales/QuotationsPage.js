@@ -937,7 +937,7 @@ const QuotationsPage = () => {
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 transition-all border border-red-100 "
+                className="w-8 h-8 rounded flex items-center justify-center text-red-500 hover:bg-red-50 transition-all border border-red-100 "
               >
                 <Plus size={15} className="rotate-45" />
               </button>
@@ -990,7 +990,7 @@ const QuotationsPage = () => {
                   <p className="text-xs text-gray-400  mb-3 font-[500]">Client Personal Info</p>
                   <div className='grid grid-cols-3'>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded bg-red-50 flex items-center justify-center">
                         <User size={14} className="text-red-600" />
                       </div>
                       <div>
@@ -1000,7 +1000,7 @@ const QuotationsPage = () => {
                     </div>
                     {quotation.client_email && (
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center">
                           <Mail size={14} className="text-blue-600" />
                         </div>
                         <div>
@@ -1011,7 +1011,7 @@ const QuotationsPage = () => {
                     )}
                     {quotation.client_phone && (
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded bg-emerald-50 flex items-center justify-center">
                           <Phone size={14} className="text-emerald-600" />
                         </div>
                         <div>
@@ -1125,7 +1125,7 @@ const QuotationsPage = () => {
                               <span className="text-xs text-gray-400">
                                 {new Date(v.estimate_date).toLocaleDateString('en-GB')}
                               </span>
-                              <div className={`w-2 h-2 rounded-full ${v.status === 'Draft' ? 'bg-orange-500' : 'bg-blue-500'}`}></div>
+                              <div className={`w-2 h-2 rounded ${v.status === 'Draft' ? 'bg-orange-500' : 'bg-blue-500'}`}></div>
                             </div>
                           </div>
                         </div>
@@ -1148,11 +1148,11 @@ const QuotationsPage = () => {
                   <span className="text-sm  text-gray-600">Create Revision</span>
                   <button
                     onClick={() => setIsReviseModalOpen(true)}
-                    className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    className="relative inline-flex h-6 w-11 items-center rounded bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                   >
                     <span className="sr-only">Create Revision</span>
                     <div className="w-full flex justify-end">
-                      <span className="translate-x-1 inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
+                      <span className="translate-x-1 inline-block h-4 w-4 transform rounded bg-white transition-transform" />
                     </div>
                   </button>
                 </div>
@@ -1573,7 +1573,7 @@ const QuotationsPage = () => {
           <div className="flex items-center gap-2 text-gray-900  text-xs">
             <Filter size={15} className="text-gray-700" /> Filter
           </div>
-          <button onClick={() => setOpenDropdown(null)} className="w-4 h-4 rounded-full flex items-center justify-center text-[#1F2020] hover:bg-red-50 hover:text-red  transition-colors">
+          <button onClick={() => setOpenDropdown(null)} className="w-4 h-4 rounded flex items-center justify-center text-[#1F2020] hover:bg-red-50 hover:text-red  transition-colors">
             <Plus size={15} className="rotate-45" />
           </button>
         </div>
@@ -1639,17 +1639,17 @@ const QuotationsPage = () => {
             >
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-0.5 opacity-20 group-hover:opacity-40 transition-opacity">
-                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
-                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
-                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded" />
                 </div>
                 <span className={`text-xs  transition-colors ${visibleColumns[col] ? 'text-gray-900 ' : 'text-gray-500'}`}>{col}</span>
               </div>
               <div
-                className={`w-10 h-5.5 rounded-full relative transition-all duration-200 p-1 ${visibleColumns[col] ? 'bg-red-600' : 'bg-gray-200'}`}
+                className={`w-10 h-5.5 rounded relative transition-all duration-200 p-1 ${visibleColumns[col] ? 'bg-red-600' : 'bg-gray-200'}`}
               >
                 <div
-                  className={`w-3.5 h-3.5 bg-white rounded-full transition-all duration-200  ${visibleColumns[col] ? 'translate-x-[18px]' : 'translate-x-0'}`}
+                  className={`w-3.5 h-3.5 bg-white rounded transition-all duration-200  ${visibleColumns[col] ? 'translate-x-[18px]' : 'translate-x-0'}`}
                 />
               </div>
             </div>
@@ -1670,7 +1670,7 @@ const QuotationsPage = () => {
         <div>
           <h1 className="text-xl font-[500] text-gray-900">
             Quotations
-            <span className="inline-block p-1  bg-red-50 text-red  text-xs  rounded-full border border-red-100">
+            <span className="inline-block p-1  bg-red-50 text-red  text-xs  rounded border border-red-100">
               {filteredQuotations.length}
             </span>
           </h1>
@@ -1787,10 +1787,10 @@ const QuotationsPage = () => {
                   {/* Column Header */}
                   <div className={`${statusColors[group.id]?.light || 'bg-blue-50'} p-2 border-b border-gray-200 flex items-center justify-between sticky top-0 z-10`}>
                     <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full  ${statusColors[group.id]?.dot || 'bg-blue-500'}`}></div>
+                      <div className={`w-3 h-3 rounded  ${statusColors[group.id]?.dot || 'bg-blue-500'}`}></div>
                       <div className="flex items-center gap-2">
                         <h2 className={`text-sm  tracking-tight ${statusColors[group.id]?.text || 'text-blue-700'}`}>{group.name}</h2>
-                        <span className="p-1 px-2 bg-white/50 text-gray-600 text-xs font-[500] rounded-full border border-gray-200/50 backdrop-blur-sm ">
+                        <span className="p-1 px-2 bg-white/50 text-gray-600 text-xs font-[500] rounded border border-gray-200/50 backdrop-blur-sm ">
                           {group.items.length}
                         </span>
                       </div>
@@ -1835,7 +1835,7 @@ const QuotationsPage = () => {
                           {/* Header: Logo, Name, Subtitle, Menu */}
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-6 h-6 rounded-full border border-gray-100 flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 ">
+                              <div className="w-6 h-6 rounded border border-gray-100 flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 ">
                                 {item.logo ? (
                                   <img src={item.logo} alt="" className="w-full h-full object-cover" />
                                 ) : (
@@ -1858,7 +1858,7 @@ const QuotationsPage = () => {
                                   e.stopPropagation();
                                   setActionMenu(actionMenu === item.id ? null : item.id);
                                 }}
-                                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-all"
+                                className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 transition-all"
                               >
                                 <MoreVertical size={15} />
                               </button>
@@ -1902,7 +1902,7 @@ const QuotationsPage = () => {
                           {/* Footer: Avatar, Name, External Link */}
                           <div className="pt-4 border-t border-gray-100 flex items-center justify-between pointer-events-none">
                             <div className="flex items-center gap-3">
-                              <div className="w-5 h-5 rounded-full border border-gray-200 overflow-hidden shrink-0 ">
+                              <div className="w-5 h-5 rounded border border-gray-200 overflow-hidden shrink-0 ">
                                 {item.owner_avatar ? (
                                   <img src={item.owner_avatar} alt="" className="w-full h-full object-cover" />
                                 ) : (
@@ -1915,7 +1915,7 @@ const QuotationsPage = () => {
                                 {getCardValue(item, 'owner')}
                               </span>
                             </div>
-                            <button className="w-9 h-9 flex items-center justify-center rounded-full border border-blue-100 bg-white text-blue-500 hover:bg-blue-50 transition-all pointer-events-auto ">
+                            <button className="w-9 h-9 flex items-center justify-center rounded border border-blue-100 bg-white text-blue-500 hover:bg-blue-50 transition-all pointer-events-auto ">
                               <ExternalLink size={15} />
                             </button>
                           </div>
@@ -1923,7 +1923,7 @@ const QuotationsPage = () => {
                       ))
                     ) : (
                       <div className="flex flex-col items-center justify-center py-12 text-[#1F2020] border-2 border-dashed border-gray-200 rounded bg-white/40">
-                        <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mb-3">
+                        <div className="w-12 h-12 rounded bg-gray-50 flex items-center justify-center mb-3">
                           <FileText size={15} className="opacity-30" />
                         </div>
                         <p className="text-xs  text-[#1F2020] ">No quotations</p>
@@ -2086,7 +2086,7 @@ const QuotationsPage = () => {
                       {visibleColumns['Client'] && (
                         <td className="p-2">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs  text-gray-500 border border-gray-200">
+                            <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-xs  text-gray-500 border border-gray-200">
                               {getCardValue(item, 'company')[0]}
                             </div>
                             <span className="text-xs   text-gray-900">{getCardValue(item, 'company')}</span>
@@ -2099,7 +2099,7 @@ const QuotationsPage = () => {
                       {visibleColumns['Project'] && (
                         <td className="p-2">
                           <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+                            <div className="w-2.5 h-2.5 rounded bg-blue-400" />
                             <span className="text-xs  text-gray-600">{getCardValue(item, 'type')}</span>
                           </div>
                         </td>
@@ -2118,7 +2118,7 @@ const QuotationsPage = () => {
                       {visibleColumns['Estimation By'] && (
                         <td className="p-2">
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-red-50 flex items-center justify-center text-xs text-red  border border-red-100">
+                            <div className="w-6 h-6 rounded bg-red-50 flex items-center justify-center text-xs text-red  border border-red-100">
                               {getCardValue(item, 'owner').charAt(0)}
                             </div>
                             <div className="flex flex-col">
@@ -2145,7 +2145,7 @@ const QuotationsPage = () => {
                               e.stopPropagation();
                               setActionMenu(actionMenu === item.id ? null : item.id);
                             }}
-                            className="p-1.5 hover:bg-gray-200 rounded-full transition-colors text-[#1F2020] hover:text-gray-600"
+                            className="p-1.5 hover:bg-gray-200 rounded transition-colors text-[#1F2020] hover:text-gray-600"
                           >
                             <MoreVertical size={15} />
                           </button>
@@ -2183,7 +2183,7 @@ const QuotationsPage = () => {
                                     <td className="p-2 text-gray-500">{new Date(desc.estimate_date || desc.date).toLocaleDateString()}</td>
                                     <td className="p-2">
                                       <span
-                                        className="px-2 py-0.5 rounded-full text-xs"
+                                        className="px-2 py-0.5 rounded text-xs"
                                         style={{ backgroundColor: getStatusColor(desc.status) + '20', color: getStatusColor(desc.status) }}
                                       >
                                         {desc.status}

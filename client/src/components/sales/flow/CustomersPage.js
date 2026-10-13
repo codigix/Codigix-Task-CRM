@@ -33,7 +33,7 @@ export function NewCustomerModal({ onClose, onSaved }) {
           <div><label className={labelCls}>Industry</label><input value={f.industry} onChange={e => set('industry', e.target.value)} className={inputCls} /></div>
           <div className="col-span-2"><label className={labelCls}>Address</label><input value={f.address} onChange={e => set('address', e.target.value)} className={inputCls} /></div>
         </div>
-        <div className="border border-gray-200 rounded-lg p-3 bg-gray-50/60">
+        <div className="border border-gray-200 rounded p-3 bg-gray-50/60">
           <div className="text-[13px] font-medium text-gray-800 mb-2">Main contact person (optional)</div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className={labelCls}>Name</label><input value={f.contact.name} onChange={e => setC('name', e.target.value)} className={inputCls} /></div>
@@ -67,7 +67,7 @@ export default function CustomersPage() {
   if (!data) return <Loading error={error} text="Loading customers…" />;
   const c = data.counts;
   const exportCsv = () => downloadCsv('customers.csv', [['Customer', 'Type', 'Contact', 'Phone', 'Email', 'City', 'GSTIN', 'Owner', 'Open deals', 'Won deals', 'Won value', 'Invoiced', 'Paid', 'Outstanding'],
-    ...data.customers.map(x => [x.name, x.type, x.contact?.name, x.contact?.phone || x.phone, x.contact?.email || x.email, x.city, x.gstin, x.owner, x.openDeals, x.wonDeals, x.wonValue, x.invoiced, x.paid, x.outstanding])]);
+  ...data.customers.map(x => [x.name, x.type, x.contact?.name, x.contact?.phone || x.phone, x.contact?.email || x.email, x.city, x.gstin, x.owner, x.openDeals, x.wonDeals, x.wonValue, x.invoiced, x.paid, x.outstanding])]);
 
   return (
     <div className="p-5 bg-[#F8FAFC] min-h-screen font-sans text-gray-900">
@@ -89,7 +89,7 @@ export default function CustomersPage() {
         <div className="relative ml-auto"><Search size={14} className="absolute left-2.5 top-2.5 text-gray-400" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Name, phone, GSTIN, city" className="h-9 w-64 text-[13px] border border-gray-300 rounded pl-8 pr-2 outline-none focus:border-blue-500 bg-white" /></div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+      <div className="bg-white border border-gray-200 rounded overflow-x-auto">
         <table className="w-full text-[13px] min-w-[960px]">
           <thead className="text-xs text-gray-500 bg-gray-50"><tr>
             <th className="text-left font-medium px-4 py-2.5">Customer</th><th className="text-left font-medium px-2 py-2.5">Contact</th><th className="text-left font-medium px-2 py-2.5">Owner</th>

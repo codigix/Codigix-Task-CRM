@@ -227,7 +227,7 @@ const AnalyticsPage = () => {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading analytics...</p>
         </div>
       </div>
@@ -310,7 +310,7 @@ const AnalyticsPage = () => {
                     sortable: true,
                     render: (value) => (
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs  text-gray-600">
+                        <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-xs  text-gray-600">
                           {getInitials(value)}
                         </div>
                         <span className="text-xs font-medium text-gray-900">{value || 'Unassigned'}</span>
@@ -324,7 +324,7 @@ const AnalyticsPage = () => {
                     sortable: true,
                     render: (val, row) => (
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden w-24">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded overflow-hidden w-24">
                           <div
                             className="h-full bg-green-500"
                             style={{ width: `${(val / row.total_meetings) * 100}%` }}
@@ -339,7 +339,7 @@ const AnalyticsPage = () => {
                     label: 'Deal Conversions',
                     sortable: true,
                     render: (val) => (
-                      <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs ">
+                      <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs ">
                         {val} Deals
                       </span>
                     )
@@ -368,7 +368,7 @@ const AnalyticsPage = () => {
                     sortable: true,
                     render: (value, row) => (
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 ${row.bg} rounded-full flex items-center justify-center text-white text-[14px] `}>{row.initials}</div>
+                        <div className={`w-8 h-8 ${row.bg} rounded flex items-center justify-center text-white text-[14px] `}>{row.initials}</div>
                         <div>
                           <div className="text-xs    text-gray-800">{value}</div>
                           <div className="text-xs text-[#1F2020]">{row.role}</div>
@@ -459,7 +459,7 @@ const AnalyticsPage = () => {
                     sortable: true,
                     render: (value, row, index) => (
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs   ${getAvatarColor(recentCompaniesData.indexOf(row))}`}></div>
+                        <div className={`w-8 h-8 rounded flex items-center justify-center text-xs   ${getAvatarColor(recentCompaniesData.indexOf(row))}`}></div>
                         <div className="text-xs ">{value}</div>
                       </div>
                     )
@@ -510,7 +510,7 @@ const AnalyticsPage = () => {
                     label: 'Status',
                     sortable: true,
                     render: (value) => (
-                      <span className={`text-xs px-1.5 rounded-full ${value === 'Completed' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
+                      <span className={`text-xs px-1.5 rounded ${value === 'Completed' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
                         {value}
                       </span>
                     )

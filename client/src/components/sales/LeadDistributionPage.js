@@ -66,7 +66,7 @@ const LeadDistributionPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded h-12 w-12 border-b-2 border-red-600"></div>
       </div>
     );
   }
@@ -218,9 +218,9 @@ const LeadDistributionPage = () => {
                       <span className=" text-gray-700">{member.first_name} {member.last_name}</span>
                       <span className="text-gray-500">{Math.floor(Math.random() * 10) + 2} active leads</span>
                     </div>
-                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-gray-100 rounded overflow-hidden">
                       <div
-                        className="h-full bg-blue-500 rounded-full"
+                        className="h-full bg-blue-500 rounded"
                         style={{ width: `${Math.random() * 80 + 10}%` }}
                       />
                     </div>
@@ -251,7 +251,7 @@ const LeadDistributionPage = () => {
       {activeTab === 'rules' && (
         <div className="bg-white rounded border border-gray-200  p-8 text-center">
           <div className="max-w-md mx-auto space-y-4">
-            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto text-red-600">
+            <div className="w-16 h-16 bg-red-50 rounded flex items-center justify-center mx-auto text-red-600">
               <Zap size={32} />
             </div>
             <h3 className="text-lg  text-gray-900">Automation Engine</h3>
@@ -270,7 +270,7 @@ const LeadDistributionPage = () => {
       {activeTab === 'performance' && (
         <div className="bg-white rounded border border-gray-200  p-8 text-center">
           <div className="max-w-md mx-auto space-y-4">
-            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-blue-600">
+            <div className="w-16 h-16 bg-blue-50 rounded flex items-center justify-center mx-auto text-blue-600">
               <BarChart3 size={32} />
             </div>
             <h3 className="text-lg  text-gray-900">Performance Analytics</h3>
@@ -278,7 +278,7 @@ const LeadDistributionPage = () => {
               Track conversion rates, response times, and workload distribution across your sales team.
             </p>
             <div className="pt-4 flex gap-2 justify-center">
-              <div className="px-4 py-1.5 bg-gray-100 rounded-full text-xs  text-gray-600 ">Available in Pro Plan</div>
+              <div className="px-4 py-1.5 bg-gray-100 rounded text-xs  text-gray-600 ">Available in Pro Plan</div>
             </div>
           </div>
         </div>

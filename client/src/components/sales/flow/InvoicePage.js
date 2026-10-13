@@ -138,7 +138,7 @@ export default function InvoicePage() {
     <div className="p-5 bg-[#F8FAFC] min-h-screen font-sans text-gray-900">
       <button onClick={() => navigate(`${base}/invoices`)} className="text-xs text-gray-500 hover:text-gray-800 inline-flex items-center gap-1 mb-2 cursor-pointer"><ArrowLeft size={13} /> Invoices</button>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 flex flex-wrap items-center gap-3">
+      <div className="bg-white border border-gray-200 rounded p-4 mb-4 flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-[18px] font-semibold">{isNew ? 'New invoice' : inv.number}</h1>
@@ -176,7 +176,7 @@ export default function InvoicePage() {
 
       <div className="grid xl:grid-cols-[1fr_320px] gap-4 mt-2">
         <div className="space-y-4 min-w-0">
-          <div className="bg-white border border-gray-200 rounded-lg p-4 grid md:grid-cols-2 gap-4">
+          <div className="bg-white border border-gray-200 rounded p-4 grid md:grid-cols-2 gap-4">
             <ClientFields client={form.client} editable={draft} withContact={false} companyState={meta.companyState} onChange={(client) => { setForm(f => ({ ...f, client })); setDirty(true); }} onGstMode={(m) => setF('gstMode', m)} />
             <div className="space-y-2">
               <div className="text-xs font-semibold text-gray-700">Invoice</div>
@@ -191,7 +191,7 @@ export default function InvoicePage() {
 
           <ItemsTable items={form.items} onChange={(items) => { setForm(f => ({ ...f, items })); setDirty(true); }} editable={draft} defaultTax={meta.quotation.defaultTaxPct} services={meta.services || []} />
 
-          <div className="bg-white border border-gray-200 rounded-lg p-4 grid md:grid-cols-2 gap-4">
+          <div className="bg-white border border-gray-200 rounded p-4 grid md:grid-cols-2 gap-4">
             <div><label className={labelCls}>Terms & conditions</label><textarea disabled={!draft} value={form.terms} onChange={e => setF('terms', e.target.value)} rows={5} placeholder="Leave empty to use the standard invoice terms from Sales Settings" className="w-full text-[12.5px] border border-gray-300 rounded p-2.5 outline-none focus:border-blue-500 disabled:bg-gray-50" /></div>
             <div><label className={labelCls}>Notes on the invoice</label><textarea disabled={status === 'Paid'} value={form.notes} onChange={e => setF('notes', e.target.value)} rows={5} placeholder="Printed on the PDF" className="w-full text-[12.5px] border border-gray-300 rounded p-2.5 outline-none focus:border-blue-500 disabled:bg-gray-50" /></div>
           </div>
@@ -219,7 +219,7 @@ export default function InvoicePage() {
           )}
 
           {!isNew && inv.advance > 0 && status !== 'Draft' && inv.balance > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-[12.5px]">
+            <div className="bg-blue-50 border border-blue-200 rounded p-3 text-[12.5px]">
               <div className="font-semibold text-blue-900">Advance held for this customer: {money2(inv.advance)}</div>
               <div className="text-blue-800 mt-0.5">Adjust it against this invoice instead of asking for payment again.</div>
               <button onClick={() => act('adv', () => desk(`/invoices/${id}/apply-advance`, { method: 'POST', body: {} }))} disabled={!!busy} className={`${btn.blue} mt-2`}><Wallet size={13} /> Adjust {money2(Math.min(inv.advance, inv.balance))}</button>

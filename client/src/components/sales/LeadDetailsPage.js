@@ -1130,7 +1130,7 @@ const LeadDetailsPage = () => {
       {/* Profile Header Card */}
       <div className="bg-white rounded border border-gray-200 p-2 mb-3 flex  justify-between">
         <div className="flex  gap-4">
-          <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-sm  border border-amber-200">
+          <div className="w-8 h-8 rounded bg-amber-100 text-amber-600 flex items-center justify-center text-sm  border border-amber-200">
             {getInitials(lead.name || lead.lead_name)}
           </div>
           <div>
@@ -1249,7 +1249,7 @@ const LeadDetailsPage = () => {
           <div className="bg-white rounded border border-gray-200 p-2">
             <h3 className="text-sm  text-gray-900 mb-4">Owner</h3>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs  text-blue-600 overflow-hidden">
+              <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-xs  text-blue-600 overflow-hidden">
                 <img src={`https://i.pravatar.cc/100?u=${lead.assignee_id || lead.owner_id || 1}`} alt="" className="w-full h-full object-cover" />
               </div>
               <span className="text-xs  text-gray-700">{lead.assignee_name || lead.owner_name || 'Steve Vaughan'}</span>
@@ -1320,7 +1320,7 @@ const LeadDetailsPage = () => {
               {dealContacts.length > 0 ? (
                 dealContacts.map((contact, idx) => (
                   <div key={idx} className={`flex items-center gap-3 ${idx > 0 ? 'pt-4 border-t border-gray-50' : ''}`}>
-                    <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                    <div className="w-8 h-8 rounded bg-gray-100 overflow-hidden flex items-center justify-center">
                       {contact.profile_image ? (
                         <img src={contact.profile_image} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -1606,7 +1606,7 @@ const LeadDetailsPage = () => {
                               {!['Lead', 'Deal', 'Project', 'Task', 'Quotation'].includes(group.type) && <History size={20} />}
                             </div>
                             {/* Dot on line for root */}
-                            <div className="absolute -left-[11px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-gray-400 border-2 border-white"></div>
+                            <div className="absolute -left-[11px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded bg-gray-400 border-2 border-white"></div>
                           </div>
                           <div className="flex-1 flex items-center gap-2">
                             <h4 className="text-sm  text-gray-900 whitespace-nowrap">{group.name}</h4>
@@ -1635,7 +1635,7 @@ const LeadDetailsPage = () => {
                                   {!['Call', 'Google Meet', 'Meeting', 'Proposal Discussion', 'Proposal', 'Email', 'Payment Reminder', 'Payment', 'Internal', 'Team'].includes(item.type) && <CheckCircle size={16} className="text-gray-500" />}
                                 </div>
                                 {/* Small dot on the vertical line */}
-                                <div className="absolute -left-[14.5px] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gray-300 z-20"></div>
+                                <div className="absolute -left-[14.5px] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded bg-gray-300 z-20"></div>
                               </div>
 
                               <div className="flex-1 flex items-center gap-2">
@@ -1742,7 +1742,7 @@ const LeadDetailsPage = () => {
                         <div className="relative">
                           <button
                             onClick={() => setIsNoteMenuOpen(isNoteMenuOpen === note.id ? null : note.id)}
-                            className="text-gray-400 hover:text-gray-600 p-1  rounded-full transition-colors"
+                            className="text-gray-400 hover:text-gray-600 p-1  rounded transition-colors"
                           >
                             <MoreVertical size={16} />
                           </button>
@@ -1891,7 +1891,7 @@ const LeadDetailsPage = () => {
                                 <Play size={10} /> Listen to Recording
                               </button>
                               {call.ai_sentiment && (
-                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${call.ai_sentiment === 'Positive' ? 'bg-green-100 text-green-700' :
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded ${call.ai_sentiment === 'Positive' ? 'bg-green-100 text-green-700' :
                                   call.ai_sentiment === 'Negative' ? 'bg-red-100 text-red-700' :
                                     'bg-gray-100 text-gray-700'
                                   }`}>
@@ -1953,7 +1953,7 @@ const LeadDetailsPage = () => {
                     <div key={idx} className="bg-white border border-gray-100 rounded p-4 space-y-2">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-red-50 text-red flex items-center justify-center text-xs">
+                          <div className="w-8 h-8 rounded bg-red-50 text-red flex items-center justify-center text-xs">
                             <Mail size={16} />
                           </div>
                           <div>
@@ -2093,7 +2093,7 @@ const LeadDetailsPage = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 pt-2">
-                          <div className="w-6 h-6 rounded-full bg-red-50 text-red flex items-center justify-center text-[9px]">
+                          <div className="w-6 h-6 rounded bg-red-50 text-red flex items-center justify-center text-[9px]">
                             {getInitials(file.owner_name || file.first_name || 'U')}
                           </div>
                           <span className="text-xs text-gray-600">{file.owner_name || `${file.first_name || ''} ${file.last_name || ''}`.trim() || 'System User'}</span>
@@ -2133,7 +2133,7 @@ const LeadDetailsPage = () => {
           <div className="bg-white rounded  w-full max-w-lg animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-2 border-b border-gray-100">
               <h3 className="text-base font-[500] text-gray-900">Add New Notes</h3>
-              <button onClick={() => setIsAddNoteModalOpen(false)} className="p-1  rounded-full text-gray-400">
+              <button onClick={() => setIsAddNoteModalOpen(false)} className="p-1  rounded text-gray-400">
                 <X size={15} />
               </button>
             </div>
@@ -2174,7 +2174,7 @@ const LeadDetailsPage = () => {
                   onClick={() => noteFileInputRef.current?.click()}
                   className="border border-dashed border-gray-200 rounded p-4 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group"
                 >
-                  <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                  <div className="w-10 h-10 bg-red-50 rounded flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                     <FileUp size={16} className="text-red-600" />
                   </div>
                   <p className="text-xs text-gray-700 font-medium">Click to <span className="text-red-600">browse</span> files to attach</p>
@@ -2227,7 +2227,7 @@ const LeadDetailsPage = () => {
           <div className="bg-white rounded  w-full max-w-lg animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-2 border-b border-gray-100">
               <h3 className="text-base font-[500] text-gray-900">Create Call Log</h3>
-              <button onClick={() => setIsAddCallLogModalOpen(false)} className="p-1  rounded-full text-gray-400">
+              <button onClick={() => setIsAddCallLogModalOpen(false)} className="p-1  rounded text-gray-400">
                 <X size={15} />
               </button>
             </div>
@@ -2322,7 +2322,7 @@ const LeadDetailsPage = () => {
                               }
                             }}
                             className={`
-                              h-8 w-8 flex items-center justify-center text-xs  rounded-full transition-all
+                              h-8 w-8 flex items-center justify-center text-xs  rounded transition-all
                               ${!isCurrentMonth ? 'text-gray-300 pointer-events-none' : 'text-gray-600 hover:bg-red-50 hover:text-red'}
                               ${isSelected ? 'bg-red text-white hover:bg-red-700' : ''}
                             `}
@@ -2375,7 +2375,7 @@ const LeadDetailsPage = () => {
           <div className="bg-white rounded  w-full max-w-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-2 border-b border-gray-100">
               <h3 className="text-base font-[500] text-gray-900">Create New File</h3>
-              <button onClick={() => setIsAddFileModalOpen(false)} className="p-1  rounded-full text-gray-400">
+              <button onClick={() => setIsAddFileModalOpen(false)} className="p-1  rounded text-gray-400">
                 <X size={15} />
               </button>
             </div>
@@ -2518,7 +2518,7 @@ const LeadDetailsPage = () => {
                               {idx === 0 ? (
                                 <button
                                   onClick={() => setFileForm({ ...fileForm, recipients: [...fileForm.recipients, { name: '', email: '' }] })}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border border-gray-400 rounded-full flex items-center justify-center text-gray-400 text-xs font-[500] hover:border-red hover:text-red transition-colors"
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border border-gray-400 rounded flex items-center justify-center text-gray-400 text-xs font-[500] hover:border-red hover:text-red transition-colors"
                                 >
                                   +
                                 </button>
@@ -2590,7 +2590,7 @@ const LeadDetailsPage = () => {
                               {idx === 0 ? (
                                 <button
                                   onClick={() => setFileForm({ ...fileForm, recipients: [...fileForm.recipients, { name: '', email: '' }] })}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border border-gray-400 rounded-full flex items-center justify-center text-gray-400 text-xs font-[500] hover:border-red hover:text-red transition-colors"
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border border-gray-400 rounded flex items-center justify-center text-gray-400 text-xs font-[500] hover:border-red hover:text-red transition-colors"
                                 >
                                   +
                                 </button>
@@ -2638,7 +2638,7 @@ const LeadDetailsPage = () => {
                   </button>
 
                   <div className="p-3 bg-green-50 border border-green-200 rounded flex items-center gap-2 text-green-700 text-xs ">
-                    <div className="w-3 h-3 bg-green-500 rounded-full flex items-center justify-center text-white">
+                    <div className="w-3 h-3 bg-green-500 rounded flex items-center justify-center text-white">
                       <Check size={10} strokeWidth={4} />
                     </div>
                     Document sent successfully to the selected recipients
@@ -2678,7 +2678,7 @@ const LeadDetailsPage = () => {
           <div className="bg-white rounded  w-full max-w-lg animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-2 border-b border-gray-100">
               <h3 className="text-base font-[500] text-gray-900">Connect Account</h3>
-              <button onClick={() => setIsConnectAccountModalOpen(false)} className="p-1  rounded-full text-gray-400">
+              <button onClick={() => setIsConnectAccountModalOpen(false)} className="p-1  rounded text-gray-400">
                 <X size={15} />
               </button>
             </div>
@@ -2740,7 +2740,7 @@ const LeadDetailsPage = () => {
           <div className="bg-white rounded  w-full max-w-lg animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-2 border-b border-gray-100">
               <h3 className="text-base font-[500] text-gray-900">Add Contact</h3>
-              <button onClick={() => setIsAddContactModalOpen(false)} className="p-1  rounded-full text-gray-400">
+              <button onClick={() => setIsAddContactModalOpen(false)} className="p-1  rounded text-gray-400">
                 <X size={15} />
               </button>
             </div>
@@ -2767,7 +2767,7 @@ const LeadDetailsPage = () => {
                   <div className={`w-3 h-3 rounded border flex items-center justify-center transition-colors ${selectedContacts.includes(contact.id) ? 'bg-red-600 border-red text-white' : 'border-gray-300 bg-white group-hover:border-red'}`}>
                     {selectedContacts.includes(contact.id) && <Check size={12} strokeWidth={3} />}
                   </div>
-                  <img src={contact.img} alt="" className="w-8 h-8 rounded-full object-cover" />
+                  <img src={contact.img} alt="" className="w-8 h-8 rounded object-cover" />
                   <span className="text-xs  text-gray-700 group-hover:text-gray-900">{contact.name}</span>
                 </div>
               ))}

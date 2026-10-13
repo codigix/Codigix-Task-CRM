@@ -128,7 +128,7 @@ const FilterPanel = ({ isOpen, onClose, users, onFilter, onReset }) => {
                         className="w-3 h-3 cursor-pointer"
                       />
                       {user?.avatar && (
-                        <img src={user.avatar} alt={name} className="w-5 h-5 rounded-full" />
+                        <img src={user.avatar} alt={name} className="w-5 h-5 rounded" />
                       )}
                       <span className="text-xs text-gray-700 flex-1 truncate">{name}</span>
                     </label>

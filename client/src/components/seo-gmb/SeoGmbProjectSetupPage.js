@@ -373,7 +373,7 @@ export default function SeoGmbProjectSetupPage() {
                       : 'bg-transparent text-slate-500 hover:bg-slate-50'
                       }`}
                   >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 ${createStep === s.step ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-500'
+                    <div className={`w-8 h-8 rounded flex items-center justify-center text-xs shrink-0 ${createStep === s.step ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-500'
                       }`}>
                       {s.step}
                     </div>
@@ -644,10 +644,10 @@ export default function SeoGmbProjectSetupPage() {
                           <button
                             type="button"
                             onClick={() => item.set(s => !s)}
-                            className={`w-10 h-5.5 rounded-full p-0.5 border-none cursor-pointer transition-colors ${item.state ? 'bg-red-600' : 'bg-slate-300'
+                            className={`w-10 h-5.5 rounded p-0.5 border-none cursor-pointer transition-colors ${item.state ? 'bg-red-600' : 'bg-slate-300'
                               }`}
                           >
-                            <div className={`w-4.5 h-4.5 bg-white rounded-full transition-transform ${item.state ? 'translate-x-4.5' : 'translate-x-0'}`} />
+                            <div className={`w-4.5 h-4.5 bg-white rounded transition-transform ${item.state ? 'translate-x-4.5' : 'translate-x-0'}`} />
                           </button>
                         </div>
                       ))}
@@ -728,8 +728,8 @@ export default function SeoGmbProjectSetupPage() {
                       <p className=" text-slate-700 m-0">Auto Sync Reviews and Posts</p>
                       <p className="text-xs text-slate-400 m-0 mt-0.5">Automatically sync customer ratings and Google posts every 2 hours.</p>
                     </div>
-                    <button type="button" onClick={() => setNewProj(p => ({ ...p, gmbSyncEnabled: !p.gmbSyncEnabled }))} className={`w-10 h-5.5 rounded-full p-0.5 border-none cursor-pointer transition-colors ${newProj.gmbSyncEnabled ? 'bg-red-600' : 'bg-slate-300'}`}>
-                      <div className={`w-4.5 h-4.5 bg-white rounded-full transition-transform ${newProj.gmbSyncEnabled ? 'translate-x-4.5' : 'translate-x-0'}`} />
+                    <button type="button" onClick={() => setNewProj(p => ({ ...p, gmbSyncEnabled: !p.gmbSyncEnabled }))} className={`w-10 h-5.5 rounded p-0.5 border-none cursor-pointer transition-colors ${newProj.gmbSyncEnabled ? 'bg-red-600' : 'bg-slate-300'}`}>
+                      <div className={`w-4.5 h-4.5 bg-white rounded transition-transform ${newProj.gmbSyncEnabled ? 'translate-x-4.5' : 'translate-x-0'}`} />
                     </button>
                   </div>
                 </div>
@@ -799,8 +799,8 @@ export default function SeoGmbProjectSetupPage() {
                         <p className=" text-slate-700 m-0">Rank Drop Instant Alert</p>
                         <p className="text-xs text-slate-400 m-0 mt-0.5">Send immediate notification if a target keyword drops out of top 10.</p>
                       </div>
-                      <button type="button" onClick={() => setNewProj(p => ({ ...p, notifInstantAlerts: !p.notifInstantAlerts }))} className={`w-10 h-5.5 rounded-full p-0.5 border-none cursor-pointer transition-colors ${newProj.notifInstantAlerts ? 'bg-red-600' : 'bg-slate-300'}`}>
-                        <div className={`w-4.5 h-4.5 bg-white rounded-full transition-transform ${newProj.notifInstantAlerts ? 'translate-x-4.5' : 'translate-x-0'}`} />
+                      <button type="button" onClick={() => setNewProj(p => ({ ...p, notifInstantAlerts: !p.notifInstantAlerts }))} className={`w-10 h-5.5 rounded p-0.5 border-none cursor-pointer transition-colors ${newProj.notifInstantAlerts ? 'bg-red-600' : 'bg-slate-300'}`}>
+                        <div className={`w-4.5 h-4.5 bg-white rounded transition-transform ${newProj.notifInstantAlerts ? 'translate-x-4.5' : 'translate-x-0'}`} />
                       </button>
                     </div>
                   </div>
@@ -866,7 +866,7 @@ export default function SeoGmbProjectSetupPage() {
                     { text: "Click 'Create Project' to get started", checked: createStep === 6 }
                   ].map((x, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-xs">
-                      <div className={`w-4 h-4 rounded-full flex items-center justify-center ${x.checked ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'
+                      <div className={`w-4 h-4 rounded flex items-center justify-center ${x.checked ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'
                         }`}>
                         <Check size={10} strokeWidth={3} />
                       </div>
@@ -910,7 +910,7 @@ export default function SeoGmbProjectSetupPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h1 className="text-xl  text-slate-900 m-0">{projectName}</h1>
-                    <span className="bg-green-100 text-green-700 text-xs  px-2.5 py-0.5 rounded-full">Active</span>
+                    <span className="bg-green-100 text-green-700 text-xs  px-2.5 py-0.5 rounded">Active</span>
                   </div>
                   <div className="text-xs text-slate-500 flex items-center gap-4 mt-1">
                     <span className="text-blue-500 hover:underline cursor-pointer">www.technova.com</span>

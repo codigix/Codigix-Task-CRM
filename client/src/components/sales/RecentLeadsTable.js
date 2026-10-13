@@ -50,7 +50,7 @@ const RecentLeadsTable = ({ leads, onDateRangeChange }) => {
                 <td className="p-3 text-xs text-gray-600">{lead.company}</td>
                 <td className="p-3 text-xs text-gray-600">{lead.phone}</td>
                 <td className="p-3 text-xs">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs   ${getStatusColor(lead.status)}`}>
+                  <span className={`inline-flex items-center px-3 py-1 rounded text-xs   ${getStatusColor(lead.status)}`}>
                     {lead.status}
                   </span>
                 </td>

@@ -86,7 +86,7 @@ const UpcomingEvents = () => {
   if (loading) {
     return (
       <div className="bg-white rounded  p-4 border border-gray-100 min-h-[300px] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+        <div className="animate-spin rounded h-8 w-8 border-b-2 border-red-500"></div>
       </div>
     );
   }

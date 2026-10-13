@@ -58,8 +58,8 @@ const ProjectActivityPanel = ({ projectId, currentUserId = 1 }) => {
         <button
           onClick={() => setActiveTab('comments')}
           className={`px-4 py-3   text-xs  flex items-center gap-2 border-b-2 ${activeTab === 'comments'
-              ? 'border-red-600 text-red '
-              : 'border-transparent text-gray-600 hover:text-gray-900'
+            ? 'border-red-600 text-red '
+            : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
         >
           <MessageCircle size={16} /> Comments ({comments.length})
@@ -67,8 +67,8 @@ const ProjectActivityPanel = ({ projectId, currentUserId = 1 }) => {
         <button
           onClick={() => setActiveTab('activity')}
           className={`px-4 py-3   text-xs  border-b-2 ${activeTab === 'activity'
-              ? 'border-red-600 text-red '
-              : 'border-transparent text-gray-600 hover:text-gray-900'
+            ? 'border-red-600 text-red '
+            : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
         >
           Activity ({activity.length})
@@ -125,7 +125,7 @@ const ProjectActivityPanel = ({ projectId, currentUserId = 1 }) => {
           ) : (
             activity.map(act => (
               <div key={act.id} className="flex gap-3 pb-3 border-b border-gray-200 last:border-b-0">
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
                   <span className="text-xs   text-gray-600">
                     {act.first_name?.[0]}{act.last_name?.[0]}
                   </span>

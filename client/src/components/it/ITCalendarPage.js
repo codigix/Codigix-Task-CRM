@@ -108,7 +108,7 @@ function GuestEmailsInput({ emails, onChange }) {
       </label>
       <div className="flex flex-wrap gap-1.5 p-2 border border-gray-200 rounded focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-50 bg-white min-h-[42px] transition-all">
         {emails.map((email, idx) => (
-          <div key={idx} className="flex items-center gap-1 bg-red-50 border border-red-100 text-red-700 rounded-full px-2.5 py-0.5 text-xs">
+          <div key={idx} className="flex items-center gap-1 bg-red-50 border border-red-100 text-red-700 rounded px-2.5 py-0.5 text-xs">
             <span>{email}</span>
             <button
               type="button"
@@ -205,7 +205,7 @@ function AddEventModal({ onClose, onSave, defaultDate, eventToEdit }) {
             <h2 className="text-[16px] text-gray-900">{eventToEdit ? 'Edit Event' : 'Add New Event'}</h2>
             <p className="text-xs text-gray-500 mt-0.5">Fill in the details to schedule your event</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -335,7 +335,7 @@ function AddEventModal({ onClose, onSave, defaultDate, eventToEdit }) {
                     className="w-full border border-gray-200 rounded p-2.5 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 bg-white text-gray-800 font-mono transition-all"
                   />
                   {loadingLink && (
-                    <div className="absolute right-3 w-4 h-4 border-2 border-t-blue-500 rounded-full animate-spin"></div>
+                    <div className="absolute right-3 w-4 h-4 border-2 border-t-blue-500 rounded animate-spin"></div>
                   )}
                 </div>
               </div>
@@ -446,11 +446,11 @@ function EventDetail({ event, onClose, onEdit, onDelete, onSyncTrigger }) {
               <Users size={13} className="text-gray-400 shrink-0 mt-0.5" />
               <div className="flex flex-wrap gap-1">
                 {event.attendees.map(a => (
-                  <div key={a} className="flex items-center gap-1 bg-gray-100 rounded-full px-2.5 py-0.5">
+                  <div key={a} className="flex items-center gap-1 bg-gray-100 rounded px-2.5 py-0.5">
                     {a.includes('@') ? (
                       <span className="text-gray-400 shrink-0"><Mail size={11} /></span>
                     ) : (
-                      AVATARS[a] && <img src={AVATARS[a]} className="w-4 h-4 rounded-full" alt={a} />
+                      AVATARS[a] && <img src={AVATARS[a]} className="w-4 h-4 rounded" alt={a} />
                     )}
                     <span className="text-xs text-gray-700">{a}</span>
                   </div>
@@ -661,7 +661,7 @@ export default function ITCalendarPage({ department }) {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs  text-gray-700  ">Event Categories</h3>
-            <button onClick={() => setShowAddModal(true)} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-500 transition-colors">
+            <button onClick={() => setShowAddModal(true)} className="w-6 h-6 rounded bg-gray-100 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center text-gray-500 transition-colors">
               <Plus size={14} />
             </button>
           </div>
@@ -703,7 +703,7 @@ export default function ITCalendarPage({ department }) {
                     <p className="text-[12px]  text-gray-800 truncate">{ev.title}</p>
                     <p className="text-xs text-gray-400 font-medium mt-0.5">{ev.startTime} – {ev.endTime}</p>
                     <div className="flex items-center gap-1 mt-1">
-                      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: cat.color }} />
+                      <div className="w-1.5 h-1.5 rounded shrink-0" style={{ background: cat.color }} />
                       <span className="text-xs " style={{ color: cat.color }}>{ev.category}</span>
                     </div>
                   </div>
@@ -778,7 +778,7 @@ export default function ITCalendarPage({ department }) {
                         ${!cell.curMonth ? 'bg-gray-50/60' : 'bg-white hover:bg-blue-50/20'}
                         ${(idx + 1) % 7 === 0 ? 'border-r-0' : ''}`}
                     >
-                      <div className={`w-6 h-6 flex items-center justify-center rounded-full text-[12px]  mb-1.5 transition-colors
+                      <div className={`w-6 h-6 flex items-center justify-center rounded text-[12px]  mb-1.5 transition-colors
                         ${isToday ? 'bg-red-600 text-white ' : cell.curMonth ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300'}`}>
                         {cell.day}
                       </div>
@@ -824,7 +824,7 @@ export default function ITCalendarPage({ department }) {
                       return (
                         <div key={ev.id} onClick={() => setSelectedEvent(ev)}
                           className="px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer flex items-center gap-4 transition-colors">
-                          <div className={`w-1 h-10 rounded-full shrink-0`} style={{ background: cat.color }} />
+                          <div className={`w-1 h-10 rounded shrink-0`} style={{ background: cat.color }} />
                           <div className="flex-1">
                             <p className="text-xs  text-gray-800">{ev.title}</p>
                             <p className="text-xs text-gray-500 font-medium">{ev.startTime} – {ev.endTime} {ev.location ? `• ${ev.location}` : ''}</p>
@@ -880,7 +880,7 @@ export default function ITCalendarPage({ department }) {
                       <div className="flex items-center gap-1">
                         {ev.attendees.slice(0, 3).map(a => (
                           AVATARS[a] ? (
-                            <img key={a} src={AVATARS[a]} className="w-5 h-5 rounded-full border border-white -ml-1 first:ml-0" alt={a} />
+                            <img key={a} src={AVATARS[a]} className="w-5 h-5 rounded border border-white -ml-1 first:ml-0" alt={a} />
                           ) : null
                         ))}
                         {ev.attendees.length > 3 && (

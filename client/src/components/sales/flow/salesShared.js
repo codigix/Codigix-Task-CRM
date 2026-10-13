@@ -86,7 +86,7 @@ export const inputCls = 'w-full h-9 text-[13px] border border-gray-300 rounded p
 export const labelCls = 'block text-xs font-semibold text-gray-700 mb-1';
 export const btn = {
   primary: 'h-8 px-3 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 cursor-pointer inline-flex items-center gap-1.5',
-  blue: 'h-8 px-3 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 cursor-pointer inline-flex items-center gap-1.5',
+  blue: 'h-8 px-3 text-xs font-medium rounded bg-red-600 text-white hover:bg-blue-700 disabled:opacity-60 cursor-pointer inline-flex items-center gap-1.5',
   green: 'h-8 px-3 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 cursor-pointer inline-flex items-center gap-1.5',
   ghost: 'h-8 px-3 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-60 cursor-pointer inline-flex items-center gap-1.5',
   danger: 'h-8 px-3 text-xs rounded border border-red-200 text-red-700 bg-white hover:bg-red-50 disabled:opacity-60 cursor-pointer inline-flex items-center gap-1.5'
@@ -172,10 +172,12 @@ export function LogCommunicationModal({ meta, leadId, dealId, defaultChannel = '
       footer={<><button onClick={onClose} className={btn.ghost}>Cancel</button><button onClick={save} disabled={saving} className={btn.primary}>{saving && <Loader2 size={13} className="animate-spin" />} Save</button></>}>
       <div className="space-y-4">
         <div className="flex flex-wrap gap-1.5">
-          {meta.channels.map(c => { const I = icons[c] || StickyNote; return (
-            <button key={c} type="button" onClick={() => { setChannel(c); setOutcome(''); }}
-              className={`h-8 px-3 text-xs rounded-full border inline-flex items-center gap-1.5 cursor-pointer ${channel === c ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}><I size={13} /> {c}</button>
-          ); })}
+          {meta.channels.map(c => {
+            const I = icons[c] || StickyNote; return (
+              <button key={c} type="button" onClick={() => { setChannel(c); setOutcome(''); }}
+                className={`h-8 px-3 text-xs rounded border inline-flex items-center gap-1.5 cursor-pointer ${channel === c ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}><I size={13} /> {c}</button>
+            );
+          })}
         </div>
         {channel !== 'Note' && (
           <div className="flex flex-wrap items-center gap-3 text-[13px]">
@@ -188,7 +190,7 @@ export function LogCommunicationModal({ meta, leadId, dealId, defaultChannel = '
           <div>
             <label className={labelCls}>Outcome</label>
             <div className="flex flex-wrap gap-1.5">
-              {QUICK_OUTCOMES[channel].map(o => <button key={o} type="button" onClick={() => setOutcome(outcome === o ? '' : o)} className={`h-7 px-2.5 text-xs rounded border cursor-pointer ${outcome === o ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{o}</button>)}
+              {QUICK_OUTCOMES[channel].map(o => <button key={o} type="button" onClick={() => setOutcome(outcome === o ? '' : o)} className={`h-7 px-2.5 text-xs rounded border cursor-pointer ${outcome === o ? 'bg-red-600 text-white border-blue-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{o}</button>)}
             </div>
           </div>
         )}
@@ -198,7 +200,7 @@ export function LogCommunicationModal({ meta, leadId, dealId, defaultChannel = '
             placeholder={channel === 'Note' ? 'Anything the team should know' : 'Requirements, budget, objections, decision maker, what they asked for…'} />
         </div>
         {channel !== 'Note' && (
-          <div className="border border-gray-200 rounded-lg p-3 bg-gray-50/60">
+          <div className="border border-gray-200 rounded p-3 bg-gray-50/60">
             <label className="flex items-center gap-2 text-[13px] font-medium text-gray-800 cursor-pointer mb-2"><input type="checkbox" checked={planNext} onChange={e => setPlanNext(e.target.checked)} /> Plan the next step</label>
             {planNext && <NextStepFields value={next} onChange={setNext} types={meta.followupTypes} people={meta.people} />}
           </div>
@@ -250,11 +252,11 @@ export function CompleteFollowupModal({ meta, followup, onClose, onSaved }) {
         <div>
           <label className={labelCls}>Outcome</label>
           <div className="flex flex-wrap gap-1.5">
-            {(QUICK_OUTCOMES[channel] || []).map(o => <button key={o} type="button" onClick={() => setOutcome(outcome === o ? '' : o)} className={`h-7 px-2.5 text-xs rounded border cursor-pointer ${outcome === o ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{o}</button>)}
+            {(QUICK_OUTCOMES[channel] || []).map(o => <button key={o} type="button" onClick={() => setOutcome(outcome === o ? '' : o)} className={`h-7 px-2.5 text-xs rounded border cursor-pointer ${outcome === o ? 'bg-red-600 text-white border-blue-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{o}</button>)}
           </div>
         </div>
         <div><label className={labelCls}>How it went</label><textarea autoFocus value={notes} onChange={e => setNotes(e.target.value)} rows={4} className="w-full text-[13px] border border-gray-300 rounded p-2.5 outline-none focus:border-blue-500" placeholder="What was discussed and agreed" /></div>
-        <div className="border border-gray-200 rounded-lg p-3 bg-gray-50/60">
+        <div className="border border-gray-200 rounded p-3 bg-gray-50/60">
           <label className="flex items-center gap-2 text-[13px] font-medium text-gray-800 cursor-pointer mb-2"><input type="checkbox" checked={planNext} onChange={e => setPlanNext(e.target.checked)} /> Plan the next step</label>
           {planNext && <NextStepFields value={next} onChange={setNext} types={meta.followupTypes} people={meta.people} />}
         </div>
@@ -295,16 +297,16 @@ export function FollowupList({ items, meta, onChanged, emptyText = 'Nothing sche
   const cancel = async (f) => {
     const reason = window.prompt(`Cancel this ${f.type.toLowerCase()}? Reason (optional):`, '');
     if (reason === null) return;
-    await api(`/followups/${f.id}/cancel`, { method: 'POST', body: { reason } }).catch(() => {});
+    await api(`/followups/${f.id}/cancel`, { method: 'POST', body: { reason } }).catch(() => { });
     onChanged();
   };
   if (!open.length) return <div className="text-xs text-gray-500 py-2">{emptyText}</div>;
   return (
     <div className="space-y-2">
       {open.map(f => (
-        <div key={f.id} className={`p-3 rounded-lg border ${f.overdue ? 'border-red-200 bg-red-50/40' : 'border-gray-200 bg-white'}`}>
+        <div key={f.id} className={`p-3 rounded border ${f.overdue ? 'border-red-200 bg-red-50/40' : 'border-gray-200 bg-white'}`}>
           <div className="flex items-start gap-2">
-            <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${f.overdue ? 'bg-red-100 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+            <span className={`w-7 h-7 rounded flex items-center justify-center shrink-0 ${f.overdue ? 'bg-red-100 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
               {/meet/i.test(f.type) ? <Video size={13} /> : /visit|demo/i.test(f.type) ? <MapPin size={13} /> : /mail/i.test(f.type) ? <Mail size={13} /> : /whats/i.test(f.type) ? <MessageCircle size={13} /> : <Phone size={13} />}
             </span>
             <div className="min-w-0 flex-1">
@@ -350,7 +352,7 @@ export function Timeline({ items, filter = 'all' }) {
         const Icon = i.kind === 'communication' ? (CHANNEL_ICON[i.meta?.channel] || MessageCircle) : (EVENT_ICON[i.kind] || ArrowRightLeft);
         return (
           <li key={i.id} className="ml-5">
-            <span className={`absolute -left-3.5 w-7 h-7 rounded-full flex items-center justify-center ring-4 ring-white ${EVENT_TONE[i.kind] || 'bg-gray-100 text-gray-600'}`}><Icon size={13} /></span>
+            <span className={`absolute -left-3.5 w-7 h-7 rounded flex items-center justify-center ring-4 ring-white ${EVENT_TONE[i.kind] || 'bg-gray-100 text-gray-600'}`}><Icon size={13} /></span>
             <div className="text-[13px] text-gray-900 font-medium">{i.title}</div>
             <div className="text-[11px] text-gray-500">{fmtWhen(i.at)}{i.by ? ` · ${i.by}` : ''}{i.meta?.durationMin ? ` · ${i.meta.durationMin} min` : ''}</div>
             {i.body && <div className="mt-1 text-[12.5px] text-gray-700 whitespace-pre-wrap bg-gray-50 border border-gray-100 rounded p-2">{i.body}</div>}

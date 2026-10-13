@@ -501,7 +501,7 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, initialData, department })
               {formData.responsiblePersons.map(person => (
                 <div key={person} className="flex items-center justify-between bg-red-50 border border-red-100 rounded p-2">
                   <span className="text-xs text-gray-700 flex items-center gap-2">
-                    <span className={`w-5 h-5 ${getTeamColor(person)} rounded-full flex items-center justify-center text-white text-xs `}>
+                    <span className={`w-5 h-5 ${getTeamColor(person)} rounded flex items-center justify-center text-white text-xs `}>
                       {person.charAt(0)}
                     </span>
                     {person}

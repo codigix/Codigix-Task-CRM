@@ -15,11 +15,11 @@ const ComparisonSection = () => {
   return (
     <section className="py-20 bg-slate-50 relative overflow-hidden" id="comparison">
       {/* Background decoration */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-rose-100 opacity-30 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-rose-100 opacity-30 rounded blur-[100px] pointer-events-none"></div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-100/50 text-red-600 text-xs  uppercase tracking-widest mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-red-100/50 text-red-600 text-xs  uppercase tracking-widest mb-6">
             Why Codigix?
           </div>
           <h3 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Beyond Issue Tracking</h3>
@@ -40,7 +40,7 @@ const ComparisonSection = () => {
               <span className="text-[9px] text-slate-400 mt-0.5">(Jira, Trello)</span>
             </div>
             <div className="col-span-1 text-center">
-              <span className="inline-block bg-red-600 text-white text-[11px]  uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg shadow-red-600/20">
+              <span className="inline-block bg-red-600 text-white text-[11px]  uppercase tracking-widest px-4 py-1.5 rounded shadow-lg shadow-red-600/20">
                 Codigix
               </span>
             </div>
@@ -54,7 +54,7 @@ const ComparisonSection = () => {
                 className="grid grid-cols-1 md:grid-cols-4 bg-white rounded p-2 items-center border border-slate-200/60 shadow-sm hover:shadow-md hover:border-red-200 transition-all duration-300 group"
               >
                 <div className="col-span-1 md:col-span-2 pl-4 py-3 text-sm md:text-base  text-slate-800 flex items-center gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover:bg-red-400 transition-colors"></div>
+                  <div className="w-1.5 h-1.5 rounded bg-slate-200 group-hover:bg-red-400 transition-colors"></div>
                   {feature.name}
                 </div>
 
@@ -77,7 +77,7 @@ const ComparisonSection = () => {
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-pulse transition-opacity"></div>
                   {feature.codigix ? (
                     <div className="relative">
-                      <div className="absolute inset-0 bg-red-400 rounded-full blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-red-400 rounded blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-300"></div>
                       <CheckCircle2 size={26} className="text-red-600 relative z-10 group-hover:scale-110 transition-transform duration-300 drop-shadow-sm" />
                     </div>
                   ) : (

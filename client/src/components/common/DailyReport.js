@@ -141,18 +141,18 @@ export default function DailyReport({ department: boardDepartment }) {
           <span className="ml-2 text-[13px] text-gray-600">{longDay(day)}{day === today ? ' · so far today' : ' · at end of day'}</span>
         </div>
         <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded p-0.5">
-          {[...new Set(['All', 'IT', 'Marketing', boardDepartment].filter(Boolean))].map(d => (
-            <button key={d} onClick={() => setDepartment(d)}
-              className={`px-2.5 h-7 text-xs font-medium rounded cursor-pointer ${department === d ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
-              {d === 'All' ? 'All departments' : d}
-            </button>
-          ))}
-        </div>
-        <button onClick={downloadPdf} disabled={!data || !data.rows.length}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium rounded bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 cursor-pointer">
-          <Download size={14} /> Download PDF
-        </button>
+          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded p-0.5">
+            {[...new Set(['All', 'IT', 'Marketing', boardDepartment].filter(Boolean))].map(d => (
+              <button key={d} onClick={() => setDepartment(d)}
+                className={`px-2.5 h-7 text-xs font-medium rounded cursor-pointer ${department === d ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+                {d === 'All' ? 'All departments' : d}
+              </button>
+            ))}
+          </div>
+          <button onClick={downloadPdf} disabled={!data || !data.rows.length}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium rounded bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 cursor-pointer">
+            <Download size={14} /> Download PDF
+          </button>
         </div>
       </div>
 
@@ -240,7 +240,7 @@ export default function DailyReport({ department: boardDepartment }) {
                           <td className="px-3 py-2">
                             {p == null ? <span className="text-gray-300">—</span> : (
                               <div className="flex items-center gap-2">
-                                <div className="h-1.5 flex-1 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${p >= 80 ? 'bg-[#1baf7a]' : p >= 50 ? 'bg-[#eda100]' : 'bg-[#eb6834]'}`} style={{ width: `${p}%` }} /></div>
+                                <div className="h-1.5 flex-1 bg-gray-100 rounded overflow-hidden"><div className={`h-full rounded ${p >= 80 ? 'bg-[#1baf7a]' : p >= 50 ? 'bg-[#eda100]' : 'bg-[#eb6834]'}`} style={{ width: `${p}%` }} /></div>
                                 <span className="text-xs tabular-nums text-gray-700 w-9 text-right">{p}%</span>
                               </div>
                             )}

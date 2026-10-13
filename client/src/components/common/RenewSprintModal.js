@@ -64,7 +64,7 @@ const RenewSprintModal = ({ isOpen, sprint, onCancel, onRenew }) => {
 
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-indigo-50">
-          <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
             <RefreshCw size={20} className="animate-spin-slow" />
           </div>
           <div>

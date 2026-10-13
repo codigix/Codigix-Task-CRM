@@ -31,24 +31,24 @@ const LEVELS = {
   light: { label: 'Light', bar: 'bg-sky-500', chip: 'bg-sky-50 text-sky-700 ring-sky-200', hint: 'Under 40% of the week planned' },
   idle: { label: 'No open work', bar: 'bg-gray-300', chip: 'bg-gray-100 text-gray-600 ring-gray-200', hint: 'Nothing open assigned' }
 };
-const TONES = ['bg-blue-600', 'bg-emerald-600', 'bg-violet-600', 'bg-amber-600', 'bg-rose-600', 'bg-cyan-700', 'bg-fuchsia-600', 'bg-teal-600'];
+const TONES = ['bg-red-600', 'bg-emerald-600', 'bg-violet-600', 'bg-amber-600', 'bg-rose-600', 'bg-cyan-700', 'bg-fuchsia-600', 'bg-teal-600'];
 const initials = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('');
 const Avatar = ({ name, id, size = 'w-8 h-8', text = 'text-[11px]' }) => (
-  <span className={`${size} ${text} rounded-full ${TONES[Math.abs(Number(id) || 0) % TONES.length]} text-white font-semibold flex items-center justify-center shrink-0`} title={name}>{initials(name)}</span>
+  <span className={`${size} ${text} rounded ${TONES[Math.abs(Number(id) || 0) % TONES.length]} text-white font-semibold flex items-center justify-center shrink-0`} title={name}>{initials(name)}</span>
 );
 const fmtDue = (d) => (d ? new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'No date');
 const sinceText = (v) => { if (!v) return ''; const m = Math.round((Date.now() - new Date(v)) / 60000); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; };
 
 const LoadBar = ({ pct, level, hours, capacity }) => (
   <div className="flex items-center gap-2 min-w-[130px]" title={`${hours} h planned of ${capacity} h this week · ${LEVELS[level]?.hint || ''}`}>
-    <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${LEVELS[level]?.bar || 'bg-gray-300'}`} style={{ width: `${Math.min(100, pct)}%` }} /></div>
+    <div className="h-2 flex-1 bg-gray-100 rounded overflow-hidden"><div className={`h-full rounded ${LEVELS[level]?.bar || 'bg-gray-300'}`} style={{ width: `${Math.min(100, pct)}%` }} /></div>
     <span className="text-[12px] tabular-nums text-gray-700 w-10 text-right">{pct}%</span>
   </div>
 );
 
 const Tile = ({ icon: Icon, label, value, hint, tone = 'text-gray-500', onClick, active }) => (
   <button type="button" onClick={onClick} disabled={!onClick}
-    className={`text-left bg-white border rounded-lg p-3 transition ${onClick ? 'cursor-pointer hover:border-gray-300' : 'cursor-default'} ${active ? 'border-blue-400 ring-1 ring-blue-200' : 'border-gray-200'}`}>
+    className={`text-left bg-white border rounded p-3 transition ${onClick ? 'cursor-pointer hover:border-gray-300' : 'cursor-default'} ${active ? 'border-blue-400 ring-1 ring-blue-200' : 'border-gray-200'}`}>
     <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium"><Icon size={13} className={tone} /> {label}</div>
     <div className="text-2xl font-semibold text-gray-900 tabular-nums mt-1">{value}</div>
     {hint && <div className="text-[11px] text-gray-500 mt-0.5 truncate">{hint}</div>}
@@ -197,7 +197,7 @@ function PersonPanel({ person, capacity, onClose, onTicket }) {
         </div>
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {person.working && (
-            <button onClick={() => onTicket(person.working.key)} className="w-full text-left p-3 rounded-lg border border-emerald-200 bg-emerald-50/60 cursor-pointer">
+            <button onClick={() => onTicket(person.working.key)} className="w-full text-left p-3 rounded border border-emerald-200 bg-emerald-50/60 cursor-pointer">
               <div className="text-[11px] font-semibold text-emerald-800 flex items-center gap-1"><PlayCircle size={12} /> Working now · {sinceText(person.working.since)}</div>
               <div className="text-[13px] text-gray-800 truncate mt-0.5"><span className="font-mono text-[11px] text-gray-500">{person.working.key}</span> {person.working.title}</div>
             </button>
@@ -209,7 +209,7 @@ function PersonPanel({ person, capacity, onClose, onTicket }) {
           </div>
           <div className="grid grid-cols-4 gap-2 text-center">
             {[['Open', person.open], ['In progress', person.inProgress], ['In review', person.review], ['Overdue', person.overdue], ['Due 7 days', person.dueWeek], ['To review', person.toReview], ['Done 7 days', person.doneWeek], ['Hours 7 days', person.hoursWeek]].map(([l, v]) => (
-              <div key={l} className="rounded-lg border border-gray-200 p-2">
+              <div key={l} className="rounded border border-gray-200 p-2">
                 <div className={`text-[17px] font-semibold tabular-nums ${l === 'Overdue' && v ? 'text-red-700' : 'text-gray-900'}`}>{v}</div>
                 <div className="text-[10px] text-gray-500">{l}</div>
               </div>
@@ -218,7 +218,7 @@ function PersonPanel({ person, capacity, onClose, onTicket }) {
           <div>
             <div className="text-xs font-semibold text-gray-700 mb-1.5">Open tasks ({person.tasks.length})</div>
             {person.tasks.length === 0 ? <div className="text-xs text-gray-500">Nothing open.</div> : (
-              <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+              <div className="border border-gray-200 rounded divide-y divide-gray-100">
                 {person.tasks.map(t => (
                   <button key={t.key} onClick={() => onTicket(t.key)} className="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer">
                     <div className="flex items-center gap-2">
@@ -320,12 +320,12 @@ const ITTeamsPage = ({ department }) => {
           <p className="text-[12px] text-gray-500 mt-0.5">Who is working on what, how full each person's week is, and how teams are set up. A working week here is {data.capacity} h.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded-lg p-0.5">
+          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded p-0.5">
             {['All', ...data.departments].map(d => (
-              <button key={d} onClick={() => setDept(d)} className={`px-2.5 h-7 text-xs font-medium rounded-md cursor-pointer ${dept === d ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{d === 'All' ? 'Everyone' : d}</button>
+              <button key={d} onClick={() => setDept(d)} className={`px-2.5 h-7 text-xs font-medium rounded cursor-pointer ${dept === d ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{d === 'All' ? 'Everyone' : d}</button>
             ))}
           </div>
-          {data.canManage && <button onClick={() => setEditing('new')} className="h-8 px-3 rounded-lg bg-red-600 text-white text-[13px] font-medium hover:bg-red-700 flex items-center gap-1.5 cursor-pointer"><Plus size={14} /> New team</button>}
+          {data.canManage && <button onClick={() => setEditing('new')} className="h-8 px-3 rounded bg-red-600 text-white text-[13px] font-medium hover:bg-red-700 flex items-center gap-1.5 cursor-pointer"><Plus size={14} /> New team</button>}
         </div>
       </div>
 
@@ -342,19 +342,19 @@ const ITTeamsPage = ({ department }) => {
       </div>
 
       {/* Workload distribution */}
-      <div className="bg-white border border-gray-200 rounded-lg p-3 mb-4">
+      <div className="bg-white border border-gray-200 rounded p-3 mb-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-gray-700 flex items-center gap-1.5"><Activity size={13} /> Workload this week</span>
           {levelFilter && <button onClick={() => setLevelFilter('')} className="text-[11px] text-blue-600 hover:underline cursor-pointer">Show everyone</button>}
         </div>
-        <div className="flex h-3 rounded-full overflow-hidden bg-gray-100">
+        <div className="flex h-3 rounded overflow-hidden bg-gray-100">
           {Object.entries(LEVELS).map(([k, L]) => levelCounts[k] ? <div key={k} className={`${L.bar} border-r-2 border-white last:border-r-0`} style={{ width: `${(levelCounts[k] / Math.max(1, scope.length)) * 100}%` }} title={`${L.label}: ${levelCounts[k]}`} /> : null)}
         </div>
         <div className="flex flex-wrap gap-2 mt-2">
           {Object.entries(LEVELS).map(([k, L]) => (
             <button key={k} onClick={() => { setLevelFilter(levelFilter === k ? '' : k); setTab('people'); }} title={L.hint}
-              className={`text-[11px] px-2 py-1 rounded-md ring-1 ring-inset flex items-center gap-1.5 cursor-pointer ${levelFilter === k ? 'ring-2 ring-blue-400' : ''} ${L.chip}`}>
-              <span className={`w-2 h-2 rounded-full ${L.bar}`} /> {L.label} <strong className="tabular-nums">{levelCounts[k]}</strong>
+              className={`text-[11px] px-2 py-1 rounded ring-1 ring-inset flex items-center gap-1.5 cursor-pointer ${levelFilter === k ? 'ring-2 ring-blue-400' : ''} ${L.chip}`}>
+              <span className={`w-2 h-2 rounded ${L.bar}`} /> {L.label} <strong className="tabular-nums">{levelCounts[k]}</strong>
             </button>
           ))}
         </div>
@@ -370,21 +370,21 @@ const ITTeamsPage = ({ department }) => {
         {tab === 'people' && (
           <div className="ml-auto flex flex-wrap items-center gap-2">
             {data.teams.length > 0 && (
-              <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} className="h-8 text-xs border border-gray-300 rounded-lg px-2 bg-white">
+              <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} className="h-8 text-xs border border-gray-300 rounded px-2 bg-white">
                 <option value="">All teams</option>
                 {data.teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             )}
             <div className="relative">
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search people" className="h-8 w-56 pl-8 pr-2 text-xs border border-gray-300 rounded-lg outline-none focus:border-blue-500 bg-white" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search people" className="h-8 w-56 pl-8 pr-2 text-xs border border-gray-300 rounded outline-none focus:border-blue-500 bg-white" />
             </div>
           </div>
         )}
       </div>
 
       {tab === 'people' ? (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+        <div className="bg-white border border-gray-200 rounded overflow-x-auto">
           <table className="w-full text-[13px] min-w-[1100px]">
             <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs">
               <tr>{COLS.map(([k, l]) => <SortHead key={k} k={k}>{l}</SortHead>)}</tr>
@@ -397,7 +397,7 @@ const ITTeamsPage = ({ department }) => {
                     <div className="flex items-center gap-2.5">
                       <span className="relative">
                         <Avatar name={p.name} id={p.id} />
-                        {p.working && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" title={`Working on ${p.working.key}`} />}
+                        {p.working && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded bg-emerald-500 border-2 border-white" title={`Working on ${p.working.key}`} />}
                       </span>
                       <div className="min-w-0">
                         <div className="font-medium text-gray-900 truncate flex items-center gap-1">{p.name}{p.isManager && <Crown size={11} className="text-amber-500" title="Manager" />}</div>
@@ -418,14 +418,14 @@ const ITTeamsPage = ({ department }) => {
         </div>
       ) : (
         teams.length === 0 ? (
-          <div className="py-14 text-center bg-white border border-gray-200 rounded-lg">
+          <div className="py-14 text-center bg-white border border-gray-200 rounded">
             <div className="text-sm text-gray-600">No teams yet.</div>
             {data.canManage && <button onClick={() => setEditing('new')} className="mt-3 h-8 px-3 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 cursor-pointer">Create the first team</button>}
           </div>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-3">
             {teams.map(t => (
-              <div key={t.id} className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col">
+              <div key={t.id} className="bg-white border border-gray-200 rounded p-4 flex flex-col">
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="text-[15px] font-semibold text-gray-900 truncate">{t.name}</div>

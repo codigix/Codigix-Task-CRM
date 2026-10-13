@@ -230,7 +230,7 @@ const InvoicesPage = () => {
           <div>
             <div className="flex items-center gap-3 mb-3">
               <h1 className="text-xl  text-gray-900">Invoices</h1>
-              <span className="bg-red-100 text-red  p-2 rounded-full text-xs ">
+              <span className="bg-red-100 text-red  p-2 rounded text-xs ">
                 {filteredInvoices.length}
               </span>
             </div>
@@ -318,7 +318,7 @@ const InvoicesPage = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              <div className="inline-block animate-spin rounded h-12 w-12 border-b-2 border-red-600"></div>
               <p className="mt-4 text-gray-600  ">Loading invoices...</p>
             </div>
           </div>
@@ -372,7 +372,7 @@ const InvoicesPage = () => {
 
                     {/* Company Info */}
                     <div className="flex items-center gap-3 mb-5">
-                      <div className={`w-14 h-14 ${avatarBg} rounded-full flex items-center justify-center  text-xl  text-white `}>
+                      <div className={`w-14 h-14 ${avatarBg} rounded flex items-center justify-center  text-xl  text-white `}>
                         {companyLogo}
                       </div>
                       <div>
@@ -416,7 +416,7 @@ const InvoicesPage = () => {
                     {/* Status Badge */}
                     <div className="pt-3 border-t border-gray-200">
                       <div className="flex items-center justify-between mb-2">
-                        <span className={`px-3 py-1 rounded-full text-xs  ${statusStyles.bg} ${statusStyles.text}`}>
+                        <span className={`px-3 py-1 rounded text-xs  ${statusStyles.bg} ${statusStyles.text}`}>
                           {invoice.status}
                         </span>
                       </div>

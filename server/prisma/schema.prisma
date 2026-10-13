@@ -970,6 +970,7 @@ model general_tasks {
   workflow_type              String?                    @db.VarChar(100)
   department_id              Int?
   sprint_id                  Int?
+  meeting_id                Int?
   task_type                  String?                    @db.VarChar(100)
   created_by                 Int?
   due_time                   DateTime?                  @db.Time(0)
@@ -2738,10 +2739,12 @@ model kb_items {
   email         String?   @db.VarChar(255)
   secret_enc    String?   @db.Text
   project_id    Int?
+  department    String?   @db.VarChar(80)
   category      String?   @db.VarChar(80)
   tags          Json?
   files         Json?
-  visibility    String    @default("team") @db.VarChar(12)
+  visibility    String    @default("team") @db.VarChar(20)
+  shared_with   Json?
   pinned        Boolean   @default(false)
   created_by_id Int?
   created_by    String?   @db.VarChar(120)
@@ -2752,6 +2755,76 @@ model kb_items {
 
   @@index([project_id], map: "idx_kb_project")
   @@index([type], map: "idx_kb_type")
+}
+
+model meetings {
+  id               Int       @id @default(autoincrement())
+  title            String    @db.VarChar(255)
+  kind             String    @default("offline") @db.VarChar(20)
+  scheduled_at     DateTime  @db.DateTime(0)
+  duration_min     Int       @default(60)
+  location         String?   @db.VarChar(500)
+  meet_link        String?   @db.VarChar(500)
+  google_event_id  String?   @db.VarChar(200)
+  google_owner     String?   @db.VarChar(40)
+  meet_provider    String?   @db.VarChar(20)
+  agenda           String?   @db.Text
+  status           String    @default("Scheduled") @db.VarChar(20)
+  department       String?   @db.VarChar(80)
+  project_id       Int?
+  sprint_id        Int?
+  host_id          Int
+  host_name        String?   @db.VarChar(120)
+  task_id          Int?
+  sprint_task_id   Int?
+  cal_event_id     Int?
+  issue_key        String?   @db.VarChar(50)
+  guest_emails     Json?
+  action_keys      Json?
+  reschedule_count Int       @default(0)
+  cancel_reason    String?   @db.VarChar(500)
+  mom              String?   @db.Text
+  mom_decisions    String?   @db.Text
+  mom_submitted_at DateTime? @db.DateTime(0)
+  created_at       DateTime  @default(now()) @db.DateTime(0)
+  updated_at       DateTime  @default(now()) @db.DateTime(0)
+
+  @@index([host_id], map: "idx_m_host")
+  @@index([issue_key], map: "idx_m_issue")
+  @@index([project_id], map: "idx_m_project")
+  @@index([sprint_id], map: "idx_m_sprint")
+}
+
+model meeting_attendees {
+  meeting_id Int
+  user_id    Int
+  name       String? @db.VarChar(120)
+  email      String? @db.VarChar(180)
+  responded  String  @default("pending") @db.VarChar(20)
+  attended   Boolean?
+
+  @@id([meeting_id, user_id])
+  @@index([user_id], map: "idx_ma_user")
+}
+
+model meeting_log {
+  id         Int      @id @default(autoincrement())
+  meeting_id Int
+  user_id    Int?
+  user_name  String?  @db.VarChar(120)
+  action     String   @db.VarChar(40)
+  detail     String?  @db.VarChar(600)
+  created_at DateTime @default(now()) @db.DateTime(0)
+
+  @@index([meeting_id], map: "idx_ml_meeting")
+}
+
+model google_oauth {
+  user_id       Int      @id
+  email         String?  @db.VarChar(190)
+  refresh_token String   @db.Text
+  is_org        Boolean  @default(false)
+  connected_at  DateTime @default(now()) @db.DateTime(0)
 }
 
 model sheet_sync_items {

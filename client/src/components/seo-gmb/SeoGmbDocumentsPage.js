@@ -434,7 +434,7 @@ const SeoGmbDocumentsPage = () => {
                 {storageData.map((d, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></div>
+                      <div className="w-2.5 h-2.5 rounded" style={{ backgroundColor: d.color }}></div>
                       <span className="text-sm font-medium text-gray-600">{d.name}</span>
                     </div>
                     <div className="flex items-center gap-4">

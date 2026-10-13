@@ -221,7 +221,7 @@ const ContractDetailsPage = ({ contract, onBack, onUpdate }) => {
         <div className="bg-white rounded  border border-gray-200p-3 ">
           {/* Status Badge */}
           <div className="flex items-center gap-2 mb-6 pb-6 border-b border-gray-200">
-            <span className={`text-xs  px-3 py-1 rounded-full   ${getStatusColor(formData.status)}`}>
+            <span className={`text-xs  px-3 py-1 rounded   ${getStatusColor(formData.status)}`}>
               {formData.status}
             </span>
             <span className="text-xs  text-gray-600">

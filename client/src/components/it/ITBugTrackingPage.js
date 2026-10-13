@@ -27,9 +27,9 @@ const PriorityBadge = ({ priority }) => {
 const SeverityBadge = ({ severity }) => {
   let colors = '';
   switch (severity) {
-    case 'Critical': colors = 'text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs font-medium'; break;
-    case 'Major': colors = 'text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full text-xs font-medium'; break;
-    case 'Minor': colors = 'text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full text-xs font-medium'; break;
+    case 'Critical': colors = 'text-red-600 bg-red-50 px-2 py-0.5 rounded text-xs font-medium'; break;
+    case 'Major': colors = 'text-orange-600 bg-orange-50 px-2 py-0.5 rounded text-xs font-medium'; break;
+    case 'Minor': colors = 'text-gray-600 bg-gray-100 px-2 py-0.5 rounded text-xs font-medium'; break;
     default: colors = 'text-gray-500';
   }
   return <span className={colors}>{severity}</span>;
@@ -38,10 +38,10 @@ const SeverityBadge = ({ severity }) => {
 const StatusBadge = ({ status }) => {
   let colors = '';
   switch (status) {
-    case 'Open': colors = 'text-red-500 font-medium border border-red-100 bg-red-50 px-2.5 py-0.5 rounded-full text-xs'; break;
-    case 'In Progress': colors = 'text-blue-500 font-medium border border-blue-100 bg-blue-50 px-2.5 py-0.5 rounded-full text-xs'; break;
-    case 'Resolved': colors = 'text-green-500 font-medium border border-green-100 bg-green-50 px-2.5 py-0.5 rounded-full text-xs'; break;
-    case 'Closed': colors = 'text-gray-500 font-medium border border-gray-200 bg-gray-50 px-2.5 py-0.5 rounded-full text-xs'; break;
+    case 'Open': colors = 'text-red-500 font-medium border border-red-100 bg-red-50 px-2.5 py-0.5 rounded text-xs'; break;
+    case 'In Progress': colors = 'text-blue-500 font-medium border border-blue-100 bg-blue-50 px-2.5 py-0.5 rounded text-xs'; break;
+    case 'Resolved': colors = 'text-green-500 font-medium border border-green-100 bg-green-50 px-2.5 py-0.5 rounded text-xs'; break;
+    case 'Closed': colors = 'text-gray-500 font-medium border border-gray-200 bg-gray-50 px-2.5 py-0.5 rounded text-xs'; break;
     default: colors = 'text-gray-500';
   }
   return <span className={colors}>{status}</span>;
@@ -320,7 +320,7 @@ const ITBugTrackingPage = () => {
                     }`}
                 >
                   {tab.name}
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab.name ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${activeTab === tab.name ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
                     }`}>
                     {tab.count}
                   </span>
@@ -383,7 +383,7 @@ const ITBugTrackingPage = () => {
                       <td className="p-2"><StatusBadge status={bug.status} /></td>
                       <td className="p-2">
                         <div className="flex items-center gap-2">
-                          <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(bug.assignee || 'U')}&background=random`} alt={bug.assignee} className="w-6 h-6 rounded-full bg-gray-200 object-cover" />
+                          <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(bug.assignee || 'U')}&background=random`} alt={bug.assignee} className="w-6 h-6 rounded bg-gray-200 object-cover" />
                           <span className="text-gray-700 font-medium">{bug.assignee}</span>
                         </div>
                       </td>
@@ -494,7 +494,7 @@ const ITBugTrackingPage = () => {
                 <div className="grid grid-cols-3 items-center mt-2">
                   <div className="text-gray-500">Assignee</div>
                   <div className="col-span-2 flex items-center gap-2">
-                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(selectedBug.assignee || 'U')}&background=random`} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
+                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(selectedBug.assignee || 'U')}&background=random`} alt="Avatar" className="w-6 h-6 rounded object-cover" />
                     <span className="font-medium text-gray-900">{selectedBug.assignee}</span>
                   </div>
                 </div>
@@ -502,7 +502,7 @@ const ITBugTrackingPage = () => {
                   <div>
                     <div className="text-xs text-gray-400 mb-1">Reported By</div>
                     <div className="flex items-center gap-2 text-sm text-gray-900 font-medium">
-                      <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(selectedBug.reporter || 'U')}&background=random`} alt="reporter" className="w-6 h-6 rounded-full" />
+                      <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(selectedBug.reporter || 'U')}&background=random`} alt="reporter" className="w-6 h-6 rounded" />
                       {selectedBug.reporter || 'Unknown'}
                     </div>
                   </div>

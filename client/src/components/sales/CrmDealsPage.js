@@ -560,7 +560,7 @@ const CrmDealsPage = () => {
       label: 'Status',
       sortable: true,
       render: (value) => (
-        <span className={`px-2 py-0.5 rounded-full text-xs font-[500] ${value === 'Won' ? 'bg-green-50 text-green-700' : value === 'Lost' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+        <span className={`px-2 py-0.5 rounded text-xs font-[500] ${value === 'Won' ? 'bg-green-50 text-green-700' : value === 'Lost' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
           {value}
         </span>
       )
@@ -583,7 +583,7 @@ const CrmDealsPage = () => {
       sortable: true,
       render: (value) => (
         <div className="flex items-center gap-2">
-          <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="w-16 h-1.5 bg-gray-100 rounded overflow-hidden">
             <div className={`h-full ${getProgressColor(value)}`} style={{ width: `${value}%` }}></div>
           </div>
           <span className="text-xs text-gray-500 ">{value}%</span>
@@ -596,7 +596,7 @@ const CrmDealsPage = () => {
       sortable: true,
       render: (value, row) => (
         <div className="flex items-center gap-2">
-          <img src={`https://i.pravatar.cc/100?u=${row.id}`} alt={value} className="w-5 h-5 rounded-full border border-white" />
+          <img src={`https://i.pravatar.cc/100?u=${row.id}`} alt={value} className="w-5 h-5 rounded border border-white" />
           <span className="text-xs text-gray-600 ">{value}</span>
         </div>
       )
@@ -688,7 +688,7 @@ const CrmDealsPage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded h-12 w-12 border-b-2 border-red-600"></div>
       </div>
     );
   }
@@ -700,7 +700,7 @@ const CrmDealsPage = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-[500] text-gray-900">Deals</h1>
-            <span className="bg-red-100 text-red  text-[12px]  text-black px-2 py-1 rounded-full">
+            <span className="bg-red-100 text-red  text-[12px]  text-black px-2 py-1 rounded">
               {deals.length}
             </span>
           </div>
@@ -793,7 +793,7 @@ const CrmDealsPage = () => {
             {showLeftArrow && (
               <button
                 onClick={() => handleScroll('left')}
-                className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-100 rounded-full shadow-lg flex items-center justify-center text-[#1F2020] hover:text-red hover:shadow-xl transition-all"
+                className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-100 rounded shadow-lg flex items-center justify-center text-[#1F2020] hover:text-red hover:shadow-xl transition-all"
               >
                 <ChevronLeft size={20} />
               </button>
@@ -841,7 +841,7 @@ const CrmDealsPage = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="flex items-center gap-3 mb-1">
-                            <div className={`w-2.5 h-2.5 rounded-full ${stageStyle.border.replace('border-', 'bg-')} `}></div>
+                            <div className={`w-2.5 h-2.5 rounded ${stageStyle.border.replace('border-', 'bg-')} `}></div>
                             <h3 className={`text-sm font-[500] ${stageStyle.text}`}>{stageObj.name}</h3>
                           </div>
                           <div className="px-1">
@@ -916,7 +916,7 @@ const CrmDealsPage = () => {
                             </div>
                             <div className="flex items-center gap-2 text-xs">
                               <RotateCcw size={12} className="text-green-500" />
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-[500]  ${deal.status === 'Won' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
+                              <span className={`px-2 py-0.5 rounded text-xs font-[500]  ${deal.status === 'Won' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
                                 {deal.status}
                               </span>
                             </div>
@@ -927,11 +927,11 @@ const CrmDealsPage = () => {
 
                             <div className="flex items-center gap-2 pt-1 border-t border-gray-100 mt-2">
                               <div className="flex items-center gap-1.5 flex-1">
-                                <img src={`https://i.pravatar.cc/100?u=${deal.id}`} alt={deal.owner} className="w-4 h-4 rounded-full" />
+                                <img src={`https://i.pravatar.cc/100?u=${deal.id}`} alt={deal.owner} className="w-4 h-4 rounded" />
                                 <span className="text-xs text-gray-500 truncate">{deal.owner}</span>
                               </div>
                               <div className="flex items-center gap-1">
-                                <div className="w-10 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="w-10 h-1 bg-gray-100 rounded overflow-hidden">
                                   <div className={`h-full ${getProgressColor(deal.progress)}`} style={{ width: `${deal.progress}%` }}></div>
                                 </div>
                                 <span className="text-[9px] text-gray-400">{deal.progress}%</span>
@@ -980,7 +980,7 @@ const CrmDealsPage = () => {
             {showRightArrow && (
               <button
                 onClick={() => handleScroll('right')}
-                className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-100 rounded-full shadow-lg flex items-center justify-center text-[#1F2020] hover:text-red hover:shadow-xl transition-all"
+                className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-100 rounded shadow-lg flex items-center justify-center text-[#1F2020] hover:text-red hover:shadow-xl transition-all"
               >
                 <ChevronRight size={20} />
               </button>

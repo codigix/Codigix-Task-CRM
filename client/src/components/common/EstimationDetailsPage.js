@@ -258,17 +258,17 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                 <h1 className="text-xl  text-slate-900">
                   {estimation.estimation_number}
                 </h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs  bg-amber-50 text-amber-800 border border-amber-300">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs  bg-amber-50 text-amber-800 border border-amber-300">
                   <Lock size={11} className="text-amber-700" /> INTERNAL DOCUMENT
                 </span>
                 <span className="text-xs  px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                   v{estimation.version || 1}
                 </span>
-                <span className={`text-xs  px-2.5 py-0.5 rounded-full border ${getStatusColor(estimation.status)}`}>
+                <span className={`text-xs  px-2.5 py-0.5 rounded border ${getStatusColor(estimation.status)}`}>
                   {estimation.status}
                 </span>
                 {expiryStatus && (
-                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${expiryStatus.badgeClass}`}>
+                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded border ${expiryStatus.badgeClass}`}>
                     {expiryStatus.label}
                   </span>
                 )}
@@ -400,7 +400,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                   <h3 className="text-sm  text-slate-800 flex items-center gap-2">
                     <Layers size={16} className="text-blue-600" /> Estimate Line Items
                   </h3>
-                  <span className="text-xs  bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                  <span className="text-xs  bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
                     {items.length} {items.length === 1 ? 'item' : 'items'}
                   </span>
                 </div>
@@ -608,7 +608,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className={`text-xs  px-2.5 py-0.5 rounded-full border ${getStatusColor(rev.status)}`}>
+                      <span className={`text-xs  px-2.5 py-0.5 rounded border ${getStatusColor(rev.status)}`}>
                         {rev.status}
                       </span>
                       <span className=" text-slate-900 text-sm">
@@ -641,7 +641,7 @@ const EstimationDetailsPage = ({ estimationId, onBack, onEdit }) => {
             <div className="space-y-6 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200">
               {activities.map((act) => (
                 <div key={act.id} className="relative flex items-start gap-4 pl-8">
-                  <div className="absolute left-0 top-1 w-7 h-7 rounded-full bg-blue-100 text-blue-600 border border-blue-300 flex items-center justify-center text-xs ">
+                  <div className="absolute left-0 top-1 w-7 h-7 rounded bg-blue-100 text-blue-600 border border-blue-300 flex items-center justify-center text-xs ">
                     ✓
                   </div>
                   <div className="bg-slate-50 border border-slate-200 rounded p-3.5 flex-1">

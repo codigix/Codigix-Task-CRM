@@ -436,7 +436,7 @@ const Header = ({ toggleSidebar }) => {
               >
                 <MessageSquare size={20} />
                 {messagesData.some(m => !m.read) && (
-                  <span className="notification-badge absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white"></span>
+                  <span className="notification-badge absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded border border-white"></span>
                 )}
               </button>
 
@@ -445,7 +445,7 @@ const Header = ({ toggleSidebar }) => {
                   <div className="p-3 border-b border-gray-100 flex items-center justify-between">
                     <h3 className="text-xs  text-gray-900">Messages</h3>
                     {messagesData.some(m => !m.read) && (
-                      <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full ">New</span>
+                      <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded ">New</span>
                     )}
                   </div>
                   <div className="max-h-80 overflow-y-auto">
@@ -459,7 +459,7 @@ const Header = ({ toggleSidebar }) => {
                         className="notification-item p-3 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
                       >
                         <div className="flex gap-3">
-                          <div className={`w-9 h-9 rounded-full ${msg.avatarColor} flex items-center justify-center text-white text-xs  shrink-0 `}>
+                          <div className={`w-9 h-9 rounded ${msg.avatarColor} flex items-center justify-center text-white text-xs  shrink-0 `}>
                             {msg.avatar}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -495,7 +495,7 @@ const Header = ({ toggleSidebar }) => {
               >
                 <Bell size={20} />
                 {unreadCount > 0 && (
-                  <span className="notification-badge absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px]  rounded-full border border-white flex items-center justify-center">
+                  <span className="notification-badge absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px]  rounded border border-white flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -585,7 +585,7 @@ const Header = ({ toggleSidebar }) => {
                         className={`notification-item p-3 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${!notif.read ? 'bg-blue-50/40' : ''}`}
                       >
                         <div className="flex gap-3">
-                          <div className={`w-9 h-9 rounded-full ${notif.avatarColor} flex items-center justify-center text-white text-xs  shrink-0 `}>
+                          <div className={`w-9 h-9 rounded ${notif.avatarColor} flex items-center justify-center text-white text-xs  shrink-0 `}>
                             {notif.avatar}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -595,7 +595,7 @@ const Header = ({ toggleSidebar }) => {
                               {notif.name !== 'System' ? `${notif.name} · ` : ''}{notif.time}
                             </p>
                           </div>
-                          {!notif.read && <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1" />}
+                          {!notif.read && <span className="w-2 h-2 rounded bg-blue-500 shrink-0 mt-1" />}
                         </div>
                       </div>
                     ))}
@@ -622,7 +622,7 @@ const Header = ({ toggleSidebar }) => {
                 className="header-dropdown-trigger flex items-center p-1 hover:bg-gray-100 rounded transition-smooth active:scale-95"
                 title="Profile"
               >
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-300 to-pink-500 flex items-center justify-center text-white text-xs  border-2 border-green-400 hover-lift">
+                <div className="w-9 h-9 rounded bg-gradient-to-br from-pink-300 to-pink-500 flex items-center justify-center text-white text-xs  border-2 border-green-400 hover-lift">
                   {user?.name?.charAt(0).toUpperCase() || 'U'}
                 </div>
               </button>
@@ -631,7 +631,7 @@ const Header = ({ toggleSidebar }) => {
                 <div className="dropdown-menu absolute right-0 mt-2 w-56 bg-white z-50 rounded shadow-xl border border-gray-100 py-1">
                   <div className="p-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white rounded-t-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-300 to-pink-500 flex items-center justify-center text-white text-xs  shrink-0">
+                      <div className="w-10 h-10 rounded bg-gradient-to-br from-pink-300 to-pink-500 flex items-center justify-center text-white text-xs  shrink-0">
                         {user?.name?.charAt(0).toUpperCase() || 'U'}
                       </div>
                       <div className="flex-1 min-w-0">

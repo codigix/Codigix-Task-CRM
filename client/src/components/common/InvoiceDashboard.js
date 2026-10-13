@@ -76,7 +76,7 @@ const InvoiceDashboard = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              <div className="inline-block animate-spin rounded h-12 w-12 border-b-2 border-red-600"></div>
               <p className="mt-4 text-gray-600  ">Loading dashboard...</p>
             </div>
           </div>
@@ -121,7 +121,7 @@ const InvoiceDashboard = () => {
             <div className="bg-white roundedp-3  border border-gray-100  hover:shadow-md transition">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs    text-gray-600">Total Invoices</h3>
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <div className="w-12 h-12 rounded bg-blue-100 flex items-center justify-center">
                   <Calendar className="text-white " size={24} />
                 </div>
               </div>
@@ -133,7 +133,7 @@ const InvoiceDashboard = () => {
             <div className="bg-white roundedp-3  border border-gray-100  hover:shadow-md transition">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs    text-gray-600">Total Revenue</h3>
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <div className="w-12 h-12 rounded bg-green-100 flex items-center justify-center">
                   <DollarSign className="text-green-600" size={24} />
                 </div>
               </div>
@@ -145,7 +145,7 @@ const InvoiceDashboard = () => {
             <div className="bg-white roundedp-3  border border-gray-100  hover:shadow-md transition">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs    text-gray-600">Amount Paid</h3>
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <div className="w-12 h-12 rounded bg-green-100 flex items-center justify-center">
                   <CheckCircle className="text-green-600" size={24} />
                 </div>
               </div>
@@ -157,7 +157,7 @@ const InvoiceDashboard = () => {
             <div className="bg-white roundedp-3  border border-gray-100  hover:shadow-md transition">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs    text-gray-600">Amount Due</h3>
-                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <div className="w-12 h-12 rounded bg-red-100 flex items-center justify-center">
                   <AlertCircle className="text-red " size={24} />
                 </div>
               </div>
@@ -225,9 +225,9 @@ const InvoiceDashboard = () => {
                           <span className="text-xs   text-gray-700">{status.count} invoices</span>
                         </div>
                         <div className="space-y-1 text-xs ">
-                          <div className="w-full bg-gray-300 rounded-full h-2">
+                          <div className="w-full bg-gray-300 rounded h-2">
                             <div
-                              className={`h-2 rounded-full transition-all ${status.status === 'Paid' ? 'bg-green-500' :
+                              className={`h-2 rounded transition-all ${status.status === 'Paid' ? 'bg-green-500' :
                                 status.status === 'Unpaid' ? 'bg-red-500' :
                                   status.status === 'Partially Paid' ? 'bg-yellow-500' :
                                     status.status === 'Overdue' ? 'bg-orange-500' :
@@ -283,9 +283,9 @@ const InvoiceDashboard = () => {
                       {metrics.total_amount > 0 ? Math.round((metrics.total_paid / metrics.total_amount) * 100) : 0}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="w-full bg-gray-200 rounded h-3">
                     <div
-                      className="h-3 bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all"
+                      className="h-3 bg-gradient-to-r from-green-400 to-green-600 rounded transition-all"
                       style={{ width: `${metrics.total_amount > 0 ? (metrics.total_paid / metrics.total_amount) * 100 : 0}%` }}
                     ></div>
                   </div>

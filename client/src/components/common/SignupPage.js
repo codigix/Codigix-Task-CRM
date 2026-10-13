@@ -149,7 +149,7 @@ const SignupPage = () => {
         <div className="bg-white rounded border border-gray-100 p-8 shadow-sm">
           {requestSubmitted ? (
             <div className="text-center py-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full mb-4 ring-8 ring-emerald-50/50">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 text-emerald-600 rounded mb-4 ring-8 ring-emerald-50/50">
                 <CheckCircle2 size={36} />
               </div>
               <h2 className="text-2xl  text-gray-900 mb-2">Registration Request Sent!</h2>
@@ -377,7 +377,7 @@ const SignupPage = () => {
                   className="w-full bg-red-600 text-white py-3 rounded text-sm hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium transition-all active:scale-[0.99] shadow-sm hover:shadow"
                 >
                   {loading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded animate-spin"></div>
                   ) : (
                     <>
                       <Send size={18} />

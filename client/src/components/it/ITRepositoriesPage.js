@@ -653,7 +653,7 @@ export default function ITRepositoriesPage() {
                     {LANG_DATA.map(lang => (
                       <div key={lang.name} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: lang.color }}></span>
+                          <span className="w-2 h-2 rounded" style={{ backgroundColor: lang.color }}></span>
                           <span className="text-gray-700 font-medium">{lang.name}</span>
                         </div>
                         <span className="text-gray-500">{lang.value}%</span>
@@ -667,7 +667,7 @@ export default function ITRepositoriesPage() {
               <div className="bg-white border border-gray-200 rounded  p-5 flex flex-col">
                 <h3 className="text-sm  text-gray-900 mb-4">Repository Health</h3>
                 <div className="flex items-center gap-6 mb-4">
-                  <div className="relative w-20 h-20 flex-shrink-0 flex items-center justify-center rounded-full border-[6px] border-emerald-500 border-r-emerald-100">
+                  <div className="relative w-20 h-20 flex-shrink-0 flex items-center justify-center rounded border-[6px] border-emerald-500 border-r-emerald-100">
                     <div className="text-center">
                       <span className="text-xl  text-emerald-600 leading-none">92</span>
                       <p className="text-[10px] text-emerald-600 font-medium">Excellent</p>
@@ -731,7 +731,7 @@ export default function ITRepositoriesPage() {
                   <div className="flex justify-between items-center pb-2 border-b border-gray-50">
                     <span className="text-xs text-gray-500">Language</span>
                     <div className="flex items-center gap-1.5 text-xs font-medium text-gray-900">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedRepo.language_color || selectedRepo.languageColor || '#999' }}></span>
+                      <span className="w-2.5 h-2.5 rounded" style={{ backgroundColor: selectedRepo.language_color || selectedRepo.languageColor || '#999' }}></span>
                       {selectedRepo.language || 'Unknown'}
                     </div>
                   </div>
@@ -794,12 +794,12 @@ export default function ITRepositoriesPage() {
                     {selectedRepo.contributors && selectedRepo.contributors.length > 0 ? (
                       <>
                         {selectedRepo.contributors.slice(0, 4).map((c, idx) => (
-                          <div key={idx} className={`w-7 h-7 rounded-full ${c.color || 'bg-gray-100 text-gray-700'} border-2 border-white flex items-center justify-center text-[10px]  z-${40 - idx * 10} transition-colors`} title={`${c.name} (${c.commits} commits)`}>
+                          <div key={idx} className={`w-7 h-7 rounded ${c.color || 'bg-gray-100 text-gray-700'} border-2 border-white flex items-center justify-center text-[10px]  z-${40 - idx * 10} transition-colors`} title={`${c.name} (${c.commits} commits)`}>
                             {c.name ? c.name.substring(0, 2).toUpperCase() : 'U'}
                           </div>
                         ))}
                         {selectedRepo.contributors.length > 4 && (
-                          <div className="w-7 h-7 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[10px]  text-gray-600 z-0 hover:bg-gray-200 transition-colors">
+                          <div className="w-7 h-7 rounded bg-gray-100 border-2 border-white flex items-center justify-center text-[10px]  text-gray-600 z-0 hover:bg-gray-200 transition-colors">
                             +{selectedRepo.contributors.length - 4}
                           </div>
                         )}
@@ -1171,7 +1171,7 @@ export default function ITRepositoriesPage() {
                   selectedRepo.contributors.map((user, idx) => (
                     <div key={idx} className="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs  ${user.color || 'bg-gray-100 text-gray-700'}`}>
+                        <div className={`w-8 h-8 rounded flex items-center justify-center text-xs  ${user.color || 'bg-gray-100 text-gray-700'}`}>
                           {user.name ? user.name.substring(0, 2).toUpperCase() : 'U'}
                         </div>
                         <div>

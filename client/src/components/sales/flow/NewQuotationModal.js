@@ -37,7 +37,7 @@ export default function NewQuotationModal({ preset, onClose }) {
       <div className="space-y-4">
         <div className="grid sm:grid-cols-3 gap-2">
           {FORMATS.map(([v, l, d, Icon]) => (
-            <button key={v} type="button" onClick={() => setFormat(v)} className={`text-left border rounded-lg p-3 cursor-pointer ${format === v ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
+            <button key={v} type="button" onClick={() => setFormat(v)} className={`text-left border rounded p-3 cursor-pointer ${format === v ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
               <div className="flex items-center gap-1.5 text-[13px] font-semibold"><Icon size={14} /> {l}</div><div className="text-[11.5px] text-gray-600 mt-1 leading-snug">{d}</div>
             </button>
           ))}

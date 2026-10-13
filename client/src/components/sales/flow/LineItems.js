@@ -48,12 +48,12 @@ export function ItemsTable({ items, onChange, editable, defaultTax = 18, discoun
     const sv = it.autoRate === false ? null : findService(services, it.name);
     setItem(it.key, { qty: v, ...(sv && sv.slabs?.length && v !== '' && v !== '-' ? { rate: slabRate(sv, v), autoRate: true } : {}) });
   };
-  const move = (idx, dir) => { const next = [...items]; const j = idx + dir; if (j < 0 || j >= next.length) return; [next[idx], next[j]] = [next[j], next[idx]]; onChange(next); };
+  const move = (idx, dir) => { const next = [...items]; const j = idx + dir; if (j < 0 || j >= next.length) return;[next[idx], next[j]] = [next[j], next[idx]]; onChange(next); };
   const cell = `${inputCls} disabled:bg-white disabled:border-transparent`;
   const mini = 'w-full h-9 text-[12.5px] border border-gray-300 rounded px-1.5 outline-none focus:border-blue-500 bg-white disabled:bg-white disabled:border-transparent';
   const groups = services.reduce((m, s) => { (m[s.category] = m[s.category] || []).push(s); return m; }, {});
   return (
-    <div className="bg-white border border-gray-200 rounded-lg">
+    <div className="bg-white border border-gray-200 rounded">
       <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
         <span className="text-[13px] font-semibold">{title}</span>
         {editable && (
@@ -114,7 +114,7 @@ export function ItemsTable({ items, onChange, editable, defaultTax = 18, discoun
 /** Sub-total, discount, GST split and total; extra rows (paid / balance) go in children. */
 export function TotalsCard({ t, gstMode, children, sticky = true }) {
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg p-4 ${sticky ? 'xl:sticky xl:top-4' : ''}`}>
+    <div className={`bg-white border border-gray-200 rounded p-4 ${sticky ? 'xl:sticky xl:top-4' : ''}`}>
       <div className="text-xs font-semibold text-gray-700 mb-2">Totals</div>
       <dl className="text-[13px] space-y-1.5">
         <div className="flex justify-between"><dt className="text-gray-500">Sub-total</dt><dd className="tabular-nums">{money2(t.gross)}</dd></div>

@@ -291,17 +291,17 @@ export default function SeoGmbOnPageSeoPage() {
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-2">
                             <span className=" text-slate-800 w-6">{row.score}</span>
-                            <div className="w-16 bg-slate-100 rounded-full h-1">
+                            <div className="w-16 bg-slate-100 rounded h-1">
                               <div className={`h-full ${row.color}`} style={{ width: `${row.score}%` }} />
                             </div>
                           </div>
                         </td>
                         <td className="py-2.5 px-3">
-                          <span className={`w-1.5 h-1.5 rounded-full inline-block mr-1 ${row.count > 5 ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                          <span className={`w-1.5 h-1.5 rounded inline-block mr-1 ${row.count > 5 ? 'bg-red-500' : 'bg-emerald-500'}`} />
                           {row.count}
                         </td>
                         <td className="py-2.5 px-3">
-                          <span className={`text-xs  px-2.5 py-0.5 rounded-full border ${row.status === 'Excellent' ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                          <span className={`text-xs  px-2.5 py-0.5 rounded border ${row.status === 'Excellent' ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
                             : row.status === 'Good' ? 'bg-blue-50 text-blue-700 border-blue-100'
                               : 'bg-amber-50 text-amber-700 border-amber-100'
                             }`}>{row.status}</span>

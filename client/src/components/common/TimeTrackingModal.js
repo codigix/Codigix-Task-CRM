@@ -41,7 +41,7 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
         fetch(`${API_BASE_URL}/it-kanban/issues/${encodeURIComponent(key)}/standard-size`)
           .then(r => (r.ok ? r.json() : null))
           .then(d => { if (d && d.hours) setStandard(d); })
-          .catch(() => {});
+          .catch(() => { });
       }
     }
   }, [isOpen, taskDetails]);
@@ -85,7 +85,7 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
               </div>
               <button
                 onClick={onClose}
-                className="rounded-full bg-white/10 p-1 text-white hover:bg-white/20 transition-colors focus:outline-none"
+                className="rounded bg-white/10 p-1 text-white hover:bg-white/20 transition-colors focus:outline-none"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -130,9 +130,9 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
                 {error
                   ? <p className="mt-1 text-xs text-red-600">{error}</p>
                   : <p className="mt-1 text-xs text-gray-500">
-                      Required. 1d = 9h.
-                      {standard && <> Standard for {standard.workType}: <button type="button" onClick={() => setEstimatedTime(`${standard.hours}h`)} className="text-blue-600 hover:underline cursor-pointer">{standard.hours} h</button>{standard.limitHours ? ` (up to ${Math.round(standard.limitHours * 100) / 100} h without approval)` : ''}.</>}
-                    </p>}
+                    Required. 1d = 9h.
+                    {standard && <> Standard for {standard.workType}: <button type="button" onClick={() => setEstimatedTime(`${standard.hours}h`)} className="text-blue-600 hover:underline cursor-pointer">{standard.hours} h</button>{standard.limitHours ? ` (up to ${Math.round(standard.limitHours * 100) / 100} h without approval)` : ''}.</>}
+                  </p>}
               </div>
             </div>
 

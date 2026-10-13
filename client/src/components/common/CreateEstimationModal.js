@@ -445,7 +445,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 {initialData ? 'Edit Internal Estimation' : 'Create Internal Estimation'}
               </h2>
               {/* Internal Badge */}
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs  bg-amber-50 text-amber-800 border border-amber-300 shadow-sm">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs  bg-amber-50 text-amber-800 border border-amber-300 shadow-sm">
                 <Lock size={12} className="text-amber-700" />
                 INTERNAL DOCUMENT
               </span>
@@ -460,7 +460,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+            className="w-9 h-9 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
             title="Close"
           >
             <X size={20} />
@@ -1201,7 +1201,7 @@ const CreateEstimationModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         {/* ================= MODAL FOOTER & ACTIONS ================= */}
         <div className="p-3 sm:p-4 border-t border-slate-200 bg-white sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className="inline-block w-2 h-2 rounded bg-emerald-500"></span>
             <span>Total Rec. Price: <strong className="text-slate-900 ">₹{recommendedSellingPrice.toLocaleString('en-IN')}</strong></span>
             <span className="text-slate-300">|</span>
             <span>Est. Cost: <strong className="text-slate-700">₹{totalInternalCost.toLocaleString('en-IN')}</strong></span>

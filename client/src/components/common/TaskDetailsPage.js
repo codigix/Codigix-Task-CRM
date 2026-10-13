@@ -371,7 +371,7 @@ const TaskDetailsPage = () => {
       {/* Profile Header Card */}
       <div className="bg-white rounded border border-gray-200 p-2 mb-3 flex items-center justify-between">
         <div className="flex gap-4">
-          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm border border-blue-200">
+          <div className="w-8 h-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-sm border border-blue-200">
             {getInitials(task.title)}
           </div>
           <div>
@@ -459,7 +459,7 @@ const TaskDetailsPage = () => {
           <div className="bg-white rounded border border-gray-200 p-2">
             <h3 className="text-sm font-[500] text-gray-900 mb-4">Assigned To</h3>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs text-blue-600 overflow-hidden">
+              <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-xs text-blue-600 overflow-hidden">
                 <User size={16} />
               </div>
               <span className="text-xs  text-gray-700">
@@ -713,7 +713,7 @@ const TaskDetailsPage = () => {
                         <div className="relative">
                           <button
                             onClick={() => setIsNoteMenuOpen(isNoteMenuOpen === note.id ? null : note.id)}
-                            className="text-gray-400 hover:text-gray-600 p-1  rounded-full transition-colors"
+                            className="text-gray-400 hover:text-gray-600 p-1  rounded transition-colors"
                           >
                             <MoreVertical size={16} />
                           </button>
@@ -928,7 +928,7 @@ const TaskDetailsPage = () => {
           <div className="bg-white rounded  w-full max-w-lg animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-2 border-b border-gray-100">
               <h3 className="text-base font-[500] text-gray-900">Add New Note</h3>
-              <button onClick={() => setIsAddNoteModalOpen(false)} className="p-1  rounded-full text-gray-400">
+              <button onClick={() => setIsAddNoteModalOpen(false)} className="p-1  rounded text-gray-400">
                 <X size={15} />
               </button>
             </div>
@@ -955,7 +955,7 @@ const TaskDetailsPage = () => {
               <div>
                 <label className="block text-xs font-[500] text-gray-700 mb-1.5">Attachment <span className="text-red-500">*</span></label>
                 <div className="border border-dashed border-gray-200 rounded p-4 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group">
-                  <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <div className="w-10 h-10 bg-red-50 rounded flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                     <FileUp size={15} className="text-red" />
                   </div>
                   <p className="text-xs text-black-600">Drop your files here or <span className="text-red font-[500]">browse</span></p>
@@ -986,7 +986,7 @@ const TaskDetailsPage = () => {
           <div className="bg-white rounded  w-full max-w-lg animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-2 border-b border-gray-100">
               <h3 className="text-base font-[500] text-gray-900">Create Call Log</h3>
-              <button onClick={() => setIsAddCallLogModalOpen(false)} className="p-1  rounded-full text-gray-400">
+              <button onClick={() => setIsAddCallLogModalOpen(false)} className="p-1  rounded text-gray-400">
                 <X size={15} />
               </button>
             </div>
@@ -1076,7 +1076,7 @@ const TaskDetailsPage = () => {
                               }
                             }}
                             className={`
-                              h-8 w-8 flex items-center justify-center text-xs  rounded-full transition-all
+                              h-8 w-8 flex items-center justify-center text-xs  rounded transition-all
                               ${!isCurrentMonth ? 'text-gray-300 pointer-events-none' : 'text-gray-600 hover:bg-red-50 hover:text-red'}
                               ${isSelected ? 'bg-red text-white hover:bg-red-700' : ''}
                             `}
@@ -1128,7 +1128,7 @@ const TaskDetailsPage = () => {
           <div className="bg-white rounded  w-full max-w-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-2 border-b border-gray-100">
               <h3 className="text-base font-[500] text-gray-900">Create New File</h3>
-              <button onClick={() => setIsAddFileModalOpen(false)} className="p-1  rounded-full text-gray-400">
+              <button onClick={() => setIsAddFileModalOpen(false)} className="p-1  rounded text-gray-400">
                 <X size={15} />
               </button>
             </div>
@@ -1216,7 +1216,7 @@ const TaskDetailsPage = () => {
           <div className="bg-white rounded  w-full max-w-lg animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between p-2 border-b border-gray-100">
               <h3 className="text-base font-[500] text-gray-900">Connect Account</h3>
-              <button onClick={() => setIsConnectAccountModalOpen(false)} className="p-1  rounded-full text-gray-400">
+              <button onClick={() => setIsConnectAccountModalOpen(false)} className="p-1  rounded text-gray-400">
                 <X size={15} />
               </button>
             </div>

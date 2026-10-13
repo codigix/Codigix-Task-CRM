@@ -130,7 +130,7 @@ const statusBadge = (s) => {
     Pending: 'bg-amber-50 text-amber-700 border border-amber-200',
     Rejected: 'bg-rose-50 text-rose-600 border border-rose-200',
   };
-  return <span className={`text-xs  px-2.5 py-0.5 rounded-full ${map[s] || 'bg-slate-100 text-slate-500'}`}>{s}</span>;
+  return <span className={`text-xs  px-2.5 py-0.5 rounded ${map[s] || 'bg-slate-100 text-slate-500'}`}>{s}</span>;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -289,7 +289,7 @@ export default function SeoGmbOffPageSeoPage() {
                     {BACKLINK_SOURCES.map((s) => (
                       <div key={s.name} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
+                          <span className="w-2 h-2 rounded flex-shrink-0" style={{ backgroundColor: s.color }} />
                           <span className="text-slate-600 font-medium">{s.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -480,7 +480,7 @@ export default function SeoGmbOffPageSeoPage() {
                     {BACKLINK_HEALTH.map((h) => (
                       <div key={h.name} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: h.color }} />
+                          <span className="w-2 h-2 rounded" style={{ backgroundColor: h.color }} />
                           <span className="text-slate-500 font-medium">{h.name}</span>
                         </div>
                         <span className=" text-slate-700">{h.value.toLocaleString()} ({h.pct}%)</span>

@@ -175,7 +175,7 @@ const TYPE_TO_KEY = {
 // ── Status Badge ───────────────────────────────────────────────────────────
 const sBadge = (s) => {
   const m = { Sent: 'bg-emerald-50 text-emerald-700 border border-emerald-200', Scheduled: 'bg-amber-50 text-amber-700 border border-amber-200', Active: 'bg-emerald-50 text-emerald-700 border border-emerald-200', Paused: 'bg-slate-100 text-slate-500', Draft: 'bg-slate-100 text-slate-500' };
-  return <span className={`text-xs  px-2.5 py-0.5 rounded-full ${m[s] || 'bg-slate-100 text-slate-500'}`}>{s}</span>;
+  return <span className={`text-xs  px-2.5 py-0.5 rounded ${m[s] || 'bg-slate-100 text-slate-500'}`}>{s}</span>;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -323,7 +323,7 @@ export default function SeoGmbReportsPage() {
                   <div className="flex flex-col gap-1.5 flex-1">
                     {REPORTS_BY_TYPE.map((d) => (
                       <div key={d.name} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} /><span className="text-slate-600">{d.name}</span></div>
+                        <div className="flex items-center gap-1"><span className="w-2 h-2 rounded" style={{ backgroundColor: d.color }} /><span className="text-slate-600">{d.name}</span></div>
                         <div><strong className="text-slate-800">{d.value}</strong><span className="text-slate-400 ml-1">({d.pct})</span></div>
                       </div>
                     ))}
@@ -410,7 +410,7 @@ export default function SeoGmbReportsPage() {
                       <td className="py-2.5 px-3 text-slate-500">{row.date}</td>
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[9px] font-black text-blue-600">{row.by[0]}</div>
+                          <div className="w-5 h-5 rounded bg-blue-100 flex items-center justify-center text-[9px] font-black text-blue-600">{row.by[0]}</div>
                           <span className="text-slate-600">{row.by}</span>
                         </div>
                       </td>
@@ -489,7 +489,7 @@ export default function SeoGmbReportsPage() {
               {tableData.clients.map(c => (
                 <div key={c.id} className="bg-white rounded p-4 border border-slate-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-black text-blue-600">{c.client[0]}</div>
+                    <div className="w-7 h-7 rounded bg-blue-100 flex items-center justify-center text-xs font-black text-blue-600">{c.client[0]}</div>
                     <span className="text-xs  text-slate-800 leading-tight">{c.client}</span>
                   </div>
                   <strong className="text-xl font-black text-slate-900">{c.reports}</strong>

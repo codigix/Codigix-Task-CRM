@@ -584,7 +584,7 @@ const AddNewProposalModal = ({ isOpen, onClose, onSubmit, companies = [], contac
                           .filter(Boolean)
                           .map((srv, idx) => (
                             <li key={idx} className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 text-emerald-800 font-medium border border-emerald-200 text-[11px]">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                              <span className="w-1.5 h-1.5 rounded bg-emerald-500 shrink-0"></span>
                               <span>{srv}</span>
                             </li>
                           ))}

@@ -78,15 +78,15 @@ const MarketingMockup = () => {
                     <span className="text-[9px] text-slate-400">{camp.type}</span>
                   </div>
                   <div className="col-span-2 flex justify-center">
-                    <span className={`text-[8px]  px-2 py-0.5 rounded-full ${camp.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    <span className={`text-[8px]  px-2 py-0.5 rounded ${camp.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                       {camp.status}
                     </span>
                   </div>
                   <div className="col-span-2 text-right font-medium text-slate-600">{camp.spend}</div>
                   <div className="col-span-3 flex flex-col items-end justify-center gap-1">
                     <span className=" text-slate-700">{camp.leads}</span>
-                    <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-red-500 rounded-full" style={{ width: `${camp.progress}%` }}></div>
+                    <div className="w-16 h-1 bg-slate-100 rounded overflow-hidden">
+                      <div className="h-full bg-red-500 rounded" style={{ width: `${camp.progress}%` }}></div>
                     </div>
                   </div>
                 </div>
@@ -112,8 +112,8 @@ const MarketingMockup = () => {
                     <span className="text-slate-600 font-medium">{src.name}</span>
                     <span className=" text-slate-800">{src.val}</span>
                   </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${src.color} rounded-full`} style={{ width: src.val }}></div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded overflow-hidden">
+                    <div className={`h-full ${src.color} rounded`} style={{ width: src.val }}></div>
                   </div>
                 </div>
               ))}

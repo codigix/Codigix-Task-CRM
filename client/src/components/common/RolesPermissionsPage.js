@@ -145,7 +145,7 @@ const RolesPermissionsPage = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl  text-gray-900">Roles & Permissions</h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs   bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs   bg-red-100 text-red-800">
                 152
               </span>
             </div>

@@ -480,7 +480,7 @@ const NewTestCaseModal = ({ isOpen, onClose, onSuccess }) => {
                 {/* Drag Drop Area */}
                 <div className="flex-1 min-w-[200px] relative border-2 border-dashed border-blue-200 bg-white rounded flex flex-col items-center justify-center p-4 text-center hover:bg-blue-50 cursor-pointer transition-colors">
                   <input type="file" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-blue-500 mb-2">
+                  <div className="w-8 h-8 rounded flex items-center justify-center text-blue-500 mb-2">
                     <CloudUpload size={24} />
                   </div>
                   <div className="text-xs font-medium text-blue-700 mb-1">

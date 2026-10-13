@@ -368,9 +368,8 @@ const ITIssueDetailsSidebar = ({
                       setOpenDropdown(null);
                       handleUpdate({ status });
                     }}
-                    className={`p-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between font-medium ${
-                      isBlockedDone ? 'text-gray-400 opacity-70' : 'text-gray-700'
-                    }`}
+                    className={`p-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between font-medium ${isBlockedDone ? 'text-gray-400 opacity-70' : 'text-gray-700'
+                      }`}
                   >
                     <span className="flex items-center gap-1.5">
                       {status}
@@ -399,7 +398,7 @@ const ITIssueDetailsSidebar = ({
             className="flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-300 rounded hover:bg-gray-50 transition text-xs  text-gray-700 disabled:opacity-50 cursor-pointer"
           >
             {Object.values(aiLoading).some(Boolean) ? (
-              <div className="w-3.5 h-3.5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-purple-600 border-t-transparent rounded animate-spin" />
             ) : (
               <Sparkles size={13} className="text-purple-600" />
             )}
@@ -493,7 +492,7 @@ const ITIssueDetailsSidebar = ({
                     className={`flex items-center gap-1.5 px-1.5 py-1 -ml-1 rounded cursor-pointer transition text-gray-800 hover:bg-gray-100/80 min-w-0 ${openDropdown === 'details-assignee' ? 'bg-blue-50 ring-1 ring-blue-300' : ''}`}
                     title="Click to change assignee"
                   >
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px]  shrink-0 ${!assignee?.name || assignee?.name === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
+                    <div className={`w-5 h-5 rounded flex items-center justify-center text-[10px]  shrink-0 ${!assignee?.name || assignee?.name === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
                       {!assignee?.name || assignee?.name === 'Unassigned' ? <User size={11} className="text-gray-600" /> : (assignee?.initial || 'U')}
                     </div>
                     <span className="text-xs text-gray-700 font-medium truncate">{assignee?.name || 'Unassigned'}</span>
@@ -544,7 +543,7 @@ const ITIssueDetailsSidebar = ({
                           }}
                           className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${(!assignee?.name || assignee?.name === 'Unassigned') ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                         >
-                          <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
+                          <div className="w-5 h-5 rounded bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
                             <User size={12} className="text-gray-500" />
                           </div>
                           <span className="flex-1 truncate">Unassigned</span>
@@ -570,7 +569,7 @@ const ITIssueDetailsSidebar = ({
                             }}
                             className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                           >
-                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
+                            <div className="w-5 h-5 rounded bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
                               {uInitial}
                             </div>
                             <span className="flex-1 truncate">{uName}</span>
@@ -632,7 +631,7 @@ const ITIssueDetailsSidebar = ({
                   title="Click to change reporter"
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px]  shrink-0 ${!reporter?.name || reporter?.name === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
+                    <div className={`w-5 h-5 rounded flex items-center justify-center text-[10px]  shrink-0 ${!reporter?.name || reporter?.name === 'Unassigned' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>
                       {!reporter?.name || reporter?.name === 'Unassigned' ? <User size={11} className="text-gray-600" /> : (reporter?.initial || 'U')}
                     </div>
                     <span className="text-xs text-gray-700 font-medium truncate">{reporter?.name || 'Unassigned'}</span>
@@ -680,7 +679,7 @@ const ITIssueDetailsSidebar = ({
                           }}
                           className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${(!reporter?.name || reporter?.name === 'Unassigned') ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                         >
-                          <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
+                          <div className="w-5 h-5 rounded bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
                             <User size={12} className="text-gray-500" />
                           </div>
                           <span className="flex-1 truncate">Unassigned</span>
@@ -708,7 +707,7 @@ const ITIssueDetailsSidebar = ({
                             }}
                             className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                           >
-                            <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
+                            <div className="w-5 h-5 rounded bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
                               {uInitial}
                             </div>
                             <span className="flex-1 truncate">{uName}</span>
@@ -851,8 +850,8 @@ const ITIssueDetailsSidebar = ({
                 <div className="flex-1 min-w-0">
                   <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
                     <span className="relative flex h-2 w-2 mr-1">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded h-2 w-2 bg-emerald-500"></span>
                     </span>
                     {new Date(issue.timer_start_time).toLocaleString()}
                   </span>

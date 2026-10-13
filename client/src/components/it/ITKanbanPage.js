@@ -1282,7 +1282,7 @@ const ITKanbanPage = ({ department }) => {
       fetch(`${API_BASE_URL}/it-kanban/labels?department=${encodeURIComponent(currentDept)}`)
         .then(res => res.json())
         .then(data => setLabelOptions(Array.isArray(data) ? data.map(l => l.label).filter(l => l && !HIDDEN_CARD_LABELS.has(l.toLowerCase())) : []))
-        .catch(() => {});
+        .catch(() => { });
     }
   };
 
@@ -2308,7 +2308,7 @@ const ITKanbanPage = ({ department }) => {
                   Backlog until a sprint is started, which is how a Scrum board behaves. */}
               {activeSprints.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
-                  <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                  <div className="w-14 h-14 rounded bg-gray-100 flex items-center justify-center mb-4">
                     <LayoutList size={24} className="text-gray-400" />
                   </div>
                   {isManager ? (
@@ -2628,7 +2628,7 @@ const ITKanbanPage = ({ department }) => {
                                                         <div className="relative card-assignee-dropdown">
                                                           <button
                                                             onClick={(e) => handleOpenCardAssignee(e, card.key)}
-                                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px]  border border-white shrink-0 cursor-pointer transition-transform hover:scale-110 ${card.assignee === 'Unassigned' || !card.assignee
+                                                            className={`w-6 h-6 rounded flex items-center justify-center text-[9px]  border border-white shrink-0 cursor-pointer transition-transform hover:scale-110 ${card.assignee === 'Unassigned' || !card.assignee
                                                               ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                                               : 'bg-red-600 text-white shadow-sm'
                                                               }`}
@@ -2691,7 +2691,7 @@ const ITKanbanPage = ({ department }) => {
                                                                       className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${card.assignee === 'Unassigned' || !card.assignee ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'
                                                                         }`}
                                                                     >
-                                                                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
+                                                                      <div className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
                                                                         <User size={13} className="text-gray-600" />
                                                                       </div>
                                                                       <span className="text-xs font-medium">Unassigned</span>
@@ -2707,7 +2707,7 @@ const ITKanbanPage = ({ department }) => {
                                                                     }}
                                                                     className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 text-gray-700 font-medium border-b border-gray-100 transition-colors"
                                                                   >
-                                                                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
+                                                                    <div className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
                                                                       <User size={13} className="text-gray-600" />
                                                                     </div>
                                                                     <span className="text-xs font-medium">Automatic</span>
@@ -2725,7 +2725,7 @@ const ITKanbanPage = ({ department }) => {
                                                                         : 'text-gray-700'
                                                                         }`}
                                                                     >
-                                                                      <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]  shrink-0">
+                                                                      <div className="w-6 h-6 rounded bg-emerald-600 text-white flex items-center justify-center text-[10px]  shrink-0">
                                                                         {getInitials(user.first_name || user.username)}
                                                                       </div>
                                                                       <div className="flex-1 min-w-0">
@@ -2766,7 +2766,7 @@ const ITKanbanPage = ({ department }) => {
                                                                           className={`px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${isCurrentAssignee ? 'bg-[#deebff] text-blue-900 ' : 'text-gray-700'
                                                                             }`}
                                                                         >
-                                                                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px]  shrink-0 ${colorClass}`}>
+                                                                          <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px]  shrink-0 ${colorClass}`}>
                                                                             {initials}
                                                                           </div>
                                                                           <div className="flex-1 min-w-0">
@@ -2980,7 +2980,7 @@ const ITKanbanPage = ({ department }) => {
                                                         onClick={() => toggle(l)}
                                                         className="px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
                                                       >
-                                                        <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${newIssueLabels.includes(l) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                                                        <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${newIssueLabels.includes(l) ? 'bg-red-600 border-blue-600' : 'border-gray-300'}`}>
                                                           {newIssueLabels.includes(l) && <Check size={10} className="text-white" />}
                                                         </span>
                                                         <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ring-1 ring-inset truncate ${getLabelStyle(l).chip}`}>{l}</span>
@@ -3174,7 +3174,7 @@ const ITKanbanPage = ({ department }) => {
                                                 title={`Assignee: ${newIssueAssignee || 'Unassigned'}`}
                                               >
                                                 {newIssueAssignee && newIssueAssignee !== 'Unassigned' && newIssueAssignee !== 'Automatic' ? (
-                                                  <div className="w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-[9px] ">
+                                                  <div className="w-5 h-5 rounded bg-red-600 text-white flex items-center justify-center text-[9px] ">
                                                     {getInitials(newIssueAssignee)}
                                                   </div>
                                                 ) : (
@@ -3225,7 +3225,7 @@ const ITKanbanPage = ({ department }) => {
                                                         className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${newIssueAssignee === 'Unassigned' ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'
                                                           }`}
                                                       >
-                                                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
+                                                        <div className="w-5 h-5 rounded bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
                                                           <User size={12} />
                                                         </div>
                                                         <span className="text-xs font-medium">Unassigned</span>
@@ -3243,7 +3243,7 @@ const ITKanbanPage = ({ department }) => {
                                                         className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${newIssueAssignee === 'Automatic' ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'
                                                           }`}
                                                       >
-                                                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
+                                                        <div className="w-5 h-5 rounded bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
                                                           <User size={12} />
                                                         </div>
                                                         <span className="text-xs font-medium">Automatic</span>
@@ -3264,7 +3264,7 @@ const ITKanbanPage = ({ department }) => {
                                                           : 'text-gray-700'
                                                           }`}
                                                       >
-                                                        <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px]  shrink-0">
+                                                        <div className="w-5 h-5 rounded bg-emerald-600 text-white flex items-center justify-center text-[9px]  shrink-0">
                                                           {getInitials(user.first_name || user.username)}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
@@ -3311,7 +3311,7 @@ const ITKanbanPage = ({ department }) => {
                                                             className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition-colors ${isSelected ? 'bg-[#deebff] text-blue-900 ' : 'text-gray-700'
                                                               }`}
                                                           >
-                                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px]  shrink-0 ${colorClass}`}>
+                                                            <div className={`w-5 h-5 rounded flex items-center justify-center text-[9px]  shrink-0 ${colorClass}`}>
                                                               {initials}
                                                             </div>
                                                             <div className="flex-1 min-w-0">

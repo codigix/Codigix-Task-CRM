@@ -214,7 +214,7 @@ export default function ITFileManagerPage() {
           }
           return (
             <div key={idx} className="bg-white p-4 rounded  border border-gray-100 flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-full ${kpi.bg} flex items-center justify-center shrink-0`}>
+              <div className={`w-12 h-12 rounded ${kpi.bg} flex items-center justify-center shrink-0`}>
                 {kpi.icon}
               </div>
               <div>
@@ -276,7 +276,7 @@ export default function ITFileManagerPage() {
                       {item.label}
                     </div>
                     {item.count && (
-                      <span className="text-xs  bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">{item.count}</span>
+                      <span className="text-xs  bg-red-100 text-red-600 px-1.5 py-0.5 rounded">{item.count}</span>
                     )}
                   </li>
                 );
@@ -294,7 +294,7 @@ export default function ITFileManagerPage() {
               {STORAGE_DETAILS.map((detail) => (
                 <div key={detail.label} className="flex items-center justify-between text-xs  text-gray-600">
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${detail.color} shrink-0`} />
+                    <div className={`w-2 h-2 rounded ${detail.color} shrink-0`} />
                     {detail.label}
                   </div>
                   <span className="text-gray-900 ">{detail.size}</span>
@@ -306,7 +306,7 @@ export default function ITFileManagerPage() {
                 <span>Total Used</span>
                 <span className="text-gray-500 ">77.2 GB / 100 GB</span>
               </div>
-              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden flex">
+              <div className="w-full h-1.5 bg-gray-100 rounded overflow-hidden flex">
                 <div className="bg-green-500 h-full" style={{ width: '24%' }} />
                 <div className="bg-yellow-500 h-full" style={{ width: '13%' }} />
                 <div className="bg-blue-400 h-full" style={{ width: '8%' }} />
@@ -453,7 +453,7 @@ export default function ITFileManagerPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <img src={file.user.avatar} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
+                          <img src={file.user.avatar} alt="avatar" className="w-6 h-6 rounded object-cover" />
                           <div>
                             <p className="text-xs  text-gray-800 leading-tight">{file.user.name}</p>
                             <p className="text-[9px] text-gray-400 font-medium">{file.user.role}</p>
@@ -502,7 +502,7 @@ export default function ITFileManagerPage() {
                     <p className="text-xs text-gray-400 font-medium mt-0.5">{file.subtitle} • {file.size !== '-' ? file.size : 'Folder'}</p>
                   </div>
                   <div className="flex items-center gap-1.5 mt-auto">
-                    <img src={file.user.avatar} alt="avatar" className="w-4 h-4 rounded-full" />
+                    <img src={file.user.avatar} alt="avatar" className="w-4 h-4 rounded" />
                     <p className="text-xs text-gray-500  truncate">{file.user.name}</p>
                   </div>
                 </div>

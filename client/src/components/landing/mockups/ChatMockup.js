@@ -26,7 +26,7 @@ const ChatMockup = () => {
               <div key={i} className={`flex items-center gap-2 px-4 py-1.5 cursor-pointer text-xs font-medium ${i === 1 ? 'bg-red-50 text-red-600 border-r-2 border-red-600' : 'text-slate-600 hover:bg-slate-100'}`}>
                 <Hash size={14} className={i === 1 ? 'text-red-500' : 'text-slate-400'} />
                 {ch}
-                {i === 1 && <span className="ml-auto bg-red-600 text-white text-[9px]  px-1.5 rounded-full">3</span>}
+                {i === 1 && <span className="ml-auto bg-red-600 text-white text-[9px]  px-1.5 rounded">3</span>}
               </div>
             ))}
           </div>
@@ -44,8 +44,8 @@ const ChatMockup = () => {
             ].map((user, i) => (
               <div key={i} className="flex items-center gap-2 px-4 py-1.5 cursor-pointer text-xs font-medium text-slate-600 hover:bg-slate-100">
                 <div className="relative">
-                  <img src={user.img} alt={user.name} className="w-5 h-5 rounded-full border border-slate-200" />
-                  {user.online && <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-green-500 border border-white rounded-full"></div>}
+                  <img src={user.img} alt={user.name} className="w-5 h-5 rounded border border-slate-200" />
+                  {user.online && <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-green-500 border border-white rounded"></div>}
                 </div>
                 {user.name}
               </div>

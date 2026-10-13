@@ -307,7 +307,7 @@ const SeoGmbPage = () => {
                   {widgets.seoHealthDetails?.categories?.map((c, i) => (
                     <div key={i} className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }}></div>
+                        <div className="w-2 h-2 rounded" style={{ backgroundColor: c.color }}></div>
                         <span className="text-gray-700 font-medium">{c.name}</span>
                       </div>
                       <span className="text-gray-500">{c.value}</span>
@@ -328,7 +328,7 @@ const SeoGmbPage = () => {
                     <div key={i} className="flex items-center justify-between border-b border-gray-50 pb-4 last:border-0 last:pb-0">
                       <span className="text-xs text-gray-600 w-1/2">{wv.name}</span>
                       <span className="text-sm  text-gray-900 text-right w-1/4">{wv.value}</span>
-                      <span className="text-[10px] text-green-600 bg-green-50 px-2 py-1 rounded-full  border border-green-100 flex items-center gap-1 w-1/4 justify-center">
+                      <span className="text-[10px] text-green-600 bg-green-50 px-2 py-1 rounded  border border-green-100 flex items-center gap-1 w-1/4 justify-center">
                         {wv.status} {wv.status === 'Good' ? '>' : ''}
                       </span>
                     </div>
@@ -359,7 +359,7 @@ const SeoGmbPage = () => {
                   {lists.topKeywords?.slice(0, 6).map((k, i) => (
                     <div key={i} className="flex items-center text-xs">
                       <span className="w-1/3 truncate text-gray-700">{k.keyword}</span>
-                      <div className="w-1/2 bg-gray-100 rounded-full h-2.5 flex overflow-hidden mr-3">
+                      <div className="w-1/2 bg-gray-100 rounded h-2.5 flex overflow-hidden mr-3">
                         {charts.keywordsByIntent?.map((intent, j) => {
                           const width = (Math.random() * 40 + 10);
                           return <div key={j} className="h-full" style={{ width: `${width}%`, backgroundColor: intent.color }}></div>;
@@ -426,7 +426,7 @@ const SeoGmbPage = () => {
                     {charts.devicesByClicks?.map((d, i) => (
                       <div key={i} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></div>
+                          <div className="w-2.5 h-2.5 rounded" style={{ backgroundColor: d.color }}></div>
                           <span className="text-gray-700 font-medium">{d.name}</span>
                         </div>
                         <span className=" text-gray-900">{d.value} <span className="text-gray-400 font-normal">({d.pct})</span></span>
@@ -537,8 +537,8 @@ const SeoGmbPage = () => {
                           <span className="text-green-500 font-medium flex items-center w-12 justify-end">↑ {act.change.replace('+', '')}</span>
                         </div>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div className="bg-red-600 h-2 rounded-full" style={{ width: `${(act.value / 600) * 100}%` }}></div>
+                      <div className="w-full bg-gray-100 rounded h-2">
+                        <div className="bg-red-600 h-2 rounded" style={{ width: `${(act.value / 600) * 100}%` }}></div>
                       </div>
                     </div>
                   ))}
@@ -566,8 +566,8 @@ const SeoGmbPage = () => {
                     {widgets.gmbRecentReviews?.breakdown?.map((b, i) => (
                       <div key={i} className="flex items-center justify-between gap-2">
                         <span className="text-gray-600 w-8">{b.stars} Stars</span>
-                        <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                          <div className="h-1.5 rounded-full" style={{ width: b.pct, backgroundColor: b.color }}></div>
+                        <div className="flex-1 bg-gray-100 rounded h-1.5">
+                          <div className="h-1.5 rounded" style={{ width: b.pct, backgroundColor: b.color }}></div>
                         </div>
                         <span className="text-gray-900  w-6 text-right">{b.value}</span>
                         <span className="text-gray-400 w-8 text-right">({b.pct})</span>
@@ -851,8 +851,8 @@ const SeoGmbPage = () => {
                           <span className="text-green-500 font-medium text-[9px] flex items-center justify-end">↑ {q.change.replace('+ ', '')}</span>
                         </div>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${q.value}%` }}></div>
+                      <div className="w-full bg-gray-100 rounded h-2">
+                        <div className="bg-blue-500 h-2 rounded" style={{ width: `${q.value}%` }}></div>
                       </div>
                     </div>
                   ))}
@@ -945,8 +945,8 @@ const SeoGmbPage = () => {
                   ))}
                 </div>
                 <div className="flex-1 bg-gray-50 rounded p-4 border border-gray-100 flex flex-col relative">
-                  <div className="absolute top-1/2 -translate-y-1/2 -left-3 bg-white border border-gray-200 rounded-full p-1 shadow-sm cursor-pointer hover:bg-gray-50"><ChevronLeft size={16} className="text-gray-400" /></div>
-                  <div className="absolute top-1/2 -translate-y-1/2 -right-3 bg-white border border-gray-200 rounded-full p-1 shadow-sm cursor-pointer hover:bg-gray-50"><ChevronRight size={16} className="text-gray-400" /></div>
+                  <div className="absolute top-1/2 -translate-y-1/2 -left-3 bg-white border border-gray-200 rounded p-1 shadow-sm cursor-pointer hover:bg-gray-50"><ChevronLeft size={16} className="text-gray-400" /></div>
+                  <div className="absolute top-1/2 -translate-y-1/2 -right-3 bg-white border border-gray-200 rounded p-1 shadow-sm cursor-pointer hover:bg-gray-50"><ChevronRight size={16} className="text-gray-400" /></div>
 
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2"><MessageCircle size={16} className="text-gray-900" /><span className=" text-gray-900 text-sm">{activeAiAnswerTab}</span></div>
@@ -1173,7 +1173,7 @@ const SeoGmbPage = () => {
                       {lists.compTopCompetitors?.map((c, i) => (
                         <tr key={i} className="text-gray-700">
                           <td className="py-2.5 flex items-center gap-1.5  text-gray-900">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }}></div>
+                            <div className="w-2 h-2 rounded" style={{ backgroundColor: c.color }}></div>
                             {c.domain}
                           </td>
                           <td className="py-2.5 text-center  text-indigo-600">{c.visibility}</td>
@@ -1616,7 +1616,7 @@ const SeoGmbPage = () => {
                     ].map((c, i) => (
                       <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-gray-600">
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> {c.name}
+                          <div className="w-1.5 h-1.5 rounded bg-blue-500"></div> {c.name}
                         </div>
                         <span className=" text-gray-900">{c.score}</span>
                       </div>

@@ -362,7 +362,7 @@ const RoleBasedAccessControl = () => {
                   {getUsersByRole(selectedRole).length > 0 ? (
                     getUsersByRole(selectedRole).map(user => (
                       <div key={user.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                        <div className="w-8 h-8 bg-red-600  text-white rounded-full flex items-center justify-center text-sm  ">
+                        <div className="w-8 h-8 bg-red-600  text-white rounded flex items-center justify-center text-sm  ">
                           {user.first_name?.charAt(0).toUpperCase()}
                         </div>
                         <div>

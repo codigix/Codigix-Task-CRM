@@ -555,7 +555,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
       <div className="bg-white  border border-gray-200 rounded  p-2 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className={`w-14 h-14 rounded-full text-white flex items-center justify-center text-2xl overflow-hidden flex-shrink-0 shadow-md ${companyProfile.logo && companyProfile.logo.startsWith('data:') ? 'bg-white' : 'bg-gradient-to-br from-indigo-400 to-indigo-600'}`}>
+            <div className={`w-14 h-14 rounded text-white flex items-center justify-center text-2xl overflow-hidden flex-shrink-0 shadow-md ${companyProfile.logo && companyProfile.logo.startsWith('data:') ? 'bg-white' : 'bg-gradient-to-br from-indigo-400 to-indigo-600'}`}>
               {companyProfile.logo && companyProfile.logo.startsWith('data:') ? (
                 <img
                   src={companyProfile.logo}
@@ -573,7 +573,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="text-xl  text-gray-900">{companyData.name}</h2>
-                <span className="inline-flex items-center gap-1 px-3 py-1 text-xs  rounded-full bg-amber-50 text-amber-600 border border-amber-100">
+                <span className="inline-flex items-center gap-1 px-3 py-1 text-xs  rounded bg-amber-50 text-amber-600 border border-amber-100">
                   ⭐ {companyData.rating}
                 </span>
               </div>
@@ -671,7 +671,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
             <h3 className="text-xs   text-gray-900 mb-3">Tags</h3>
             <div className="flex flex-wrap gap-2">
               {companyData.tags.map((tag) => (
-                <span key={tag.id} className={`text-xs  px-3 py-1 rounded-full ${tag.classes}`}>
+                <span key={tag.id} className={`text-xs  px-3 py-1 rounded ${tag.classes}`}>
                   {tag.label}
                 </span>
               ))}
@@ -684,7 +684,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
               {companyData.associatedCompanies.map((assoc) => (
                 <div key={assoc.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-full text-white text-xs  flex items-center justify-center ${assoc.color}`}>
+                    <div className={`w-9 h-9 rounded text-white text-xs  flex items-center justify-center ${assoc.color}`}>
                       {assoc.initials}
                     </div>
                     <div>
@@ -762,7 +762,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                       {companyContacts.map((contact) => (
                         <div key={contact.id} className="border border-gray-200 rounded  p-2 flex justify-between items-start hover:bg-gray-50 transition">
                           <div className="flex gap-3 flex-1">
-                            <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs   flex-shrink-0">
+                            <div className="w-10 h-10 rounded bg-blue-500 text-white flex items-center justify-center text-xs   flex-shrink-0">
                               {contact.first_name?.[0]}{contact.last_name?.[0]}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -809,7 +809,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                               <p className="text-gray-900 text-xs  ">{deal.deal_name}</p>
                               <p className="text-gray-600 text-xs mt-1">Value: {deal.currency} {deal.deal_value}</p>
                             </div>
-                            <span className={`text-xs   p-1  rounded-full ${deal.status === 'Won' ? 'bg-green-50 text-green-700' :
+                            <span className={`text-xs   p-1  rounded ${deal.status === 'Won' ? 'bg-green-50 text-green-700' :
                               deal.status === 'Lost' ? 'bg-red-50 text-red-700' :
                                 'bg-blue-50 text-blue-700'
                               }`}>
@@ -955,7 +955,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                     <div key={note.id} className="rounded  border border-gray-200  p-2 bg-white space-y-4">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className={`w-11 h-11 rounded-full text-white text-xs   flex items-center justify-center ${note.author.color}`}>
+                          <div className={`w-11 h-11 rounded text-white text-xs   flex items-center justify-center ${note.author.color}`}>
                             {note.author.initials}
                           </div>
                           <div>
@@ -964,7 +964,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs  px-2.5 py-1 rounded-full ${note.badge.bg} ${note.badge.text}`}>
+                          <span className={`text-xs  px-2.5 py-1 rounded ${note.badge.bg} ${note.badge.text}`}>
                             {note.badge.label}
                           </span>
                           <button className="w-9 h-9 rounded  border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 bg-white">
@@ -1047,7 +1047,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                       <div key={call.id} className="rounded  border border-gray-200  p-2 bg-white space-y-3">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <div className={`w-11 h-11 rounded-full text-white text-xs   flex items-center justify-center ${call.contact.color}`}>
+                            <div className={`w-11 h-11 rounded text-white text-xs   flex items-center justify-center ${call.contact.color}`}>
                               {call.contact.initials}
                             </div>
                             <div>
@@ -1167,7 +1167,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                             <p className="text-xs  text-gray-600 mt-1">{file.description}</p>
                           </div>
                           <div className="flex items-center gap-3 flex-wrap">
-                            <div className={`w-11 h-11 rounded-full text-white text-xs   flex items-center justify-center ${file.owner.color}`}>
+                            <div className={`w-11 h-11 rounded text-white text-xs   flex items-center justify-center ${file.owner.color}`}>
                               {file.owner.initials}
                             </div>
                             <div className="flex items-center gap-2">
@@ -1232,7 +1232,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                         <div key={thread.id} className="rounded  border border-gray-200 bg-white  p-2 space-y-4">
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <div className={`w-11 h-11 rounded-full text-white text-xs   flex items-center justify-center ${thread.sender.color}`}>
+                              <div className={`w-11 h-11 rounded text-white text-xs   flex items-center justify-center ${thread.sender.color}`}>
                                 {thread.sender.initials}
                               </div>
                               <div>
@@ -1243,7 +1243,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                             <div className="flex flex-wrap items-center gap-2 justify-end">
                               {thread.badges &&
                                 thread.badges.map((badge) => (
-                                  <span key={badge.id} className={`text-xs  px-2.5 py-1 rounded-full ${badge.bg} ${badge.text}`}>
+                                  <span key={badge.id} className={`text-xs  px-2.5 py-1 rounded ${badge.bg} ${badge.text}`}>
                                     {badge.label}
                                   </span>
                                 ))}
@@ -1326,7 +1326,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
             <div className="flex items-center justify-between p-2  border-b border-gray-200">
               <h3 className="text-md  text-gray-900">Create New File</h3>
               <button
-                className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700"
+                className="w-9 h-9 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700"
                 onClick={closeCreateDocumentModal}
               >
                 <X className="w-4 h-4" />
@@ -1337,7 +1337,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                 {companyData.documentForm.tabs.map((tab) => (
                   <button
                     key={tab.id}
-                    className={`flex items-center gap-2 text-xs   p-2  rounded-full border transition-all ${documentTab === tab.id
+                    className={`flex items-center gap-2 text-xs   p-2  rounded border transition-all ${documentTab === tab.id
                       ? 'bg-red-500 text-white border-red-500 shadow-md'
                       : 'bg-gray-50 text-gray-600 border-gray-200'
                       }`}
@@ -1425,10 +1425,10 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                             onChange={() => setSelectedSignature(option.value)}
                           />
                           <span
-                            className={`w-4 h-4 rounded-full border flex items-center justify-center mt-1 ${selectedSignature === option.value ? 'border-red-500' : 'border-gray-300'
+                            className={`w-4 h-4 rounded border flex items-center justify-center mt-1 ${selectedSignature === option.value ? 'border-red-500' : 'border-gray-300'
                               }`}
                           >
-                            {selectedSignature === option.value && <span className="w-2 h-2 bg-red-500 rounded-full"></span>}
+                            {selectedSignature === option.value && <span className="w-2 h-2 bg-red-500 rounded"></span>}
                           </span>
                           <div>
                             <p className="text-xs   text-gray-900">{option.title}</p>
@@ -1590,7 +1590,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
             <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
               <h3 className="text-md  text-gray-900">Add New Notes</h3>
               <button
-                className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700"
+                className="w-9 h-9 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700"
                 onClick={closeAddNoteModal}
               >
                 <X className="w-4 h-4" />
@@ -1622,7 +1622,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                   {companyData.noteForm.attachmentLabel} <span className="text-red-500">*</span>
                 </label>
                 <div className="rounded border border-dashed border-gray-200 bg-whitep-3  text-center flex flex-col items-center gap-3 shadow-[0_24px_65px_rgba(15,23,42,0.08)]">
-                  <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded bg-red-50 flex items-center justify-center">
                     <FolderOpen className="w-6 h-6 text-red-500" />
                   </div>
                   <p className="text-xs  text-gray-700">
@@ -1650,7 +1650,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
                             <p className="text-xs text-gray-500">{attachment.size}</p>
                           </div>
                         </div>
-                        <button className="w-9 h-9 rounded-full border border-gray-200 text-gray-500 hover:text-red-500 flex items-center justify-center">
+                        <button className="w-9 h-9 rounded border border-gray-200 text-gray-500 hover:text-red-500 flex items-center justify-center">
                           <X className="w-4 h-4" />
                         </button>
                       </div>
@@ -1684,7 +1684,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
             <div className="flex items-center justify-between p-2  border-b border-gray-200">
               <h3 className="text-md  text-gray-900">Create Call Log</h3>
               <button
-                className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700"
+                className="w-9 h-9 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700"
                 onClick={closeCreateCallModal}
               >
                 <X className="w-4 h-4" />
@@ -1753,7 +1753,7 @@ const CompanyDetailsPage = ({ company = {}, onBack }) => {
             <div className="flex items-center justify-between p-2  border-b border-gray-200">
               <h3 className="text-md  text-gray-900">Compose Email</h3>
               <button
-                className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700"
+                className="w-9 h-9 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700"
                 onClick={() => setIsComposeEmailOpen(false)}
               >
                 <X className="w-4 h-4" />

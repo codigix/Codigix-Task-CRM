@@ -55,14 +55,14 @@ export const PageHead = ({ title, sub, children }) => (
   </div>
 );
 export const Segmented = ({ value, onChange, options }) => (
-  <div className="flex bg-white border border-gray-200 rounded-lg p-0.5">
-    {options.map(([v, l]) => <button key={v} onClick={() => onChange(v)} className={`h-7 px-3 text-xs rounded-md cursor-pointer whitespace-nowrap ${value === v ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900'}`}>{l}</button>)}
+  <div className="flex bg-white border border-gray-200 rounded p-0.5">
+    {options.map(([v, l]) => <button key={v} onClick={() => onChange(v)} className={`h-7 px-3 text-xs rounded cursor-pointer whitespace-nowrap ${value === v ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900'}`}>{l}</button>)}
   </div>
 );
 export const Chips = ({ value, onChange, options }) => (
   <div className="flex flex-wrap gap-1.5">
     {options.map(([v, l, n]) => (
-      <button key={v} onClick={() => onChange(v)} className={`h-7 px-3 text-xs rounded-full border cursor-pointer ${value === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+      <button key={v} onClick={() => onChange(v)} className={`h-7 px-3 text-xs rounded border cursor-pointer ${value === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
         {l}{n != null && <span className={`ml-1 ${value === v ? 'text-gray-300' : 'text-gray-400'}`}>{n}</span>}
       </button>
     ))}
@@ -70,14 +70,14 @@ export const Chips = ({ value, onChange, options }) => (
 );
 export const Kpi = ({ icon: Icon, label, value, hint, tone = 'text-gray-500', warn, onClick }) => (
   <button type="button" onClick={onClick} disabled={!onClick}
-    className={`text-left bg-white border rounded-lg p-3 min-w-0 ${onClick ? 'hover:border-gray-300 cursor-pointer' : 'cursor-default'} ${warn ? 'border-red-200' : 'border-gray-200'}`}>
+    className={`text-left bg-white border rounded p-3 min-w-0 ${onClick ? 'hover:border-gray-300 cursor-pointer' : 'cursor-default'} ${warn ? 'border-red-200' : 'border-gray-200'}`}>
     <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium">{Icon && <Icon size={13} className={tone} />} <span className="truncate">{label}</span></div>
     <div className={`text-xl font-semibold tabular-nums mt-1 truncate ${warn ? 'text-red-700' : 'text-gray-900'}`}>{value}</div>
     {hint && <div className="text-[11px] text-gray-500 mt-0.5 truncate">{hint}</div>}
   </button>
 );
 export const Card = ({ title, action, children, className = '', pad = true }) => (
-  <div className={`bg-white border border-gray-200 rounded-lg ${className}`}>
+  <div className={`bg-white border border-gray-200 rounded ${className}`}>
     {title && <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between gap-2"><span className="text-[13px] font-semibold text-gray-900">{title}</span>{action}</div>}
     <div className={pad ? 'p-4' : ''}>{children}</div>
   </div>
@@ -94,8 +94,8 @@ export function TargetBar({ label, achieved, target, format = (v) => v, expected
         <span className="text-gray-700 font-medium">{label}</span>
         <span className="tabular-nums text-gray-600"><span className="font-semibold text-gray-900">{format(achieved)}</span>{target ? ` of ${format(target)}` : ' · no target set'}</span>
       </div>
-      <div className="relative h-2 mt-1 rounded-full bg-gray-100">
-        {target > 0 && <div className={`absolute inset-y-0 left-0 rounded-full ${pctDone >= 100 ? 'bg-emerald-600' : behind ? 'bg-amber-500' : 'bg-blue-600'}`} style={{ width: `${pctDone}%` }} />}
+      <div className="relative h-2 mt-1 rounded bg-gray-100">
+        {target > 0 && <div className={`absolute inset-y-0 left-0 rounded ${pctDone >= 100 ? 'bg-emerald-600' : behind ? 'bg-amber-500' : 'bg-red-600'}`} style={{ width: `${pctDone}%` }} />}
         {target > 0 && expected != null && expected > 0 && expected < 1 && <div className="absolute -top-0.5 -bottom-0.5 w-0.5 bg-gray-500" style={{ left: `${Math.round(expected * 100)}%` }} title="Where you should be by today" />}
       </div>
       {target > 0 && <div className={`text-[11px] mt-0.5 ${pctDone >= 100 ? 'text-emerald-700' : behind ? 'text-amber-700' : 'text-gray-500'}`}>{pctDone}%{pctDone >= 100 ? ' · target reached' : behind ? ' · behind pace' : ' · on pace'}</div>}
@@ -147,7 +147,7 @@ export function TrendBars({ data, series, height = 170, format = shortMoney }) {
       </svg>
       {empty && <div className="absolute inset-0 flex items-center justify-center text-[12px] text-gray-500 pointer-events-none">Nothing yet in these months</div>}
       {hover != null && data[hover] && !empty && (
-        <div className="absolute top-0 right-0 bg-white border border-gray-200 shadow-md rounded-md px-2.5 py-1.5 text-[11.5px] pointer-events-none">
+        <div className="absolute top-0 right-0 bg-white border border-gray-200 shadow-md rounded px-2.5 py-1.5 text-[11.5px] pointer-events-none">
           <div className="font-semibold text-gray-900 mb-0.5">{data[hover].label || monthLabel(data[hover].month)}</div>
           {series.map((s, i) => <div key={s.key} className="flex items-center gap-1.5 text-gray-700"><span className="w-2 h-2 rounded-sm" style={{ background: SERIES_COLORS[i] }} />{s.label}: <span className="font-medium tabular-nums">{money(data[hover][s.key])}</span></div>)}
         </div>
@@ -165,7 +165,7 @@ export function HBars({ rows, valueKey, labelKey, format = (v) => v, sub, empty 
       {rows.map((r, i) => (
         <div key={r[labelKey] || i}>
           <div className="flex justify-between gap-2 text-[12px]"><span className="text-gray-700 truncate">{r[labelKey]}</span><span className="tabular-nums text-gray-900 font-medium shrink-0">{format(r[valueKey])}{sub ? <span className="text-gray-500 font-normal"> · {sub(r)}</span> : null}</span></div>
-          <div className="h-1.5 mt-1 rounded-full bg-gray-100"><div className="h-full rounded-full bg-blue-600" style={{ width: `${Number(r[valueKey]) ? Math.max(2, ((Number(r[valueKey]) || 0) / max) * 100) : 0}%` }} /></div>
+          <div className="h-1.5 mt-1 rounded bg-gray-100"><div className="h-full rounded bg-red-600" style={{ width: `${Number(r[valueKey]) ? Math.max(2, ((Number(r[valueKey]) || 0) / max) * 100) : 0}%` }} /></div>
         </div>
       ))}
     </div>

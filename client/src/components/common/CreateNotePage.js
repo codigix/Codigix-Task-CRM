@@ -81,9 +81,9 @@ const CreateNotePage = () => {
   const ToggleSwitch = ({ checked, onChange }) => (
     <div
       onClick={() => onChange(!checked)}
-      className={`w-10 h-5 flex items-center rounded-full p-1 cursor-pointer transition-colors ${checked ? 'bg-red-600' : 'bg-gray-200'}`}
+      className={`w-10 h-5 flex items-center rounded p-1 cursor-pointer transition-colors ${checked ? 'bg-red-600' : 'bg-gray-200'}`}
     >
-      <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
+      <div className={`bg-white w-4 h-4 rounded shadow-md transform transition-transform ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
     </div>
   );
 
@@ -100,7 +100,7 @@ const CreateNotePage = () => {
             <p className="text-xs text-gray-500">Create, organize and share knowledge with your team.</p>
           </div>
         </div>
-        <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded text-gray-500 transition-colors">
           <X size={20} />
         </button>
       </div>
@@ -275,8 +275,8 @@ const CreateNotePage = () => {
                   { id: 'Custom', desc: 'Choose custom access permissions' },
                 ].map(opt => (
                   <div key={opt.id} onClick={() => handleInputChange('teamAccess', opt.id)} className="flex items-start gap-3 cursor-pointer group">
-                    <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${formData.teamAccess === opt.id ? 'border-indigo-600' : 'border-gray-300 group-hover:border-indigo-400'}`}>
-                      {formData.teamAccess === opt.id && <div className="w-2 h-2 bg-red-600 rounded-full" />}
+                    <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${formData.teamAccess === opt.id ? 'border-indigo-600' : 'border-gray-300 group-hover:border-indigo-400'}`}>
+                      {formData.teamAccess === opt.id && <div className="w-2 h-2 bg-red-600 rounded" />}
                     </div>
                     <div>
                       <div className={`text-xs font-medium mb-0.5 ${formData.teamAccess === opt.id ? 'text-gray-900' : 'text-gray-700'}`}>{opt.id}</div>

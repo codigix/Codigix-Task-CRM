@@ -208,7 +208,7 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
                       ))}
                     </select>
                     {isAutoMatched && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded whitespace-nowrap">
                         ✓ Matched with Sprint
                       </span>
                     )}

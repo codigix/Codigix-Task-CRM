@@ -51,7 +51,7 @@ const CRMDataTable = ({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl  text-gray-900">{title}</h1>
-            <span className="bg-red-100 text-red  text-xs px-2 py-0.5 rounded-full ">
+            <span className="bg-red-100 text-red  text-xs px-2 py-0.5 rounded ">
               {data.length}
             </span>
           </div>

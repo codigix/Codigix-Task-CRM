@@ -568,7 +568,7 @@ const ProfileSettingsPage = () => {
         {/* Profile Card details */}
         <div className="xl:col-span-6 bg-white border border-gray-100 rounded p-4  flex flex-col md:flex-row items-center md:items-start gap-4">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-50 shadow-inner flex-shrink-0">
+            <div className="w-24 h-24 rounded overflow-hidden border-4 border-gray-50 shadow-inner flex-shrink-0">
               {profile.avatarUrl && !profile.avatarUrl.includes('preadmin') ? (
                 <img
                   src={profile.avatarUrl}
@@ -582,7 +582,7 @@ const ProfileSettingsPage = () => {
                 </div>
               )}
             </div>
-            <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-white rounded-full"></span>
+            <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-white rounded"></span>
           </div>
 
           <div className="flex-1 text-center md:text-left">
@@ -720,7 +720,7 @@ const ProfileSettingsPage = () => {
                   <span>Workspace tasks</span>
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded bg-blue-50 text-blue-600 flex items-center justify-center">
                 <FileText size={18} />
               </div>
             </div>
@@ -735,7 +735,7 @@ const ProfileSettingsPage = () => {
                   <span>{kpiStats.completed} of {kpiStats.total} done</span>
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded bg-green-50 text-green-600 flex items-center justify-center">
                 <CheckCircle size={18} />
               </div>
             </div>
@@ -750,7 +750,7 @@ const ProfileSettingsPage = () => {
                   <span>Pending start</span>
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded bg-rose-50 text-rose-600 flex items-center justify-center">
                 <AlertCircle size={18} />
               </div>
             </div>
@@ -765,7 +765,7 @@ const ProfileSettingsPage = () => {
                   <span>Active working</span>
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded bg-amber-50 text-amber-600 flex items-center justify-center">
                 <Clock size={18} />
               </div>
             </div>
@@ -778,7 +778,7 @@ const ProfileSettingsPage = () => {
                   <span>{kpiStats.overdue > 0 ? `${kpiStats.overdue} past target` : 'On schedule'}</span>
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded bg-red-50 text-red-600 flex items-center justify-center">
                 <AlertTriangle size={18} />
               </div>
             </div>
@@ -793,7 +793,7 @@ const ProfileSettingsPage = () => {
                   </span>
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <Shield size={18} />
               </div>
             </div>
@@ -868,7 +868,7 @@ const ProfileSettingsPage = () => {
                 <div className="grid grid-cols-2 gap-y-2 text-xs font-medium text-gray-655 mt-4 border-t border-gray-50 pt-4">
                   {categoriesData.map((cat, idx) => (
                     <div key={idx} className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: cat.color }}></span>
+                      <span className="w-2.5 h-2.5 rounded inline-block flex-shrink-0" style={{ backgroundColor: cat.color }}></span>
                       <span className="truncate">{cat.name} ({cat.value}%)</span>
                     </div>
                   ))}
@@ -897,10 +897,10 @@ const ProfileSettingsPage = () => {
                             <img
                               src={userItem.avatar}
                               alt={userItem.name}
-                              className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-gray-200"
+                              className="w-7 h-7 rounded object-cover flex-shrink-0 border border-gray-200"
                             />
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs  flex-shrink-0">
+                            <div className="w-7 h-7 rounded bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs  flex-shrink-0">
                               {userItem.name.charAt(0).toUpperCase()}
                             </div>
                           )}
@@ -910,9 +910,9 @@ const ProfileSettingsPage = () => {
                           </div>
                           <span className="text-xs  text-gray-700">{userItem.workload}% ({userItem.taskCount} {userItem.taskCount === 1 ? 'task' : 'tasks'})</span>
                         </div>
-                        <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                        <div className="w-full bg-gray-100 h-1.5 rounded overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${idx === 0 ? 'bg-red-600' : idx === 1 ? 'bg-emerald-500' : idx === 2 ? 'bg-purple-500' : idx === 3 ? 'bg-amber-500' : 'bg-rose-500'
+                            className={`h-full rounded transition-all duration-500 ${idx === 0 ? 'bg-red-600' : idx === 1 ? 'bg-emerald-500' : idx === 2 ? 'bg-purple-500' : idx === 3 ? 'bg-amber-500' : 'bg-rose-500'
                               }`}
                             style={{ width: `${Math.min(100, Math.max(userItem.workload, userItem.taskCount > 0 ? 10 : 0))}%` }}
                           ></div>
@@ -1118,7 +1118,7 @@ const ProfileSettingsPage = () => {
                         <td className="p-4  text-gray-600">{t.category}</td>
                         <td className="p-4">
                           <div className="flex items-center gap-2">
-                            <img src={t.avatar} className="w-6 h-6 rounded-full object-cover border border-gray-100" alt="avatar" />
+                            <img src={t.avatar} className="w-6 h-6 rounded object-cover border border-gray-100" alt="avatar" />
                             <span className=" text-gray-800">{t.assignedTo}</span>
                           </div>
                         </td>
@@ -1263,8 +1263,8 @@ const ProfileSettingsPage = () => {
                         </td>
                         <td className="p-4 w-48">
                           <div className="flex items-center gap-2">
-                            <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${p.progress === 100 ? 'bg-emerald-500' : 'bg-blue-500'
+                            <div className="w-full bg-gray-100 h-2 rounded overflow-hidden">
+                              <div className={`h-full rounded ${p.progress === 100 ? 'bg-emerald-500' : 'bg-blue-500'
                                 }`} style={{ width: `${p.progress}%` }}></div>
                             </div>
                             <span className=" text-gray-600 text-xs">{p.progress}%</span>
@@ -1274,7 +1274,7 @@ const ProfileSettingsPage = () => {
                         <td className="p-4  text-gray-650">{p.dueDate}</td>
                         <td className="p-4">
                           <div className="flex items-center gap-2">
-                            <img src={p.avatar} className="w-6 h-6 rounded-full object-cover border border-gray-100" alt="avatar" />
+                            <img src={p.avatar} className="w-6 h-6 rounded object-cover border border-gray-100" alt="avatar" />
                             <span className=" text-gray-800">{p.manager}</span>
                           </div>
                         </td>
@@ -1440,7 +1440,7 @@ const ProfileSettingsPage = () => {
                         <td className="p-4  text-gray-650">{t.dueDate}</td>
                         <td className="p-4">
                           <div className="flex items-center gap-2">
-                            <img src={t.avatar} className="w-6 h-6 rounded-full object-cover border border-gray-100" alt="avatar" />
+                            <img src={t.avatar} className="w-6 h-6 rounded object-cover border border-gray-100" alt="avatar" />
                             <span className=" text-gray-800">{t.assignedTo}</span>
                           </div>
                         </td>
@@ -1543,7 +1543,7 @@ const ProfileSettingsPage = () => {
           {/* Attendance activities logs table */}
           <div className="bg-white border border-gray-150 rounded overflow-hidden ">
             <div className="p-8 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-50 text-gray-400 mb-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded bg-gray-50 text-gray-400 mb-4">
                 <Clock size={24} />
               </div>
               <h3 className="text-sm font-medium text-gray-900">API Pending</h3>
@@ -1692,7 +1692,7 @@ const ProfileSettingsPage = () => {
                   {categoriesData.map((cat, idx) => (
                     <div key={idx} className="flex items-center justify-between text-xs text-gray-650">
                       <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: cat.color }}></span>
+                        <span className="w-2.5 h-2.5 rounded inline-block flex-shrink-0" style={{ backgroundColor: cat.color }}></span>
                         <span className="">{cat.name}</span>
                       </div>
                       <span className=" text-gray-800">{cat.value}% ({cat.count})</span>
@@ -1769,9 +1769,9 @@ const ProfileSettingsPage = () => {
                   teamWorkload.map((agent, idx) => (
                     <div key={idx} className="flex items-center gap-3">
                       {agent.avatar && !agent.avatar.includes('preadmin') ? (
-                        <img src={agent.avatar} className="w-8 h-8 rounded-full object-cover border border-gray-100" alt="avatar" />
+                        <img src={agent.avatar} className="w-8 h-8 rounded object-cover border border-gray-100" alt="avatar" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs ">
+                        <div className="w-8 h-8 rounded bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs ">
                           {agent.name.charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -1780,8 +1780,8 @@ const ProfileSettingsPage = () => {
                           <span className="text-gray-900 font-medium truncate">{agent.name}</span>
                           <span className="text-indigo-600 ">{agent.workload}% ({agent.taskCount} tasks)</span>
                         </div>
-                        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                          <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(100, Math.max(agent.workload, 10))}%` }}></div>
+                        <div className="w-full bg-gray-100 h-2 rounded overflow-hidden">
+                          <div className="h-full bg-indigo-500 rounded" style={{ width: `${Math.min(100, Math.max(agent.workload, 10))}%` }}></div>
                         </div>
                       </div>
                     </div>
@@ -1825,7 +1825,7 @@ const ProfileSettingsPage = () => {
                 <div className="flex justify-center items-center gap-6 mt-4 text-xs  text-gray-600 border-t border-gray-50 pt-4">
                   {priorityData.map((p, idx) => (
                     <div key={idx} className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }}></span>
+                      <span className="w-2.5 h-2.5 rounded" style={{ backgroundColor: p.color }}></span>
                       <span>{p.name} ({p.value}%)</span>
                     </div>
                   ))}
@@ -1883,10 +1883,10 @@ const ProfileSettingsPage = () => {
                 {/* Photo Upload widget */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 border-b border-gray-100 pb-6">
                   <div className="relative group cursor-pointer" onClick={triggerPhotoUpload}>
-                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-200">
+                    <div className="w-20 h-20 rounded overflow-hidden border-2 border-gray-200">
                       <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                     </div>
-                    <div className="absolute inset-0 bg-black/35 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                    <div className="absolute inset-0 bg-black/35 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                       <Camera size={18} className="text-white" />
                     </div>
                   </div>
@@ -2301,7 +2301,7 @@ const ProfileSettingsPage = () => {
                       <p className=" text-gray-800 truncate">Chrome on Windows (Current)</p>
                       <p className="text-xs text-gray-400 mt-0.5">London, UK • IP: 192.168.1.105</p>
                     </div>
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0 mr-2"></span>
+                    <span className="w-2.5 h-2.5 rounded bg-green-500 flex-shrink-0 mr-2"></span>
                   </div>
 
                   <div className="flex items-center justify-between p-2 rounded border border-gray-100 text-xs">
@@ -2378,7 +2378,7 @@ const ProfileSettingsPage = () => {
                     <span>Users</span>
                     <span>12 / 50</span>
                   </div>
-                  <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-gray-100 h-2 rounded overflow-hidden">
                     <div className="h-full bg-red-500" style={{ width: '24%' }}></div>
                   </div>
                 </div>
@@ -2388,7 +2388,7 @@ const ProfileSettingsPage = () => {
                     <span>Projects</span>
                     <span>24 / 100</span>
                   </div>
-                  <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-gray-100 h-2 rounded overflow-hidden">
                     <div className="h-full bg-blue-500" style={{ width: '24%' }}></div>
                   </div>
                 </div>
@@ -2398,7 +2398,7 @@ const ProfileSettingsPage = () => {
                     <span>Storage</span>
                     <span>72.2 GB / 500 GB</span>
                   </div>
-                  <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-gray-100 h-2 rounded overflow-hidden">
                     <div className="h-full bg-purple-500" style={{ width: '14.4%' }}></div>
                   </div>
                 </div>
@@ -2408,7 +2408,7 @@ const ProfileSettingsPage = () => {
                     <span>API Calls</span>
                     <span>12,450 / 50,000</span>
                   </div>
-                  <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-gray-100 h-2 rounded overflow-hidden">
                     <div className="h-full bg-green-500" style={{ width: '24.9%' }}></div>
                   </div>
                 </div>
@@ -2437,7 +2437,7 @@ const ProfileSettingsPage = () => {
                         <td className="py-3 text-gray-500 ">{inv.date}</td>
                         <td className="py-3  text-gray-800">{inv.amount}</td>
                         <td className="py-3">
-                          <span className="px-2 py-0.5 rounded-full text-xs  bg-green-50 text-green-600 border border-green-100">
+                          <span className="px-2 py-0.5 rounded text-xs  bg-green-50 text-green-600 border border-green-100">
                             {inv.status}
                           </span>
                         </td>
@@ -2522,7 +2522,7 @@ const ProfileSettingsPage = () => {
                   <div key={act.id} className="relative">
 
                     {/* Timeline bullet dot icon */}
-                    <div className="absolute -left-[35px] top-0 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 ">
+                    <div className="absolute -left-[35px] top-0 w-6 h-6 rounded bg-white border border-gray-200 flex items-center justify-center text-gray-500 ">
                       {act.type === 'ticket' && <FileText size={12} className="text-blue-500" />}
                       {act.type === 'project' && <Briefcase size={12} className="text-emerald-500" />}
                       {act.type === 'code' && <Activity size={12} className="text-indigo-500" />}

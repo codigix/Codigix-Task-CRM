@@ -98,7 +98,7 @@ const SearchableSelect = ({
       >
         <div className="flex items-center gap-2 truncate">
           {selectedOption?.avatar && (
-            <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-medium shrink-0">
+            <div className="w-5 h-5 rounded bg-red-500 text-white flex items-center justify-center text-[10px] font-medium shrink-0">
               {selectedOption.avatar}
             </div>
           )}
@@ -162,7 +162,7 @@ const SearchableSelect = ({
                   >
                     <div className="flex items-center gap-2.5 truncate">
                       {opt.avatar && (
-                        <div className="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px]  shrink-0">
+                        <div className="w-6 h-6 rounded bg-red-600 text-white flex items-center justify-center text-[10px]  shrink-0">
                           {opt.avatar}
                         </div>
                       )}

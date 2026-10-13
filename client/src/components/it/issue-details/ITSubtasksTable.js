@@ -132,11 +132,11 @@ export const SubtaskAssigneePicker = ({
         >
           <div className="flex items-center gap-2 min-w-0">
             {isUnassigned ? (
-              <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0">
+              <div className="w-5 h-5 rounded bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0">
                 <User size={11} className="text-gray-500" />
               </div>
             ) : (
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px]  shrink-0 ${getSubtaskAvatarColor(currentName)}`}>
+              <div className={`w-5 h-5 rounded flex items-center justify-center text-[9px]  shrink-0 ${getSubtaskAvatarColor(currentName)}`}>
                 {getSafeInitials(currentName, getInitials)}
               </div>
             )}
@@ -153,11 +153,11 @@ export const SubtaskAssigneePicker = ({
           title={`Assignee: ${currentName}. Click to change.`}
         >
           {isUnassigned ? (
-            <div className="w-4 h-4 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0">
+            <div className="w-4 h-4 rounded bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0">
               <User size={10} className="text-gray-500" />
             </div>
           ) : (
-            <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px]  shrink-0 ${getSubtaskAvatarColor(currentName)}`}>
+            <div className={`w-4 h-4 rounded flex items-center justify-center text-[8px]  shrink-0 ${getSubtaskAvatarColor(currentName)}`}>
               {getSafeInitials(currentName, getInitials)}
             </div>
           )}
@@ -216,7 +216,7 @@ export const SubtaskAssigneePicker = ({
                   onClick={() => handlePick('Unassigned')}
                   className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isUnassigned ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                 >
-                  <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
+                  <div className="w-5 h-5 rounded bg-gray-200 text-gray-500 flex items-center justify-center text-[10px] shrink-0">
                     <User size={12} className="text-gray-500" />
                   </div>
                   <span className="flex-1 truncate">Unassigned</span>
@@ -233,7 +233,7 @@ export const SubtaskAssigneePicker = ({
                     onClick={() => handlePick(uName)}
                     className={`px-3 py-1.5 hover:bg-blue-50 cursor-pointer flex items-center gap-2.5 transition text-xs ${isSelected ? 'bg-[#deebff]  text-blue-900' : 'text-gray-700'}`}
                   >
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px]  shrink-0 ${getSubtaskAvatarColor(uName)}`}>
+                    <div className={`w-5 h-5 rounded flex items-center justify-center text-[9px]  shrink-0 ${getSubtaskAvatarColor(uName)}`}>
                       {getSafeInitials(uName, getInitials)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -375,9 +375,9 @@ const ITSubtasksTable = ({
 
       {/* Progress bar */}
       {subtasks.length > 0 && (
-        <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+        <div className="w-full bg-gray-100 rounded h-1.5 overflow-hidden">
           <div
-            className="bg-emerald-500 h-1.5 rounded-full transition-all duration-300"
+            className="bg-emerald-500 h-1.5 rounded transition-all duration-300"
             style={{ width: `${(subtasks.filter(s => s.completed || s.status === 'Done').length / subtasks.length) * 100}%` }}
           />
         </div>

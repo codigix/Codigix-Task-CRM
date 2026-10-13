@@ -19,7 +19,7 @@ const SOURCES = ['Website', 'Phone call', 'WhatsApp', 'Referral', 'Walk-in', 'So
 
 const Tile = ({ icon: Icon, label, value, hint, tone = 'text-gray-500', onClick, warn }) => (
   <button type="button" onClick={onClick} disabled={!onClick}
-    className={`text-left bg-white border rounded-lg p-3 ${onClick ? 'hover:border-gray-300 cursor-pointer' : 'cursor-default'} ${warn ? 'border-red-200' : 'border-gray-200'}`}>
+    className={`text-left bg-white border rounded p-3 ${onClick ? 'hover:border-gray-300 cursor-pointer' : 'cursor-default'} ${warn ? 'border-red-200' : 'border-gray-200'}`}>
     <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium"><Icon size={13} className={tone} /> {label}</div>
     <div className={`text-xl font-semibold tabular-nums mt-1 ${warn ? 'text-red-700' : 'text-gray-900'}`}>{value}</div>
     {hint && <div className="text-[11px] text-gray-500 mt-0.5 truncate">{hint}</div>}
@@ -55,7 +55,7 @@ function NewLeadModal({ meta, onClose, onSaved }) {
           <div><label className={labelCls}>Owner</label><select value={f.owner_id} onChange={e => set('owner_id', e.target.value)} className={inputCls}><option value="">Me</option>{meta.people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
         </div>
         <div><label className={labelCls}>Enquiry details</label><textarea value={f.notes} onChange={e => set('notes', e.target.value)} rows={3} className="w-full text-[13px] border border-gray-300 rounded p-2.5 outline-none focus:border-blue-500" placeholder="What they asked for, budget, timeline" /></div>
-        <div className="border border-gray-200 rounded-lg p-3 bg-gray-50/60">
+        <div className="border border-gray-200 rounded p-3 bg-gray-50/60">
           <label className="flex items-center gap-2 text-[13px] font-medium text-gray-800 cursor-pointer mb-2"><input type="checkbox" checked={planFirst} onChange={e => setPlanFirst(e.target.checked)} /> Schedule the first contact</label>
           {planFirst && <NextStepFields value={first} onChange={setFirst} types={meta.followupTypes} people={meta.people} />}
         </div>
@@ -112,7 +112,7 @@ export default function SalesPipelinePage() {
     if (card.status === status) return;
     if (card.dealId) { navigate(`${base}/opportunity/${card.dealId}`); return; }
     if (['Lost', 'On Hold', 'Unqualified'].includes(status)) { setDialog({ kind: 'lead', card, target: status }); return; }
-    if (card.status === 'On Hold') await api(`/leads/${card.id}/resume`, { method: 'POST' }).catch(() => {});
+    if (card.status === 'On Hold') await api(`/leads/${card.id}/resume`, { method: 'POST' }).catch(() => { });
     try { await api(`/leads/${card.id}/status`, { method: 'POST', body: { status } }); load(); } catch (e) { setError(e.message); }
   };
   const moveDeal = async (card, column) => {
@@ -127,7 +127,7 @@ export default function SalesPipelinePage() {
 
   const LeadCard = ({ c }) => (
     <div draggable onDragStart={() => setDrag({ type: 'lead', card: c })} onDragEnd={() => setDrag(null)} onClick={() => navigate(`${base}/enquiry/${c.id}`)}
-      className="bg-white border border-gray-200 rounded-lg p-2.5 cursor-pointer hover:border-blue-300 hover:shadow-sm">
+      className="bg-white border border-gray-200 rounded p-2.5 cursor-pointer hover:border-blue-300 hover:shadow-sm">
       <div className="text-[13px] font-semibold text-gray-900 truncate">{c.name}</div>
       <div className="text-[11px] text-gray-500 truncate">{[c.company, c.project].filter(Boolean).join(' · ') || c.source || '—'}</div>
       <div className="flex items-center justify-between mt-1.5 text-[11px]">
@@ -142,7 +142,7 @@ export default function SalesPipelinePage() {
   );
   const DealCard = ({ c }) => (
     <div draggable onDragStart={() => setDrag({ type: 'deal', card: c })} onDragEnd={() => setDrag(null)} onClick={() => navigate(`${base}/opportunity/${c.id}`)}
-      className="bg-white border border-gray-200 rounded-lg p-2.5 cursor-pointer hover:border-blue-300 hover:shadow-sm">
+      className="bg-white border border-gray-200 rounded p-2.5 cursor-pointer hover:border-blue-300 hover:shadow-sm">
       <div className="text-[13px] font-semibold text-gray-900 truncate">{c.name}</div>
       <div className="text-[11px] text-gray-500 truncate">{c.company || '—'}</div>
       <div className="flex items-center justify-between mt-1.5 text-[11px]">
@@ -176,12 +176,12 @@ export default function SalesPipelinePage() {
           <p className="text-[12px] text-gray-500 mt-0.5">Enquiry → contact → qualify → deal → quotation → negotiation → won, lost or on hold.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded-lg p-0.5">
-            {[['all', 'Team'], ['mine', 'Mine']].map(([kk, l]) => <button key={kk} onClick={() => setScope(kk)} className={`px-2.5 h-7 text-xs font-medium rounded-md cursor-pointer ${scope === kk ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{l}</button>)}
+          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded p-0.5">
+            {[['all', 'Team'], ['mine', 'Mine']].map(([kk, l]) => <button key={kk} onClick={() => setScope(kk)} className={`px-2.5 h-7 text-xs font-medium rounded cursor-pointer ${scope === kk ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{l}</button>)}
           </div>
           <div className="relative">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, company, phone" className="h-8 w-56 pl-8 pr-2 text-xs border border-gray-300 rounded-lg outline-none focus:border-blue-500 bg-white" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, company, phone" className="h-8 w-56 pl-8 pr-2 text-xs border border-gray-300 rounded outline-none focus:border-blue-500 bg-white" />
           </div>
           <button onClick={() => setNewLead(true)} className={btn.primary}><Plus size={14} /> New enquiry</button>
         </div>
@@ -206,10 +206,10 @@ export default function SalesPipelinePage() {
             <button key={kk} onClick={() => setTab(kk)} className={`px-3 py-2 text-[13px] font-medium -mb-px border-b-2 cursor-pointer ${tab === kk ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>{l}</button>
           ))}
         </div>
-        {quick && <button onClick={() => setQuick('')} className="h-7 px-2.5 text-xs rounded-full bg-gray-900 text-white flex items-center gap-1 cursor-pointer">{quick === 'overdue' ? 'Overdue follow-ups' : 'No next step'} <X size={11} /></button>}
-        <div className="ml-auto flex items-center gap-0.5 bg-white border border-gray-200 rounded-lg p-0.5">
-          <button onClick={() => setView('board')} className={`p-1.5 rounded-md cursor-pointer ${view === 'board' ? 'bg-gray-900 text-white' : 'text-gray-500'}`} title="Board"><LayoutGrid size={14} /></button>
-          <button onClick={() => setView('list')} className={`p-1.5 rounded-md cursor-pointer ${view === 'list' ? 'bg-gray-900 text-white' : 'text-gray-500'}`} title="List"><List size={14} /></button>
+        {quick && <button onClick={() => setQuick('')} className="h-7 px-2.5 text-xs rounded bg-gray-900 text-white flex items-center gap-1 cursor-pointer">{quick === 'overdue' ? 'Overdue follow-ups' : 'No next step'} <X size={11} /></button>}
+        <div className="ml-auto flex items-center gap-0.5 bg-white border border-gray-200 rounded p-0.5">
+          <button onClick={() => setView('board')} className={`p-1.5 rounded cursor-pointer ${view === 'board' ? 'bg-gray-900 text-white' : 'text-gray-500'}`} title="Board"><LayoutGrid size={14} /></button>
+          <button onClick={() => setView('list')} className={`p-1.5 rounded cursor-pointer ${view === 'list' ? 'bg-gray-900 text-white' : 'text-gray-500'}`} title="List"><List size={14} /></button>
         </div>
       </div>
 
@@ -226,9 +226,9 @@ export default function SalesPipelinePage() {
               </Column>
             );
           })}
-          <Column title="Converted to deal" count={leads.filter(l => l.status === 'Converted to Deal').length} tone={LEAD_STATUS_STYLE['Converted to Deal']} onDrop={() => {}}>
+          <Column title="Converted to deal" count={leads.filter(l => l.status === 'Converted to Deal').length} tone={LEAD_STATUS_STYLE['Converted to Deal']} onDrop={() => { }}>
             {leads.filter(l => l.status === 'Converted to Deal').slice(0, 30).map(c => (
-              <button key={c.id} onClick={() => navigate(`${base}/opportunity/${c.dealId}`)} className="w-full text-left bg-white border border-gray-200 rounded-lg p-2 hover:border-violet-300 cursor-pointer">
+              <button key={c.id} onClick={() => navigate(`${base}/opportunity/${c.dealId}`)} className="w-full text-left bg-white border border-gray-200 rounded p-2 hover:border-violet-300 cursor-pointer">
                 <div className="text-[12px] font-medium text-gray-800 truncate">{c.name}</div><div className="text-[11px] text-violet-700">Open deal →</div>
               </button>
             ))}
@@ -250,7 +250,7 @@ export default function SalesPipelinePage() {
       )}
 
       {view === 'list' && (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+        <div className="bg-white border border-gray-200 rounded overflow-x-auto">
           <table className="w-full text-[13px] min-w-[900px]">
             <thead className="bg-gray-50 border-b border-gray-200 text-xs text-gray-600"><tr>
               <th className="text-left font-medium px-3 py-2.5">{tab === 'leads' ? 'Enquiry' : 'Deal'}</th>

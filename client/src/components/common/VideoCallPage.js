@@ -366,7 +366,7 @@ export default function VideoCallPage() {
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 bg-white/5 p-2 rounded border border-white/10">
-            <div className={`w-2 h-2 ${isExternalWindowOpen ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-yellow-500'} rounded-full`}></div>
+            <div className={`w-2 h-2 ${isExternalWindowOpen ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-yellow-500'} rounded`}></div>
             <span className="text-xs   tracking-widest text-gray-300">
               {isExternalWindowOpen ? 'Live Bridge Session' : 'Ready to Connect'}
             </span>
@@ -390,8 +390,8 @@ export default function VideoCallPage() {
             <button className="hover:text-white transition-colors"><MessageSquare size={18} /></button>
             <button className="hover:text-white transition-colors"><Bell size={18} /></button>
           </div>
-          <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-blue-500/30 p-0.5">
-            <img src={user?.avatar || "https://ui-avatars.com/api/?name=Amit+Sharma&background=3B82F6&color=fff"} alt="Profile" className="w-full h-full object-cover rounded-full" />
+          <div className="w-8 h-8 rounded overflow-hidden border-2 border-blue-500/30 p-0.5">
+            <img src={user?.avatar || "https://ui-avatars.com/api/?name=Amit+Sharma&background=3B82F6&color=fff"} alt="Profile" className="w-full h-full object-cover rounded" />
           </div>
         </div>
       </header>
@@ -401,7 +401,7 @@ export default function VideoCallPage() {
         <div className="flex-1 p-4 relative overflow-hidden flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md p-2 rounded border border-white/5">
-              <div className={`w-2.5 h-2.5 ${isExternalWindowOpen ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]'} rounded-full`}></div>
+              <div className={`w-2.5 h-2.5 ${isExternalWindowOpen ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]'} rounded`}></div>
               <span className="text-xs font-medium tracking-wide">
                 {isExternalWindowOpen ? 'Meeting in Progress' : 'Awaiting Bridge Launch...'}
               </span>
@@ -413,7 +413,7 @@ export default function VideoCallPage() {
               <span className="text-xs text-gray-500   er">Participants</span>
               <div className="flex -space-x-2">
                 {participants.map(p => (
-                  <div key={p.id} className={`w-6 h-6 rounded-full border border-gray-800 ${p.isClient ? 'bg-green-600' : 'bg-red-600'} overflow-hidden text-[9px] flex items-center justify-center `}>
+                  <div key={p.id} className={`w-6 h-6 rounded border border-gray-800 ${p.isClient ? 'bg-green-600' : 'bg-red-600'} overflow-hidden text-[9px] flex items-center justify-center `}>
                     {p.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
                   </div>
                 ))}
@@ -455,19 +455,19 @@ export default function VideoCallPage() {
                   <div className="flex flex-col items-center justify-center space-y-8 w-full h-full relative">
                     {/* Mock Integrated Visual to reassure user */}
                     <div className="absolute top-4 right-4 flex items-center gap-2">
-                      <div className="bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-xs  border border-green-500/20  tracking-widest flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                      <div className="bg-green-500/20 text-green-500 px-3 py-1 rounded text-xs  border border-green-500/20  tracking-widest flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded animate-pulse"></div>
                         Integrated
                       </div>
-                      <button onClick={() => externalWindowRef.current?.focus()} className="bg-white/5 hover:bg-white/10 text-white px-3 py-1 rounded-full text-xs  border border-white/10  tracking-widest flex items-center gap-1.5 transition-all">
+                      <button onClick={() => externalWindowRef.current?.focus()} className="bg-white/5 hover:bg-white/10 text-white px-3 py-1 rounded text-xs  border border-white/10  tracking-widest flex items-center gap-1.5 transition-all">
                         <Maximize size={12} />
                         Popout
                       </button>
                     </div>
 
                     <div className="relative">
-                      <div className="w-32 h-32 rounded-full border-4 border-blue-600/20 flex items-center justify-center animate-pulse">
-                        <div className="w-24 h-24 rounded-full border-4 border-blue-500 flex items-center justify-center">
+                      <div className="w-32 h-32 rounded border-4 border-blue-600/20 flex items-center justify-center animate-pulse">
+                        <div className="w-24 h-24 rounded border-4 border-blue-500 flex items-center justify-center">
                           <Video size={40} className="text-blue-500" />
                         </div>
                       </div>
@@ -481,7 +481,7 @@ export default function VideoCallPage() {
                         Use the right panel to take notes and track AI analysis.
                       </p>
                       <div className="inline-flex items-center gap-2 bg-blue-500/10 p-2 rounded border border-blue-500/20 text-blue-400 text-xs font-medium">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-blue-500 rounded"></div>
                         Synced with CRM: {clientName}
                       </div>
                     </div>
@@ -499,8 +499,8 @@ export default function VideoCallPage() {
 
               <div className="h-12 bg-black/40 border-t border-white/5 flex items-center justify-between px-6 backdrop-blur-xl">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                  <div className="flex items-center gap-2 bg-blue-500/10 px-3 py-1 rounded border border-blue-500/20">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded"></div>
                     <span className="text-xs  text-blue-400  tracking-wider">Internal Video Pipeline Active</span>
                   </div>
                 </div>
@@ -515,7 +515,7 @@ export default function VideoCallPage() {
 
           <div className=" flex items-center justify-between p-2 bg-black/40 backdrop-blur-xl border-t border-white/5 mx-[-16px] px-[32px]">
             <div className="flex items-center gap-3 bg-[#16181d] p-2 rounded border border-white/5 shadow-inner">
-              <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+              <div className="w-2.5 h-2.5 bg-red-500 rounded animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
               <span className="text-xs  tracking-[0.2em] text-gray-200">REC</span>
               <span className="text-gray-700 mx-1">|</span>
               <span className="text-xs font-mono font-medium text-gray-300">{formatTime(callTime)}</span>
@@ -537,7 +537,7 @@ export default function VideoCallPage() {
 
               {recordingStatus === 'idle' ? (
                 <button onClick={startRecording} className="bg-white text-black px-6 py-2.5 rounded  text-xs  tracking-wider flex items-center gap-2 hover:bg-gray-200 transition-all shadow-xl active:scale-95">
-                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>RECORD
+                  <div className="w-2 h-2 bg-red-600 rounded"></div>RECORD
                 </button>
               ) : isRecording ? (
                 <button onClick={stopRecording} className="bg-red-600 text-white px-6 py-2.5 rounded  text-xs  tracking-wider flex items-center gap-2 hover:bg-red-700 transition-all shadow-xl active:scale-95">
@@ -545,7 +545,7 @@ export default function VideoCallPage() {
                 </button>
               ) : (
                 <button className="bg-gray-800 text-gray-500 px-6 py-2.5 rounded  text-xs  tracking-wider flex items-center gap-2 cursor-not-allowed">
-                  <div className="w-3 h-3 border-2 border-t-blue-500 rounded-full animate-spin"></div>PROC...
+                  <div className="w-3 h-3 border-2 border-t-blue-500 rounded animate-spin"></div>PROC...
                 </button>
               )}
 
@@ -577,7 +577,7 @@ export default function VideoCallPage() {
               <>
                 <div>
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1.5 h-6 bg-red-600 rounded-full"></div>
+                    <div className="w-1.5 h-6 bg-red-600 rounded"></div>
                     <h4 className=" tracking-wide text-xs  text-gray-400">AI Meeting Analysis</h4>
                   </div>
                   <div className="ml-2 border-l-2 border-white/5 pl-6 space-y-6">
@@ -633,7 +633,7 @@ export default function VideoCallPage() {
         </div>
 
         {!isSidebarOpen && (
-          <button onClick={() => setIsSidebarOpen(true)} className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-[#3b82f6] rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-50">
+          <button onClick={() => setIsSidebarOpen(true)} className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-[#3b82f6] rounded flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-50">
             <PanelRight size={20} />
           </button>
         )}
@@ -649,7 +649,7 @@ export default function VideoCallPage() {
                 </div>
                 <button
                   onClick={() => setIsAddParticipantModalOpen(false)}
-                  className="p-2 hover:bg-white/5 rounded-full text-gray-400 hover:text-white transition-colors"
+                  className="p-2 hover:bg-white/5 rounded text-gray-400 hover:text-white transition-colors"
                 >
                   <X size={20} />
                 </button>
@@ -679,7 +679,7 @@ export default function VideoCallPage() {
                     .map(u => (
                       <div key={u.id} className="group flex items-center justify-between p-3 rounded hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-red-600/20 flex items-center justify-center text-blue-400  border border-blue-500/20">
+                          <div className="w-10 h-10 rounded bg-red-600/20 flex items-center justify-center text-blue-400  border border-blue-500/20">
                             {u.first_name[0]}{u.last_name?.[0] || ''}
                           </div>
                           <div>
@@ -702,7 +702,7 @@ export default function VideoCallPage() {
                     return (name.includes(query) || u.email?.toLowerCase().includes(query)) && !participants.some(p => p.id === u.id);
                   }).length === 0 && (
                       <div className="py-12 text-center">
-                        <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <div className="w-12 h-12 bg-white/5 rounded flex items-center justify-center mx-auto mb-3">
                           <Users size={20} className="text-gray-600" />
                         </div>
                         <p className="text-sm text-gray-500">No users found to add</p>

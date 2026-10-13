@@ -45,7 +45,7 @@ const AdvancedFilterDropdown = ({ filterConfigs, onFilterChange, selectedFilters
         <Filter size={14} />
         <span className="">Filter</span>
         {activeFilterCount > 0 && (
-          <span className="flex items-center justify-center w-4 h-4 bg-white text-red  text-xs rounded-full font-[500] ml-1">
+          <span className="flex items-center justify-center w-4 h-4 bg-white text-red  text-xs rounded font-[500] ml-1">
             {activeFilterCount}
           </span>
         )}

@@ -122,7 +122,7 @@ const SeoGmbGeoOptimizationPage = () => {
               {data.aiEngineVisibility.map((eng, i) => (
                 <div key={i} className="flex items-center text-xs">
                   <span className="w-32 font-medium flex items-center gap-2 text-gray-700"><Cpu size={12} className="text-gray-400" /> {eng.p}</span>
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full mx-3 overflow-hidden">
+                  <div className="flex-1 h-2 bg-gray-100 rounded mx-3 overflow-hidden">
                     <div className={`h-full ${eng.color}`} style={{ width: `${eng.s}%` }}></div>
                   </div>
                   <span className="w-8  text-gray-900">{eng.s}%</span>
@@ -153,7 +153,7 @@ const SeoGmbGeoOptimizationPage = () => {
             <div className="flex flex-wrap justify-center gap-3 mt-4">
               {[{ n: 'ChatGPT', c: '#10B981' }, { n: 'Google AI', c: '#3B82F6' }, { n: 'Gemini', c: '#6366F1' }, { n: 'Perplexity', c: '#06B6D4' }, { n: 'Claude', c: '#F97316' }].map((l, i) => (
                 <div key={i} className="flex items-center gap-1 text-[9px] text-gray-600">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: l.c }}></div> {l.n}
+                  <div className="w-2 h-2 rounded" style={{ backgroundColor: l.c }}></div> {l.n}
                 </div>
               ))}
             </div>
@@ -709,7 +709,7 @@ const SeoGmbGeoOptimizationPage = () => {
                     <span className="font-medium text-gray-700">{item.n}</span>
                     <span className=" text-gray-900">{item.v}/100</span>
                   </div>
-                  <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-gray-100 rounded overflow-hidden">
                     <div className={`h-full bg-red-600`} style={{ width: `${item.v}%` }}></div>
                   </div>
                 </div>

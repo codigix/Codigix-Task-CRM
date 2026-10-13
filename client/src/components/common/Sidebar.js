@@ -182,7 +182,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
           : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
           }`}
       >
-        {Icon ? <Icon size={14} className={currentPage === page ? 'text-white' : ''} /> : <span className={`w-1 h-1 rounded-full bg-current transition-transform ${currentPage === page ? 'scale-125' : ''}`}></span>}
+        {Icon ? <Icon size={14} className={currentPage === page ? 'text-white' : ''} /> : <span className={`w-1 h-1 rounded bg-current transition-transform ${currentPage === page ? 'scale-125' : ''}`}></span>}
         <span className="flex-1 text-left text-sm">{label}</span>
         {isViewOnly && <Lock size={14} className="opacity-60" title="View-only" />}
       </button>
@@ -232,9 +232,9 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const isHR = userRole.toLowerCase().includes('hr') || userDept.toLowerCase().includes('hr');
   const isManager = userRole === 'Manager' || userRole.includes('Manager') || user?.department_role === 'Manager' || isAdmin || isHR || userEmail === 'sonalicodigix@gmail.com';
   const isSEOUser = userRole.includes('SEO') || userRole.includes('GMB') ||
-                    (user?.job_title || '').toLowerCase().includes('seo') ||
-                    (user?.job_title || '').toLowerCase().includes('gmb') ||
-                    userDept.includes('SEO') || userEmail === 'sonalicodigix@gmail.com';
+    (user?.job_title || '').toLowerCase().includes('seo') ||
+    (user?.job_title || '').toLowerCase().includes('gmb') ||
+    userDept.includes('SEO') || userEmail === 'sonalicodigix@gmail.com';
   // Scoped deliberately: the Marketing manager's own sidebar, not the whole department and
   // not any other department. Also hide non-SEO marketing tabs for SEO & GMB specialists/managers.
   const isMarketingDept = userDept.toLowerCase().includes('marketing');

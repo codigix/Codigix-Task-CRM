@@ -60,7 +60,7 @@ const PaymentDetailsPage = () => {
     return (
       <div className="p-2 bg-[#F7F8F9] min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+          <div className="inline-block animate-spin rounded h-12 w-12 border-b-2 border-red-600"></div>
           <p className="mt-4 text-gray-600  ">Loading payment details...</p>
         </div>
       </div>
@@ -209,9 +209,9 @@ const PaymentDetailsPage = () => {
               <div className="text-right">
                 <p className="text-gray-500 text-xs mb-1">Status</p>
                 <span className={`inline-block p-1  rounded text-xs  ${invoice.status === 'Paid' ? 'bg-green-100 text-green-700' :
-                    invoice.status === 'Partially Paid' ? 'bg-yellow-100 text-yellow-700' :
-                      invoice.status === 'Unpaid' ? 'bg-red-100 text-red-700' :
-                        'bg-gray-100 text-gray-700'
+                  invoice.status === 'Partially Paid' ? 'bg-yellow-100 text-yellow-700' :
+                    invoice.status === 'Unpaid' ? 'bg-red-100 text-red-700' :
+                      'bg-gray-100 text-gray-700'
                   }`}>
                   {invoice.status}
                 </span>

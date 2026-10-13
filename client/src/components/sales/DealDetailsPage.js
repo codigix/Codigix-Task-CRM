@@ -179,7 +179,7 @@ const DealDetailsPage = () => {
       {/* Profile Header Card */}
       <div className="bg-white rounded border border-gray-200 p-6 mb-3 flex items-center justify-between">
         <div className="flex gap-4">
-          <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xl font-[500] border border-amber-200">
+          <div className="w-16 h-16 rounded bg-amber-100 text-amber-600 flex items-center justify-center text-xl font-[500] border border-amber-200">
             {getInitials(deal.deal_name)}
           </div>
           <div>
@@ -259,11 +259,11 @@ const DealDetailsPage = () => {
             </div>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <img src="https://i.pravatar.cc/100?u=steve" alt="" className="w-8 h-8 rounded-full object-cover" />
+                <img src="https://i.pravatar.cc/100?u=steve" alt="" className="w-8 h-8 rounded object-cover" />
                 <span className="text-xs  text-gray-700">Steve Vaughan</span>
               </div>
               <div className="flex items-center gap-3">
-                <img src="https://i.pravatar.cc/100?u=jessica" alt="" className="w-8 h-8 rounded-full object-cover" />
+                <img src="https://i.pravatar.cc/100?u=jessica" alt="" className="w-8 h-8 rounded object-cover" />
                 <span className="text-xs  text-gray-700">Jessica Sen</span>
               </div>
             </div>
@@ -310,13 +310,13 @@ const DealDetailsPage = () => {
             </div>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <img src="https://i.pravatar.cc/100?u=steve" alt="" className="w-8 h-8 rounded-full object-cover" />
+                <img src="https://i.pravatar.cc/100?u=steve" alt="" className="w-8 h-8 rounded object-cover" />
                 <div className="flex-1">
                   <p className="text-xs font-[500] text-gray-900">Steve Vaughan</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <img src="https://i.pravatar.cc/100?u=jessica" alt="" className="w-8 h-8 rounded-full object-cover" />
+                <img src="https://i.pravatar.cc/100?u=jessica" alt="" className="w-8 h-8 rounded object-cover" />
                 <div className="flex-1">
                   <p className="text-xs font-[500] text-gray-900">Jessica Sen</p>
                 </div>
@@ -329,7 +329,7 @@ const DealDetailsPage = () => {
                 <div className="flex justify-between items-center text-xs text-gray-400">
                   <span>Modified By</span>
                   <div className="flex items-center gap-1">
-                    <img src="https://i.pravatar.cc/100?u=darlee" alt="" className="w-4 h-4 rounded-full" />
+                    <img src="https://i.pravatar.cc/100?u=darlee" alt="" className="w-4 h-4 rounded" />
                     <span className="text-gray-900 ">Darlee Robertson</span>
                   </div>
                 </div>

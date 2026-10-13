@@ -171,12 +171,12 @@ const TABS = [
 // ── Status Badge ───────────────────────────────────────────────────────────
 const sBadge = (s) => {
   const m = { Active: 'bg-emerald-50 text-emerald-700 border border-emerald-200', Scheduled: 'bg-blue-50 text-blue-700 border border-blue-200', Paused: 'bg-amber-50 text-amber-700 border border-amber-200', Failed: 'bg-rose-50 text-rose-600 border border-rose-200' };
-  return <span className={`text-xs  px-2.5 py-0.5 rounded-full ${m[s] || 'bg-slate-100 text-slate-500'}`}>{s}</span>;
+  return <span className={`text-xs  px-2.5 py-0.5 rounded ${m[s] || 'bg-slate-100 text-slate-500'}`}>{s}</span>;
 };
 
 const getCatBadge = (cat) => {
   const c = CATEGORIES.find(x => x.id === cat);
-  return c ? <span className={`text-[9px]  px-2 py-0.5 rounded-full ${c.badge}`}>{cat}</span> : <span className="text-[9px] text-slate-500">{cat}</span>;
+  return c ? <span className={`text-[9px]  px-2 py-0.5 rounded ${c.badge}`}>{cat}</span> : <span className="text-[9px] text-slate-500">{cat}</span>;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -320,7 +320,7 @@ export default function SeoGmbAutomationPage() {
                   <div className="flex flex-col gap-2 flex-1">
                     {AUTOMATION_STATUS.map(s => (
                       <div key={s.name} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} /><span className="text-slate-600">{s.name}</span></div>
+                        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded" style={{ backgroundColor: s.color }} /><span className="text-slate-600">{s.name}</span></div>
                         <div><strong className="text-slate-800">{s.value}</strong><span className="text-slate-400 ml-1">({s.pct})</span></div>
                       </div>
                     ))}
@@ -371,8 +371,8 @@ export default function SeoGmbAutomationPage() {
                     </div>
                     <p className="text-[9px] text-slate-400 m-0 mb-2 leading-relaxed">{cat.desc}</p>
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /><span className="text-[9px] text-slate-500 ">{cat.active} Active</span></div>
-                      <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" /><span className="text-[9px] text-slate-500 ">{cat.paused} Paused</span></div>
+                      <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded bg-emerald-400" /><span className="text-[9px] text-slate-500 ">{cat.active} Active</span></div>
+                      <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded bg-amber-400" /><span className="text-[9px] text-slate-500 ">{cat.paused} Paused</span></div>
                     </div>
                     <button onClick={() => setActiveTab(cat.id)} className="text-blue-500 text-[9px]  border-none bg-transparent cursor-pointer p-0 hover:underline">Manage →</button>
                   </div>

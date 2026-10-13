@@ -101,10 +101,10 @@ const EmployeeMonthlyReport = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {topPerformers.map((emp, idx) => (
           <div key={emp.id} className="bg-white/80 backdrop-blur-xl rounded p-2 border border-white shadow-lg shadow-slate-200/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
-            <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded-full opacity-10 ${getProgressBarClass(emp.overallScore)}`}></div>
+            <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded opacity-10 ${getProgressBarClass(emp.overallScore)}`}></div>
 
             <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center  text-lg border-2 ${getScoreBgClass(emp.overallScore)}`}>
+              <div className={`w-12 h-12 rounded flex items-center justify-center  text-lg border-2 ${getScoreBgClass(emp.overallScore)}`}>
                 #{idx + 1}
               </div>
               <Trophy className={idx === 0 ? "text-yellow-500" : idx === 1 ? "text-slate-400" : "text-amber-700"} size={30} />
@@ -172,7 +172,7 @@ const EmployeeMonthlyReport = () => {
                 <tr>
                   <td colSpan="8" className="p-4 text-center text-slate-500">
                     <div className="flex justify-center items-center gap-3">
-                      <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded animate-spin"></div>
                       Loading report data...
                     </div>
                   </td>
@@ -195,9 +195,9 @@ const EmployeeMonthlyReport = () => {
                   <td className="p-2 text-center font-medium">{row.totalActualHours.toFixed(1)}</td>
                   <td className="p-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex-1 max-w-[120px]">
+                      <div className="w-full h-2 bg-slate-100 rounded overflow-hidden flex-1 max-w-[120px]">
                         <div
-                          className={`h-full rounded-full ${getProgressBarClass(row.timeEfficiency)}`}
+                          className={`h-full rounded ${getProgressBarClass(row.timeEfficiency)}`}
                           style={{ width: `${Math.min(row.timeEfficiency, 100)}%` }}
                         ></div>
                       </div>
@@ -207,7 +207,7 @@ const EmployeeMonthlyReport = () => {
                     </div>
                   </td>
                   <td className="p-2 text-center">
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm  border ${getScoreBgClass(row.overallScore)}`}>
+                    <span className={`inline-block px-3 py-1 rounded text-sm  border ${getScoreBgClass(row.overallScore)}`}>
                       {row.overallScore}
                     </span>
                   </td>

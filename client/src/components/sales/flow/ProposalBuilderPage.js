@@ -23,7 +23,7 @@ const Lines = ({ value, onChange, rows = 4, placeholder = 'One point per line', 
 function Slide({ title, hint, on, onToggle, children, defaultOpen = false, canEdit }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className={`bg-white border rounded-lg ${on === false ? 'border-gray-200 opacity-70' : 'border-gray-200'}`}>
+    <div className={`bg-white border rounded ${on === false ? 'border-gray-200 opacity-70' : 'border-gray-200'}`}>
       <div className="px-4 py-3 flex items-center gap-2">
         <button onClick={() => setOpen(o => !o)} className="flex items-center gap-1.5 text-[13px] font-semibold cursor-pointer text-left flex-1 min-w-0">{open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}<span className="truncate">{title}</span>{hint && <span className="text-[11.5px] text-gray-500 font-normal truncate">· {hint}</span>}</button>
         {onToggle && <label className="text-[11.5px] text-gray-600 inline-flex items-center gap-1.5 cursor-pointer shrink-0"><input type="checkbox" disabled={!canEdit} checked={on !== false} onChange={e => onToggle(e.target.checked)} /> In the deck</label>}
@@ -46,7 +46,7 @@ function GroupsEditor({ groups, onChange, services, disabled }) {
       </div>
       <div className="grid md:grid-cols-2 gap-2">
         {groups.map((g, i) => (
-          <div key={i} className="border border-gray-200 rounded-lg p-2 bg-gray-50/50">
+          <div key={i} className="border border-gray-200 rounded p-2 bg-gray-50/50">
             <div className="flex items-center gap-1.5 mb-1.5"><input disabled={disabled} value={g.title} onChange={e => set(i, { title: e.target.value })} placeholder="Heading, e.g. Sales & CRM Module" className={`${inputCls} font-medium`} />
               {!disabled && <button onClick={() => onChange(groups.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-600 cursor-pointer" aria-label="Remove heading"><Trash2 size={14} /></button>}</div>
             <Lines disabled={disabled} value={g.items} onChange={(items) => set(i, { items })} rows={5} />
@@ -71,9 +71,9 @@ function OptionCard({ option, onChange, onRemove, services, disabled }) {
   const gst = (base * (Number(option.gstPct) || 0)) / 100;
   const monthly = option.billing === 'monthly';
   return (
-    <div className="border border-blue-200 rounded-lg bg-blue-50/20 p-3 space-y-3">
+    <div className="border border-blue-200 rounded bg-blue-50/20 p-3 space-y-3">
       <div className="flex items-center gap-2">
-        <span className="w-7 h-7 rounded bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0">{option.key}</span>
+        <span className="w-7 h-7 rounded bg-red-600 text-white text-xs font-bold flex items-center justify-center shrink-0">{option.key}</span>
         <input disabled={disabled} value={option.name} onChange={e => set({ name: e.target.value })} placeholder="e.g. Partial Modules (Option A) or Growth Plan" className={`${inputCls} font-semibold`} />
         {!disabled && <button onClick={onRemove} className="text-gray-400 hover:text-red-600 cursor-pointer" aria-label="Remove option"><Trash2 size={15} /></button>}
       </div>
@@ -90,7 +90,7 @@ function OptionCard({ option, onChange, onRemove, services, disabled }) {
       {option.priceMode === 'fixed' ? (
         <div className="max-w-xs"><label className={labelCls}>Price {monthly ? 'per month' : ''} before GST (₹)</label><input disabled={disabled} value={option.price || ''} onChange={e => set({ price: e.target.value.replace(/[^\d.]/g, '') })} className={inputCls} /></div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-lg">
+        <div className="bg-white border border-gray-200 rounded">
           <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-gray-700">What is delivered{monthly ? ' every month' : ''}, and the price</span>
             {!disabled && <select value="" onChange={e => { const sv = services.find(x => x.id === e.target.value); if (sv) set({ lines: [...lines, { name: sv.name, unit: sv.unit, qty: sv.defaultQty || 1, rate: slabRate(sv, sv.defaultQty || 1), discountPct: 0, autoRate: true }] }); }} className="h-7 text-[11.5px] border border-gray-300 rounded px-1.5 bg-white max-w-[230px]"><option value="">+ Add a service…</option>{services.map(sv => <option key={sv.id} value={sv.id}>{sv.category} · {sv.name}</option>)}</select>}
@@ -118,7 +118,7 @@ function OptionCard({ option, onChange, onRemove, services, disabled }) {
           <datalist id="proposal-service-names">{services.map(s => <option key={s.id} value={s.name} />)}</datalist>
         </div>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-[12.5px] bg-white border border-gray-200 rounded-lg px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[12.5px] bg-white border border-gray-200 rounded px-3 py-2">
         <span className="text-gray-600">Before GST <b className="text-gray-900 tabular-nums">{money2(base)}</b> · GST {option.gstPct}% <span className="tabular-nums">{money2(gst)}</span></span>
         <span className="font-semibold">Total {monthly ? 'per month ' : ''}<span className="tabular-nums">{money2(base + gst)}</span>{monthly && Number(option.months) > 0 && <span className="text-gray-500 font-normal"> · {option.months} months = {money(Math.round((base + gst) * option.months))}</span>}</span>
       </div>
@@ -145,7 +145,7 @@ function MkGroups({ groups, onChange, services, disabled }) {
       </div>
       <div className="grid md:grid-cols-2 gap-2">
         {groups.map((g, i) => (
-          <div key={i} className="border border-gray-200 rounded-lg p-2 bg-gray-50/50 space-y-1.5">
+          <div key={i} className="border border-gray-200 rounded p-2 bg-gray-50/50 space-y-1.5">
             <div className="flex items-center gap-1.5"><input disabled={disabled} value={g.title} onChange={e => set(i, { title: e.target.value })} placeholder="Heading, e.g. On-Page SEO" className={`${inputCls} font-medium`} />{!disabled && <button onClick={() => onChange(groups.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-600 cursor-pointer" aria-label="Remove heading"><Trash2 size={14} /></button>}</div>
             <textarea disabled={disabled} value={g.text || ''} onChange={e => set(i, { text: e.target.value })} rows={2} placeholder="A short paragraph (optional)" className={area} />
             <Lines disabled={disabled} value={g.items} onChange={(items) => set(i, { items })} rows={5} placeholder="Points, one per line. Start a line with “- ” for a sub-point." />
@@ -167,14 +167,14 @@ function MkVariant({ v, onChange, onRemove, canRemove, services, disabled }) {
   };
   const base = variantBase(v);
   return (
-    <div className="border border-blue-200 rounded-lg bg-blue-50/20 p-3 space-y-2.5">
+    <div className="border border-blue-200 rounded bg-blue-50/20 p-3 space-y-2.5">
       <div className="grid md:grid-cols-[1fr_130px_150px_auto] gap-2 items-end">
         <div><label className={labelCls}>Name of this price (optional)</label><input disabled={disabled} value={v.label || ''} onChange={e => set({ label: e.target.value })} placeholder="e.g. Basic" className={inputCls} /></div>
         <div><label className={labelCls}>Price from</label><select disabled={disabled} value={v.priceMode} onChange={e => set({ priceMode: e.target.value })} className={inputCls}><option value="fixed">Typed price</option><option value="lines">Quantity × rate</option></select></div>
         <div><label className={labelCls}>Price per month (₹)</label><input disabled={disabled || lines} value={lines ? Math.round(base) : (v.price || '')} onChange={e => set({ price: e.target.value.replace(/[^\d.]/g, '') })} className={`${inputCls} disabled:bg-gray-100`} /></div>
         <div><label className={labelCls}>Shown as</label><input disabled={disabled} value={v.priceLabel || ''} onChange={e => set({ priceLabel: e.target.value })} placeholder="Per Month" className={`${inputCls} w-28`} /></div>
       </div>
-      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+      <div className="bg-white border border-gray-200 rounded overflow-x-auto">
         <table className="w-full text-[12.5px] min-w-[620px]">
           <thead className="text-[11px] text-gray-500 bg-gray-50"><tr><th className="text-left font-medium px-2 py-1.5">Description</th><th className="text-left font-medium px-1 w-44">Activities</th><th className="text-left font-medium px-1 w-52">Platform</th>{lines && <><th className="text-right font-medium px-1 w-14">Qty</th><th className="text-right font-medium px-1 w-20">Rate ₹</th></>}<th className="w-7" /></tr></thead>
           <tbody className="divide-y divide-gray-100">
@@ -208,7 +208,7 @@ function MkBlock({ block, onChange, onRemove, onMove, services, disabled }) {
   const set = (patch) => onChange({ ...block, ...patch });
   const paid = block.type === 'paid';
   return (
-    <div className="border border-gray-300 rounded-lg p-3 space-y-3 bg-white">
+    <div className="border border-gray-300 rounded p-3 space-y-3 bg-white">
       <div className="flex items-center gap-2">
         <span className={`text-[10.5px] font-semibold px-1.5 py-0.5 rounded ${paid ? 'bg-amber-100 text-amber-800' : 'bg-indigo-100 text-indigo-800'}`}>{paid ? 'PAID CAMPAIGN PAGE' : 'SERVICE PAGE'}</span>
         <input disabled={disabled} value={block.title} onChange={e => set({ title: e.target.value })} placeholder={paid ? 'Paid Campaign:' : 'e.g. SEO, GEO & GMB Optimization'} className={`${inputCls} font-semibold`} />
@@ -244,7 +244,7 @@ function MarketingSlides({ c, edit, disabled, services }) {
   const toggle = (k) => (v) => edit({ sections: { ...c.sections, [k]: v } });
   const blocks = c.blocks || [];
   const setBlock = (i, n) => edit({ blocks: blocks.map((b, j) => (j === i ? n : b)) });
-  const move = (i, d) => { const j = i + d; if (j < 0 || j >= blocks.length) return; const nb = [...blocks]; [nb[i], nb[j]] = [nb[j], nb[i]]; edit({ blocks: nb }); };
+  const move = (i, d) => { const j = i + d; if (j < 0 || j >= blocks.length) return; const nb = [...blocks];[nb[i], nb[j]] = [nb[j], nb[i]]; edit({ blocks: nb }); };
   return (
     <>
       <Slide title="Cover" hint={`${c.cover.title || ''} · ${c.cover.preparedFor || ''}`} defaultOpen canEdit={!disabled}>
@@ -387,7 +387,7 @@ export default function ProposalBuilderPage() {
   return (
     <div className="p-5 bg-[#F8FAFC] min-h-screen font-sans text-gray-900">
       <button onClick={() => navigate(`${base}/proposals`)} className="text-xs text-gray-500 hover:text-gray-800 inline-flex items-center gap-1 mb-2 cursor-pointer"><ArrowLeft size={13} /> Proposals</button>
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 flex flex-wrap items-center gap-3">
+      <div className="bg-white border border-gray-200 rounded p-4 mb-4 flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2"><h1 className="text-[18px] font-semibold">{p.number}</h1><Badge text={p.status} tone={PROPOSAL_STATUS_STYLE[p.status]} /><Badge text={p.kind === 'marketing' ? 'Digital marketing' : 'Software / IT'} tone="bg-indigo-50 text-indigo-800 ring-indigo-200" />{dirty && <span className="text-[11px] text-orange-700">Unsaved changes</span>}{notice && <span className="text-[11px] text-emerald-700">{notice}</span>}</div>
           <input disabled={disabled} value={title} onChange={e => { setTitle(e.target.value); setDirty(true); }} className="mt-1 w-full max-w-xl text-[13px] border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none bg-transparent" placeholder="Proposal title" />
@@ -405,88 +405,88 @@ export default function ProposalBuilderPage() {
       <div className="grid xl:grid-cols-[1fr_320px] gap-4 mt-2">
         <div className="space-y-3 min-w-0">
           {p.kind === 'marketing' ? <MarketingSlides c={c} edit={edit} disabled={disabled} services={services} /> : <>
-          <Slide title="Cover" hint={`${c.cover.title || ''} · ${c.cover.preparedFor || ''}`} defaultOpen canEdit={!disabled}>
-            <div className="grid md:grid-cols-2 gap-3">
-              <div><label className={labelCls}>Heading</label><input disabled={disabled} value={c.cover.title || ''} onChange={e => editIn('cover', { title: e.target.value })} className={inputCls} /></div>
-              <div><label className={labelCls}>Under the heading</label><input disabled={disabled} value={c.cover.subtitle || ''} onChange={e => editIn('cover', { subtitle: e.target.value })} placeholder="Custom ERP Development" className={inputCls} /></div>
-              <div><label className={labelCls}>Prepared for</label><input disabled={disabled} value={c.cover.preparedFor || ''} onChange={e => editIn('cover', { preparedFor: e.target.value })} className={inputCls} /></div>
-              <div><label className={labelCls}>Date on the cover</label><input type="date" disabled={disabled} value={c.cover.date || ''} onChange={e => editIn('cover', { date: e.target.value })} className={inputCls} /></div>
-            </div>
-          </Slide>
+            <Slide title="Cover" hint={`${c.cover.title || ''} · ${c.cover.preparedFor || ''}`} defaultOpen canEdit={!disabled}>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div><label className={labelCls}>Heading</label><input disabled={disabled} value={c.cover.title || ''} onChange={e => editIn('cover', { title: e.target.value })} className={inputCls} /></div>
+                <div><label className={labelCls}>Under the heading</label><input disabled={disabled} value={c.cover.subtitle || ''} onChange={e => editIn('cover', { subtitle: e.target.value })} placeholder="Custom ERP Development" className={inputCls} /></div>
+                <div><label className={labelCls}>Prepared for</label><input disabled={disabled} value={c.cover.preparedFor || ''} onChange={e => editIn('cover', { preparedFor: e.target.value })} className={inputCls} /></div>
+                <div><label className={labelCls}>Date on the cover</label><input type="date" disabled={disabled} value={c.cover.date || ''} onChange={e => editIn('cover', { date: e.target.value })} className={inputCls} /></div>
+              </div>
+            </Slide>
 
-          <Slide title="About the company" hint="standard text from Sales Settings unless you write your own" on={c.sections.about} onToggle={toggle('about')} canEdit={!disabled}>
-            <textarea disabled={disabled} value={c.about.text || ''} onChange={e => editIn('about', { text: e.target.value })} rows={5} placeholder="Leave empty to use the standard company text (Sales Settings → Proposal deck)." className={area} />
-          </Slide>
+            <Slide title="About the company" hint="standard text from Sales Settings unless you write your own" on={c.sections.about} onToggle={toggle('about')} canEdit={!disabled}>
+              <textarea disabled={disabled} value={c.about.text || ''} onChange={e => editIn('about', { text: e.target.value })} rows={5} placeholder="Leave empty to use the standard company text (Sales Settings → Proposal deck)." className={area} />
+            </Slide>
 
-          <Slide title="Executive summary" on={c.sections.summary} onToggle={toggle('summary')} canEdit={!disabled} defaultOpen>
-            <div><label className={labelCls}>Opening</label><textarea disabled={disabled} value={c.summary.text || ''} onChange={e => editIn('summary', { text: e.target.value })} rows={5} className={area} /></div>
-            <div><label className={labelCls}>Key points</label><Lines disabled={disabled} value={c.summary.points} onChange={(points) => editIn('summary', { points })} rows={5} /></div>
-            <div><label className={labelCls}>Closing</label><textarea disabled={disabled} value={c.summary.closing || ''} onChange={e => editIn('summary', { closing: e.target.value })} rows={3} className={area} /></div>
-          </Slide>
+            <Slide title="Executive summary" on={c.sections.summary} onToggle={toggle('summary')} canEdit={!disabled} defaultOpen>
+              <div><label className={labelCls}>Opening</label><textarea disabled={disabled} value={c.summary.text || ''} onChange={e => editIn('summary', { text: e.target.value })} rows={5} className={area} /></div>
+              <div><label className={labelCls}>Key points</label><Lines disabled={disabled} value={c.summary.points} onChange={(points) => editIn('summary', { points })} rows={5} /></div>
+              <div><label className={labelCls}>Closing</label><textarea disabled={disabled} value={c.summary.closing || ''} onChange={e => editIn('summary', { closing: e.target.value })} rows={3} className={area} /></div>
+            </Slide>
 
-          <Slide title={c.overview.title || 'Modules / services'} hint="the list slide" on={c.sections.overview} onToggle={toggle('overview')} canEdit={!disabled}>
-            <div className="grid md:grid-cols-2 gap-3">
-              <div><label className={labelCls}>Heading</label><input disabled={disabled} value={c.overview.title || ''} onChange={e => editIn('overview', { title: e.target.value })} placeholder="ERP Modules" className={inputCls} /></div>
-              <div><label className={labelCls}>Line under it</label><input disabled={disabled} value={c.overview.intro || ''} onChange={e => editIn('overview', { intro: e.target.value })} className={inputCls} /></div>
-            </div>
-            <div><label className={labelCls}>Items</label><Lines disabled={disabled} value={c.overview.items} onChange={(items) => editIn('overview', { items })} rows={8} /></div>
-          </Slide>
+            <Slide title={c.overview.title || 'Modules / services'} hint="the list slide" on={c.sections.overview} onToggle={toggle('overview')} canEdit={!disabled}>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div><label className={labelCls}>Heading</label><input disabled={disabled} value={c.overview.title || ''} onChange={e => editIn('overview', { title: e.target.value })} placeholder="ERP Modules" className={inputCls} /></div>
+                <div><label className={labelCls}>Line under it</label><input disabled={disabled} value={c.overview.intro || ''} onChange={e => editIn('overview', { intro: e.target.value })} className={inputCls} /></div>
+              </div>
+              <div><label className={labelCls}>Items</label><Lines disabled={disabled} value={c.overview.items} onChange={(items) => editIn('overview', { items })} rows={8} /></div>
+            </Slide>
 
-          <Slide title={`Options and prices (${c.options.length})`} hint="one page per option" on={c.sections.options} onToggle={toggle('options')} canEdit={!disabled} defaultOpen>
-            <p className="text-[12px] text-gray-600">Give the client a choice: for example a partial and a full system, or Starter, Growth and Premium plans. Each option has its own price, GST and deadline or monthly period.</p>
-            {c.options.map((o, i) => <OptionCard key={i} option={o} disabled={disabled} services={services} onChange={(n) => edit({ options: c.options.map((x, j) => (j === i ? n : x)) })} onRemove={() => edit({ options: c.options.filter((_, j) => j !== i) })} />)}
-            {!disabled && c.options.length < 6 && <button onClick={() => edit({ options: [...c.options, { key: String.fromCharCode(65 + c.options.length), name: '', intro: '', groups: [], lines: [], priceMode: p.kind === 'marketing' ? 'lines' : 'fixed', price: 0, gstPct: meta.quotation.defaultTaxPct, billing: p.kind === 'marketing' ? 'monthly' : 'one-time', months: p.kind === 'marketing' ? 6 : 0, startMonth: '', deadline: '', showScope: true }] })} className={btn.ghost}><Plus size={13} /> Add an option</button>}
-          </Slide>
+            <Slide title={`Options and prices (${c.options.length})`} hint="one page per option" on={c.sections.options} onToggle={toggle('options')} canEdit={!disabled} defaultOpen>
+              <p className="text-[12px] text-gray-600">Give the client a choice: for example a partial and a full system, or Starter, Growth and Premium plans. Each option has its own price, GST and deadline or monthly period.</p>
+              {c.options.map((o, i) => <OptionCard key={i} option={o} disabled={disabled} services={services} onChange={(n) => edit({ options: c.options.map((x, j) => (j === i ? n : x)) })} onRemove={() => edit({ options: c.options.filter((_, j) => j !== i) })} />)}
+              {!disabled && c.options.length < 6 && <button onClick={() => edit({ options: [...c.options, { key: String.fromCharCode(65 + c.options.length), name: '', intro: '', groups: [], lines: [], priceMode: p.kind === 'marketing' ? 'lines' : 'fixed', price: 0, gstPct: meta.quotation.defaultTaxPct, billing: p.kind === 'marketing' ? 'monthly' : 'one-time', months: p.kind === 'marketing' ? 6 : 0, startMonth: '', deadline: '', showScope: true }] })} className={btn.ghost}><Plus size={13} /> Add an option</button>}
+            </Slide>
 
-          <Slide title="Budget, timeline and payment terms" on={c.sections.budget} onToggle={toggle('budget')} canEdit={!disabled}>
-            <div>
-              <div className="flex items-center justify-between mb-1"><label className="text-xs font-semibold text-gray-700">Payment milestones (used when you create the quotation)</label>
-                {!disabled && <button onClick={() => edit({ payment: { ...c.payment, milestones: [...c.payment.milestones, { name: '', pct: 0 }] } })} className="text-[11.5px] text-blue-700 hover:underline cursor-pointer inline-flex items-center gap-0.5"><Plus size={11} /> Add</button>}</div>
-              {c.payment.milestones.map((m, i) => (
-                <div key={i} className="grid grid-cols-[28px_1fr_90px_28px] gap-2 items-center mb-1.5">
-                  <span className="text-gray-500 text-[12.5px] text-center">{i + 1}</span>
-                  <input disabled={disabled} value={m.name} onChange={e => editIn('payment', { milestones: c.payment.milestones.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} className={inputCls} placeholder="e.g. Advance against PO" />
-                  <div className="relative"><input disabled={disabled} value={m.pct} onChange={e => editIn('payment', { milestones: c.payment.milestones.map((x, j) => (j === i ? { ...x, pct: e.target.value.replace(/[^\d.]/g, '') } : x)) })} className={`${inputCls} text-right pr-6`} /><span className="absolute right-2 top-2 text-gray-400 text-xs">%</span></div>
-                  {!disabled && <button onClick={() => editIn('payment', { milestones: c.payment.milestones.filter((_, j) => j !== i) })} className="text-gray-400 hover:text-red-600 cursor-pointer" aria-label="Remove"><Trash2 size={14} /></button>}
-                </div>
-              ))}
-              {c.payment.milestones.length > 0 && <div className={`text-[11.5px] ${Math.abs(c.payment.milestones.reduce((s, m) => s + (Number(m.pct) || 0), 0) - 100) > 0.01 ? 'text-red-700' : 'text-emerald-700'}`}>Total {c.payment.milestones.reduce((s, m) => s + (Number(m.pct) || 0), 0)}%</div>}
-            </div>
-            <div><label className={labelCls}>Other payment terms</label><Lines disabled={disabled} value={c.payment.notes} onChange={(notes) => editIn('payment', { notes })} rows={3} /></div>
-          </Slide>
+            <Slide title="Budget, timeline and payment terms" on={c.sections.budget} onToggle={toggle('budget')} canEdit={!disabled}>
+              <div>
+                <div className="flex items-center justify-between mb-1"><label className="text-xs font-semibold text-gray-700">Payment milestones (used when you create the quotation)</label>
+                  {!disabled && <button onClick={() => edit({ payment: { ...c.payment, milestones: [...c.payment.milestones, { name: '', pct: 0 }] } })} className="text-[11.5px] text-blue-700 hover:underline cursor-pointer inline-flex items-center gap-0.5"><Plus size={11} /> Add</button>}</div>
+                {c.payment.milestones.map((m, i) => (
+                  <div key={i} className="grid grid-cols-[28px_1fr_90px_28px] gap-2 items-center mb-1.5">
+                    <span className="text-gray-500 text-[12.5px] text-center">{i + 1}</span>
+                    <input disabled={disabled} value={m.name} onChange={e => editIn('payment', { milestones: c.payment.milestones.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} className={inputCls} placeholder="e.g. Advance against PO" />
+                    <div className="relative"><input disabled={disabled} value={m.pct} onChange={e => editIn('payment', { milestones: c.payment.milestones.map((x, j) => (j === i ? { ...x, pct: e.target.value.replace(/[^\d.]/g, '') } : x)) })} className={`${inputCls} text-right pr-6`} /><span className="absolute right-2 top-2 text-gray-400 text-xs">%</span></div>
+                    {!disabled && <button onClick={() => editIn('payment', { milestones: c.payment.milestones.filter((_, j) => j !== i) })} className="text-gray-400 hover:text-red-600 cursor-pointer" aria-label="Remove"><Trash2 size={14} /></button>}
+                  </div>
+                ))}
+                {c.payment.milestones.length > 0 && <div className={`text-[11.5px] ${Math.abs(c.payment.milestones.reduce((s, m) => s + (Number(m.pct) || 0), 0) - 100) > 0.01 ? 'text-red-700' : 'text-emerald-700'}`}>Total {c.payment.milestones.reduce((s, m) => s + (Number(m.pct) || 0), 0)}%</div>}
+              </div>
+              <div><label className={labelCls}>Other payment terms</label><Lines disabled={disabled} value={c.payment.notes} onChange={(notes) => editIn('payment', { notes })} rows={3} /></div>
+            </Slide>
 
-          <Slide title={c.tech.title || 'Technology'} hint="up to 4 boxes" on={c.sections.tech} onToggle={toggle('tech')} canEdit={!disabled}>
-            <div><label className={labelCls}>Heading</label><input disabled={disabled} value={c.tech.title || ''} onChange={e => editIn('tech', { title: e.target.value })} className={inputCls} /></div>
-            <div className="grid md:grid-cols-2 gap-2">
-              {c.tech.blocks.map((b, i) => (
-                <div key={i} className="border border-gray-200 rounded-lg p-2 bg-gray-50/50">
-                  <div className="flex items-center gap-1.5 mb-1.5"><input disabled={disabled} value={b.title} onChange={e => editIn('tech', { blocks: c.tech.blocks.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)) })} className={`${inputCls} font-medium`} />{!disabled && <button onClick={() => editIn('tech', { blocks: c.tech.blocks.filter((_, j) => j !== i) })} className="text-gray-400 hover:text-red-600 cursor-pointer" aria-label="Remove box"><Trash2 size={14} /></button>}</div>
-                  <Lines disabled={disabled} value={b.items} onChange={(items) => editIn('tech', { blocks: c.tech.blocks.map((x, j) => (j === i ? { ...x, items } : x)) })} rows={4} />
-                </div>
-              ))}
-            </div>
-            {!disabled && c.tech.blocks.length < 4 && <button onClick={() => editIn('tech', { blocks: [...c.tech.blocks, { title: '', items: [''] }] })} className={btn.ghost}><Plus size={13} /> Add a box</button>}
-          </Slide>
+            <Slide title={c.tech.title || 'Technology'} hint="up to 4 boxes" on={c.sections.tech} onToggle={toggle('tech')} canEdit={!disabled}>
+              <div><label className={labelCls}>Heading</label><input disabled={disabled} value={c.tech.title || ''} onChange={e => editIn('tech', { title: e.target.value })} className={inputCls} /></div>
+              <div className="grid md:grid-cols-2 gap-2">
+                {c.tech.blocks.map((b, i) => (
+                  <div key={i} className="border border-gray-200 rounded p-2 bg-gray-50/50">
+                    <div className="flex items-center gap-1.5 mb-1.5"><input disabled={disabled} value={b.title} onChange={e => editIn('tech', { blocks: c.tech.blocks.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)) })} className={`${inputCls} font-medium`} />{!disabled && <button onClick={() => editIn('tech', { blocks: c.tech.blocks.filter((_, j) => j !== i) })} className="text-gray-400 hover:text-red-600 cursor-pointer" aria-label="Remove box"><Trash2 size={14} /></button>}</div>
+                    <Lines disabled={disabled} value={b.items} onChange={(items) => editIn('tech', { blocks: c.tech.blocks.map((x, j) => (j === i ? { ...x, items } : x)) })} rows={4} />
+                  </div>
+                ))}
+              </div>
+              {!disabled && c.tech.blocks.length < 4 && <button onClick={() => editIn('tech', { blocks: [...c.tech.blocks, { title: '', items: [''] }] })} className={btn.ghost}><Plus size={13} /> Add a box</button>}
+            </Slide>
 
-          <Slide title={c.support.title || 'Support'} on={c.sections.support} onToggle={toggle('support')} canEdit={!disabled}>
-            <div><label className={labelCls}>Heading</label><input disabled={disabled} value={c.support.title || ''} onChange={e => editIn('support', { title: e.target.value })} className={inputCls} /></div>
-            <div><label className={labelCls}>Introduction</label><textarea disabled={disabled} value={c.support.intro || ''} onChange={e => editIn('support', { intro: e.target.value })} rows={2} className={area} /></div>
-            <div><label className={labelCls}>Points</label><Lines disabled={disabled} value={c.support.items} onChange={(items) => editIn('support', { items })} rows={5} /></div>
-            <div><label className={labelCls}>Closing line</label><textarea disabled={disabled} value={c.support.footer || ''} onChange={e => editIn('support', { footer: e.target.value })} rows={2} className={area} /></div>
-          </Slide>
+            <Slide title={c.support.title || 'Support'} on={c.sections.support} onToggle={toggle('support')} canEdit={!disabled}>
+              <div><label className={labelCls}>Heading</label><input disabled={disabled} value={c.support.title || ''} onChange={e => editIn('support', { title: e.target.value })} className={inputCls} /></div>
+              <div><label className={labelCls}>Introduction</label><textarea disabled={disabled} value={c.support.intro || ''} onChange={e => editIn('support', { intro: e.target.value })} rows={2} className={area} /></div>
+              <div><label className={labelCls}>Points</label><Lines disabled={disabled} value={c.support.items} onChange={(items) => editIn('support', { items })} rows={5} /></div>
+              <div><label className={labelCls}>Closing line</label><textarea disabled={disabled} value={c.support.footer || ''} onChange={e => editIn('support', { footer: e.target.value })} rows={2} className={area} /></div>
+            </Slide>
 
-          <Slide title="Annual maintenance (AMC)" on={c.sections.amc} onToggle={toggle('amc')} canEdit={!disabled}>
-            <div><label className={labelCls}>Headline</label><textarea disabled={disabled} value={c.amc.headline || ''} onChange={e => editIn('amc', { headline: e.target.value })} rows={2} className={area} /></div>
-            <div className="grid md:grid-cols-2 gap-3">
-              <div><label className={labelCls}>AMC includes</label><Lines disabled={disabled} value={c.amc.includes} onChange={(includes) => editIn('amc', { includes })} rows={8} /></div>
-              <div><label className={labelCls}>AMC does not include</label><Lines disabled={disabled} value={c.amc.excludes} onChange={(excludes) => editIn('amc', { excludes })} rows={8} /></div>
-            </div>
-            <div><label className={labelCls}>Closing line</label><input disabled={disabled} value={c.amc.footer || ''} onChange={e => editIn('amc', { footer: e.target.value })} className={inputCls} /></div>
-          </Slide>
+            <Slide title="Annual maintenance (AMC)" on={c.sections.amc} onToggle={toggle('amc')} canEdit={!disabled}>
+              <div><label className={labelCls}>Headline</label><textarea disabled={disabled} value={c.amc.headline || ''} onChange={e => editIn('amc', { headline: e.target.value })} rows={2} className={area} /></div>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div><label className={labelCls}>AMC includes</label><Lines disabled={disabled} value={c.amc.includes} onChange={(includes) => editIn('amc', { includes })} rows={8} /></div>
+                <div><label className={labelCls}>AMC does not include</label><Lines disabled={disabled} value={c.amc.excludes} onChange={(excludes) => editIn('amc', { excludes })} rows={8} /></div>
+              </div>
+              <div><label className={labelCls}>Closing line</label><input disabled={disabled} value={c.amc.footer || ''} onChange={e => editIn('amc', { footer: e.target.value })} className={inputCls} /></div>
+            </Slide>
 
-          <Slide title="Notes and conditions" hint="numbered, on the last page" on={c.sections.notes} onToggle={toggle('notes')} canEdit={!disabled}>
-            <Lines disabled={disabled} value={c.notes} onChange={(notes) => edit({ notes })} rows={10} />
-          </Slide>
+            <Slide title="Notes and conditions" hint="numbered, on the last page" on={c.sections.notes} onToggle={toggle('notes')} canEdit={!disabled}>
+              <Lines disabled={disabled} value={c.notes} onChange={(notes) => edit({ notes })} rows={10} />
+            </Slide>
           </>}
         </div>
 
@@ -539,8 +539,8 @@ function AcceptModal({ options, onClose, onConfirm, multi }) {
     <Modal title="Client accepted" onClose={onClose} width="max-w-md" footer={<><button onClick={onClose} className={btn.ghost}>Cancel</button><button onClick={async () => { try { await onConfirm(opt); } catch (e) { setError(e.message); } }} className={btn.green}>Save</button></>}>
       <div className="space-y-2">
         <label className={labelCls}>{multi ? 'Which services did the client agree to?' : 'Which option did they choose?'}</label>
-        {multi ? options.map(o => <label key={o.key} className={`flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer text-[13px] ${opt.includes(o.key) ? 'border-blue-500 bg-blue-50/40' : 'border-gray-200'}`}><input type="checkbox" checked={opt.includes(o.key)} onChange={() => setOpt(x => (x.includes(o.key) ? x.filter(k => k !== o.key) : [...x, o.key]))} /> <span className="flex-1">{o.name}</span><span className="text-gray-500 tabular-nums text-[12px]">{money(o.base)} / month</span></label>)
-          : options.map(o => <label key={o.key} className={`flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer text-[13px] ${opt === o.key ? 'border-blue-500 bg-blue-50/40' : 'border-gray-200'}`}><input type="radio" checked={opt === o.key} onChange={() => setOpt(o.key)} /> {o.key}. {o.name}</label>)}
+        {multi ? options.map(o => <label key={o.key} className={`flex items-center gap-2 border rounded px-3 py-2 cursor-pointer text-[13px] ${opt.includes(o.key) ? 'border-blue-500 bg-blue-50/40' : 'border-gray-200'}`}><input type="checkbox" checked={opt.includes(o.key)} onChange={() => setOpt(x => (x.includes(o.key) ? x.filter(k => k !== o.key) : [...x, o.key]))} /> <span className="flex-1">{o.name}</span><span className="text-gray-500 tabular-nums text-[12px]">{money(o.base)} / month</span></label>)
+          : options.map(o => <label key={o.key} className={`flex items-center gap-2 border rounded px-3 py-2 cursor-pointer text-[13px] ${opt === o.key ? 'border-blue-500 bg-blue-50/40' : 'border-gray-200'}`}><input type="radio" checked={opt === o.key} onChange={() => setOpt(o.key)} /> {o.key}. {o.name}</label>)}
         <ErrorNote text={error} />
       </div>
     </Modal>

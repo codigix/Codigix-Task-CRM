@@ -182,7 +182,7 @@ const AssigneePicker = ({ assignee, users, currentUserName, onChange }) => {
           setQuery('');
         }}
         title={name || 'Unassigned'}
-        className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px]  ring-1 ring-white hover:ring-blue-400 transition ${name ? `${avatarColor(name)} text-white` : 'bg-gray-200 text-gray-500'
+        className={`w-6 h-6 rounded flex items-center justify-center text-[9px]  ring-1 ring-white hover:ring-blue-400 transition ${name ? `${avatarColor(name)} text-white` : 'bg-gray-200 text-gray-500'
           }`}
       >
         {name ? initials(name) : '?'}
@@ -206,7 +206,7 @@ const AssigneePicker = ({ assignee, users, currentUserName, onChange }) => {
             onClick={() => pick('Unassigned')}
             className="px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
           >
-            <span className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-[9px] ">?</span>
+            <span className="w-6 h-6 rounded bg-gray-200 text-gray-500 flex items-center justify-center text-[9px] ">?</span>
             <span className="text-gray-700">Unassigned</span>
             {(!assignee || assignee === 'Unassigned') && <Check size={13} className="text-blue-600 ml-auto" />}
           </div>
@@ -216,7 +216,7 @@ const AssigneePicker = ({ assignee, users, currentUserName, onChange }) => {
               onClick={() => pick(currentUserName)}
               className="px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
             >
-              <span className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-[9px]  ${avatarColor(currentUserName)}`}>
+              <span className={`w-6 h-6 rounded text-white flex items-center justify-center text-[9px]  ${avatarColor(currentUserName)}`}>
                 {initials(currentUserName)}
               </span>
               <span className="text-gray-700 truncate">
@@ -231,7 +231,7 @@ const AssigneePicker = ({ assignee, users, currentUserName, onChange }) => {
               onClick={() => pick(u.name)}
               className="px-2.5 py-1.5 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
             >
-              <span className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-[9px]  shrink-0 ${avatarColor(u.name)}`}>
+              <span className={`w-6 h-6 rounded text-white flex items-center justify-center text-[9px]  shrink-0 ${avatarColor(u.name)}`}>
                 {initials(u.name)}
               </span>
               <div className="min-w-0">
@@ -1027,9 +1027,9 @@ const BacklogPage = ({ department }) => {
 
   const CountBadges = ({ counts }) => (
     <div className="flex items-center gap-1">
-      <span className="min-w-[22px] text-center text-[10px]  px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-700" title="To Do">{counts.todo}</span>
-      <span className="min-w-[22px] text-center text-[10px]  px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700" title="In Progress">{counts.inProgress}</span>
-      <span className="min-w-[22px] text-center text-[10px]  px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700" title="Done">{counts.done}</span>
+      <span className="min-w-[22px] text-center text-[10px]  px-1.5 py-0.5 rounded bg-gray-200 text-gray-700" title="To Do">{counts.todo}</span>
+      <span className="min-w-[22px] text-center text-[10px]  px-1.5 py-0.5 rounded bg-blue-100 text-blue-700" title="In Progress">{counts.inProgress}</span>
+      <span className="min-w-[22px] text-center text-[10px]  px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700" title="Done">{counts.done}</span>
     </div>
   );
 
@@ -1124,7 +1124,7 @@ const BacklogPage = ({ department }) => {
                       }`}
                   >
                     <span>{tab.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${selectedDepartmentFilter === tab.key ? 'bg-blue-700 text-blue-100' : 'bg-gray-100 text-gray-600'
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded ${selectedDepartmentFilter === tab.key ? 'bg-blue-700 text-blue-100' : 'bg-gray-100 text-gray-600'
                       }`}>
                       {tab.count}
                     </span>
@@ -1215,10 +1215,10 @@ const BacklogPage = ({ department }) => {
                   )}
 
                   {sprint.status === 'Active' && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">ACTIVE</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">ACTIVE</span>
                   )}
                   {sprint.status === 'Completed' && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">COMPLETED</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200">COMPLETED</span>
                   )}
                   {!canPlanSprints ? (
                     dates && <span className="flex items-center gap-1 text-xs text-gray-500"><Calendar size={11} /> {dates}</span>

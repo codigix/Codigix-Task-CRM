@@ -16,9 +16,9 @@ const transactionsData = [
 
 const StatusBadge = ({ status }) => {
   if (status === 'Completed') {
-    return <span className="inline-flex items-center px-3 py-1 rounded-full text-xs  bg-green-100 text-green-800">Completed</span>;
+    return <span className="inline-flex items-center px-3 py-1 rounded text-xs  bg-green-100 text-green-800">Completed</span>;
   }
-  return <span className="inline-flex items-center px-3 py-1 rounded-full text-xs  bg-red-100 text-red-800">Cancel</span>;
+  return <span className="inline-flex items-center px-3 py-1 rounded text-xs  bg-red-100 text-red-800">Cancel</span>;
 };
 
 const MembershipTransactionsPage = () => {
@@ -49,7 +49,7 @@ const MembershipTransactionsPage = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl  text-gray-900">Membership Transactions</h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs   bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs   bg-red-100 text-red-800">
                 152
               </span>
             </div>

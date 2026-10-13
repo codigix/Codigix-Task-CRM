@@ -104,8 +104,8 @@ const DeleteRequestFilterPanel = ({ isOpen, onClose, requests, onFilter, onReset
                       className="w-3 h-3 cursor-pointer accent-blue-500"
                     />
                     <span className={`text-xs   ${status === 'Approved' ? 'text-green-600' :
-                        status === 'Rejected' ? 'text-red ' :
-                          'text-yellow-600'
+                      status === 'Rejected' ? 'text-red ' :
+                        'text-yellow-600'
                       }`}>
                       {status}
                     </span>
@@ -149,7 +149,7 @@ const DeleteRequestFilterPanel = ({ isOpen, onClose, requests, onFilter, onReset
                         className="w-3 h-3 cursor-pointer accent-blue-500"
                       />
                       {userData?.avatar && (
-                        <img src={userData.avatar || `https://i.pravatar.cc/20?u=${userData.email}`} alt={user} className="w-5 h-5 rounded-full" />
+                        <img src={userData.avatar || `https://i.pravatar.cc/20?u=${userData.email}`} alt={user} className="w-5 h-5 rounded" />
                       )}
                       <span className="text-xs text-gray-700 flex-1 truncate">{user}</span>
                     </label>

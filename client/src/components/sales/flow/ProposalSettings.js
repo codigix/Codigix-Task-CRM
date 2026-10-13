@@ -11,7 +11,7 @@ export default function ProposalSettings({ s, setS, canEdit }) {
   const setStat = (i, patch) => setAbout({ stats: stats.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
   const area = 'w-full text-[13px] border border-gray-300 rounded p-2.5 outline-none focus:border-blue-500 disabled:bg-gray-50';
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
+    <div className="bg-white border border-gray-200 rounded p-4">
       <div className="text-[13px] font-semibold">Proposal deck: about us and contact</div>
       <p className="text-[11.5px] text-gray-500 mb-3">Used on the About and Thank You slides of every proposal. A salesperson can still write different text in a single proposal.</p>
       <div className="grid md:grid-cols-2 gap-3">

@@ -32,7 +32,7 @@ const api = async (path, opts = {}) => {
 };
 
 const initials = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('');
-const AVATAR_TONES = ['bg-blue-600', 'bg-emerald-600', 'bg-violet-600', 'bg-amber-600', 'bg-rose-600', 'bg-cyan-700', 'bg-fuchsia-600', 'bg-teal-600'];
+const AVATAR_TONES = ['bg-red-600', 'bg-emerald-600', 'bg-violet-600', 'bg-amber-600', 'bg-rose-600', 'bg-cyan-700', 'bg-fuchsia-600', 'bg-teal-600'];
 const toneFor = (id) => AVATAR_TONES[Math.abs(Number(id) || 0) % AVATAR_TONES.length];
 const dayKey = (v) => { const d = new Date(v); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
 const dayLabel = (v) => {
@@ -62,16 +62,16 @@ const lastSeen = (v) => {
 const Avatar = ({ name, id, src, size = 'w-8 h-8', text = 'text-[11px]', online }) => (
   <span className={`relative ${size} shrink-0`}>
     {src
-      ? <img src={toAbsoluteFileUrl(src)} alt={name} className={`${size} rounded-full object-cover`} />
-      : <span className={`${size} ${text} rounded-full ${toneFor(id)} text-white font-semibold flex items-center justify-center`}>{initials(name)}</span>}
-    {online !== undefined && <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${online ? 'bg-emerald-500' : 'bg-gray-300'}`} />}
+      ? <img src={toAbsoluteFileUrl(src)} alt={name} className={`${size} rounded object-cover`} />
+      : <span className={`${size} ${text} rounded ${toneFor(id)} text-white font-semibold flex items-center justify-center`}>{initials(name)}</span>}
+    {online !== undefined && <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded border-2 border-white ${online ? 'bg-emerald-500' : 'bg-gray-300'}`} />}
   </span>
 );
 
 const RoomIcon = ({ room, size = 'w-8 h-8' }) => {
   if (room.kind === 'dm') return <Avatar name={room.name} id={room.other?.id} src={room.other?.avatar} size={size} online={room.other?.online} />;
   const Icon = room.kind === 'channel' ? Hash : Users;
-  return <span className={`${size} rounded-lg flex items-center justify-center shrink-0 ${room.kind === 'channel' ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600'}`}><Icon size={15} /></span>;
+  return <span className={`${size} rounded flex items-center justify-center shrink-0 ${room.kind === 'channel' ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-600'}`}><Icon size={15} /></span>;
 };
 const roomTitle = (room) => (room.kind === 'channel' ? `#${room.name}` : room.name);
 
@@ -124,14 +124,14 @@ const Attachments = ({ items }) => {
         <div className="flex flex-wrap gap-1.5">
           {images.map((a, i) => (
             <a key={i} href={toAbsoluteFileUrl(a.url)} target="_blank" rel="noopener noreferrer" title={a.name}>
-              <img src={toAbsoluteFileUrl(a.url)} alt={a.name} loading="lazy" className={`${images.length === 1 ? 'max-h-72 max-w-[min(420px,100%)]' : 'h-32 w-32 object-cover'} rounded-lg border border-gray-200 bg-gray-50`} />
+              <img src={toAbsoluteFileUrl(a.url)} alt={a.name} loading="lazy" className={`${images.length === 1 ? 'max-h-72 max-w-[min(420px,100%)]' : 'h-32 w-32 object-cover'} rounded border border-gray-200 bg-gray-50`} />
             </a>
           ))}
         </div>
       )}
       {files.map((a, i) => (
         <a key={i} href={toAbsoluteFileUrl(a.url)} target="_blank" rel="noopener noreferrer" download={a.name}
-          className="flex items-center gap-2.5 max-w-sm p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50">
+          className="flex items-center gap-2.5 max-w-sm p-2 rounded border border-gray-200 bg-white hover:bg-gray-50">
           <span className="w-9 h-9 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><FileText size={17} /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-[13px] text-gray-900 truncate">{a.name}</span>
@@ -224,7 +224,7 @@ function NewRoomModal({ kind, people, meId, onClose, onCreated }) {
         {error && <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">{error}</div>}
         <div className="flex justify-end gap-2 pt-1">
           <button onClick={onClose} className="h-9 px-4 text-sm rounded border border-gray-300 hover:bg-gray-50 cursor-pointer">Cancel</button>
-          <button onClick={save} disabled={saving} className="h-9 px-4 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 cursor-pointer flex items-center gap-1.5">{saving && <Loader2 size={14} className="animate-spin" />} Create</button>
+          <button onClick={save} disabled={saving} className="h-9 px-4 text-sm font-medium rounded bg-red-600 text-white hover:bg-blue-700 disabled:opacity-60 cursor-pointer flex items-center gap-1.5">{saving && <Loader2 size={14} className="animate-spin" />} Create</button>
         </div>
       </div>
     </Modal>
@@ -252,7 +252,7 @@ function BrowseChannelsModal({ onClose, onOpen }) {
               </div>
               {c.joined
                 ? <button onClick={() => onOpen(c.id)} className="h-8 px-3 text-xs rounded border border-gray-300 hover:bg-gray-50 cursor-pointer">Open</button>
-                : <button onClick={() => join(c)} disabled={busy === c.id} className="h-8 px-3 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer disabled:opacity-60">Join</button>}
+                : <button onClick={() => join(c)} disabled={busy === c.id} className="h-8 px-3 text-xs font-medium rounded bg-red-600 text-white hover:bg-blue-700 cursor-pointer disabled:opacity-60">Join</button>}
             </div>
           ))}
         </div>
@@ -320,7 +320,7 @@ function RoomDetails({ room, me, people, pinned, onClose, onChanged, onJump, onL
                 <PeoplePicker people={people} selected={toAdd} exclude={(members || []).map(m => m.id)} onToggle={(id) => setToAdd(a => (a.includes(id) ? a.filter(x => x !== id) : [...a, id]))} />
                 <div className="flex gap-2">
                   <button onClick={() => { setAdding(false); setToAdd([]); }} className="flex-1 h-8 text-xs rounded border border-gray-300 cursor-pointer">Cancel</button>
-                  <button onClick={addPeople} disabled={!toAdd.length} className="flex-1 h-8 text-xs font-medium rounded bg-blue-600 text-white disabled:opacity-50 cursor-pointer">Add {toAdd.length || ''}</button>
+                  <button onClick={addPeople} disabled={!toAdd.length} className="flex-1 h-8 text-xs font-medium rounded bg-red-600 text-white disabled:opacity-50 cursor-pointer">Add {toAdd.length || ''}</button>
                 </div>
               </div>
             )}
@@ -375,7 +375,7 @@ function RoomDetails({ room, me, people, pinned, onClose, onChanged, onJump, onL
               <div className="space-y-2">
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full h-9 px-2.5 text-[13px] border border-gray-300 rounded" />
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} placeholder="Description" className="w-full p-2.5 text-[13px] border border-gray-300 rounded" />
-                <div className="flex gap-2"><button onClick={() => setEditing(false)} className="flex-1 h-8 text-xs rounded border border-gray-300 cursor-pointer">Cancel</button><button onClick={saveAbout} className="flex-1 h-8 text-xs font-medium rounded bg-blue-600 text-white cursor-pointer">Save</button></div>
+                <div className="flex gap-2"><button onClick={() => setEditing(false)} className="flex-1 h-8 text-xs rounded border border-gray-300 cursor-pointer">Cancel</button><button onClick={saveAbout} className="flex-1 h-8 text-xs font-medium rounded bg-red-600 text-white cursor-pointer">Save</button></div>
               </div>
             ) : (
               <div>
@@ -471,7 +471,7 @@ export default function ITChatPage() {
 
   const markRead = useCallback((roomId, messageId) => {
     setRooms(rs => rs.map(r => (r.id === roomId ? { ...r, unread: 0, lastReadId: Math.max(r.lastReadId, messageId || 0) } : r)));
-    api(`/chat/rooms/${roomId}/read`, { method: 'POST', body: { messageId } }).catch(() => {});
+    api(`/chat/rooms/${roomId}/read`, { method: 'POST', body: { messageId } }).catch(() => { });
   }, []);
 
   // Load a conversation.
@@ -643,7 +643,7 @@ export default function ITChatPage() {
     if (m && m[2].length <= 30) { setMention({ query: m[2], start: caret - m[2].length - 1 }); setMentionIndex(0); } else setMention(null);
     if (activeId && val && Date.now() - lastTypingSent.current > 3000) {
       lastTypingSent.current = Date.now();
-      api(`/chat/rooms/${activeId}/typing`, { method: 'POST', body: {} }).catch(() => {});
+      api(`/chat/rooms/${activeId}/typing`, { method: 'POST', body: {} }).catch(() => { });
     }
   };
 
@@ -766,7 +766,7 @@ export default function ITChatPage() {
   const newPeople = term ? people.filter(p => p.id !== me?.id && !dmIds.has(p.id) && `${p.name} ${p.email} ${p.department}`.toLowerCase().includes(term)).slice(0, 8) : [];
 
   const RoomRow = ({ r }) => (
-    <button onClick={() => setActiveId(r.id)} className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left cursor-pointer ${activeId === r.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+    <button onClick={() => setActiveId(r.id)} className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded text-left cursor-pointer ${activeId === r.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
       <RoomIcon room={r} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1">
@@ -779,7 +779,7 @@ export default function ITChatPage() {
             {typing[r.id] && Object.keys(typing[r.id]).length ? <em className="text-blue-600">typing…</em>
               : r.last ? `${r.kind !== 'dm' && r.last.kind !== 'system' && r.last.sender ? `${r.last.sender}: ` : r.last.sender === 'You' ? 'You: ' : ''}${r.last.text}` : 'No messages yet'}
           </span>
-          {r.unread > 0 && <span className={`ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold flex items-center justify-center ${r.muted ? 'bg-gray-300 text-gray-700' : 'bg-blue-600 text-white'}`}>{r.unread > 99 ? '99+' : r.unread}</span>}
+          {r.unread > 0 && <span className={`ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded text-[10px] font-semibold flex items-center justify-center ${r.muted ? 'bg-gray-300 text-gray-700' : 'bg-red-600 text-white'}`}>{r.unread > 99 ? '99+' : r.unread}</span>}
         </span>
       </span>
     </button>
@@ -822,9 +822,9 @@ export default function ITChatPage() {
         <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200">
           <span className="text-[16px] font-semibold flex items-center gap-2"><MessageSquare size={17} className="text-blue-600" /> Chat</span>
           <div className="relative">
-            <button onClick={(e) => { e.stopPropagation(); setNewMenu(m => !m); }} className="h-8 px-2.5 rounded-lg bg-blue-600 text-white text-[12px] font-medium hover:bg-blue-700 flex items-center gap-1 cursor-pointer"><Plus size={14} /> New</button>
+            <button onClick={(e) => { e.stopPropagation(); setNewMenu(m => !m); }} className="h-8 px-2.5 rounded bg-red-600 text-white text-[12px] font-medium hover:bg-blue-700 flex items-center gap-1 cursor-pointer"><Plus size={14} /> New</button>
             {newMenu && (
-              <div className="absolute right-0 top-10 z-30 w-52 bg-white border border-gray-200 rounded-lg shadow-xl py-1" onClick={e => e.stopPropagation()}>
+              <div className="absolute right-0 top-10 z-30 w-52 bg-white border border-gray-200 rounded shadow-xl py-1" onClick={e => e.stopPropagation()}>
                 {[['dm', MessageSquare, 'New message'], ['group', Users, 'New group'], ['channel', Hash, 'New channel'], ['browse', Compass, 'Browse channels']].map(([k, Icon, l]) => (
                   <button key={k} onClick={() => { setModal(k); setNewMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-50 cursor-pointer"><Icon size={14} /> {l}</button>
                 ))}
@@ -835,7 +835,7 @@ export default function ITChatPage() {
         <div className="p-3">
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={listSearch} onChange={e => setListSearch(e.target.value)} placeholder="Search conversations or people" className="w-full h-9 pl-8 pr-7 text-[13px] bg-white border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
+            <input value={listSearch} onChange={e => setListSearch(e.target.value)} placeholder="Search conversations or people" className="w-full h-9 pl-8 pr-7 text-[13px] bg-white border border-gray-300 rounded outline-none focus:border-blue-500" />
             {listSearch && <button onClick={() => setListSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer" aria-label="Clear"><X size={13} /></button>}
           </div>
         </div>
@@ -848,7 +848,7 @@ export default function ITChatPage() {
             <div className="mb-3">
               <div className="px-2.5 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Start a conversation</div>
               {newPeople.map(p => (
-                <button key={p.id} onClick={() => openDm(p.id)} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-gray-50 text-left cursor-pointer">
+                <button key={p.id} onClick={() => openDm(p.id)} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded hover:bg-gray-50 text-left cursor-pointer">
                   <Avatar name={p.name} id={p.id} src={p.avatar} online={p.online} />
                   <span className="min-w-0"><span className="block text-[13px] text-gray-800 truncate">{p.name}</span><span className="block text-[11px] text-gray-500 truncate">{p.title || p.department}</span></span>
                 </button>
@@ -868,7 +868,7 @@ export default function ITChatPage() {
             <MessageSquare size={40} className="text-gray-300 mb-3" />
             <div className="text-[15px] font-semibold text-gray-800">Pick a conversation</div>
             <p className="text-sm text-gray-500 mt-1">or start one with a teammate.</p>
-            <button onClick={() => setModal('dm')} className="mt-4 h-9 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 cursor-pointer">New message</button>
+            <button onClick={() => setModal('dm')} className="mt-4 h-9 px-4 rounded bg-red-600 text-white text-sm font-medium hover:bg-blue-700 cursor-pointer">New message</button>
           </div>
         ) : (
           <>
@@ -885,10 +885,10 @@ export default function ITChatPage() {
                 </div>
               </button>
               <div className="ml-auto flex items-center gap-0.5">
-                <button onClick={() => { setSearchOpen(s => !s); setSearchTerm(''); setSearchResults(null); }} className={`p-2 rounded-lg cursor-pointer ${searchOpen ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`} title="Search in this conversation"><Search size={16} /></button>
-                <button onClick={() => setPrefs({ starred: !active.starred })} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title={active.starred ? 'Unstar' : 'Star'}><Star size={16} className={active.starred ? 'fill-amber-400 text-amber-500' : ''} /></button>
-                <button onClick={() => setPrefs({ muted: !active.muted })} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title={active.muted ? 'Unmute' : 'Mute notifications'}>{active.muted ? <BellOff size={16} /> : <Bell size={16} />}</button>
-                <button onClick={() => setShowDetails(s => !s)} className={`p-2 rounded-lg cursor-pointer ${showDetails ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`} title="Details, members, pinned and files"><Info size={16} /></button>
+                <button onClick={() => { setSearchOpen(s => !s); setSearchTerm(''); setSearchResults(null); }} className={`p-2 rounded cursor-pointer ${searchOpen ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`} title="Search in this conversation"><Search size={16} /></button>
+                <button onClick={() => setPrefs({ starred: !active.starred })} className="p-2 rounded text-gray-500 hover:bg-gray-100 cursor-pointer" title={active.starred ? 'Unstar' : 'Star'}><Star size={16} className={active.starred ? 'fill-amber-400 text-amber-500' : ''} /></button>
+                <button onClick={() => setPrefs({ muted: !active.muted })} className="p-2 rounded text-gray-500 hover:bg-gray-100 cursor-pointer" title={active.muted ? 'Unmute' : 'Mute notifications'}>{active.muted ? <BellOff size={16} /> : <Bell size={16} />}</button>
+                <button onClick={() => setShowDetails(s => !s)} className={`p-2 rounded cursor-pointer ${showDetails ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`} title="Details, members, pinned and files"><Info size={16} /></button>
               </div>
             </header>
 
@@ -934,7 +934,7 @@ export default function ITChatPage() {
                 </div>
               )}
               {rendered.map(item => {
-                if (item.type === 'day') return <div key={item.key} className="flex items-center gap-3 my-3"><div className="flex-1 h-px bg-gray-200" /><span className="text-[11px] font-medium text-gray-500 px-2 py-0.5 rounded-full bg-white border border-gray-200">{item.label}</span><div className="flex-1 h-px bg-gray-200" /></div>;
+                if (item.type === 'day') return <div key={item.key} className="flex items-center gap-3 my-3"><div className="flex-1 h-px bg-gray-200" /><span className="text-[11px] font-medium text-gray-500 px-2 py-0.5 rounded bg-white border border-gray-200">{item.label}</span><div className="flex-1 h-px bg-gray-200" /></div>;
                 if (item.type === 'unread') return <div key="unread" data-unread-marker className="flex items-center gap-3 my-2"><div className="flex-1 h-px bg-red-300" /><span className="text-[11px] font-semibold text-red-600">New messages</span><div className="flex-1 h-px bg-red-300" /></div>;
                 const { m, compact } = item;
                 if (m.kind === 'system') return <div key={m.id} data-mid={m.id} className="text-center text-[11px] text-gray-500 my-2">{m.body} · {timeOf(m.createdAt)}</div>;
@@ -942,7 +942,7 @@ export default function ITChatPage() {
                 const isAdmin = active.role === 'owner' || active.role === 'admin' || me?.isAdmin;
                 const seen = active.kind === 'dm' && mine && m.id === myLastId && (active.otherReadId || 0) >= m.id;
                 return (
-                  <div key={m.id} data-mid={m.id} className={`group relative flex gap-2.5 px-2 -mx-2 rounded-lg ${compact ? 'mt-0.5' : 'mt-3'} ${highlight === m.id ? 'bg-amber-100/70' : 'hover:bg-white'}`}>
+                  <div key={m.id} data-mid={m.id} className={`group relative flex gap-2.5 px-2 -mx-2 rounded ${compact ? 'mt-0.5' : 'mt-3'} ${highlight === m.id ? 'bg-amber-100/70' : 'hover:bg-white'}`}>
                     <div className="w-9 shrink-0">
                       {compact ? <span className="hidden group-hover:block text-[10px] text-gray-400 pt-1.5 text-right">{timeOf(m.createdAt)}</span>
                         : <Avatar name={m.sender} id={m.senderId} src={people.find(p => p.id === m.senderId)?.avatar} size="w-9 h-9" text="text-[12px]" />}
@@ -972,7 +972,7 @@ export default function ITChatPage() {
                         <div className="flex flex-wrap gap-1 mt-1">
                           {Object.entries(m.reactions).map(([emoji, ids]) => (
                             <button key={emoji} onClick={() => react(m, emoji)} title={ids.map(id => (id === me?.id ? 'You' : peopleById.get(id) || 'Someone')).join(', ')}
-                              className={`h-6 px-1.5 rounded-full border text-[12px] flex items-center gap-1 cursor-pointer ${ids.includes(me?.id) ? 'bg-blue-50 border-blue-300 text-blue-800' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
+                              className={`h-6 px-1.5 rounded border text-[12px] flex items-center gap-1 cursor-pointer ${ids.includes(me?.id) ? 'bg-blue-50 border-blue-300 text-blue-800' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
                               <span>{emoji}</span><span className="text-[11px] font-medium">{ids.length}</span>
                             </button>
                           ))}
@@ -982,19 +982,19 @@ export default function ITChatPage() {
                       {active.kind === 'dm' && mine && m.id === myLastId && !seen && <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-0.5"><Check size={12} /> Sent</div>}
                     </div>
                     {!m.deletedAt && (
-                      <div className={`absolute -top-3 right-2 z-10 ${emojiFor === m.id ? 'flex' : 'hidden group-hover:flex'} items-center gap-0.5 bg-white border border-gray-200 rounded-lg shadow-sm px-1 py-0.5`}>
+                      <div className={`absolute -top-3 right-2 z-10 ${emojiFor === m.id ? 'flex' : 'hidden group-hover:flex'} items-center gap-0.5 bg-white border border-gray-200 rounded shadow-sm px-1 py-0.5`}>
                         {QUICK_REACTIONS.slice(0, 4).map(e => <button key={e} onClick={() => react(m, e)} className="w-7 h-7 rounded hover:bg-gray-100 text-[15px] cursor-pointer" title={`React ${e}`}>{e}</button>)}
                         <div className="relative">
                           <button onClick={() => setEmojiFor(emojiFor === m.id ? null : m.id)} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title="More reactions"><Smile size={15} /></button>
                           {emojiFor === m.id && (
-                            <div className="absolute right-0 top-8 z-30 w-64 p-2 bg-white border border-gray-200 rounded-lg shadow-xl grid grid-cols-8 gap-0.5">
+                            <div className="absolute right-0 top-8 z-30 w-64 p-2 bg-white border border-gray-200 rounded shadow-xl grid grid-cols-8 gap-0.5">
                               {EMOJIS.map(e => <button key={e} onClick={() => react(m, e)} className="w-7 h-7 rounded hover:bg-gray-100 text-[16px] cursor-pointer">{e}</button>)}
                             </div>
                           )}
                         </div>
                         <button onClick={() => { setReplyTo(m); setEditing(null); inputRef.current?.focus(); }} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title="Reply"><Reply size={15} /></button>
                         <button onClick={() => pin(m)} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title={m.pinnedAt ? 'Unpin' : 'Pin'}><Pin size={14} className={m.pinnedAt ? 'fill-amber-400 text-amber-600' : ''} /></button>
-                        {m.body && <button onClick={() => { navigator.clipboard.writeText(m.body).then(() => showSuccessToast('Copied')).catch(() => {}); }} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title="Copy text"><Copy size={14} /></button>}
+                        {m.body && <button onClick={() => { navigator.clipboard.writeText(m.body).then(() => showSuccessToast('Copied')).catch(() => { }); }} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title="Copy text"><Copy size={14} /></button>}
                         {mine && m.kind === 'text' && <button onClick={() => startEdit(m)} className="w-7 h-7 rounded hover:bg-gray-100 text-gray-500 flex items-center justify-center cursor-pointer" title="Edit"><Pencil size={14} /></button>}
                         {(mine || isAdmin) && <button onClick={() => remove(m)} className="w-7 h-7 rounded hover:bg-red-50 text-gray-500 hover:text-red-600 flex items-center justify-center cursor-pointer" title="Delete"><Trash2 size={14} /></button>}
                       </div>
@@ -1018,19 +1018,19 @@ export default function ITChatPage() {
                   <div className="flex flex-wrap gap-2 px-3 pt-2">
                     {pending.map(p => (
                       <div key={p.key} className="relative">
-                        {p.isImage && (p.preview || p.url) ? <img src={p.preview || toAbsoluteFileUrl(p.url)} alt={p.name} className="h-16 w-16 rounded-lg object-cover border border-gray-200" />
-                          : <div className="h-16 w-36 rounded-lg border border-gray-200 bg-gray-50 px-2 flex items-center gap-1.5 text-[11px] text-gray-700"><FileText size={14} className="shrink-0 text-blue-600" /><span className="truncate">{p.name}</span></div>}
-                        {p.uploading && <div className="absolute inset-0 rounded-lg bg-white/70 flex items-center justify-center"><Loader2 size={14} className="animate-spin text-gray-500" /></div>}
-                        <button onClick={() => setPending(ps => ps.filter(x => x.key !== p.key))} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800 text-white flex items-center justify-center cursor-pointer" aria-label="Remove"><X size={11} /></button>
+                        {p.isImage && (p.preview || p.url) ? <img src={p.preview || toAbsoluteFileUrl(p.url)} alt={p.name} className="h-16 w-16 rounded object-cover border border-gray-200" />
+                          : <div className="h-16 w-36 rounded border border-gray-200 bg-gray-50 px-2 flex items-center gap-1.5 text-[11px] text-gray-700"><FileText size={14} className="shrink-0 text-blue-600" /><span className="truncate">{p.name}</span></div>}
+                        {p.uploading && <div className="absolute inset-0 rounded bg-white/70 flex items-center justify-center"><Loader2 size={14} className="animate-spin text-gray-500" /></div>}
+                        <button onClick={() => setPending(ps => ps.filter(x => x.key !== p.key))} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded bg-gray-800 text-white flex items-center justify-center cursor-pointer" aria-label="Remove"><X size={11} /></button>
                       </div>
                     ))}
                   </div>
                 )}
                 {mention && mentionOptions.length > 0 && (
-                  <div className="absolute bottom-full left-2 mb-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-30">
+                  <div className="absolute bottom-full left-2 mb-1 w-72 bg-white border border-gray-200 rounded shadow-xl py-1 z-30">
                     {mentionOptions.map((o, i) => (
                       <button key={o.id} onMouseDown={e => { e.preventDefault(); pickMention(o); }} className={`w-full flex items-center gap-2 px-3 py-1.5 text-left cursor-pointer ${i === mentionIndex ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
-                        {typeof o.id === 'number' ? <Avatar name={o.name} id={o.id} size="w-6 h-6" text="text-[9px]" /> : <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center"><AtSign size={12} /></span>}
+                        {typeof o.id === 'number' ? <Avatar name={o.name} id={o.id} size="w-6 h-6" text="text-[9px]" /> : <span className="w-6 h-6 rounded bg-amber-100 text-amber-700 flex items-center justify-center"><AtSign size={12} /></span>}
                         <span className="min-w-0"><span className="block text-[13px] text-gray-900 truncate">{typeof o.id === 'number' ? o.name : `@${o.name}`}</span><span className="block text-[11px] text-gray-500 truncate">{o.sub}</span></span>
                       </button>
                     ))}
@@ -1042,21 +1042,21 @@ export default function ITChatPage() {
                   className="block w-full resize-none px-3 pt-2.5 pb-1 text-[14px] outline-none rounded-xl max-h-48 min-h-[44px] bg-transparent"
                   style={{ height: `${Math.min(192, 44 + Math.max(0, draft.split('\n').length - 1) * 20)}px` }} />
                 <div className="flex items-center gap-1 px-2 pb-1.5">
-                  <button onClick={() => fileRef.current?.click()} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title="Attach files or images"><Paperclip size={16} /></button>
+                  <button onClick={() => fileRef.current?.click()} className="p-1.5 rounded text-gray-500 hover:bg-gray-100 cursor-pointer" title="Attach files or images"><Paperclip size={16} /></button>
                   <input ref={fileRef} type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} />
                   <div className="relative">
-                    <button onClick={() => setEmojiFor(emojiFor === 'composer' ? null : 'composer')} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title="Emoji"><Smile size={16} /></button>
+                    <button onClick={() => setEmojiFor(emojiFor === 'composer' ? null : 'composer')} className="p-1.5 rounded text-gray-500 hover:bg-gray-100 cursor-pointer" title="Emoji"><Smile size={16} /></button>
                     {emojiFor === 'composer' && (
-                      <div className="absolute left-0 bottom-9 z-30 w-72 p-2 bg-white border border-gray-200 rounded-lg shadow-xl grid grid-cols-8 gap-0.5">
+                      <div className="absolute left-0 bottom-9 z-30 w-72 p-2 bg-white border border-gray-200 rounded shadow-xl grid grid-cols-8 gap-0.5">
                         {EMOJIS.map(e => <button key={e} onClick={() => { insertText(e); setEmojiFor(null); }} className="w-8 h-8 rounded hover:bg-gray-100 text-[17px] cursor-pointer">{e}</button>)}
                       </div>
                     )}
                   </div>
-                  <button onClick={() => insertText('@')} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title="Mention someone"><AtSign size={16} /></button>
-                  <button onClick={() => fileRef.current?.click()} className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer" title="Share an image"><ImageIcon size={16} /></button>
+                  <button onClick={() => insertText('@')} className="p-1.5 rounded text-gray-500 hover:bg-gray-100 cursor-pointer" title="Mention someone"><AtSign size={16} /></button>
+                  <button onClick={() => fileRef.current?.click()} className="p-1.5 rounded text-gray-500 hover:bg-gray-100 cursor-pointer" title="Share an image"><ImageIcon size={16} /></button>
                   <span className="ml-2 text-[11px] text-gray-400 hidden md:inline">Enter to send · Shift+Enter new line · **bold** `code` · ↑ edits your last message</span>
                   <button onClick={send} disabled={sending || (!draft.trim() && !pending.some(p => p.url))}
-                    className="ml-auto h-8 px-3 rounded-lg bg-blue-600 text-white text-[13px] font-medium hover:bg-blue-700 disabled:opacity-40 flex items-center gap-1.5 cursor-pointer">
+                    className="ml-auto h-8 px-3 rounded bg-red-600 text-white text-[13px] font-medium hover:bg-blue-700 disabled:opacity-40 flex items-center gap-1.5 cursor-pointer">
                     {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {editing ? 'Save' : 'Send'}
                   </button>
                 </div>

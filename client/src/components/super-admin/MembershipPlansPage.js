@@ -61,7 +61,7 @@ const MembershipPlansPage = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl  text-gray-900">Membership Plans</h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs   bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs   bg-red-100 text-red-800">
                 152
               </span>
             </div>
@@ -100,20 +100,18 @@ const MembershipPlansPage = () => {
             />
           </div>
         </div>
-        
+
         {/* Billing Toggle */}
         <div className="flex items-center gap-4">
           <span className="text-xs    text-gray-700">Yearly</span>
           <button
             onClick={() => setBillingMode(billingMode === 'yearly' ? 'monthly' : 'yearly')}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              billingMode === 'yearly' ? 'bg-red-600' : 'bg-gray-300'
-            }`}
+            className={`relative inline-flex h-6 w-11 items-center rounded transition-colors ${billingMode === 'yearly' ? 'bg-red-600' : 'bg-gray-300'
+              }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                billingMode === 'yearly' ? 'translate-x-1' : 'translate-x-6'
-              }`}
+              className={`inline-block h-4 w-4 transform rounded bg-white transition-transform ${billingMode === 'yearly' ? 'translate-x-1' : 'translate-x-6'
+                }`}
             />
           </button>
           <span className="text-xs    text-gray-700">Monthly</span>
@@ -139,11 +137,11 @@ const MembershipPlansPage = () => {
                 {plan.features.map((feature, idx) => (
                   <div key={idx} className="flex items-center gap-3">
                     {feature.included ? (
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                      <div className="flex-shrink-0 w-5 h-5 rounded bg-green-100 flex items-center justify-center">
                         <span className="text-green-700 text-xs ">✓</span>
                       </div>
                     ) : (
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
+                      <div className="flex-shrink-0 w-5 h-5 rounded bg-gray-100 flex items-center justify-center">
                         <span className="text-[#1F2020] text-xs">−</span>
                       </div>
                     )}

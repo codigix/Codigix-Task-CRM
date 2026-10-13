@@ -319,7 +319,7 @@ export default function CallHistoryPage() {
                         </td>
                         <td className="p-2">
                           <div className="flex items-center gap-2">
-                            <img src={call.avatar} className="w-8 h-8 rounded-full object-cover flex-shrink-0" alt={call.name} />
+                            <img src={call.avatar} className="w-8 h-8 rounded object-cover flex-shrink-0" alt={call.name} />
                             <div className="min-w-0">
                               <p className=" text-gray-900 text-xs truncate">{call.name}</p>
                               <p className="text-xs text-gray-500 truncate">{call.email}</p>
@@ -328,13 +328,13 @@ export default function CallHistoryPage() {
                         </td>
                         <td className="p-2 text-xs text-gray-600 whitespace-nowrap">{call.phone}</td>
                         <td className="p-2">
-                          <span className={`p-1  rounded-full text-xs  inline-flex items-center gap-1 ${call.callType === 'Video Call' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                          <span className={`p-1  rounded text-xs  inline-flex items-center gap-1 ${call.callType === 'Video Call' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                             {call.callType === 'Video Call' ? <Video className="w-3 h-3" /> : <Phone className="w-3 h-3" />}
                             <span className="hidden sm:inline">{call.callType}</span>
                           </span>
                         </td>
                         <td className="p-2">
-                          <span className={`p-1  rounded-full text-xs  inline-flex items-center gap-1 ${getTypeColor(call.type)}`}>
+                          <span className={`p-1  rounded text-xs  inline-flex items-center gap-1 ${getTypeColor(call.type)}`}>
                             {getTypeIcon(call.type)}
                             <span className="hidden sm:inline">{call.type}</span>
                           </span>
@@ -448,7 +448,7 @@ export default function CallHistoryPage() {
           {/* Caller Card */}
           <div className="bg-white rounded  p-2 border border-gray-200 mb-4">
             <div className="flex justify-center mb-4">
-              <img src={selectedCaller.avatar} className="w-20 h-20 rounded-full object-cover" alt={selectedCaller.name} />
+              <img src={selectedCaller.avatar} className="w-20 h-20 rounded object-cover" alt={selectedCaller.name} />
             </div>
             <h4 className="text-center  text-gray-900 mb-6 text-lg">{selectedCaller.name}</h4>
 

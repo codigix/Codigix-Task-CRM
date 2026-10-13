@@ -155,7 +155,7 @@ const SeoGmbPredictiveAnalysisPage = () => {
                   <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded  ${row.i === 'High' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>{row.i}</span></td>
                   <td className="py-3 text-center"><span className={`px-2 py-0.5 rounded  ${row.e === 'Low' ? 'text-green-600 bg-green-50' : row.e === 'Medium' ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50'}`}>{row.e}</span></td>
                   <td className="py-3 text-center">
-                    <div className="w-6 h-6 rounded-full border-2 border-green-500 flex items-center justify-center text-[9px]  text-green-700 mx-auto">{row.s}</div>
+                    <div className="w-6 h-6 rounded border-2 border-green-500 flex items-center justify-center text-[9px]  text-green-700 mx-auto">{row.s}</div>
                   </td>
                 </tr>
               ))}
@@ -640,8 +640,8 @@ const SeoGmbPredictiveAnalysisPage = () => {
                   <h4 className={`text-xs  ${forecastType === type.id ? 'text-indigo-900' : 'text-gray-900'}`}>{type.label}</h4>
                   <p className="text-[10px] text-gray-500 mt-0.5">{type.desc}</p>
                 </div>
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${forecastType === type.id ? 'border-indigo-600' : 'border-gray-300'}`}>
-                  {forecastType === type.id && <div className="w-2 h-2 rounded-full bg-red-600"></div>}
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${forecastType === type.id ? 'border-indigo-600' : 'border-gray-300'}`}>
+                  {forecastType === type.id && <div className="w-2 h-2 rounded bg-red-600"></div>}
                 </div>
               </div>
             ))}
@@ -764,8 +764,8 @@ const SeoGmbPredictiveAnalysisPage = () => {
               <div className="col-span-1">
                 <label className="block text-[10px]  text-gray-700 mb-2">Exclude Outliers</label>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-4 bg-red-600 rounded-full relative cursor-pointer">
-                    <div className="w-3 h-3 bg-white rounded-full absolute right-0.5 top-0.5"></div>
+                  <div className="w-8 h-4 bg-red-600 rounded relative cursor-pointer">
+                    <div className="w-3 h-3 bg-white rounded absolute right-0.5 top-0.5"></div>
                   </div>
                   <span className="text-[9px] text-gray-500">Remove abnormal data points</span>
                 </div>

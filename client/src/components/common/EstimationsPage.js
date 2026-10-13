@@ -445,7 +445,7 @@ const EstimationsPage = () => {
               </div>
               <button
                 onClick={onClose}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-[#1F2020] hover:bg-gray-100 hover:text-red  transition-all border border-gray-100"
+                className="w-10 h-10 rounded flex items-center justify-center text-[#1F2020] hover:bg-gray-100 hover:text-red  transition-all border border-gray-100"
               >
                 <Plus size={24} className="rotate-45" />
               </button>
@@ -495,7 +495,7 @@ const EstimationsPage = () => {
                       onChange={() => setIsReviseModalOpen(true)}
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
                   </div>
                 </div>
               </div>
@@ -1086,7 +1086,7 @@ const EstimationsPage = () => {
           <div className="flex items-center gap-2  text-gray-900   text-[15px]">
             <Filter size={18} className="text-gray-700" /> Filter
           </div>
-          <button onClick={() => setShowFilterDropdown(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-[#1F2020] hover:bg-red-50 hover:text-red  transition-colors">
+          <button onClick={() => setShowFilterDropdown(false)} className="w-8 h-8 rounded flex items-center justify-center text-[#1F2020] hover:bg-red-50 hover:text-red  transition-colors">
             <Plus size={20} className="rotate-45" />
           </button>
         </div>
@@ -1152,17 +1152,17 @@ const EstimationsPage = () => {
             >
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-0.5 opacity-20 group-hover:opacity-40 transition-opacity">
-                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
-                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
-                  <div className="w-3.5 h-0.5 bg-red-600 rounded-full" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded" />
+                  <div className="w-3.5 h-0.5 bg-red-600 rounded" />
                 </div>
                 <span className={`text-xs  transition-colors ${visibleColumns[col] ? 'text-gray-900 ' : 'text-gray-500'}`}>{col}</span>
               </div>
               <div
-                className={`w-10 h-5.5 rounded-full relative transition-all duration-200 p-1 ${visibleColumns[col] ? 'bg-red-600' : 'bg-gray-300'}`}
+                className={`w-10 h-5.5 rounded relative transition-all duration-200 p-1 ${visibleColumns[col] ? 'bg-red-600' : 'bg-gray-300'}`}
               >
                 <div
-                  className={`w-3.5 h-3.5 bg-white rounded-full transition-all duration-200  ${visibleColumns[col] ? 'translate-x-[18px]' : 'translate-x-0'}`}
+                  className={`w-3.5 h-3.5 bg-white rounded transition-all duration-200  ${visibleColumns[col] ? 'translate-x-[18px]' : 'translate-x-0'}`}
                 />
               </div>
             </div>
@@ -1234,10 +1234,10 @@ const EstimationsPage = () => {
           <div>
             <h1 className="text-xl  text-slate-900 flex items-center gap-2 flex-wrap">
               Estimations Management
-              <span className="inline-block px-2.5 py-0.5 bg-red-50 text-red-600 text-xs  rounded-full border border-red-100">
+              <span className="inline-block px-2.5 py-0.5 bg-red-50 text-red-600 text-xs  rounded border border-red-100">
                 {filteredEstimations.length}
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs  bg-amber-50 text-amber-800 border border-amber-300 shadow-sm">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs  bg-amber-50 text-amber-800 border border-amber-300 shadow-sm">
                 <Lock size={12} className="text-amber-700" />
                 INTERNAL DOCUMENT
               </span>
@@ -1338,7 +1338,7 @@ const EstimationsPage = () => {
                   <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded shadow-2xl z-[100] w-72 overflow-hidden">
                     <div className="p-2  border-b border-gray-100 flex items-center justify-between">
                       <span className="  text-gray-900 flex items-center gap-2"><Filter size={16} /> Filter</span>
-                      <button onClick={() => setShowFilterDropdown(false)} className="text-red-500 hover:bg-red-50 p-1 rounded-full"><Plus size={18} className="rotate-45" /></button>
+                      <button onClick={() => setShowFilterDropdown(false)} className="text-red-500 hover:bg-red-50 p-1 rounded"><Plus size={18} className="rotate-45" /></button>
                     </div>
                     {/* ... (rest of filter content) */}
                   </div>
@@ -1471,7 +1471,7 @@ const EstimationsPage = () => {
                   {/* Column Header */}
                   <div className="p-2  flex items-center justify-between sticky top-0 z-10 pointer-events-none group">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: col.color }}></div>
+                      <div className="w-2.5 h-2.5 rounded" style={{ backgroundColor: col.color }}></div>
                       <h2 className="text-xs   text-gray-800  ">{col.name}</h2>
                     </div>
                     <button className="w-6 h-6 rounded bg-gray-50 flex items-center justify-center border border-gray-200 hover:bg-gray-100 pointer-events-auto">
@@ -1574,7 +1574,7 @@ const EstimationsPage = () => {
                           <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
                             {visibleColumns['Estimation By'] && (
                               <div className="flex items-center gap-1.5">
-                                <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px]  text-slate-700">
+                                <div className="w-5 h-5 rounded bg-slate-200 flex items-center justify-center text-[10px]  text-slate-700">
                                   {getCardValue(item, 'owner')[0]}
                                 </div>
                                 <span className="text-[11px] text-slate-600 truncate max-w-[100px]">{getCardValue(item, 'owner')}</span>
@@ -1585,9 +1585,9 @@ const EstimationsPage = () => {
                             {item.expiry_date && (() => {
                               const diffDays = Math.ceil((new Date(item.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
                               if (diffDays < 0) {
-                                return <span className="text-[10px]  px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Expired</span>;
+                                return <span className="text-[10px]  px-2 py-0.5 rounded bg-rose-100 text-rose-700">Expired</span>;
                               } else if (diffDays <= 3) {
-                                return <span className="text-[10px]  px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">In {diffDays}d</span>;
+                                return <span className="text-[10px]  px-2 py-0.5 rounded bg-amber-100 text-amber-800">In {diffDays}d</span>;
                               }
                               return null;
                             })()}
@@ -1728,7 +1728,7 @@ const EstimationsPage = () => {
                     {visibleColumns['Project'] && (
                       <td className="p-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-xs text-blue-600  border border-blue-100">
+                          <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center text-xs text-blue-600  border border-blue-100">
                             {getCardValue(item, 'type')[0]}
                           </div>
                           <span className="text-xs text-gray-600">{getCardValue(item, 'type')}</span>
@@ -1743,9 +1743,9 @@ const EstimationsPage = () => {
                         {item.expiry_date ? (() => {
                           const diffDays = Math.ceil((new Date(item.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
                           if (diffDays < 0) {
-                            return <span className="text-[10px]  px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Expired</span>;
+                            return <span className="text-[10px]  px-2 py-0.5 rounded bg-rose-100 text-rose-700">Expired</span>;
                           } else if (diffDays <= 3) {
-                            return <span className="text-[10px]  px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">In {diffDays}d</span>;
+                            return <span className="text-[10px]  px-2 py-0.5 rounded bg-amber-100 text-amber-800">In {diffDays}d</span>;
                           }
                           return new Date(item.expiry_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                         })() : 'Not set'}
@@ -1754,7 +1754,7 @@ const EstimationsPage = () => {
                     {visibleColumns['Estimation By'] && (
                       <td className="p-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-600 overflow-hidden border border-gray-200">
+                          <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center text-xs text-gray-600 overflow-hidden border border-gray-200">
                             {item.avatar ? <img src={item.avatar} alt="" className="w-full h-full object-cover" /> : getCardValue(item, 'owner')[0]}
                           </div>
                           <div className="flex flex-col">
@@ -1766,7 +1766,7 @@ const EstimationsPage = () => {
                     {visibleColumns['Status'] && (
                       <td className="p-2">
                         <span
-                          className={`px-2.5 py-1 text-[11px] font-medium rounded-full border ${item.status === 'Accepted' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                          className={`px-2.5 py-1 text-[11px] font-medium rounded border ${item.status === 'Accepted' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
                             item.status === 'Sent' ? 'bg-blue-100 text-blue-800 border-blue-300' :
                               item.status === 'Revised' ? 'bg-indigo-100 text-indigo-800 border-indigo-300' :
                                 item.status === 'Rejected' || item.status === 'Declined' ? 'bg-rose-100 text-rose-800 border-rose-300' :
@@ -1781,7 +1781,7 @@ const EstimationsPage = () => {
                       <td className="p-2  text-right relative">
                         <button
                           onClick={() => setActionMenu(actionMenu === item.id ? null : item.id)}
-                          className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                          className="p-1.5 hover:bg-gray-100 rounded transition-colors"
                         >
                           <MoreVertical size={16} className="text-gray-500" />
                         </button>

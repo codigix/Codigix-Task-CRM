@@ -49,7 +49,7 @@ export default function InvoiceListPage() {
   if (!data) return <Loading error={error} text="Loading invoices…" />;
   const c = data.counts; const t = data.totals;
   const exportCsv = () => downloadCsv('invoices.csv', [['Invoice', 'Date', 'Due', 'Customer', 'Status', 'Total', 'Paid', 'Balance', 'Quotation'],
-    ...data.invoices.map(i => [i.number, i.date && dayOf(i.date), i.dueDate && dayOf(i.dueDate), i.company, i.status, i.total, i.paid, i.balance, i.quotationNumber])]);
+  ...data.invoices.map(i => [i.number, i.date && dayOf(i.date), i.dueDate && dayOf(i.dueDate), i.company, i.status, i.total, i.paid, i.balance, i.quotationNumber])]);
 
   return (
     <div className="p-5 bg-[#F8FAFC] min-h-screen font-sans text-gray-900">
@@ -71,7 +71,7 @@ export default function InvoiceListPage() {
         <div className="relative ml-auto"><Search size={14} className="absolute left-2.5 top-2.5 text-gray-400" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Number, customer, subject" className="h-9 w-64 text-[13px] border border-gray-300 rounded pl-8 pr-2 outline-none focus:border-blue-500 bg-white" /></div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+      <div className="bg-white border border-gray-200 rounded overflow-x-auto">
         <table className="w-full text-[13px] min-w-[860px]">
           <thead className="text-xs text-gray-500 bg-gray-50"><tr>
             <th className="text-left font-medium px-4 py-2.5">Invoice</th><th className="text-left font-medium px-2 py-2.5">Customer</th><th className="text-left font-medium px-2 py-2.5">Status</th>

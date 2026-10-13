@@ -321,7 +321,7 @@ const ProposalsPage = ({ onViewDetails }) => {
               <span className="text-xs  text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
                 {proposal.proposal_number || `PROP-${proposal.id}`}
               </span>
-              <span className={`text-[10px]  px-2 py-0.5 rounded-full ${getStatusColor(proposal.status)}`}>
+              <span className={`text-[10px]  px-2 py-0.5 rounded ${getStatusColor(proposal.status)}`}>
                 {proposal.status || 'Draft'}
               </span>
             </div>
@@ -454,7 +454,7 @@ const ProposalsPage = ({ onViewDetails }) => {
         <div className="border-t border-gray-100 pt-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-7 h-7 rounded-full ${getCompanyColor(proposal.client_id)} text-white flex items-center justify-center text-[10px]  shrink-0 shadow-sm`}>
+              <div className={`w-7 h-7 rounded ${getCompanyColor(proposal.client_id)} text-white flex items-center justify-center text-[10px]  shrink-0 shadow-sm`}>
                 {getCompanyInitials(clientName)}
               </div>
               <div className="min-w-0">
@@ -466,8 +466,8 @@ const ProposalsPage = ({ onViewDetails }) => {
             </div>
 
             {proposal.assigned_to_name && (
-              <div className="flex items-center gap-1.5 shrink-0 bg-gray-50 px-2 py-1 rounded-full border border-gray-200" title={`Assigned to: ${proposal.assigned_to_name}`}>
-                <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] ">
+              <div className="flex items-center gap-1.5 shrink-0 bg-gray-50 px-2 py-1 rounded border border-gray-200" title={`Assigned to: ${proposal.assigned_to_name}`}>
+                <div className="w-5 h-5 rounded bg-red-500 text-white flex items-center justify-center text-[9px] ">
                   {getCompanyInitials(proposal.assigned_to_name)}
                 </div>
                 <span className="text-[10px] font-medium text-gray-700 truncate max-w-[90px]">
@@ -512,7 +512,7 @@ const ProposalsPage = ({ onViewDetails }) => {
         <td className="p-3 text-xs">
           {proposal.assigned_to_name ? (
             <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] ">
+              <div className="w-5 h-5 rounded bg-red-500 text-white flex items-center justify-center text-[9px] ">
                 {proposal.assigned_to_name.slice(0, 2).toUpperCase()}
               </div>
               <span className="text-gray-700 text-xs font-medium">{proposal.assigned_to_name}</span>
@@ -526,7 +526,7 @@ const ProposalsPage = ({ onViewDetails }) => {
           <div className="text-[10px] text-gray-400">Till: {proposal.validity_date ? new Date(proposal.validity_date).toLocaleDateString() : 'N/A'}</div>
         </td>
         <td className="p-3 text-xs">
-          <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${getStatusColor(proposal.status)}`}>
+          <span className={`text-[11px] font-medium px-2.5 py-1 rounded ${getStatusColor(proposal.status)}`}>
             {proposal.status}
           </span>
         </td>

@@ -110,7 +110,7 @@ const badge = (s) => {
     Missed: 'bg-rose-50 text-rose-600 border border-rose-200', Replied: 'bg-purple-50 text-purple-700 border border-purple-200',
     Secondary: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
   };
-  return <span className={`text-xs  px-2 py-0.5 rounded-full ${m[s] || 'bg-slate-100 text-slate-500'}`}>{s}</span>;
+  return <span className={`text-xs  px-2 py-0.5 rounded ${m[s] || 'bg-slate-100 text-slate-500'}`}>{s}</span>;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -271,7 +271,7 @@ export default function SeoGmbGmbProfilePage() {
                   <div className="flex flex-col gap-2 flex-1">
                     {TOP_ACTIONS.map((a) => (
                       <div key={a.name} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} /><span className="text-slate-600">{a.name}</span></div>
+                        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded" style={{ backgroundColor: a.color }} /><span className="text-slate-600">{a.name}</span></div>
                         <div className="text-right"><strong className="text-slate-800">{a.value.toLocaleString()}</strong><span className="text-slate-400 ml-1">({a.pct})</span></div>
                       </div>
                     ))}
@@ -295,7 +295,7 @@ export default function SeoGmbGmbProfilePage() {
                   <div className="flex flex-col gap-1">
                     {COMPLETENESS_ITEMS.map((ci) => (
                       <div key={ci.label} className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
-                        <span className={`w-2 h-2 rounded-full ${ci.done ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                        <span className={`w-2 h-2 rounded ${ci.done ? 'bg-emerald-400' : 'bg-slate-300'}`} />
                         {ci.label}
                       </div>
                     ))}
@@ -341,7 +341,7 @@ export default function SeoGmbGmbProfilePage() {
                   <div key={r.id} className="border-b border-slate-50 pb-2 mb-2">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1.5">
-                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-[9px] font-black text-blue-600">{r.reviewer[0]}</div>
+                        <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center text-[9px] font-black text-blue-600">{r.reviewer[0]}</div>
                         <span className="text-xs  text-slate-800">{r.reviewer}</span>
                       </div>
                       <span className="text-[9px] text-amber-400">{r.rating.slice(0, 5)}</span>
@@ -442,7 +442,7 @@ export default function SeoGmbGmbProfilePage() {
                 {tableData['Local Competitors'].map(c => (
                   <div key={c.id} className="flex items-center justify-between py-1.5 border-b border-slate-50">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center"><Building2 size={11} className="text-slate-400" /></div>
+                      <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center"><Building2 size={11} className="text-slate-400" /></div>
                       <div><p className="text-xs  text-slate-800 m-0">{c.name}</p><p className="text-[9px] text-slate-400 m-0">{c.distance}</p></div>
                     </div>
                     <div className="text-right"><span className="text-xs font-black text-slate-800">{c.rating}</span><span className="text-[9px] text-amber-400"> ★</span><p className="text-[9px] text-slate-400 m-0">{c.reviews}</p></div>

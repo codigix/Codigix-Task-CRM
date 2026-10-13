@@ -160,7 +160,7 @@ const CrmCompaniesPage = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-[28px]  text-gray-900">Companies</h1>
-              <span className="bg-[#FFE5E5] text-[#F62416] px-2.5 py-0.5 rounded-full text-[12px] ">{companies.length}</span>
+              <span className="bg-[#FFE5E5] text-[#F62416] px-2.5 py-0.5 rounded text-[12px] ">{companies.length}</span>
             </div>
             <div className="flex items-center gap-1 text-xs  mt-1">
               <button className="text-[#F97316] hover:text-[#EA580C]   bg-transparent border-none cursor-pointer p-0">Home</button>
@@ -208,7 +208,7 @@ const CrmCompaniesPage = () => {
               className="bg-white border border-[#EAECF0] rounded shadow-[0_2px_6px_rgba(0,0,0,0.05)] p-2 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-shadow"
             >
               <div className="flex justify-between items-start mb-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white  text-lg overflow-hidden flex-shrink-0 ${company.logo && company.logo.startsWith('data:') ? 'bg-white' : 'bg-gradient-to-br from-blue-400 to-blue-600'} `}>
+                <div className={`w-12 h-12 rounded flex items-center justify-center text-white  text-lg overflow-hidden flex-shrink-0 ${company.logo && company.logo.startsWith('data:') ? 'bg-white' : 'bg-gradient-to-br from-blue-400 to-blue-600'} `}>
                   {company.logo && company.logo.startsWith('data:') ? (
                     <img
                       src={company.logo}
@@ -283,7 +283,7 @@ const CrmCompaniesPage = () => {
                   <button className="hover:text-gray-900 transition p-0.5" title="Call"><Phone size={15} strokeWidth={1.5} /></button>
                 </div>
                 <div className="flex gap-1">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs   border border-white ${company.icon}`}>C</div>
+                  <div className={`w-6 h-6 rounded flex items-center justify-center text-white text-xs   border border-white ${company.icon}`}>C</div>
                 </div>
               </div>
             </div>
@@ -299,7 +299,7 @@ const CrmCompaniesPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded  shadow-lg p-8 max-w-sm mx-4">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+              <div className="w-12 h-12 rounded bg-red-100 flex items-center justify-center">
                 <span className="text-2xl">🗑️</span>
               </div>
             </div>

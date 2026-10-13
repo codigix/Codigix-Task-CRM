@@ -192,7 +192,7 @@ const FileManagerPage = ({ department }) => {
     return (
       <div className="p-3 sm:p-3 lg:p-3 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="max-w-md w-full bg-white rounded  shadow-lgp-3 ">
-          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded bg-red-100 mx-auto mb-4">
             <AlertCircle size={24} className="text-red " />
           </div>
           <h2 className="text-xl  text-gray-900 text-center mb-2">Authentication Required</h2>
@@ -209,7 +209,7 @@ const FileManagerPage = ({ department }) => {
     return (
       <div className="p-3 sm:p-3 lg:p-3 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading files...</p>
         </div>
       </div>
@@ -282,7 +282,7 @@ const FileManagerPage = ({ department }) => {
 
             <div className="bg-white border border-gray-200 rounded  p-2 mt-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white  text-xs ">
+                <div className="w-10 h-10 rounded bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white  text-xs ">
                   {user?.first_name?.[0]}{user?.last_name?.[0]}
                 </div>
                 <div>
@@ -414,8 +414,8 @@ const FileManagerPage = ({ department }) => {
                       <span>{folder.file_count} files</span>
                     </div>
                     <div className="flex items-center gap-1 mt-2">
-                      <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-07.jpg" alt="user" className="w-6 h-6 rounded-full" />
-                      <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg" alt="user" className="w-6 h-6 rounded-full" />
+                      <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-07.jpg" alt="user" className="w-6 h-6 rounded" />
+                      <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg" alt="user" className="w-6 h-6 rounded" />
                     </div>
                   </div>
                 )) : (
@@ -466,8 +466,8 @@ const FileManagerPage = ({ department }) => {
                         <td className="p-2  text-xs  text-gray-700">{new Date(file.created_at).toLocaleDateString()}</td>
                         <td className="p-2 ">
                           <div className="flex items-center gap-1">
-                            <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-03.jpg" alt="user" className="w-6 h-6 rounded-full" />
-                            <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-04.jpg" alt="user" className="w-6 h-6 rounded-full" />
+                            <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-03.jpg" alt="user" className="w-6 h-6 rounded" />
+                            <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-04.jpg" alt="user" className="w-6 h-6 rounded" />
                           </div>
                         </td>
                         <td className="p-2 ">
@@ -546,7 +546,7 @@ const FileManagerPage = ({ department }) => {
                 <label htmlFor="file-input" className={`cursor-pointer ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
                   {uploading ? (
                     <>
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400 mx-auto mb-2"></div>
+                      <div className="animate-spin rounded h-8 w-8 border-b-2 border-gray-400 mx-auto mb-2"></div>
                       <p className="text-gray-600   mb-1">Uploading...</p>
                     </>
                   ) : (

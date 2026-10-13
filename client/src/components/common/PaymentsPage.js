@@ -172,7 +172,7 @@ const PaymentsPage = () => {
           <div>
             <div className="flex items-center gap-3 mb-3">
               <h1 className="text-xl  text-gray-900">Payments</h1>
-              <span className="bg-red-100 text-red  p-2 rounded-full text-xs ">
+              <span className="bg-red-100 text-red  p-2 rounded text-xs ">
                 {filteredPayments.length}
               </span>
             </div>
@@ -245,7 +245,7 @@ const PaymentsPage = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              <div className="inline-block animate-spin rounded h-12 w-12 border-b-2 border-red-600"></div>
               <p className="mt-4 text-gray-600  ">Loading payments...</p>
             </div>
           </div>
@@ -290,7 +290,7 @@ const PaymentsPage = () => {
                           </td>
                           <td className="p-2 ">
                             <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs  text-gray-600">
+                              <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-xs  text-gray-600">
                                 {invoice.client_name?.charAt(0).toUpperCase()}
                               </div>
                               <span className="text-xs    text-gray-900">{invoice.client_name || 'N/A'}</span>
@@ -309,7 +309,7 @@ const PaymentsPage = () => {
                             <span className="text-xs  font-mono text-gray-600">TXN{String(invoice.id).padStart(10, '0')}</span>
                           </td>
                           <td className="p-2 ">
-                            <span className={`px-3 py-1 rounded-full text-xs  ${statusStyles.bg} ${statusStyles.text}`}>
+                            <span className={`px-3 py-1 rounded text-xs  ${statusStyles.bg} ${statusStyles.text}`}>
                               {invoice.status}
                             </span>
                           </td>

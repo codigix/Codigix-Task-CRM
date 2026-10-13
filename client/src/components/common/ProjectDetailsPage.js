@@ -446,7 +446,7 @@ const ProjectDetailsPage = () => {
   if (isLoading) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -512,13 +512,13 @@ const ProjectDetailsPage = () => {
                 ['Services', (project.client_services && project.client_services.length > 0) ? (
                   <div className="flex flex-wrap gap-1">
                     {project.client_services.map((s, si) => (
-                      <span key={si} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full  border border-indigo-100 text-[10px]">
+                      <span key={si} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded  border border-indigo-100 text-[10px]">
                         {s}
                       </span>
                     ))}
                   </div>
                 ) : (project.service_name || '-')],
-                ['Assigned Team', (project.team_name || assignedTeamName) ? <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full  border border-emerald-100 text-[10px]">{project.team_name || assignedTeamName}</span> : 'No team assigned'],
+                ['Assigned Team', (project.team_name || assignedTeamName) ? <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded  border border-emerald-100 text-[10px]">{project.team_name || assignedTeamName}</span> : 'No team assigned'],
                 ['Project Manager', `${project.manager_first_name || ''} ${project.manager_last_name || ''}`.trim() || 'Unassigned'],
                 ['Priority', <span className="text-red-500 bg-red-50 px-1.5 py-0.5 rounded text-[9px] font-medium border border-red-200">{project.priority || '-'}</span>],
                 ['Start Date', formatDate(project.start_date)],
@@ -526,7 +526,7 @@ const ProjectDetailsPage = () => {
                 ['Status', <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-[9px] font-medium border border-blue-200">{project.status || '-'}</span>],
                 ['Progress',
                   <div className="flex items-center gap-2 w-full">
-                    <div className="flex-1 h-1 bg-gray-100 rounded-full"><div className="h-full bg-red-600 rounded-full" style={{ width: `${progress}%` }}></div></div>
+                    <div className="flex-1 h-1 bg-gray-100 rounded"><div className="h-full bg-red-600 rounded" style={{ width: `${progress}%` }}></div></div>
                     <span className="text-xs">{progress}%</span>
                   </div>
                 ],
@@ -549,7 +549,7 @@ const ProjectDetailsPage = () => {
             {(project?.team_name || assignedTeamName) ? (
               <div className="space-y-4">
                 <div>
-                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full  border border-emerald-100 text-[10px]">
+                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded  border border-emerald-100 text-[10px]">
                     {project?.team_name || assignedTeamName}
                   </span>
                 </div>
@@ -559,7 +559,7 @@ const ProjectDetailsPage = () => {
                   <h4 className="text-[9px]  text-gray-400 uppercase tracking-wider mb-1">Team Manager</h4>
                   <div className="flex items-center gap-2">
                     {assignedTeam?.manager_name ? (
-                      <div className="w-6 h-6 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-[10px] ">
+                      <div className="w-6 h-6 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center text-[10px] ">
                         {assignedTeam.manager_name[0].toUpperCase()}
                       </div>
                     ) : null}
@@ -579,9 +579,9 @@ const ProjectDetailsPage = () => {
                       <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-gray-50 last:border-0">
                         <div className="flex items-center gap-2">
                           {m.avatar ? (
-                            <img src={m.avatar} alt="A" className="w-5 h-5 rounded-full object-cover" />
+                            <img src={m.avatar} alt="A" className="w-5 h-5 rounded object-cover" />
                           ) : (
-                            <div className="w-5 h-5 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-[9px] ">
+                            <div className="w-5 h-5 bg-blue-50 text-blue-600 rounded flex items-center justify-center text-[9px] ">
                               {m.first_name ? m.first_name[0].toUpperCase() : 'U'}
                             </div>
                           )}
@@ -622,15 +622,15 @@ const ProjectDetailsPage = () => {
             </div>
             <div className="mt-8 flex flex-col gap-2 w-full px-4">
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#0ea5e9]"></div> <span className="text-gray-600">Completed</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded bg-[#0ea5e9]"></div> <span className="text-gray-600">Completed</span></div>
                 <span className="font-medium">{stats.completed} ({Math.round((stats.completed / stats.total) * 100)}%)</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-600"></div> <span className="text-gray-600">In Progress</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded bg-red-600"></div> <span className="text-gray-600">In Progress</span></div>
                 <span className="font-medium">{stats.inProgress} ({Math.round((stats.inProgress / stats.total) * 100)}%)</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-yellow-500"></div> <span className="text-gray-600">To Do</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded bg-yellow-500"></div> <span className="text-gray-600">To Do</span></div>
                 <span className="font-medium">{stats.todo} ({Math.round((stats.todo / stats.total) * 100)}%)</span>
               </div>
             </div>
@@ -650,8 +650,8 @@ const ProjectDetailsPage = () => {
               return (
                 <div key={i} className="flex items-center text-xs">
                   <span className="w-20 text-gray-600">{status.label}</span>
-                  <div className="flex-1 mx-3 h-1.5 bg-gray-100 rounded-full flex overflow-hidden">
-                    <div className={`h-full rounded-full ${status.color}`} style={{ width: `${pct}%` }}></div>
+                  <div className="flex-1 mx-3 h-1.5 bg-gray-100 rounded flex overflow-hidden">
+                    <div className={`h-full rounded ${status.color}`} style={{ width: `${pct}%` }}></div>
                   </div>
                   <span className="w-12 text-right font-medium text-gray-900">{status.count} ({pct}%)</span>
                 </div>
@@ -699,12 +699,12 @@ const ProjectDetailsPage = () => {
               <td className="p-3 text-center"><input type="checkbox" className="rounded border-gray-300" /></td>
               <td className="p-3 font-medium text-gray-900">{t.title}</td>
               <td className="p-3 flex items-center gap-1.5">
-                {t.avatar ? <img src={t.avatar} alt="A" className="w-5 h-5 rounded-full" /> : <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex justify-center items-center text-[9px] ">{t.first_name?.[0] || 'U'}</div>}
+                {t.avatar ? <img src={t.avatar} alt="A" className="w-5 h-5 rounded" /> : <div className="w-5 h-5 rounded bg-blue-100 text-blue-600 flex justify-center items-center text-[9px] ">{t.first_name?.[0] || 'U'}</div>}
                 {t.first_name || t.assigned_to || 'Unassigned'}
               </td>
               <td className="p-3">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex justify-center items-center text-[9px] ">
+                  <div className="w-5 h-5 rounded bg-indigo-100 text-indigo-700 flex justify-center items-center text-[9px] ">
                     {(t.reporter || 'U').substring(0, 1).toUpperCase()}
                   </div>
                   <span className="text-gray-700 font-medium">{t.reporter || 'Unassigned'}</span>
@@ -723,8 +723,8 @@ const ProjectDetailsPage = () => {
               <td className="p-3 text-gray-500">{formatDate(t.due_date)}</td>
               <td className="p-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${t.status === 'Completed' || t.status === 'DONE' ? 'bg-green-500' : 'bg-red-600'}`} style={{ width: t.status === 'Completed' || t.status === 'DONE' ? '100%' : t.status === 'In Progress' || t.status === 'IN PROGRESS' ? '60%' : '0%' }}></div>
+                  <div className="w-16 h-1.5 bg-gray-100 rounded overflow-hidden">
+                    <div className={`h-full rounded ${t.status === 'Completed' || t.status === 'DONE' ? 'bg-green-500' : 'bg-red-600'}`} style={{ width: t.status === 'Completed' || t.status === 'DONE' ? '100%' : t.status === 'In Progress' || t.status === 'IN PROGRESS' ? '60%' : '0%' }}></div>
                   </div>
                   <span className="text-xs text-gray-500">{t.status === 'Completed' || t.status === 'DONE' ? '100%' : t.status === 'In Progress' || t.status === 'IN PROGRESS' ? '60%' : '0%'}</span>
                 </div>
@@ -877,7 +877,7 @@ const ProjectDetailsPage = () => {
                     <td className="p-3 font-medium text-gray-900">{i + 1}. {m.title}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-1.5">
-                        {m.owner_avatar ? <img src={m.owner_avatar} alt="" className="w-5 h-5 rounded-full" /> : <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex justify-center items-center text-[9px]">{m.owner_name?.[0] || '?'}</div>}
+                        {m.owner_avatar ? <img src={m.owner_avatar} alt="" className="w-5 h-5 rounded" /> : <div className="w-5 h-5 rounded bg-blue-100 text-blue-600 flex justify-center items-center text-[9px]">{m.owner_name?.[0] || '?'}</div>}
                         {m.owner_name || <span className="text-gray-400 italic">Unassigned</span>}
                       </div>
                     </td>
@@ -894,8 +894,8 @@ const ProjectDetailsPage = () => {
                     </td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${m.status === 'Completed' ? 'bg-green-500' : 'bg-red-600'}`} style={{ width: `${m.progress}%` }}></div>
+                        <div className="w-16 h-1.5 bg-gray-100 rounded overflow-hidden">
+                          <div className={`h-full rounded ${m.status === 'Completed' ? 'bg-green-500' : 'bg-red-600'}`} style={{ width: `${m.progress}%` }}></div>
                         </div>
                         <span className="text-xs text-gray-500">{m.progress}%</span>
                       </div>
@@ -946,7 +946,7 @@ const ProjectDetailsPage = () => {
               return (
                 <tr key={i} className="hover:bg-gray-50">
                   <td className="p-3 flex items-center gap-1.5">
-                    {m.avatar ? <img src={m.avatar} alt="A" className="w-6 h-6 rounded-full" /> : <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex justify-center items-center  text-xs">{m.first_name?.[0] || 'U'}</div>}
+                    {m.avatar ? <img src={m.avatar} alt="A" className="w-6 h-6 rounded" /> : <div className="w-6 h-6 rounded bg-blue-100 text-blue-600 flex justify-center items-center  text-xs">{m.first_name?.[0] || 'U'}</div>}
                     <span className="font-medium text-gray-900">{m.first_name} {m.last_name}</span>
                   </td>
                   <td className="p-3">{displayRole}</td>
@@ -956,8 +956,8 @@ const ProjectDetailsPage = () => {
                   <td className="p-3">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2 flex-1">
-                        <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full bg-red-600" style={{ width: `${Math.max(20, 100 - i * 15)}%` }}></div>
+                        <div className="w-16 h-1.5 bg-gray-100 rounded overflow-hidden">
+                          <div className="h-full rounded bg-red-600" style={{ width: `${Math.max(20, 100 - i * 15)}%` }}></div>
                         </div>
                         <span className="text-xs text-gray-500">{Math.max(20, 100 - i * 15)}%</span>
                       </div>
@@ -1051,7 +1051,7 @@ const ProjectDetailsPage = () => {
                   <td className="p-3">{doc.storage_type || 'Internal'}</td>
                   <td className="p-3">
                     <div className="flex items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                      <div className="w-5 h-5 rounded bg-gray-200 flex items-center justify-center overflow-hidden">
                         <span className="text-[9px] text-gray-600">
                           {doc.first_name ? doc.first_name.charAt(0) : 'U'}
                         </span>
@@ -1105,7 +1105,7 @@ const ProjectDetailsPage = () => {
           ].map((c, i) => (
             <div key={i} className="bg-white border border-gray-200 rounded p-4 ">
               <div className="flex items-center gap-2 mb-2 text-xs text-gray-500 font-medium">
-                <div className={`p-1.5 rounded-full ${c.color}`}>{c.icon}</div>
+                <div className={`p-1.5 rounded ${c.color}`}>{c.icon}</div>
                 {c.label}
               </div>
               <div className="text-xl  text-gray-900">{c.val}</div>
@@ -1159,7 +1159,7 @@ const ProjectDetailsPage = () => {
       <div className="relative border-l border-gray-200 ml-4 space-y-6 pb-4">
         {activityLogs.length > 0 ? activityLogs.map(a => (
           <div key={a.id} className="pl-6 relative">
-            <div className="w-3 h-3 bg-blue-500 rounded-full border-4 border-white absolute -left-1.5 top-1"></div>
+            <div className="w-3 h-3 bg-blue-500 rounded border-4 border-white absolute -left-1.5 top-1"></div>
             <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 mb-1">
               <span className="font-medium text-sm text-gray-900">{a.action}</span>
               <span className="text-xs text-gray-400">
@@ -1338,9 +1338,9 @@ const ProjectDetailsPage = () => {
                 <span className="text-gray-500">Project Manager</span>
                 <div className="flex items-center gap-1.5 font-medium text-gray-900">
                   {project.manager_avatar ? (
-                    <img src={project.manager_avatar} alt="manager" className="w-5 h-5 rounded-full" />
+                    <img src={project.manager_avatar} alt="manager" className="w-5 h-5 rounded" />
                   ) : project.manager_first_name ? (
-                    <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[9px] ">
+                    <div className="w-5 h-5 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-[9px] ">
                       {project.manager_first_name.charAt(0)}
                     </div>
                   ) : null}
@@ -1364,8 +1364,8 @@ const ProjectDetailsPage = () => {
                   <span className="text-gray-500">Progress</span>
                   <span className=" text-gray-900">{progress}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-red-600 rounded-full" style={{ width: `${progress}%` }}></div>
+                <div className="w-full h-1.5 bg-gray-100 rounded overflow-hidden">
+                  <div className="h-full bg-red-600 rounded" style={{ width: `${progress}%` }}></div>
                 </div>
               </div>
 
@@ -1406,7 +1406,7 @@ const ProjectDetailsPage = () => {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded border border-gray-200 p-4  flex flex-col justify-between h-20">
               <div className="flex items-start justify-between">
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><CheckSquare size={16} /></div>
+                <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center text-blue-500"><CheckSquare size={16} /></div>
                 <div className="text-right">
                   <div className="text-xs text-gray-500 font-medium">Tasks</div>
                   <div className="text-lg  text-gray-900 leading-tight">{project.completed_tasks || 0} / {project.total_tasks || 0}</div>
@@ -1416,7 +1416,7 @@ const ProjectDetailsPage = () => {
 
             <div className="bg-white rounded border border-gray-200 p-4  flex flex-col justify-between h-20">
               <div className="flex items-start justify-between">
-                <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500"><Flag size={16} /></div>
+                <div className="w-8 h-8 rounded bg-emerald-50 flex items-center justify-center text-emerald-500"><Flag size={16} /></div>
                 <div className="text-right">
                   <div className="text-xs text-gray-500 font-medium">Milestones</div>
                   <div className="text-lg  text-gray-900 leading-tight">{milestones.filter(m => m.status === 'Completed').length} / {milestones.length}</div>
@@ -1426,7 +1426,7 @@ const ProjectDetailsPage = () => {
 
             <div className="bg-white rounded border border-gray-200 p-4  flex flex-col justify-between h-20">
               <div className="flex items-start justify-between">
-                <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-500"><Users size={16} /></div>
+                <div className="w-8 h-8 rounded bg-purple-50 flex items-center justify-center text-purple-500"><Users size={16} /></div>
                 <div className="text-right">
                   <div className="text-xs text-gray-500 font-medium">Team Members</div>
                   <div className="text-lg  text-gray-900 leading-tight">{teamMembers.length || 0}</div>
@@ -1437,7 +1437,7 @@ const ProjectDetailsPage = () => {
             {canManage ? (
               <div className="bg-white rounded border border-gray-200 p-4  flex flex-col justify-between h-20">
                 <div className="flex items-start justify-between">
-                  <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500"><DollarSign size={16} /></div>
+                  <div className="w-8 h-8 rounded bg-green-50 flex items-center justify-center text-green-500"><DollarSign size={16} /></div>
                   <div className="text-right">
                     <div className="text-xs text-gray-500 font-medium">Budget Spent</div>
                     <div className="text-lg  text-gray-900 leading-tight">{formatCurrency(project.spent)}</div>
@@ -1447,7 +1447,7 @@ const ProjectDetailsPage = () => {
             ) : (
               <div className="bg-white rounded border border-gray-200 p-4  flex flex-col justify-between h-20">
                 <div className="flex items-start justify-between">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><CheckSquare size={16} /></div>
+                  <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center text-blue-500"><CheckSquare size={16} /></div>
                   <div className="text-right">
                     <div className="text-xs text-gray-500 font-medium">Progress</div>
                     <div className="text-lg  text-gray-900 leading-tight">{progress}%</div>
@@ -1467,7 +1467,7 @@ const ProjectDetailsPage = () => {
                   }`}
               >
                 {tab}
-                {tab === 'Documents' && <span className="ml-1 bg-gray-100 text-gray-600 py-0.5 px-1.5 rounded-full text-[9px]">24</span>}
+                {tab === 'Documents' && <span className="ml-1 bg-gray-100 text-gray-600 py-0.5 px-1.5 rounded text-[9px]">24</span>}
               </button>
             ))}
           </div>

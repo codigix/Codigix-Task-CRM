@@ -126,7 +126,7 @@ export default function AdminDetailPanel({ detail, onClose }) {
             <div className="text-[11px] font-semibold text-gray-600 mb-1.5">Hours by person</div>
             <div className="flex flex-wrap gap-1.5">
               {data.people.map(p => (
-                <button key={p.name} onClick={() => setSearch(p.name)} className="text-xs bg-gray-100 hover:bg-gray-200 rounded-full px-2.5 py-1 cursor-pointer">
+                <button key={p.name} onClick={() => setSearch(p.name)} className="text-xs bg-gray-100 hover:bg-gray-200 rounded px-2.5 py-1 cursor-pointer">
                   {p.name}: <strong className="tabular-nums">{p.hours} h</strong>
                 </button>
               ))}

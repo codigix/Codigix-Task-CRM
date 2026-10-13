@@ -110,9 +110,9 @@ function AttendeePicker({ users, selected, onChange, meId }) {
     <div>
       <div className="flex flex-wrap gap-1.5 mb-1.5">
         {chosen.map(u => (
-          <span key={u.id} className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-800 border border-blue-200 rounded-full pl-2 pr-1 py-0.5">
+          <span key={u.id} className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-800 border border-blue-200 rounded pl-2 pr-1 py-0.5">
             {u.name}
-            <button type="button" onClick={() => onChange(selected.filter(id => id !== u.id))} className="hover:bg-blue-100 rounded-full p-0.5 cursor-pointer" aria-label={`Remove ${u.name}`}><X size={11} /></button>
+            <button type="button" onClick={() => onChange(selected.filter(id => id !== u.id))} className="hover:bg-blue-100 rounded p-0.5 cursor-pointer" aria-label={`Remove ${u.name}`}><X size={11} /></button>
           </span>
         ))}
       </div>
@@ -147,8 +147,8 @@ function GuestEmails({ emails, onChange }) {
   return (
     <div className="flex flex-wrap gap-1.5 p-1.5 border border-gray-300 rounded min-h-[40px] focus-within:border-blue-500">
       {emails.map(e => (
-        <span key={e} className="inline-flex items-center gap-1 text-xs bg-gray-100 rounded-full pl-2 pr-1 py-0.5">
-          {e}<button type="button" onClick={() => onChange(emails.filter(x => x !== e))} className="hover:bg-gray-200 rounded-full p-0.5 cursor-pointer" aria-label={`Remove ${e}`}><X size={11} /></button>
+        <span key={e} className="inline-flex items-center gap-1 text-xs bg-gray-100 rounded pl-2 pr-1 py-0.5">
+          {e}<button type="button" onClick={() => onChange(emails.filter(x => x !== e))} className="hover:bg-gray-200 rounded p-0.5 cursor-pointer" aria-label={`Remove ${e}`}><X size={11} /></button>
         </span>
       ))}
       <input value={v} onChange={e => setV(e.target.value)} onBlur={add}
@@ -368,8 +368,8 @@ function EventDetails({ ev, users, onClose, onEdit, onChanged }) {
                 <div className="flex gap-2">
                   <Users size={15} className="text-gray-400 shrink-0 mt-0.5" />
                   <div className="flex flex-wrap gap-1">
-                    {ev.attendeeIds.map(id => <span key={id} className="text-xs bg-blue-50 text-blue-800 rounded-full px-2 py-0.5">{nameOf(id)}</span>)}
-                    {ev.guestEmails.map(e => <span key={e} className="text-xs bg-gray-100 rounded-full px-2 py-0.5">{e}</span>)}
+                    {ev.attendeeIds.map(id => <span key={id} className="text-xs bg-blue-50 text-blue-800 rounded px-2 py-0.5">{nameOf(id)}</span>)}
+                    {ev.guestEmails.map(e => <span key={e} className="text-xs bg-gray-100 rounded px-2 py-0.5">{e}</span>)}
                   </div>
                 </div>
               )}
@@ -431,7 +431,7 @@ function MonthView({ cursor, items, today, onOpen, onCreate }) {
           return (
             <div key={ymd(day)} onClick={() => onCreate(day)}
               className={`border-b border-r border-gray-100 p-1.5 min-w-0 cursor-pointer hover:bg-blue-50/30 ${inMonth ? 'bg-white' : 'bg-gray-50/70'}`}>
-              <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs mb-1 ${isToday ? 'bg-red-600 text-white ' : inMonth ? 'text-gray-800' : 'text-gray-400'}`}>{day.getDate()}</div>
+              <div className={`w-6 h-6 flex items-center justify-center rounded text-xs mb-1 ${isToday ? 'bg-red-600 text-white ' : inMonth ? 'text-gray-800' : 'text-gray-400'}`}>{day.getDate()}</div>
               <div className="space-y-0.5">
                 {list.slice(0, 3).map(it => <Chip key={it.id} item={it} onOpen={onOpen} />)}
                 {list.length > 3 && <div className="text-[11px] text-gray-500 pl-1">+{list.length - 3} more</div>}
@@ -528,7 +528,7 @@ function ListView({ items, onOpen, from }) {
             const st = styleOf(it);
             return (
               <button key={it.id} type="button" onClick={() => onOpen(it)} className="w-full text-left px-4 py-2.5 border-b border-gray-100 hover:bg-gray-50 flex items-center gap-3 cursor-pointer">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: st.dot }} aria-hidden="true" />
+                <span className="w-2 h-2 rounded shrink-0" style={{ background: st.dot }} aria-hidden="true" />
                 <span className="w-28 shrink-0 text-xs text-gray-600 tabular-nums">{it.allDay ? 'All day' : `${fmtTime(it.startDate)} – ${fmtTime(it.endDate)}`}</span>
                 <span className={`flex-1 min-w-0 truncate text-sm text-gray-900 ${it.status === 'Cancelled' || it.done ? 'line-through text-gray-500' : ''}`}>{it.title}</span>
                 <span className={`text-[11px] px-2 py-0.5 rounded border shrink-0 ${st.chip}`}>{it.source === 'ticket' ? 'Ticket due' : it.source === 'sprint' ? 'Sprint' : it.category}</span>
@@ -635,7 +635,7 @@ export default function TeamCalendar({ department }) {
               {upcoming.map(it => (
                 <li key={it.id}>
                   <button onClick={() => setOpenItem(it)} className="w-full text-left flex gap-2 hover:bg-gray-50 rounded p-1 -m-1 cursor-pointer">
-                    <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: styleOf(it).dot }} aria-hidden="true" />
+                    <span className="w-2 h-2 rounded mt-1.5 shrink-0" style={{ background: styleOf(it).dot }} aria-hidden="true" />
                     <span className="min-w-0">
                       <span className="block text-xs font-medium text-gray-900 truncate">{it.title}</span>
                       <span className="block text-[11px] text-gray-500">{fmtDay(it.startDate)}{it.allDay ? '' : ` · ${fmtTime(it.startDate)}`}</span>

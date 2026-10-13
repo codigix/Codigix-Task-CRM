@@ -713,7 +713,7 @@ const AddNewTaskModal = ({ isOpen, onClose, onSubmit, initialData = null, deals 
                     key={note}
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, internal_notes: prev.internal_notes ? `${prev.internal_notes}\n${note}` : note }))}
-                    className="p-2 bg-gray-50 border border-gray-200 rounded-full text-xs text-gray-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
+                    className="p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
                   >
                     + {note}
                   </button>

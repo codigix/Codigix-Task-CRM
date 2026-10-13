@@ -169,7 +169,7 @@ const ContactDetailsPage = ({ contactId, onBack }) => {
             <div className="flex items-start gap-4">
               <div
                 style={{ backgroundColor: avatarColor }}
-                className="w-20 h-20 rounded-full flex items-center justify-center text-white  text-2xl flex-shrink-0"
+                className="w-20 h-20 rounded flex items-center justify-center text-white  text-2xl flex-shrink-0"
               >
                 {initials}
               </div>
@@ -251,8 +251,8 @@ const ContactDetailsPage = ({ contactId, onBack }) => {
             <div className="bg-white rounded  border border-[#E5E7EB]  p-2">
               <h3 className=" text-gray-900 text-xs  mb-4">Tags</h3>
               <div className="flex gap-2 flex-wrap">
-                <span className="px-3 py-1 bg-green-50 text-green-700 text-xs   rounded-full">Collab</span>
-                <span className="px-3 py-1 bg-yellow-50 text-yellow-700 text-xs   rounded-full">Rated</span>
+                <span className="px-3 py-1 bg-green-50 text-green-700 text-xs   rounded">Collab</span>
+                <span className="px-3 py-1 bg-yellow-50 text-yellow-700 text-xs   rounded">Rated</span>
               </div>
             </div>
 

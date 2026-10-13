@@ -52,7 +52,7 @@ const getRoleName = (department, roleType) => {
 const StatusBadge = ({ status }) => {
   if (status === 'Approved') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs  bg-emerald-50 text-emerald-700 border border-emerald-200">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs  bg-emerald-50 text-emerald-700 border border-emerald-200">
         <CheckCircle2 size={13} />
         Approved
       </span>
@@ -60,14 +60,14 @@ const StatusBadge = ({ status }) => {
   }
   if (status === 'Rejected') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs  bg-rose-50 text-rose-700 border border-rose-200">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs  bg-rose-50 text-rose-700 border border-rose-200">
         <XCircle size={13} />
         Rejected
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs  bg-amber-50 text-amber-700 border border-amber-200">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs  bg-amber-50 text-amber-700 border border-amber-200">
       <Clock size={13} />
       Pending Review
     </span>
@@ -372,7 +372,7 @@ const RegistrationRequestsPage = () => {
               >
                 <span>{tab.label}</span>
                 <span
-                  className={`text-[11px] px-1.5 py-0.2 rounded-full ${selectedStatus === tab.id
+                  className={`text-[11px] px-1.5 py-0.2 rounded ${selectedStatus === tab.id
                     ? 'bg-gray-100 text-gray-900'
                     : 'bg-gray-200 text-gray-600'
                     }`}
@@ -423,7 +423,7 @@ const RegistrationRequestsPage = () => {
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-gray-500">
                     <div className="inline-flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded animate-spin"></div>
                       <span>Loading registration requests...</span>
                     </div>
                   </td>
@@ -432,7 +432,7 @@ const RegistrationRequestsPage = () => {
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-gray-500">
                     <div className="max-w-sm mx-auto space-y-2">
-                      <div className="inline-flex p-3 bg-gray-100 rounded-full text-gray-400">
+                      <div className="inline-flex p-3 bg-gray-100 rounded text-gray-400">
                         <Users size={24} />
                       </div>
                       <p className="font-medium text-gray-700">No registration requests found</p>
@@ -458,7 +458,7 @@ const RegistrationRequestsPage = () => {
                       {/* Applicant */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-red-100 text-red-700  flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
+                          <div className="w-9 h-9 rounded bg-red-100 text-red-700  flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
                             {initials}
                           </div>
                           <div>
@@ -588,7 +588,7 @@ const RegistrationRequestsPage = () => {
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-100 text-red-700  flex items-center justify-center text-sm shadow-xs">
+                <div className="w-10 h-10 rounded bg-red-100 text-red-700  flex items-center justify-center text-sm shadow-xs">
                   {selectedRequest.first_name?.[0] || 'U'}
                 </div>
                 <div>
@@ -696,7 +696,7 @@ const RegistrationRequestsPage = () => {
                         <Briefcase size={15} className="text-amber-700" />
                         <span>Assign Department & Designation</span>
                       </div>
-                      <span className="text-[11px]  text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+                      <span className="text-[11px]  text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded border border-amber-300">
                         HR / Admin Decision
                       </span>
                     </div>
@@ -882,7 +882,7 @@ const RegistrationRequestsPage = () => {
                     className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-medium transition-all shadow-xs flex items-center gap-2 disabled:opacity-50 active:scale-98"
                   >
                     {actionLoading ? (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded animate-spin"></div>
                     ) : (
                       <>
                         <UserCheck size={16} />

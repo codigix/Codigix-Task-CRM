@@ -179,7 +179,7 @@ const SeoGmbAiContentGenerationPage = () => {
             <div className="border-b border-gray-100 px-5 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h3 className=" text-gray-900">Generated Content</h3>
-                <span className="bg-green-50 text-green-600 border border-green-200 text-[10px]  px-2 py-0.5 rounded-full uppercase tracking-wider">AI Generated</span>
+                <span className="bg-green-50 text-green-600 border border-green-200 text-[10px]  px-2 py-0.5 rounded uppercase tracking-wider">AI Generated</span>
               </div>
               <div className="flex items-center gap-4 text-gray-500 text-sm">
                 <span>1,832 words</span>
@@ -314,21 +314,21 @@ const SeoGmbAiContentGenerationPage = () => {
                     <h4 className="text-sm  text-gray-900 mb-1">Benefits of Cloud ERP for Manufacturing</h4>
                     <p className="text-[10px] text-gray-500">May 30, 2026 - 10:30 AM</p>
                   </div>
-                  <span className="bg-green-50 text-green-600 border border-green-200 text-[9px]  px-2 py-0.5 rounded-full">Published</span>
+                  <span className="bg-green-50 text-green-600 border border-green-200 text-[9px]  px-2 py-0.5 rounded">Published</span>
                 </div>
                 <div className="flex items-start justify-between border-b border-gray-50 pb-3">
                   <div>
                     <h4 className="text-sm  text-gray-900 mb-1">Top ERP Features for Manufacturing</h4>
                     <p className="text-[10px] text-gray-500">May 28, 2026 - 04:15 PM</p>
                   </div>
-                  <span className="bg-gray-50 text-gray-600 border border-gray-200 text-[9px]  px-2 py-0.5 rounded-full">Draft</span>
+                  <span className="bg-gray-50 text-gray-600 border border-gray-200 text-[9px]  px-2 py-0.5 rounded">Draft</span>
                 </div>
                 <div className="flex items-start justify-between border-b border-gray-50 pb-3">
                   <div>
                     <h4 className="text-sm  text-gray-900 mb-1">Manufacturing ERP Implementation Guide</h4>
                     <p className="text-[10px] text-gray-500">May 26, 2026 - 11:20 AM</p>
                   </div>
-                  <span className="bg-gray-50 text-gray-600 border border-gray-200 text-[9px]  px-2 py-0.5 rounded-full">Draft</span>
+                  <span className="bg-gray-50 text-gray-600 border border-gray-200 text-[9px]  px-2 py-0.5 rounded">Draft</span>
                 </div>
               </div>
               <button className="text-indigo-600 text-xs  mt-2 hover:underline w-full text-left">View All History &rarr;</button>
@@ -470,25 +470,25 @@ const SeoGmbAiContentGenerationPage = () => {
             <h3 className=" text-gray-900 mb-4">Content Actions</h3>
             <div className="grid grid-cols-4 gap-2">
               <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer transition gap-2 text-center group">
-                <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition">
+                <div className="w-8 h-8 rounded bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition">
                   <Search size={14} className="text-indigo-600" />
                 </div>
                 <span className="text-[9px]  text-gray-700 leading-tight">Generate FAQ</span>
               </div>
               <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition gap-2 text-center group">
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
+                <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
                   <Globe size={14} className="text-blue-600" />
                 </div>
                 <span className="text-[9px]  text-gray-700 leading-tight">Generate Meta</span>
               </div>
               <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-pink-300 hover:bg-pink-50 cursor-pointer transition gap-2 text-center group">
-                <div className="w-8 h-8 rounded-full bg-pink-50 flex items-center justify-center group-hover:bg-pink-100 transition">
+                <div className="w-8 h-8 rounded bg-pink-50 flex items-center justify-center group-hover:bg-pink-100 transition">
                   <FileText size={14} className="text-pink-600" />
                 </div>
                 <span className="text-[9px]  text-gray-700 leading-tight">Generate Summary</span>
               </div>
               <div className="flex flex-col items-center justify-center p-3 rounded border border-gray-100 hover:border-green-300 hover:bg-green-50 cursor-pointer transition gap-2 text-center group">
-                <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition">
+                <div className="w-8 h-8 rounded bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition">
                   <Shield size={14} className="text-green-600" />
                 </div>
                 <span className="text-[9px]  text-gray-700 leading-tight">Check Plagiarism</span>

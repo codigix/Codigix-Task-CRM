@@ -138,7 +138,7 @@ const CrmCampaignPage = ({ department }) => {
     return (
       <div className="w-full bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading campaigns...</p>
         </div>
       </div>
@@ -197,8 +197,8 @@ const CrmCampaignPage = ({ department }) => {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`text-xs   transition-colors pb-1 ${activeTab === tab
-                  ? 'text-red  border-b-2 border-red-600 -mb-1'
-                  : 'text-gray-600 hover:text-gray-900'
+                ? 'text-red  border-b-2 border-red-600 -mb-1'
+                : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
               {tab}
@@ -284,7 +284,7 @@ const CrmCampaignPage = ({ department }) => {
                             key={i}
                             src={`https://i.pravatar.cc/40?img=${idx * 3 + i}`}
                             alt="member"
-                            className="w-7 h-7 rounded-full border-2 border-white"
+                            className="w-7 h-7 rounded border-2 border-white"
                           />
                         ))}
                       </div>

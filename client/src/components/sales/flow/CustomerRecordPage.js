@@ -126,9 +126,9 @@ export default function CustomerRecordPage() {
     <div className="p-5 bg-[#F8FAFC] min-h-screen font-sans text-gray-900">
       <button onClick={() => navigate(`${base}/customers`)} className="text-xs text-gray-500 hover:text-gray-800 inline-flex items-center gap-1 mb-2 cursor-pointer"><ArrowLeft size={13} /> Customers</button>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+      <div className="bg-white border border-gray-200 rounded p-4 mb-4">
         <div className="flex flex-wrap items-start gap-3">
-          <span className="w-11 h-11 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0"><Building2 size={20} /></span>
+          <span className="w-11 h-11 rounded bg-gray-100 text-gray-500 flex items-center justify-center shrink-0"><Building2 size={20} /></span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2"><h1 className="text-[18px] font-semibold">{c.name.trim()}</h1><Badge text={c.type} tone={CUSTOMER_TYPE_STYLE[c.type]} /></div>
             <div className="text-[12.5px] text-gray-600 mt-1 flex flex-wrap gap-x-4 gap-y-1">
@@ -257,7 +257,7 @@ export default function CustomerRecordPage() {
                 const link = jump(e);
                 return (
                   <li key={e.id} className="border-l-2 border-gray-200 pl-3 pb-3 ml-1.5 relative">
-                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-gray-400" />
+                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded bg-gray-400" />
                     <div className="text-[13px] text-gray-900">{link ? <button onClick={() => navigate(link)} className="hover:text-blue-700 text-left cursor-pointer">{e.title}</button> : e.title}</div>
                     {e.body && <div className="text-[12px] text-gray-600 whitespace-pre-wrap mt-0.5">{e.body}</div>}
                     <div className="text-[11px] text-gray-500 mt-0.5">{new Date(e.at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}{e.by ? ` · ${e.by}` : ''}</div>

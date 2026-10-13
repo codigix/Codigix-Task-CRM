@@ -10,7 +10,7 @@ const VideoMockup = () => {
           <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center text-white text-[10px] ">C</div>
           <span className=" text-slate-200 text-sm">Weekly Sync</span>
           <span className="bg-red-500/20 text-red-400 text-[9px] px-2 py-0.5 rounded  uppercase tracking-widest border border-red-500/30 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+            <span className="w-1.5 h-1.5 bg-red-500 rounded animate-pulse"></span>
             REC
           </span>
         </div>
@@ -87,20 +87,20 @@ const VideoMockup = () => {
 
       {/* Bottom Controls */}
       <div className="h-16 bg-slate-900 border-t border-slate-800 flex items-center justify-center px-6 shrink-0 relative z-10 gap-3">
-        <button className="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors">
+        <button className="w-10 h-10 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors">
           <Mic size={18} />
         </button>
-        <button className="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors">
+        <button className="w-10 h-10 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors">
           <VideoIcon size={18} />
         </button>
-        <button className="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors">
+        <button className="w-10 h-10 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors">
           <MonitorUp size={18} />
         </button>
         <div className="w-px h-6 bg-slate-700 mx-1"></div>
-        <button className="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors lg:hidden">
+        <button className="w-10 h-10 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors lg:hidden">
           <Users size={18} />
         </button>
-        <button className="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors">
+        <button className="w-10 h-10 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-200 transition-colors">
           <Settings size={18} />
         </button>
         <button className="w-12 h-10 rounded bg-red-600 hover:bg-red-700 flex items-center justify-center text-white transition-colors ml-2 shadow-lg shadow-red-900/50">

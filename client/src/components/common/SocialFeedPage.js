@@ -88,7 +88,7 @@ const SocialFeedPage = () => {
           <div className="w-64 flex-shrink-0">
             <div className="bg-white border border-gray-200 rounded  p-2 mb-4">
               <div className="flex items-center gap-3 mb-4">
-                <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg" alt="James Hong" className="w-12 h-12 rounded-full" />
+                <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg" alt="James Hong" className="w-12 h-12 rounded" />
                 <div>
                   <p className="text-xs   text-gray-900">James Hong</p>
                   <p className="text-xs text-gray-600">@James Hong324</p>
@@ -114,7 +114,7 @@ const SocialFeedPage = () => {
                 <button className="w-full text-left p-2  text-xs  text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2">
                   <Home size={16} />
                   All Feeds
-                  <span className="ml-auto bg-red-600 text-white p-1  rounded-full text-xs ">56</span>
+                  <span className="ml-auto bg-red-600 text-white p-1  rounded text-xs ">56</span>
                 </button>
                 <button className="w-full text-left p-2  text-xs  text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2">
                   <Compass size={16} />
@@ -139,7 +139,7 @@ const SocialFeedPage = () => {
                 <button className="w-full text-left p-2  text-xs  text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2">
                   <FileText size={16} />
                   Files
-                  <span className="ml-auto bg-red-600  text-white p-1  rounded-full text-xs ">14</span>
+                  <span className="ml-auto bg-red-600  text-white p-1  rounded text-xs ">14</span>
                 </button>
                 <button className="w-full text-left p-2  text-xs  text-gray-700 hover:bg-gray-100 rounded flex items-center gap-2">
                   <Music size={16} />
@@ -172,8 +172,8 @@ const SocialFeedPage = () => {
           <div className="flex-1 max-w-2xl">
             <div className="bg-white border border-gray-200 rounded  p-2 mb-4">
               <div className="flex items-center gap-2 mb-4">
-                <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg" alt="James" className="w-10 h-10 rounded-full" />
-                <input type="text" placeholder="What's on your mind?" className="flex-1 bg-gray-100 border-0 rounded-full p-2  text-xs " />
+                <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg" alt="James" className="w-10 h-10 rounded" />
+                <input type="text" placeholder="What's on your mind?" className="flex-1 bg-gray-100 border-0 rounded p-2  text-xs " />
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -195,7 +195,7 @@ const SocialFeedPage = () => {
               <div key={post.id} className="bg-white border border-gray-200 rounded  p-2 mb-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <img src={`https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-${post.id + 2}.jpg`} alt={post.author} className="w-10 h-10 rounded-full" />
+                    <img src={`https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-${post.id + 2}.jpg`} alt={post.author} className="w-10 h-10 rounded" />
                     <div>
                       <p className="text-xs   text-gray-900">{post.author}</p>
                       <p className="text-xs text-gray-600">{post.handle} • {post.location}</p>
@@ -241,7 +241,7 @@ const SocialFeedPage = () => {
 
                 <div className="text-xs text-gray-600">
                   <div className="flex items-center gap-2 mb-2">
-                    <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg" alt="user" className="w-6 h-6 rounded-full" />
+                    <img src="https://preadmin.dreamstechnologies.com/html/crm/assets/img/profiles/avatar-02.jpg" alt="user" className="w-6 h-6 rounded" />
                     <span className="  text-gray-900">Frank Hoffman</span>
                     <span>12:45 PM</span>
                   </div>
@@ -274,7 +274,7 @@ const SocialFeedPage = () => {
                 {displayedPeoples.map((person) => (
                   <div key={person.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <img src={person.avatar} alt={person.name} className="w-8 h-8 rounded-full flex-shrink-0" />
+                      <img src={person.avatar} alt={person.name} className="w-8 h-8 rounded flex-shrink-0" />
                       <div className="min-w-0">
                         <p className="text-xs  text-gray-900 truncate">{person.name}</p>
                         <p className="text-xs text-gray-600 truncate">{person.location}</p>

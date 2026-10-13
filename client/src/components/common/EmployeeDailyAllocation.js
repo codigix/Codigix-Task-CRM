@@ -195,8 +195,8 @@ const EmployeeDailyAllocation = () => {
                             </div>
                           </div>
                           <span className={`p-1  rounded text-xs  whitespace-nowrap ${task.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                              task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                                'bg-gray-100 text-gray-800'
+                            task.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
                             }`}>
                             {task.status}
                           </span>
@@ -218,11 +218,11 @@ const EmployeeDailyAllocation = () => {
                       {workload > 8 ? '⚠️ High' : workload > 0 ? '✓ Balanced' : 'Empty'}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 rounded h-2">
                     <div
-                      className={`h-2 rounded-full transition-all ${workload > 8 ? 'bg-red-600' :
-                          workload > 4 ? 'bg-yellow-500' :
-                            'bg-green-600'
+                      className={`h-2 rounded transition-all ${workload > 8 ? 'bg-red-600' :
+                        workload > 4 ? 'bg-yellow-500' :
+                          'bg-green-600'
                         }`}
                       style={{ width: `${Math.min((workload / 12) * 100, 100)}%` }}
                     />

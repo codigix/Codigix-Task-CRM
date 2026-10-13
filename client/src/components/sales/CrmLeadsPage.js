@@ -358,7 +358,7 @@ const CrmLeadsPage = () => {
       sortable: true,
       render: (value, row) => (
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-[8px]  text-gray-600">
+          <div className="w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-[8px]  text-gray-600">
             {value ? value.split(' ').map(n => n[0]).join('') : 'U'}
           </div>
           <span className="text-xs text-gray-600 ">{value || 'Unassigned'}</span>
@@ -378,8 +378,8 @@ const CrmLeadsPage = () => {
       render: (value) => {
         const colors = statusColors[value] || statusColors['New'];
         return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs  ${colors.light} ${colors.text}`}>
-            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${colors.dot}`}></span>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs  ${colors.light} ${colors.text}`}>
+            <span className={`w-1.5 h-1.5 rounded mr-1.5 ${colors.dot}`}></span>
             {value}
           </span>
         );
@@ -392,7 +392,7 @@ const CrmLeadsPage = () => {
       render: (value) => {
         const colors = sourceColors[value] || sourceColors['Other'];
         return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs  ${colors.light} ${colors.text}`}>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs  ${colors.light} ${colors.text}`}>
             {value}
           </span>
         );
@@ -448,7 +448,7 @@ const CrmLeadsPage = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-[500] text-gray-900">Leads</h1>
-            <span className="bg-red-100 text-red  text-[12px]  text-black px-2 py-1 rounded-full">
+            <span className="bg-red-100 text-red  text-[12px]  text-black px-2 py-1 rounded">
               {leads.length}
             </span>
           </div>
@@ -536,7 +536,7 @@ const CrmLeadsPage = () => {
           <div className="relative group">
             <button
               onClick={() => handleScroll('left')}
-              className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-100 rounded-full shadow-lg flex items-center justify-center text-[#1F2020] hover:text-red  opacity-0 group-hover:opacity-100 transition-all"
+              className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-100 rounded shadow-lg flex items-center justify-center text-[#1F2020] hover:text-red  opacity-0 group-hover:opacity-100 transition-all"
             >
               <ChevronLeft size={20} />
             </button>
@@ -578,7 +578,7 @@ const CrmLeadsPage = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="flex items-center gap-3 mb-1">
-                            <div className={`w-2.5 h-2.5 rounded-full ${statusColors[statusObj.status]?.dot || 'bg-blue-500'} `}></div>
+                            <div className={`w-2.5 h-2.5 rounded ${statusColors[statusObj.status]?.dot || 'bg-blue-500'} `}></div>
                             <h3 className={`text-sm font-[500] ${statusColors[statusObj.status]?.text || 'text-blue-700'}`}>{statusObj.status}</h3>
                           </div>
                           <div className="px-1">
@@ -675,7 +675,7 @@ const CrmLeadsPage = () => {
                                 </div>
                                 <div className="flex items-center gap-2 text-xs">
                                   <Filter size={12} className="text-indigo-500" />
-                                  <span className={`px-2 py-0.5 rounded-full text-xs font-[500]  ${sourceColors[lead.source]?.light || 'bg-gray-50'} ${sourceColors[lead.source]?.text || 'text-gray-600'}`}>
+                                  <span className={`px-2 py-0.5 rounded text-xs font-[500]  ${sourceColors[lead.source]?.light || 'bg-gray-50'} ${sourceColors[lead.source]?.text || 'text-gray-600'}`}>
                                     {lead.source || 'No Source'}
                                   </span>
                                 </div>
@@ -717,7 +717,7 @@ const CrmLeadsPage = () => {
 
             <button
               onClick={() => handleScroll('right')}
-              className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-100 rounded-full shadow-lg flex items-center justify-center text-[#1F2020] hover:text-red  opacity-0 group-hover:opacity-100 transition-all"
+              className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-100 rounded shadow-lg flex items-center justify-center text-[#1F2020] hover:text-red  opacity-0 group-hover:opacity-100 transition-all"
             >
               <ChevronRight size={20} />
             </button>

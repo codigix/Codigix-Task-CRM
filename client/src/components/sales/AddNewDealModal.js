@@ -632,7 +632,7 @@ const AddNewDealModal = ({ isOpen, onClose, onSubmit, contacts = [], projects = 
             >
               {isLoading ? (
                 <>
-                  <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded animate-spin" />
                   Processing...
                 </>
               ) : (

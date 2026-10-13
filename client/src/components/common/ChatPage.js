@@ -189,9 +189,9 @@ export default function ChatPage() {
                       <img
                         src={u.avatar}
                         alt={u.name}
-                        className="w-12 h-12 rounded-full object-cover"
+                        className="w-12 h-12 rounded object-cover"
                       />
-                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded border-2 border-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-xs   text-gray-800">{u.name}</h3>
@@ -220,9 +220,9 @@ export default function ChatPage() {
                     <img
                       src={chat.avatar}
                       alt={chat.name}
-                      className="w-12 h-12 rounded-full object-cover"
+                      className="w-12 h-12 rounded object-cover"
                     />
-                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded border-2 border-white" />
                   </div>
 
                   {/* Chat Info */}
@@ -263,9 +263,9 @@ export default function ChatPage() {
                   <img
                     src={currentChat.avatar}
                     alt={currentChat.name}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="w-10 h-10 rounded object-cover"
                   />
-                  <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 ${currentChat.statusDot} rounded-full border-2 border-white`} />
+                  <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 ${currentChat.statusDot} rounded border-2 border-white`} />
                 </div>
 
                 {/* User Info */}
@@ -296,7 +296,7 @@ export default function ChatPage() {
                   <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {msg.sender === 'other' ? (
                       <div className="flex items-start gap-3">
-                        <img src={currentChat.avatar} className="w-10 h-10 rounded-full" alt="user" />
+                        <img src={currentChat.avatar} className="w-10 h-10 rounded" alt="user" />
                         <div className="p-2 bg-gray-100 rounded max-w-[70%]">
                           <p className="text-gray-700">{msg.text}</p>
                           <span className="text-xs text-[#1F2020] block mt-1">{msg.timestamp}</span>
@@ -322,12 +322,12 @@ export default function ChatPage() {
               {isTyping && (
                 <div className="flex justify-start">
                   <div className="flex items-start gap-3">
-                    <img src={currentChat?.avatar} className="w-10 h-10 rounded-full" alt="user" />
+                    <img src={currentChat?.avatar} className="w-10 h-10 rounded" alt="user" />
                     <div className="p-2 bg-gray-100 rounded">
                       <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
                     </div>
                   </div>
@@ -363,7 +363,7 @@ export default function ChatPage() {
           /* Empty State */
           <div className="flex-1 flex items-center justify-center bg-white">
             <div className="text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center mx-auto mb-4">
                 <X className="w-8 h-8 text-[#1F2020]" />
               </div>
               <h3 className="text-md  text-gray-900 mb-1">No chat selected</h3>

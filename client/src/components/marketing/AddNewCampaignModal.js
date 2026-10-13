@@ -102,7 +102,7 @@ const AddNewCampaignModal = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileSelect(e.dataTransfer.files[0]);
     }
@@ -155,7 +155,7 @@ const AddNewCampaignModal = ({ isOpen, onClose, onSuccess }) => {
       };
 
       await campaignAPI.create(payload);
-      
+
       if (onSuccess) {
         onSuccess();
       }
@@ -335,7 +335,7 @@ const AddNewCampaignModal = ({ isOpen, onClose, onSuccess }) => {
             {formData.target_audience.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {formData.target_audience.map((audience, idx) => (
-                  <span key={idx} className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-900 rounded-full text-xs ">
+                  <span key={idx} className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-900 rounded text-xs ">
                     {audience}
                     <button
                       type="button"
@@ -371,9 +371,8 @@ const AddNewCampaignModal = ({ isOpen, onClose, onSuccess }) => {
               Attachment
             </label>
             <div
-              className={`border-2 border-dashed rounded p-3  text-center transition ${
-                dragActive ? 'border-red-500 bg-red-50' : 'border-gray-300'
-              }`}
+              className={`border-2 border-dashed rounded p-3  text-center transition ${dragActive ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}

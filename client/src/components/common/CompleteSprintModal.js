@@ -59,7 +59,7 @@ const CompleteSprintModal = ({ isOpen, sprints, initialSprintId, onCancel, onCom
       <div className="bg-white rounded shadow-2xl w-full max-w-[600px] max-h-[90vh] overflow-y-auto">
         {/* Celebratory banner */}
         <div className="h-[150px] bg-gradient-to-b from-cyan-400 to-cyan-300 flex items-end justify-center relative">
-          <div className="absolute -bottom-1 w-20 h-20 rounded-full bg-white/0 flex items-center justify-center">
+          <div className="absolute -bottom-1 w-20 h-20 rounded bg-white/0 flex items-center justify-center">
             <Trophy size={56} className="text-amber-400 drop-shadow" fill="currentColor" />
           </div>
         </div>

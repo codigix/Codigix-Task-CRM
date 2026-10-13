@@ -95,7 +95,7 @@ export default function AudioCallPage() {
         <div className="flex items-center gap-3">
           <img
             src={caller.avatar}
-            className="w-10 h-10 rounded-full object-cover"
+            className="w-10 h-10 rounded object-cover"
             alt={caller.name}
           />
           <div>
@@ -116,11 +116,11 @@ export default function AudioCallPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-centerp-3  bg-gradient-to-b from-blue-50 to-white">
         {/* Caller Avatar with animation */}
-        <div className={`w-32 h-32 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center mb-6 shadow-lg transition-all ${isRinging ? 'animate-pulse ring-4 ring-cyan-300' : callStarted ? 'ring-2 ring-green-400' : ''
+        <div className={`w-32 h-32 rounded bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center mb-6 shadow-lg transition-all ${isRinging ? 'animate-pulse ring-4 ring-cyan-300' : callStarted ? 'ring-2 ring-green-400' : ''
           }`}>
           <img
             src={caller.avatar}
-            className="w-full h-full rounded-full object-cover"
+            className="w-full h-full rounded object-cover"
             alt={caller.name}
           />
         </div>
@@ -156,7 +156,7 @@ export default function AudioCallPage() {
           {callStarted && (
             <button
               onClick={() => setIsMuted(!isMuted)}
-              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-md ${isMuted ? 'bg-red-100 text-red ' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              className={`w-16 h-16 rounded flex items-center justify-center transition-all shadow-md ${isMuted ? 'bg-red-100 text-red ' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
             >
               {isMuted ? <MicOff className="w-7 h-7" /> : <Mic className="w-7 h-7" />}
@@ -165,12 +165,12 @@ export default function AudioCallPage() {
 
           <button
             onClick={handleEndCall}
-            className="w-16 h-16 rounded-full flex items-center justify-center bg-red-600 hover:bg-red-700 text-white transition-all shadow-lg">
+            className="w-16 h-16 rounded flex items-center justify-center bg-red-600 hover:bg-red-700 text-white transition-all shadow-lg">
             <PhoneOff className="w-7 h-7" />
           </button>
 
           {callStarted && (
-            <button className="w-16 h-16 rounded-full flex items-center justify-center bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all shadow-md">
+            <button className="w-16 h-16 rounded flex items-center justify-center bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all shadow-md">
               <Volume2 className="w-7 h-7" />
             </button>
           )}

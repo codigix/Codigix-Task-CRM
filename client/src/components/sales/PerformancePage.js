@@ -54,13 +54,13 @@ const PerformancePage = () => {
             ].map((user) => (
               <div key={user.rank} className="flex items-center justify-between p-3 rounded hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
                 <div className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs   ${user.rank === 1 ? 'bg-yellow-100 text-yellow-700' :
+                  <span className={`w-6 h-6 rounded flex items-center justify-center text-xs   ${user.rank === 1 ? 'bg-yellow-100 text-yellow-700' :
                     user.rank === 2 ? 'bg-gray-100 text-gray-700' :
                       user.rank === 3 ? 'bg-orange-100 text-orange-700' : 'text-[#1F2020]'
                     }`}>
                     {user.rank}
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center">
                     <User size={16} className="text-blue-500" />
                   </div>
                   <div>

@@ -50,7 +50,7 @@ const isDateValue = (v) => /^\d{4}-\d{2}-\d{2}/.test(String(v || ''));
 const showValue = (v) => (v == null || v === '' ? 'none' : isDateValue(v) ? fmtDate(v) : v);
 
 const Avatar = ({ name, size = 'w-7 h-7 text-[10px]' }) => (
-  <span className={`${size} rounded-full bg-gray-200 text-gray-700 font-semibold flex items-center justify-center shrink-0`} title={name}>{initials(name)}</span>
+  <span className={`${size} rounded bg-gray-200 text-gray-700 font-semibold flex items-center justify-center shrink-0`} title={name}>{initials(name)}</span>
 );
 
 const ValueChange = ({ from, to }) => (
@@ -139,7 +139,7 @@ export default function ITActivitiesPage() {
       {/* KPIs: click one to show just that kind */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-4">
         {[{ key: '', label: 'All activity', value: k?.total, prev: k?.previousTotal, icon: Activity, tone: 'text-gray-700 bg-gray-100' },
-          ...KPI_KINDS.map(kk => ({ key: kk, label: kk === 'Created' ? 'Tasks created' : kk === 'Status' ? 'Status changes' : kk === 'Assignment' ? 'Assignments' : kk === 'Dates' ? 'Date changes' : 'Time logs', value: k?.byKind?.[kk], prev: k?.previousByKind?.[kk], icon: KIND_STYLE[kk].icon, tone: KIND_STYLE[kk].tone }))
+        ...KPI_KINDS.map(kk => ({ key: kk, label: kk === 'Created' ? 'Tasks created' : kk === 'Status' ? 'Status changes' : kk === 'Assignment' ? 'Assignments' : kk === 'Dates' ? 'Date changes' : 'Time logs', value: k?.byKind?.[kk], prev: k?.previousByKind?.[kk], icon: KIND_STYLE[kk].icon, tone: KIND_STYLE[kk].tone }))
         ].map(t => {
           const c = k ? change(t.value || 0, t.prev) : null;
           const Icon = t.icon;
@@ -147,7 +147,7 @@ export default function ITActivitiesPage() {
             <button key={t.label} onClick={() => setKind(kind === t.key ? '' : t.key)}
               className={`text-left bg-white border rounded p-3 cursor-pointer transition ${kind === t.key && (t.key || !kind) ? 'border-blue-400 ring-1 ring-blue-200' : 'border-gray-200 hover:border-gray-300'}`}>
               <div className="flex items-center gap-2 text-[11px] text-gray-500 font-medium">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center ${t.tone}`}><Icon size={13} /></span>{t.label}
+                <span className={`w-6 h-6 rounded flex items-center justify-center ${t.tone}`}><Icon size={13} /></span>{t.label}
               </div>
               <div className="text-2xl font-semibold tabular-nums mt-1.5">{k ? (t.value || 0).toLocaleString('en-IN') : '–'}</div>
               <div className="text-[11px] mt-0.5 h-4">
@@ -218,7 +218,7 @@ export default function ITActivitiesPage() {
             return (
               <div key={r.id} onClick={() => setSelected(r)}
                 className={`flex gap-3 px-4 py-2.5 border-b border-gray-100 last:border-0 cursor-pointer ${isSel ? 'bg-blue-50/60' : 'hover:bg-gray-50'}`}>
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${style.tone}`}><Icon size={14} /></span>
+                <span className={`w-7 h-7 rounded flex items-center justify-center shrink-0 ${style.tone}`}><Icon size={14} /></span>
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] text-gray-800 leading-snug">
                     <span className="font-semibold text-gray-900">{r.by}</span>{' '}{r.text}{' '}

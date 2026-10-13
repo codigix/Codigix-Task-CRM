@@ -56,7 +56,7 @@ const ProposalApprovalPanel = ({ proposal, onApprove, onReject, isManager = fals
     <div className="bg-white rounded  border border-gray-200p-3 ">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-md  text-gray-900">Proposal Approval</h3>
-        <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs   rounded-full">
+        <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs   rounded">
           Pending Your Review
         </span>
       </div>

@@ -23,7 +23,7 @@ const SalesTargetsPage = () => {
       label: 'Status',
       sortable: true,
       render: (value) => (
-        <span className={`px-2 py-1 rounded-full text-xs ${value === 'Completed' ? 'bg-green-100 text-green-600' :
+        <span className={`px-2 py-1 rounded text-xs ${value === 'Completed' ? 'bg-green-100 text-green-600' :
           value === 'On Track' ? 'bg-blue-100 text-blue-600' :
             'bg-red-100 text-red-600'
           }`}>
@@ -168,7 +168,7 @@ const SalesTargetsPage = () => {
               </span>
               <span className="text-[#1F2020] text-xs ">/ {typeof item.target === 'number' && item.title.includes('Revenue') ? `$${item.target.toLocaleString()}` : item.target}</span>
             </div>
-            <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+            <div className="w-full bg-gray-100 h-2 rounded overflow-hidden">
               <div
                 className={`${item.color} h-full transition-all duration-500`}
                 style={{ width: `${Math.min(100, (item.current / item.target) * 100)}%` }}

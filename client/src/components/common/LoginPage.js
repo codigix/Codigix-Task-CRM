@@ -179,7 +179,7 @@ const LoginPage = () => {
           <form onSubmit={handleLogin}>
             {error && (
               <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded  flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                <div className="w-1.5 h-1.5 rounded bg-red-500"></div>
                 <p className="text-xs  text-red-700">{error}</p>
               </div>
             )}
@@ -241,7 +241,7 @@ const LoginPage = () => {
               className="w-full mt-8 bg-red-600 text-white py-2.5 rounded   text-sm hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2  transition-all active:scale-[0.98]"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded animate-spin"></div>
               ) : (
                 <>
                   <LogIn size={18} />

@@ -124,8 +124,8 @@ const SalesDashboard = () => {
     return (
       <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50/30">
         <div className="relative w-16 h-16">
-          <div className="absolute inset-0 rounded-full border-4 border-indigo-100"></div>
-          <div className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
+          <div className="absolute inset-0 rounded border-4 border-indigo-100"></div>
+          <div className="absolute inset-0 rounded border-4 border-indigo-600 border-t-transparent animate-spin"></div>
         </div>
         <p className="mt-4 text-indigo-900 font-medium tracking-wide animate-pulse">Loading Workspace...</p>
       </div>
@@ -156,7 +156,7 @@ const SalesDashboard = () => {
                 </div>
               )}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full"></div>
+            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded"></div>
           </div>
         </div>
       </div>
@@ -198,7 +198,7 @@ const SalesDashboard = () => {
               <h2 className="text-lg  text-slate-800">Pipeline Velocity</h2>
               <p className="text-xs text-slate-500 mt-1">Value of deals across active stages</p>
             </div>
-            <div className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs  rounded-full">This Quarter</div>
+            <div className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs  rounded">This Quarter</div>
           </div>
 
           <div className="flex-1 min-h-[280px] w-full">
@@ -283,11 +283,11 @@ const SalesDashboard = () => {
 
           <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-500 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-indigo-500"></div>Achieved</span>
+              <span className="text-sm text-slate-500 flex items-center gap-2"><div className="w-2 h-2 rounded bg-indigo-500"></div>Achieved</span>
               <span className="text-sm  text-slate-700">₹{wonValue.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-500 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-200"></div>Remaining</span>
+              <span className="text-sm text-slate-500 flex items-center gap-2"><div className="w-2 h-2 rounded bg-slate-200"></div>Remaining</span>
               <span className="text-sm  text-slate-700">₹{Math.max(0, totalTarget - wonValue).toLocaleString()}</span>
             </div>
           </div>
@@ -310,8 +310,8 @@ const SalesDashboard = () => {
                 <span className="text-sm font-medium text-slate-600">Win Rate</span>
                 <span className="text-sm  text-slate-800">68%</span>
               </div>
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-400 rounded-full w-[68%] group-hover:bg-emerald-500 transition-colors" />
+              <div className="w-full h-2 bg-slate-100 rounded overflow-hidden">
+                <div className="h-full bg-emerald-400 rounded w-[68%] group-hover:bg-emerald-500 transition-colors" />
               </div>
             </div>
 
@@ -320,8 +320,8 @@ const SalesDashboard = () => {
                 <span className="text-sm font-medium text-slate-600">Sales Cycle Velocity</span>
                 <span className="text-sm  text-slate-800">14 Days</span>
               </div>
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-400 rounded-full w-[85%] group-hover:bg-indigo-500 transition-colors" />
+              <div className="w-full h-2 bg-slate-100 rounded overflow-hidden">
+                <div className="h-full bg-indigo-400 rounded w-[85%] group-hover:bg-indigo-500 transition-colors" />
               </div>
             </div>
 
@@ -345,7 +345,7 @@ const SalesDashboard = () => {
               <Bell className="text-rose-500" size={20} />
               <h3 className="text-lg  text-slate-800">Action Center</h3>
             </div>
-            <span className="bg-rose-100 text-rose-600 text-xs  px-2 py-0.5 rounded-full">3 Alerts</span>
+            <span className="bg-rose-100 text-rose-600 text-xs  px-2 py-0.5 rounded">3 Alerts</span>
           </div>
 
           <div className="space-y-3">

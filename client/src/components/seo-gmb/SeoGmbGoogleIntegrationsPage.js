@@ -193,7 +193,7 @@ const statusBadge = (s) => {
     Error: 'bg-rose-50 text-rose-600 border border-rose-200',
     Inactive: 'bg-slate-100 text-slate-500',
   };
-  return <span className={`text-xs  px-2.5 py-0.5 rounded-full ${m[s] || 'bg-slate-100 text-slate-500'}`}>{s}</span>;
+  return <span className={`text-xs  px-2.5 py-0.5 rounded ${m[s] || 'bg-slate-100 text-slate-500'}`}>{s}</span>;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -301,7 +301,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span className="w-2 h-2 rounded bg-emerald-400" />
                     <span className="text-xs  text-emerald-600">{intg.status}</span>
                   </div>
                   <p className="text-[9px] text-slate-400 m-0">Last synced: {intg.synced}</p>
@@ -433,7 +433,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
                   <div className="flex flex-col gap-2 flex-1">
                     {USER_BEHAVIOR.map((u) => (
                       <div key={u.name} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: u.color }} /><span className="text-slate-600">{u.name}</span></div>
+                        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded" style={{ backgroundColor: u.color }} /><span className="text-slate-600">{u.name}</span></div>
                         <div className="text-right"><strong className="text-slate-800">{u.value.toLocaleString()}</strong><span className="text-slate-400 ml-1">({u.pct})</span></div>
                       </div>
                     ))}
@@ -487,8 +487,8 @@ export default function SeoGmbGoogleIntegrationsPage() {
                             <span className="text-[9px] text-slate-400">({pctOfTotal}%)</span>
                           </div>
                         </div>
-                        <div className="w-full bg-slate-100 rounded-full h-3">
-                          <div className="h-3 rounded-full" style={{ width: `${pct}%`, backgroundColor: item.fill }} />
+                        <div className="w-full bg-slate-100 rounded h-3">
+                          <div className="h-3 rounded" style={{ width: `${pct}%`, backgroundColor: item.fill }} />
                         </div>
                       </div>
                     );
@@ -511,7 +511,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
                     <div>
                       <p className="text-[9px]  text-slate-700 m-0">{intg.name.split(' ')[0]} {intg.name.split(' ')[1] || ''}</p>
                       <div className="flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="w-1.5 h-1.5 rounded bg-emerald-400" />
                         <span className="text-[9px] text-emerald-600 ">{intg.status}</span>
                       </div>
                     </div>
@@ -695,7 +695,7 @@ export default function SeoGmbGoogleIntegrationsPage() {
                   <div className="flex flex-col gap-2">
                     {USER_BEHAVIOR.map(u => (
                       <div key={u.name} className="flex items-center justify-between gap-4 text-xs">
-                        <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: u.color }} /><span className="text-slate-600">{u.name}</span></div>
+                        <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded" style={{ backgroundColor: u.color }} /><span className="text-slate-600">{u.name}</span></div>
                         <div className="text-right"><strong className="text-slate-800">{u.value.toLocaleString()}</strong><span className="text-slate-400 ml-1">({u.pct})</span></div>
                       </div>
                     ))}

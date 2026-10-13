@@ -26,7 +26,7 @@ export default function SalesAgendaPage() {
   const cancel = async (i) => {
     const reason = window.prompt(`Cancel this ${i.type.toLowerCase()}? Reason (optional):`, '');
     if (reason === null) return;
-    await api(`/followups/${i.id}/cancel`, { method: 'POST', body: { reason } }).catch(() => {});
+    await api(`/followups/${i.id}/cancel`, { method: 'POST', body: { reason } }).catch(() => { });
     load();
   };
   const Icon = (t) => (/meet/i.test(t) ? Video : /visit|demo/i.test(t) ? MapPin : /mail/i.test(t) ? Mail : /whats/i.test(t) ? MessageCircle : Phone);
@@ -39,11 +39,11 @@ export default function SalesAgendaPage() {
           <p className="text-[12px] text-gray-500 mt-0.5">Mark each one done with how it went and plan the next step, so no enquiry goes cold.</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded-lg p-0.5">
-            {[['', 'All'], ['calls', 'Calls & messages'], ['meetings', 'Meetings']].map(([k, l]) => <button key={k} onClick={() => setType(k)} className={`px-2.5 h-7 text-xs font-medium rounded-md cursor-pointer ${type === k ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{l}</button>)}
+          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded p-0.5">
+            {[['', 'All'], ['calls', 'Calls & messages'], ['meetings', 'Meetings']].map(([k, l]) => <button key={k} onClick={() => setType(k)} className={`px-2.5 h-7 text-xs font-medium rounded cursor-pointer ${type === k ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{l}</button>)}
           </div>
-          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded-lg p-0.5">
-            {[['mine', 'Mine'], ['all', 'Team']].map(([k, l]) => <button key={k} onClick={() => setScope(k)} className={`px-2.5 h-7 text-xs font-medium rounded-md cursor-pointer ${scope === k ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{l}</button>)}
+          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded p-0.5">
+            {[['mine', 'Mine'], ['all', 'Team']].map(([k, l]) => <button key={k} onClick={() => setScope(k)} className={`px-2.5 h-7 text-xs font-medium rounded cursor-pointer ${scope === k ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{l}</button>)}
           </div>
         </div>
       </div>
@@ -56,28 +56,30 @@ export default function SalesAgendaPage() {
             return (
               <section key={key}>
                 <h2 className={`text-[13px] font-semibold mb-2 flex items-center gap-1.5 ${tone}`}>{key === 'overdue' && <AlertTriangle size={14} />}{label} <span className="text-gray-400 font-normal">{list.length}</span></h2>
-                {list.length === 0 ? <div className="text-xs text-gray-500 bg-white border border-dashed border-gray-200 rounded-lg px-3 py-4">Nothing {key === 'today' ? 'for today' : key}.</div> : (
-                  <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
-                    {list.map(i => { const I = Icon(i.type); return (
-                      <div key={i.id} className={`flex flex-wrap items-center gap-3 px-3 py-2.5 ${key === 'done' ? 'opacity-70' : ''}`}>
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${key === 'overdue' ? 'bg-red-50 text-red-700' : key === 'done' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}><I size={14} /></span>
-                        <div className="w-24 shrink-0 text-[12px]"><div className="font-medium text-gray-900">{i.time}</div><div className="text-gray-500">{fmtDate(i.date)}</div></div>
-                        <button onClick={() => open(i)} className="min-w-0 flex-1 text-left cursor-pointer">
-                          <div className="text-[13px] font-medium text-gray-900 truncate">{i.type}{i.subject ? ` · ${i.subject}` : ''}</div>
-                          <div className="text-[12px] text-gray-500 truncate">{i.name}{i.company ? ` · ${i.company}` : ''} · <Badge text={i.dealId ? i.stage || 'Deal' : i.stage || 'Enquiry'} /> {scope === 'all' && `· ${i.assignedName}`}</div>
-                          {key === 'done' && (i.outcome || i.remarks) && <div className="text-[12px] text-gray-600 truncate">{[i.outcome, i.remarks].filter(Boolean).join(' — ')}</div>}
-                        </button>
-                        <div className="flex items-center gap-1.5">
-                          {i.phone && key !== 'done' && <a href={`tel:${i.phone}`} className={btn.ghost} title={i.phone}><Phone size={13} /></a>}
-                          {i.meetingLink && key !== 'done' && <a href={i.meetingLink} target="_blank" rel="noopener noreferrer" className={btn.ghost}><ExternalLink size={13} /> Join</a>}
-                          {key !== 'done' && <>
-                            <button onClick={() => setCompleting(i)} className={btn.green}><CheckCircle2 size={13} /> Done</button>
-                            <button onClick={() => setMoving(i)} className={btn.ghost} title="Reschedule"><CalendarClock size={13} /></button>
-                            <button onClick={() => cancel(i)} className={btn.ghost} title="Cancel"><XCircle size={13} /></button>
-                          </>}
+                {list.length === 0 ? <div className="text-xs text-gray-500 bg-white border border-dashed border-gray-200 rounded px-3 py-4">Nothing {key === 'today' ? 'for today' : key}.</div> : (
+                  <div className="bg-white border border-gray-200 rounded divide-y divide-gray-100">
+                    {list.map(i => {
+                      const I = Icon(i.type); return (
+                        <div key={i.id} className={`flex flex-wrap items-center gap-3 px-3 py-2.5 ${key === 'done' ? 'opacity-70' : ''}`}>
+                          <span className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${key === 'overdue' ? 'bg-red-50 text-red-700' : key === 'done' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}><I size={14} /></span>
+                          <div className="w-24 shrink-0 text-[12px]"><div className="font-medium text-gray-900">{i.time}</div><div className="text-gray-500">{fmtDate(i.date)}</div></div>
+                          <button onClick={() => open(i)} className="min-w-0 flex-1 text-left cursor-pointer">
+                            <div className="text-[13px] font-medium text-gray-900 truncate">{i.type}{i.subject ? ` · ${i.subject}` : ''}</div>
+                            <div className="text-[12px] text-gray-500 truncate">{i.name}{i.company ? ` · ${i.company}` : ''} · <Badge text={i.dealId ? i.stage || 'Deal' : i.stage || 'Enquiry'} /> {scope === 'all' && `· ${i.assignedName}`}</div>
+                            {key === 'done' && (i.outcome || i.remarks) && <div className="text-[12px] text-gray-600 truncate">{[i.outcome, i.remarks].filter(Boolean).join(' — ')}</div>}
+                          </button>
+                          <div className="flex items-center gap-1.5">
+                            {i.phone && key !== 'done' && <a href={`tel:${i.phone}`} className={btn.ghost} title={i.phone}><Phone size={13} /></a>}
+                            {i.meetingLink && key !== 'done' && <a href={i.meetingLink} target="_blank" rel="noopener noreferrer" className={btn.ghost}><ExternalLink size={13} /> Join</a>}
+                            {key !== 'done' && <>
+                              <button onClick={() => setCompleting(i)} className={btn.green}><CheckCircle2 size={13} /> Done</button>
+                              <button onClick={() => setMoving(i)} className={btn.ghost} title="Reschedule"><CalendarClock size={13} /></button>
+                              <button onClick={() => cancel(i)} className={btn.ghost} title="Cancel"><XCircle size={13} /></button>
+                            </>}
+                          </div>
                         </div>
-                      </div>
-                    ); })}
+                      );
+                    })}
                   </div>
                 )}
               </section>

@@ -329,7 +329,7 @@ const CrmProjectsPage = ({ department }) => {
     return (
       <div className="w-full bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading projects...</p>
         </div>
       </div>
@@ -357,7 +357,7 @@ const CrmProjectsPage = ({ department }) => {
         <div className=" border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h2 className="text-xl  text-gray-900">All Projects</h2>
-            <span className="bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full">{filteredProjects.length} Projects</span>
+            <span className="bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded">{filteredProjects.length} Projects</span>
           </div>
           <div className="flex items-center gap-3 my-4">
             {canManageProjects && (
@@ -554,9 +554,9 @@ const CrmProjectsPage = ({ department }) => {
                     {visibleColumns.includes('Project Manager') && <td className="p-3">
                       <div className="flex items-center gap-2">
                         {project.manager_avatar ? (
-                          <img src={project.manager_avatar} alt="Manager" className="w-6 h-6 rounded-full object-cover border border-gray-200" />
+                          <img src={project.manager_avatar} alt="Manager" className="w-6 h-6 rounded object-cover border border-gray-200" />
                         ) : project.manager_first_name ? (
-                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs ">
+                          <div className="w-6 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-xs ">
                             {project.manager_first_name.charAt(0)}
                           </div>
                         ) : null}
@@ -570,8 +570,8 @@ const CrmProjectsPage = ({ department }) => {
                     </td>}
                     {visibleColumns.includes('Progress') && <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-red-600 rounded-full" style={{ width: `${progress}%` }}></div>
+                        <div className="w-16 h-1.5 bg-gray-200 rounded overflow-hidden">
+                          <div className="h-full bg-red-600 rounded" style={{ width: `${progress}%` }}></div>
                         </div>
                         <span className="text-xs text-gray-600">{progress}%</span>
                       </div>
@@ -752,7 +752,7 @@ const CrmProjectsPage = ({ department }) => {
                               </h4>
                               <p className="text-[10px] text-gray-500 truncate mt-0.5">{p.department_name || p.workflow_type || 'Uncategorized'}</p>
                             </div>
-                            <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[10px]  text-indigo-600 flex-shrink-0 ml-2" title={p.manager_name || 'No Manager'}>
+                            <div className="w-6 h-6 rounded bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[10px]  text-indigo-600 flex-shrink-0 ml-2" title={p.manager_name || 'No Manager'}>
                               {p.manager_name ? p.manager_name.charAt(0).toUpperCase() : '?'}
                             </div>
                           </div>
@@ -964,7 +964,7 @@ const CrmProjectsPage = ({ department }) => {
                 <div className="mb-4 bg-blue-50/50 p-3 rounded border border-blue-100">
                   <h3 className="text-xs  text-gray-700 mb-1.5 uppercase tracking-wider">Currently Assigned Team</h3>
                   <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
+                    <div className="w-1.5 h-1.5 rounded bg-blue-500 shrink-0"></div>
                     <span className="text-sm font-medium text-blue-700">{selectedProjectToAssign.team_name || selectedProjectToAssign.assigned_team}</span>
                   </div>
                 </div>

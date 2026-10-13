@@ -26,7 +26,7 @@ const SalesMockup = () => {
       <div className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-5">
         <div>
           <h2 className="text-lg  text-slate-800 flex items-center gap-2">
-            Sales Pipeline <span className="bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full ">Q4</span>
+            Sales Pipeline <span className="bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded ">Q4</span>
           </h2>
           <span className="text-[10px] text-slate-500 font-medium">124 Active Deals • $2.4M Total Value</span>
         </div>
@@ -91,18 +91,18 @@ const SalesMockup = () => {
                   {deal.value}
                 </div>
                 <div className="col-span-2 flex justify-center">
-                  <span className={`text-[9px] px-2 py-0.5 rounded-full border  ${getStageColor(deal.stage)}`}>
+                  <span className={`text-[9px] px-2 py-0.5 rounded border  ${getStageColor(deal.stage)}`}>
                     {deal.stage}
                   </span>
                 </div>
                 <div className="col-span-1 flex flex-col items-center justify-center gap-1">
                   <span className="text-[10px]  text-slate-600">{deal.prob}%</span>
-                  <div className="w-8 h-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-500 rounded-full" style={{ width: `${deal.prob}%` }}></div>
+                  <div className="w-8 h-1 bg-slate-100 rounded overflow-hidden">
+                    <div className="h-full bg-red-500 rounded" style={{ width: `${deal.prob}%` }}></div>
                   </div>
                 </div>
                 <div className="col-span-1 flex justify-center">
-                  <img src={deal.owner} alt="Owner" className="w-5 h-5 rounded-full border border-slate-200" />
+                  <img src={deal.owner} alt="Owner" className="w-5 h-5 rounded border border-slate-200" />
                 </div>
               </div>
             ))}
@@ -113,9 +113,9 @@ const SalesMockup = () => {
                 <div className="col-span-4 h-3 bg-slate-100 rounded w-3/4"></div>
                 <div className="col-span-2 h-3 bg-slate-100 rounded w-1/2"></div>
                 <div className="col-span-2 h-3 bg-slate-100 rounded w-1/3 justify-self-end"></div>
-                <div className="col-span-2 h-4 bg-slate-100 rounded-full w-16 justify-self-center"></div>
+                <div className="col-span-2 h-4 bg-slate-100 rounded w-16 justify-self-center"></div>
                 <div className="col-span-1 h-3 bg-slate-100 rounded w-6 justify-self-center"></div>
-                <div className="col-span-1 h-5 w-5 bg-slate-100 rounded-full justify-self-center"></div>
+                <div className="col-span-1 h-5 w-5 bg-slate-100 rounded justify-self-center"></div>
               </div>
             ))}
           </div>

@@ -31,7 +31,7 @@ const statusBadge = (status) => {
     'Pending': 'bg-rose-50 text-rose-600 border border-rose-200',
     'Approved': 'bg-emerald-50 text-emerald-700 border border-emerald-200',
   };
-  return <span className={`text-xs  px-2.5 py-0.5 rounded-full ${map[status] || 'bg-slate-100 text-slate-500'}`}>{status}</span>;
+  return <span className={`text-xs  px-2.5 py-0.5 rounded ${map[status] || 'bg-slate-100 text-slate-500'}`}>{status}</span>;
 };
 
 const priorityBadge = (p) => {
@@ -277,10 +277,10 @@ export default function SeoGmbContentMarketingPage() {
                   ))}
                 </div>
                 <div className="flex gap-3 mt-2 text-xs ">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />Published</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400" />Scheduled</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />Draft</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-400" />Review</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-500" />Published</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-blue-400" />Scheduled</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400" />Draft</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-rose-400" />Review</span>
                 </div>
               </div>
             </div>
@@ -537,7 +537,7 @@ export default function SeoGmbContentMarketingPage() {
                   {DUPLICATE_PIE.map((d) => (
                     <div key={d.name} className="flex items-center justify-between text-xs  text-slate-600">
                       <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
+                        <span className="w-2 h-2 rounded" style={{ backgroundColor: d.color }} />
                         {d.name}
                       </div>
                       <strong>{d.value}</strong>
@@ -578,7 +578,7 @@ export default function SeoGmbContentMarketingPage() {
               <div className="relative w-full h-64 bg-slate-50 rounded overflow-hidden">
                 {/* Center pillar */}
                 <div className="absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%,-50%)' }}>
-                  <div className="w-28 h-28 rounded-full bg-blue-100 border-2 border-blue-300 flex items-center justify-center text-center">
+                  <div className="w-28 h-28 rounded bg-blue-100 border-2 border-blue-300 flex items-center justify-center text-center">
                     <span className="text-xs  text-blue-700 leading-tight px-2">Complete SEO Guide (Pillar)</span>
                   </div>
                 </div>
@@ -592,7 +592,7 @@ export default function SeoGmbContentMarketingPage() {
                   { label: 'Technical SEO', left: '78%', top: '42%', color: 'bg-indigo-100 border-indigo-300 text-indigo-700' },
                 ].map((c) => (
                   <div key={c.label} className="absolute" style={{ left: c.left, top: c.top, transform: 'translate(-50%,-50%)' }}>
-                    <div className={`w-20 h-20 rounded-full border-2 flex items-center justify-center text-center ${c.color}`}>
+                    <div className={`w-20 h-20 rounded border-2 flex items-center justify-center text-center ${c.color}`}>
                       <span className="text-[9px]  leading-tight px-1">{c.label}</span>
                     </div>
                   </div>

@@ -500,7 +500,7 @@ const AddCompanyPage = () => {
                 {/* Logo Upload */}
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
-                    <div className="w-20 h-20 rounded-full border-2 border-dashed border-[#E5E7EB] flex items-center justify-center overflow-hidden bg-white">
+                    <div className="w-20 h-20 rounded border-2 border-dashed border-[#E5E7EB] flex items-center justify-center overflow-hidden bg-white">
                       {formData.logoPreview ? (
                         <img src={formData.logoPreview} alt="Company logo" className="w-full h-full object-cover" />
                       ) : (
@@ -676,7 +676,7 @@ const AddCompanyPage = () => {
                   </label>
                   <div className="flex flex-wrap gap-2 p-3 border border-[#E5E7EB] rounded  bg-white min-h-[40px]">
                     {formData.tags.map((tag, idx) => (
-                      <span key={idx} className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-xs  flex items-center gap-2 border border-red-200">
+                      <span key={idx} className="bg-red-50 text-red-700 px-3 py-1 rounded text-xs  flex items-center gap-2 border border-red-200">
                         {tag}
                         <button
                           type="button"
@@ -753,8 +753,8 @@ const AddCompanyPage = () => {
                   </label>
                   <div className="flex flex-wrap gap-2 p-3 border border-[#E5E7EB] rounded  bg-white min-h-[40px]">
                     {selectedContacts.map((contact) => (
-                      <span key={contact.id} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs  flex items-center gap-2 border border-blue-200">
-                        <span className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs">👤</span>
+                      <span key={contact.id} className="bg-blue-50 text-blue-700 px-3 py-1 rounded text-xs  flex items-center gap-2 border border-blue-200">
+                        <span className="w-5 h-5 rounded bg-blue-200 flex items-center justify-center text-xs">👤</span>
                         {contact.first_name} {contact.last_name}
                         <button
                           type="button"
@@ -853,8 +853,8 @@ const AddCompanyPage = () => {
                     <div className="flex flex-wrap gap-2 p-3 border border-[#E5E7EB] rounded  bg-white min-h-[40px]">
                       {selectedDeals.length > 0 ? (
                         selectedDeals.map((deal) => (
-                          <span key={deal.id} className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-xs  flex items-center gap-2 border border-purple-200">
-                            <span className="w-5 h-5 rounded-full bg-purple-200 flex items-center justify-center text-xs">📊</span>
+                          <span key={deal.id} className="bg-purple-50 text-purple-700 px-3 py-1 rounded text-xs  flex items-center gap-2 border border-purple-200">
+                            <span className="w-5 h-5 rounded bg-purple-200 flex items-center justify-center text-xs">📊</span>
                             {deal.deal_name}
                             {deal.custom && <span className="text-xs ">(Custom)</span>}
                             <button

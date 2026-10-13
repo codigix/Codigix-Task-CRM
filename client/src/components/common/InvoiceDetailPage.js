@@ -162,7 +162,7 @@ const InvoiceDetailPage = ({ invoiceId, onClose }) => {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
         <div className="bg-white rounded  p-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <div className="animate-spin rounded h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
           <p className="text-center mt-4 text-gray-600">Loading invoice...</p>
         </div>
       </div>

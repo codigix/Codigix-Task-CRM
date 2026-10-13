@@ -180,7 +180,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`text-xs px-3 py-1 rounded-full font-medium ${getStatusColor(proposal.status)}`}>
+            <span className={`text-xs px-3 py-1 rounded font-medium ${getStatusColor(proposal.status)}`}>
               {proposal.status}
             </span>
             <button
@@ -256,7 +256,7 @@ const ProposalDetailsPage = ({ proposalId, onBack, companies = [], leads = [] })
                         key={idx}
                         className="flex items-center gap-2.5 px-3 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded text-xs font-medium text-emerald-900"
                       >
-                        <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]  shrink-0">
+                        <span className="w-4 h-4 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]  shrink-0">
                           ✓
                         </span>
                         <span>{service}</span>

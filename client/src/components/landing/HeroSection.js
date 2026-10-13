@@ -29,15 +29,15 @@ const HeroSection = () => {
     <section className="relative pt-24 pb-16 lg:pt-32 lg:pb-24 overflow-hidden">
       {/* Dynamic Background */}
       <div className="absolute inset-0 bg-slate-50 -z-20"></div>
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-red-600 opacity-20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
-      <div className="absolute top-40 left-1/4 -translate-x-1/2 w-[400px] h-[400px] bg-rose-600 opacity-10 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
-      <div className="absolute top-20 right-1/4 translate-x-1/2 w-[500px] h-[500px] bg-orange-600 opacity-20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-red-600 opacity-20 rounded blur-[100px] -z-10 pointer-events-none"></div>
+      <div className="absolute top-40 left-1/4 -translate-x-1/2 w-[400px] h-[400px] bg-rose-600 opacity-10 rounded blur-[100px] -z-10 pointer-events-none"></div>
+      <div className="absolute top-20 right-1/4 translate-x-1/2 w-[500px] h-[500px] bg-orange-600 opacity-20 rounded blur-[100px] -z-10 pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 pt-10">
         {/* Premium Badge */}
-        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-[0_4px_20px_rgb(0,0,0,0.05)] text-slate-800 text-xs sm:text-sm  mb-10 animate-fade-in-up hover:shadow-lg transition-all hover:scale-105 cursor-pointer">
-          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-tr from-red-600 to-rose-500 shadow-inner">
-            <span className="flex h-2 w-2 rounded-full bg-white animate-pulse"></span>
+        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-[0_4px_20px_rgb(0,0,0,0.05)] text-slate-800 text-xs sm:text-sm  mb-10 animate-fade-in-up hover:shadow-lg transition-all hover:scale-105 cursor-pointer">
+          <div className="flex items-center justify-center w-6 h-6 rounded bg-gradient-to-tr from-red-600 to-rose-500 shadow-inner">
+            <span className="flex h-2 w-2 rounded bg-white animate-pulse"></span>
           </div>
           Codigix 2.0 is now live
           <div className="w-px h-4 bg-slate-300 mx-1"></div>
@@ -61,18 +61,18 @@ const HeroSection = () => {
         {/* Buttons & Social Proof */}
         <div className="flex flex-col items-center animate-fade-in-up animation-delay-300">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-10 w-full sm:w-auto">
-            <a href="#demo" className="w-full sm:w-auto bg-slate-900 hover:bg-red-600 text-white px-8 py-4 rounded-full  text-lg transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(220,38,38,0.3)] flex items-center justify-center gap-2 hover:-translate-y-1">
+            <a href="#demo" className="w-full sm:w-auto bg-slate-900 hover:bg-red-600 text-white px-8 py-4 rounded  text-lg transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(220,38,38,0.3)] flex items-center justify-center gap-2 hover:-translate-y-1">
               Start your free trial <ArrowRight size={20} />
             </a>
-            <a href="#modules" className="w-full sm:w-auto bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200/80 px-8 py-4 rounded-full  text-lg transition-all duration-300 flex items-center justify-center gap-2 hover:-translate-y-1 hover:border-slate-300 shadow-sm">
+            <a href="#modules" className="w-full sm:w-auto bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200/80 px-8 py-4 rounded  text-lg transition-all duration-300 flex items-center justify-center gap-2 hover:-translate-y-1 hover:border-slate-300 shadow-sm">
               Explore modules
             </a>
           </div>
 
-          <div className="flex items-center gap-5 text-sm font-medium text-slate-600 bg-white/50 backdrop-blur-sm px-6 py-3 rounded-full border border-slate-200/50 shadow-sm">
+          <div className="flex items-center gap-5 text-sm font-medium text-slate-600 bg-white/50 backdrop-blur-sm px-6 py-3 rounded border border-slate-200/50 shadow-sm">
             <div className="flex -space-x-3">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className={`relative w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-xs  text-white shadow-md transition-transform hover:-translate-y-1 hover:z-50 ${['bg-red-600 z-40', 'bg-rose-500 z-30', 'bg-orange-500 z-20', 'bg-emerald-500 z-10', 'bg-purple-500 z-0'][i - 1]}`}>
+                <div key={i} className={`relative w-10 h-10 rounded border-2 border-white flex items-center justify-center text-xs  text-white shadow-md transition-transform hover:-translate-y-1 hover:z-50 ${['bg-red-600 z-40', 'bg-rose-500 z-30', 'bg-orange-500 z-20', 'bg-emerald-500 z-10', 'bg-purple-500 z-0'][i - 1]}`}>
                   {['S', 'M', 'A', 'J', 'R'][i - 1]}
                 </div>
               ))}
@@ -95,7 +95,7 @@ const HeroSection = () => {
 
           {/* Floating Explanatory Badges (Hidden on mobile, visible on lg screens) */}
           <div className="absolute -left-16 top-24 bg-white/90 backdrop-blur-md px-4 py-3 rounded shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/80 flex items-center gap-3 z-30 animate-fade-in-up animation-delay-500 hidden lg:flex hover:scale-105 transition-transform cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
               <Zap size={18} />
             </div>
             <div className="text-left">
@@ -105,7 +105,7 @@ const HeroSection = () => {
           </div>
 
           <div className="absolute -right-20 top-1/3 bg-white/90 backdrop-blur-md px-4 py-3 rounded shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/80 flex items-center gap-3 z-30 animate-fade-in-up animation-delay-700 hidden lg:flex hover:scale-105 transition-transform cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm">
               <BarChart3 size={18} />
             </div>
             <div className="text-left">
@@ -115,7 +115,7 @@ const HeroSection = () => {
           </div>
 
           <div className="absolute -left-8 bottom-24 bg-white/90 backdrop-blur-md px-4 py-3 rounded shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200/80 flex items-center gap-3 z-30 animate-fade-in-up animation-delay-600 hidden lg:flex hover:scale-105 transition-transform cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded bg-purple-100 text-purple-600 flex items-center justify-center shadow-sm">
               <Users size={18} />
             </div>
             <div className="text-left">
@@ -128,9 +128,9 @@ const HeroSection = () => {
           <div className="relative rounded bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-200/80 overflow-hidden text-left z-20">
             <div className="flex items-center px-4 py-3 border-b border-slate-200/80 bg-slate-100/80 backdrop-blur-md">
               <div className="flex space-x-2">
-                <div className="w-3 h-3 rounded-full bg-red-400 border border-red-500/20"></div>
-                <div className="w-3 h-3 rounded-full bg-amber-400 border border-amber-500/20"></div>
-                <div className="w-3 h-3 rounded-full bg-green-400 border border-green-500/20"></div>
+                <div className="w-3 h-3 rounded bg-red-400 border border-red-500/20"></div>
+                <div className="w-3 h-3 rounded bg-amber-400 border border-amber-500/20"></div>
+                <div className="w-3 h-3 rounded bg-green-400 border border-green-500/20"></div>
               </div>
             </div>
 

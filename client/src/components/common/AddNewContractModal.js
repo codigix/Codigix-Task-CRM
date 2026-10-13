@@ -362,7 +362,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 <FileCheck size={20} className="text-red-600" />
                 Add New Contract
               </h2>
-              <span className="text-xs  px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+              <span className="text-xs  px-2.5 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
                 Deal to Contract Workflow
               </span>
             </div>
@@ -373,7 +373,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
           <button
             onClick={handleCancel}
             disabled={isLoading}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            className="w-9 h-9 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
           >
             <X size={20} />
           </button>
@@ -470,7 +470,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded p-4 sm:p-5 shadow-lg border border-slate-700 animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-700/60">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs  bg-amber-400 text-slate-950 shadow-sm">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs  bg-amber-400 text-slate-950 shadow-sm">
                     {selectedDeal.record_type === 'Converted Lead' ? '🎯 Converted Lead' : '💼 Pipeline Deal'}
                   </span>
                   <span className="text-xs  text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
@@ -757,7 +757,7 @@ const AddNewContractModal = ({ isOpen, onClose, onSubmit, companies: initialComp
                 : 'border-slate-300 bg-slate-50/70 hover:bg-slate-100 hover:border-slate-400'
                 }`}
             >
-              <div className="w-12 h-12 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 shadow-sm">
+              <div className="w-12 h-12 mx-auto rounded bg-red-100 text-red-600 flex items-center justify-center mb-2 shadow-sm">
                 <Upload size={22} />
               </div>
               <p className="text-xs  text-slate-800 mb-1">

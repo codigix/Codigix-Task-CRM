@@ -35,14 +35,14 @@ const FilterDropdown = ({ filterOptions, onFilterChange, selectedFilters }) => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 p-2 border rounded  text-xs    transition-colors ${isOpen
-            ? 'bg-blue-500 text-white border-blue-500'
-            : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:border-blue-300'
+          ? 'bg-blue-500 text-white border-blue-500'
+          : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:border-blue-300'
           }`}
       >
         <Filter size={16} />
         Filter
         {activeFilterCount > 0 && (
-          <span className="ml-1 p-1  bg-red-600  text-white text-xs rounded-full ">
+          <span className="ml-1 p-1  bg-red-600  text-white text-xs rounded ">
             {activeFilterCount}
           </span>
         )}

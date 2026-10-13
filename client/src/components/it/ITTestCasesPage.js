@@ -29,11 +29,11 @@ const TypeBadge = ({ type }) => {
 const StatusBadge = ({ status }) => {
   let colors = '';
   switch (status) {
-    case 'Approved': colors = 'text-green-600 bg-green-50 px-2 py-0.5 rounded-full text-xs font-medium border border-green-100'; break;
-    case 'In Review': colors = 'text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full text-xs font-medium border border-orange-100'; break;
-    case 'Ready for Test': colors = 'text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full text-xs font-medium border border-blue-100'; break;
-    case 'Rejected': colors = 'text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs font-medium border border-red-100'; break;
-    case 'Draft': colors = 'text-gray-600 bg-gray-50 px-2 py-0.5 rounded-full text-xs font-medium border border-gray-200'; break;
+    case 'Approved': colors = 'text-green-600 bg-green-50 px-2 py-0.5 rounded text-xs font-medium border border-green-100'; break;
+    case 'In Review': colors = 'text-orange-600 bg-orange-50 px-2 py-0.5 rounded text-xs font-medium border border-orange-100'; break;
+    case 'Ready for Test': colors = 'text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-xs font-medium border border-blue-100'; break;
+    case 'Rejected': colors = 'text-red-600 bg-red-50 px-2 py-0.5 rounded text-xs font-medium border border-red-100'; break;
+    case 'Draft': colors = 'text-gray-600 bg-gray-50 px-2 py-0.5 rounded text-xs font-medium border border-gray-200'; break;
     default: colors = 'text-gray-500';
   }
   return <span className={colors}>{status}</span>;
@@ -403,7 +403,7 @@ const ITTestCasesPage = () => {
                     }`}
                 >
                   {tab.name}
-                  <span className={`text-sm px-1.5 py-0.5 rounded-full ${activeTab === tab.name ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-600'
+                  <span className={`text-sm px-1.5 py-0.5 rounded ${activeTab === tab.name ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-600'
                     }`}>
                     {tab.count}
                   </span>
@@ -462,7 +462,7 @@ const ITTestCasesPage = () => {
                           <td className="p-2"><StatusBadge status={tc.status} /></td>
                           <td className="p-2">
                             <div className="flex items-center gap-1.5">
-                              <img src="https://i.pravatar.cc/150?u=1" alt="Creator" className="w-5 h-5 rounded-full bg-gray-200 object-cover" />
+                              <img src="https://i.pravatar.cc/150?u=1" alt="Creator" className="w-5 h-5 rounded bg-gray-200 object-cover" />
                               <span className="text-gray-700 font-medium text-xs">User</span>
                             </div>
                           </td>
@@ -524,23 +524,23 @@ const ITTestCasesPage = () => {
                   </div>
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500"></span><span className="text-gray-700 font-medium">Approved</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-green-500"></span><span className="text-gray-700 font-medium">Approved</span></div>
                       <div className="text-gray-500">{testCases.filter(t => t.status === 'Approved').length}</div>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-orange-500"></span><span className="text-gray-700 font-medium">In Review</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-orange-500"></span><span className="text-gray-700 font-medium">In Review</span></div>
                       <div className="text-gray-500">{testCases.filter(t => t.status === 'In Review').length}</div>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span><span className="text-gray-700 font-medium">Ready for Test</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-blue-500"></span><span className="text-gray-700 font-medium">Ready for Test</span></div>
                       <div className="text-gray-500">{testCases.filter(t => t.status === 'Ready for Test').length}</div>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500"></span><span className="text-gray-700 font-medium">Rejected</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-red-500"></span><span className="text-gray-700 font-medium">Rejected</span></div>
                       <div className="text-gray-500">{testCases.filter(t => t.status === 'Rejected').length}</div>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-400"></span><span className="text-gray-700 font-medium">Draft</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-gray-400"></span><span className="text-gray-700 font-medium">Draft</span></div>
                       <div className="text-gray-500">{testCases.filter(t => t.status === 'Draft').length}</div>
                     </div>
                   </div>
@@ -553,47 +553,47 @@ const ITTestCasesPage = () => {
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span><span className="text-gray-700 font-medium">Functional</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded bg-indigo-500"></span><span className="text-gray-700 font-medium">Functional</span></div>
                       <div className="text-gray-500">1,102 <span className="text-gray-400">(75.69%)</span></div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1">
-                      <div className="bg-indigo-500 h-1 rounded-full" style={{ width: '75.69%' }}></div>
+                    <div className="w-full bg-gray-100 rounded h-1">
+                      <div className="bg-indigo-500 h-1 rounded" style={{ width: '75.69%' }}></div>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span><span className="text-gray-700 font-medium">Regression</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded bg-blue-500"></span><span className="text-gray-700 font-medium">Regression</span></div>
                       <div className="text-gray-500">198 <span className="text-gray-400">(13.60%)</span></div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1">
-                      <div className="bg-blue-500 h-1 rounded-full" style={{ width: '13.60%' }}></div>
+                    <div className="w-full bg-gray-100 rounded h-1">
+                      <div className="bg-blue-500 h-1 rounded" style={{ width: '13.60%' }}></div>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span><span className="text-gray-700 font-medium">Integration</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded bg-orange-500"></span><span className="text-gray-700 font-medium">Integration</span></div>
                       <div className="text-gray-500">98 <span className="text-gray-400">(6.73%)</span></div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1">
-                      <div className="bg-orange-500 h-1 rounded-full" style={{ width: '6.73%' }}></div>
+                    <div className="w-full bg-gray-100 rounded h-1">
+                      <div className="bg-orange-500 h-1 rounded" style={{ width: '6.73%' }}></div>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-500"></span><span className="text-gray-700 font-medium">Performance</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded bg-green-500"></span><span className="text-gray-700 font-medium">Performance</span></div>
                       <div className="text-gray-500">38 <span className="text-gray-400">(2.61%)</span></div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1">
-                      <div className="bg-green-500 h-1 rounded-full" style={{ width: '2.61%' }}></div>
+                    <div className="w-full bg-gray-100 rounded h-1">
+                      <div className="bg-green-500 h-1 rounded" style={{ width: '2.61%' }}></div>
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500"></span><span className="text-gray-700 font-medium">Security</span></div>
+                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded bg-red-500"></span><span className="text-gray-700 font-medium">Security</span></div>
                       <div className="text-gray-500">20 <span className="text-gray-400">(1.37%)</span></div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1">
-                      <div className="bg-red-500 h-1 rounded-full" style={{ width: '1.37%' }}></div>
+                    <div className="w-full bg-gray-100 rounded h-1">
+                      <div className="bg-red-500 h-1 rounded" style={{ width: '1.37%' }}></div>
                     </div>
                   </div>
                 </div>

@@ -260,7 +260,7 @@ const ITIssueActivityTabs = ({
         <div className="space-y-4">
           {/* New Comment Box with JiraCommentEditor */}
           <div className="flex gap-2.5 items-start">
-            <div className="w-6 h-6 rounded-full bg-red-600 text-white  text-[10px] flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-6 h-6 rounded bg-red-600 text-white  text-[10px] flex items-center justify-center shrink-0 shadow-xs">
               {initialsOf(currentUser)}
             </div>
             <div className="flex-1">
@@ -299,7 +299,7 @@ const ITIssueActivityTabs = ({
               ) : (
                 comments.map((c, i) => (
                   <div key={i} className="flex gap-2.5 group text-xs">
-                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700  text-[10px] flex items-center justify-center shrink-0 border border-indigo-200/60">
+                    <div className="w-6 h-6 rounded bg-indigo-100 text-indigo-700  text-[10px] flex items-center justify-center shrink-0 border border-indigo-200/60">
                       {initialsOf(c.author)}
                     </div>
                     <div className="flex-1 space-y-1 min-w-0">
@@ -366,7 +366,7 @@ const ITIssueActivityTabs = ({
                 const c = act.data;
                 return (
                   <div key={act.id} className="flex gap-2.5 text-xs py-2 border-b border-gray-50 last:border-0">
-                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700  text-[10px] flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded bg-indigo-100 text-indigo-700  text-[10px] flex items-center justify-center shrink-0">
                       {initialsOf(c.author)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -389,7 +389,7 @@ const ITIssueActivityTabs = ({
                 const entry = act.data;
                 return (
                   <div key={act.id} className="flex gap-2.5 text-xs py-2 border-b border-gray-50 last:border-0">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700  text-[10px] flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded bg-gray-200 text-gray-700  text-[10px] flex items-center justify-center shrink-0">
                       {initialsOf(entry.changed_by)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -417,7 +417,7 @@ const ITIssueActivityTabs = ({
                 const w = act.data;
                 return (
                   <div key={act.id} className="flex gap-2.5 text-xs py-2 border-b border-gray-50 last:border-0">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700  text-[10px] flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-700  text-[10px] flex items-center justify-center shrink-0">
                       {initialsOf(w.author)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -449,7 +449,7 @@ const ITIssueActivityTabs = ({
           ) : (
             historyEntries.map(entry => (
               <div key={entry.id} className="flex gap-2 py-2 border-b border-gray-50 last:border-0">
-                <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700  text-[10px] flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded bg-gray-200 text-gray-700  text-[10px] flex items-center justify-center shrink-0">
                   {initialsOf(entry.changed_by)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -516,8 +516,8 @@ const ITIssueActivityTabs = ({
                   <span>{pctUsed}% of planned time used{timer.running ? ' (including the running timer)' : ''}</span>
                   <span className={`px-1.5 py-0.5 rounded border text-[10px] font-semibold ${verdictStyle[worklogData.verdict] || verdictStyle['Not started']}`}>{worklogData.verdict || 'Not started'}</span>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden" aria-hidden="true">
-                  <div className={`h-full rounded-full ${pctUsed > 110 ? 'bg-red-500' : pctUsed > 90 ? 'bg-amber-500' : 'bg-blue-600'}`} style={{ width: `${Math.min(100, pctUsed)}%` }} />
+                <div className="h-2 bg-gray-100 rounded overflow-hidden" aria-hidden="true">
+                  <div className={`h-full rounded ${pctUsed > 110 ? 'bg-red-500' : pctUsed > 90 ? 'bg-amber-500' : 'bg-red-600'}`} style={{ width: `${Math.min(100, pctUsed)}%` }} />
                 </div>
               </div>
             ) : (
@@ -565,7 +565,7 @@ const ITIssueActivityTabs = ({
             {/* Who spent the time */}
             {(worklogData.byPerson || []).length > 1 && (
               <div className="text-[11px] text-gray-600 flex flex-wrap gap-2">
-                {worklogData.byPerson.map(p => <span key={p.author} className="bg-gray-100 rounded-full px-2 py-0.5">{p.author}: <strong>{p.time}</strong></span>)}
+                {worklogData.byPerson.map(p => <span key={p.author} className="bg-gray-100 rounded px-2 py-0.5">{p.author}: <strong>{p.time}</strong></span>)}
               </div>
             )}
 
@@ -733,7 +733,7 @@ const ITIssueActivityTabs = ({
               className="flex items-center gap-1.5 px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded  transition cursor-pointer shadow-xs disabled:opacity-50"
             >
               {aiDocsLoading ? (
-                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded animate-spin" />
               ) : (
                 <Sparkles size={12} />
               )}

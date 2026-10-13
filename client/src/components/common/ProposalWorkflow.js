@@ -112,7 +112,7 @@ const ProposalWorkflow = ({ proposal, onStatusChange, onApprove, onReject, onSen
               <div key={stage.id} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-1">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center  text-xs  transition-all ${isActive
+                    className={`w-12 h-12 rounded flex items-center justify-center  text-xs  transition-all ${isActive
                       ? getStageColor(stage.color)
                       : isCompleted
                         ? 'bg-green-100 text-green-700 border border-green-300'

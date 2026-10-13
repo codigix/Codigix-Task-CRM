@@ -132,7 +132,7 @@ const ProjectTeamModal = ({ isOpen, onClose, projectId, currentTeam, users, team
                   <div className="flex flex-wrap gap-2">
                     {selectedTeamMembers.map(member => (
                       <div key={member.id} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded border border-blue-100 ">
-                        <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-700  text-[8px]">
+                        <div className="w-5 h-5 rounded bg-blue-100 flex items-center justify-center text-blue-700  text-[8px]">
                           {member.first_name?.[0]}{member.last_name?.[0]}
                         </div>
                         <span className="text-xs font-medium text-gray-700">{member.first_name} {member.last_name}</span>
@@ -164,7 +164,7 @@ const ProjectTeamModal = ({ isOpen, onClose, projectId, currentTeam, users, team
                 {currentTeam.map(member => (
                   <div key={member.id} className="flex items-center justify-between p-2 rounded bg-gray-50 group hover:bg-gray-100 transition-all">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-medium text-xs border border-blue-200 ">
+                      <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-700 font-medium text-xs border border-blue-200 ">
                         {member.first_name?.[0]}{member.last_name?.[0]}
                       </div>
                       <div>
@@ -578,7 +578,7 @@ const Contacts = () => {
               <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs flex-shrink-0 overflow-hidden">
+                    <div className="w-8 h-8 rounded flex items-center justify-center text-xs flex-shrink-0 overflow-hidden">
                       {contact.avatarImage ? (
                         <img src={contact.avatarImage} alt={contact.name} className="w-full h-full object-cover" />
                       ) : (
@@ -609,7 +609,7 @@ const Contacts = () => {
                         <div
                           key={member.id}
                           title={`${member.first_name} ${member.last_name} (${member.role || 'Team Member'})`}
-                          className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-blue-100 flex items-center justify-center text-[8px]  text-blue-700 border border-blue-200  cursor-help"
+                          className="inline-block h-6 w-6 rounded ring-2 ring-white bg-blue-100 flex items-center justify-center text-[8px]  text-blue-700 border border-blue-200  cursor-help"
                         >
                           {member.first_name?.[0]}{member.last_name?.[0]}
                         </div>
@@ -621,7 +621,7 @@ const Contacts = () => {
                           setActiveProjectId(contact.project_id);
                           setIsTeamModalOpen(true);
                         }}
-                        className="p-1 hover:bg-blue-50 text-blue-600 rounded-full transition-colors group"
+                        className="p-1 hover:bg-blue-50 text-blue-600 rounded transition-colors group"
                         title="Assign Team"
                       >
                         <UserPlus className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
@@ -630,7 +630,7 @@ const Contacts = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${contact.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-700'
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${contact.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-700'
                     }`}>
                     {contact.status}
                   </span>
@@ -677,7 +677,7 @@ const Contacts = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-[28px]  text-gray-900">Contacts</h1>
-              <span className="bg-[#FFE5E5] text-[#F62416] px-2.5 py-0.5 rounded-full text-[12px] ">
+              <span className="bg-[#FFE5E5] text-[#F62416] px-2.5 py-0.5 rounded text-[12px] ">
                 {filteredContacts.length}
               </span>
             </div>
@@ -965,7 +965,7 @@ const Contacts = () => {
               >
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex gap-3">
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center  text-xs  flex-shrink-0 overflow-hidden">
+                    <div className="w-5 h-5 rounded flex items-center justify-center  text-xs  flex-shrink-0 overflow-hidden">
                       {contact.avatarImage ? (
                         <img src={contact.avatarImage} alt={contact.name} className="w-full h-full object-cover" />
                       ) : (
@@ -1046,7 +1046,7 @@ const Contacts = () => {
                       <div
                         key={idx}
                         style={{ backgroundColor: getAvatarColor(collaborator.avatar) }}
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs   border border-white"
+                        className="w-6 h-6 rounded flex items-center justify-center text-white text-xs   border border-white"
                       >
                         {collaborator.avatar}
                       </div>

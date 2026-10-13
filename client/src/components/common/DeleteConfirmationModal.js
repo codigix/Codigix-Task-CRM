@@ -8,7 +8,7 @@ const DeleteConfirmationModal = ({ isOpen, onConfirm, onCancel, userName, isDele
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded  shadow-xl max-w-md w-full mx-4 p-3 ">
         <div className="flex justify-center mb-4">
-          <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-full">
+          <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded">
             <Trash2 size={32} className="text-red " />
           </div>
         </div>

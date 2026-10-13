@@ -169,7 +169,7 @@ const TodoPage = () => {
                       {todo.linked_type}: {todo.linked_id}
                     </td>
                     <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs    ${getStatusBadgeColor(todo.status, todo.due_date)}`}>
+                      <span className={`px-2 py-1 rounded text-xs    ${getStatusBadgeColor(todo.status, todo.due_date)}`}>
                         {getStatusText(todo.status, todo.due_date)}
                       </span>
                     </td>

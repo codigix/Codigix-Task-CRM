@@ -1014,7 +1014,7 @@ const AddNewLeadModal = ({ isOpen, onClose, onSubmit, companies = [], onCompanyA
                 <span className="flex items-center gap-2">
                   {getSelectedOwner() ? (
                     <>
-                      <div className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs ">
+                      <div className="w-6 h-6 rounded bg-red-500 text-white flex items-center justify-center text-xs ">
                         {getInitials(getSelectedOwner().first_name, getSelectedOwner().last_name)}
                       </div>
                       <span>{getSelectedOwner().first_name} {getSelectedOwner().last_name}</span>
@@ -1041,7 +1041,7 @@ const AddNewLeadModal = ({ isOpen, onClose, onSubmit, companies = [], onCompanyA
                       }}
                       className="w-full p-2 text-left hover:bg-gray-50 flex items-center gap-2 border-b border-gray-100 last:border-b-0"
                     >
-                      <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-xs flex-shrink-0">
+                      <div className="w-8 h-8 rounded bg-red-500 text-white flex items-center justify-center text-xs flex-shrink-0">
                         {getInitials(user.first_name, user.last_name)}
                       </div>
                       <div>
@@ -1106,7 +1106,7 @@ const AddNewLeadModal = ({ isOpen, onClose, onSubmit, companies = [], onCompanyA
             </label>
             <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded  bg-white min-h-[40px]">
               {formData.tags.map((tag, idx) => (
-                <span key={idx} className="bg-red-50 text-red-700 px-2 py-0.5 rounded-full text-xs flex items-center gap-1 border border-red-200">
+                <span key={idx} className="bg-red-50 text-red-700 px-2 py-0.5 rounded text-xs flex items-center gap-1 border border-red-200">
                   {tag}
                   <button
                     type="button"
@@ -1151,7 +1151,7 @@ const AddNewLeadModal = ({ isOpen, onClose, onSubmit, companies = [], onCompanyA
                         <>
                           <div className="flex -space-x-2">
                             {getSelectedPeopleNames().slice(0, 3).map(user => (
-                              <div key={user.id} className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs  border border-white">
+                              <div key={user.id} className="w-6 h-6 rounded bg-red-500 text-white flex items-center justify-center text-xs  border border-white">
                                 {getInitials(user.first_name, user.last_name)}
                               </div>
                             ))}
@@ -1191,7 +1191,7 @@ const AddNewLeadModal = ({ isOpen, onClose, onSubmit, companies = [], onCompanyA
                           readOnly
                           className="w-4 h-4"
                         />
-                        <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-xs  flex-shrink-0">
+                        <div className="w-8 h-8 rounded bg-red-500 text-white flex items-center justify-center text-xs  flex-shrink-0">
                           {getInitials(user.first_name, user.last_name)}
                         </div>
                         <div>

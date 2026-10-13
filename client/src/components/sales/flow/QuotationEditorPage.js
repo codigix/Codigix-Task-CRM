@@ -142,7 +142,7 @@ export default function QuotationEditorPage() {
       <button onClick={() => navigate(quote?.dealId || dealParam ? `${base}/opportunity/${quote?.dealId || dealParam}` : `${base}/quotes`)} className="text-xs text-gray-500 hover:text-gray-800 inline-flex items-center gap-1 mb-2 cursor-pointer"><ArrowLeft size={13} /> {quote?.deal?.name || 'Back'}</button>
 
       {/* Header + actions */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 flex flex-wrap items-center gap-3">
+      <div className="bg-white border border-gray-200 rounded p-4 mb-4 flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-[18px] font-semibold">{isNew ? 'New quotation' : quote.base}</h1>
@@ -186,16 +186,16 @@ export default function QuotationEditorPage() {
       </div>
 
       {status === 'Revised' && latestVersion && latestVersion.id !== quote.id && (
-        <div className="mb-4 text-[13px] bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">This version was replaced. <button onClick={() => navigate(`${base}/quotation/${latestVersion.id}`)} className="text-blue-700 hover:underline cursor-pointer">Open version {latestVersion.version}</button>.</div>
+        <div className="mb-4 text-[13px] bg-gray-50 border border-gray-200 rounded px-3 py-2">This version was replaced. <button onClick={() => navigate(`${base}/quotation/${latestVersion.id}`)} className="text-blue-700 hover:underline cursor-pointer">Open version {latestVersion.version}</button>.</div>
       )}
       {status === 'Pending Approval' && (
-        <div className="mb-4 text-[13px] bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 flex items-center gap-2"><AlertTriangle size={14} className="text-amber-700" /> Waiting for a manager to approve the {quote.maxDiscountPct}% discount (limit {limit}%). Requested by {quote.approvalRequestedBy}.</div>
+        <div className="mb-4 text-[13px] bg-amber-50 border border-amber-200 rounded px-3 py-2 flex items-center gap-2"><AlertTriangle size={14} className="text-amber-700" /> Waiting for a manager to approve the {quote.maxDiscountPct}% discount (limit {limit}%). Requested by {quote.approvalRequestedBy}.</div>
       )}
       {quote?.approvalStatus === 'rejected' && status === 'Draft' && (
-        <div className="mb-4 text-[13px] bg-red-50 border border-red-200 rounded-lg px-3 py-2">Sent back by {quote.approvedBy}: {quote.approvalNote}</div>
+        <div className="mb-4 text-[13px] bg-red-50 border border-red-200 rounded px-3 py-2">Sent back by {quote.approvedBy}: {quote.approvalNote}</div>
       )}
-      {quote?.declineReason && status === 'Declined' && <div className="mb-4 text-[13px] bg-red-50 border border-red-200 rounded-lg px-3 py-2">Declined: {quote.declineReason}</div>}
-      {quote?.revisionNote && quote.version > 1 && <div className="mb-4 text-[13px] bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">Revision {quote.version}: {quote.revisionNote}</div>}
+      {quote?.declineReason && status === 'Declined' && <div className="mb-4 text-[13px] bg-red-50 border border-red-200 rounded px-3 py-2">Declined: {quote.declineReason}</div>}
+      {quote?.revisionNote && quote.version > 1 && <div className="mb-4 text-[13px] bg-orange-50 border border-orange-200 rounded px-3 py-2">Revision {quote.version}: {quote.revisionNote}</div>}
       <ErrorNote text={error} />
 
       <div className="grid xl:grid-cols-[1fr_320px] gap-4 mt-2">
@@ -205,14 +205,14 @@ export default function QuotationEditorPage() {
             <div className="grid md:grid-cols-3 gap-2">
               {TYPES.map(([v, l, d]) => (
                 <button key={v} type="button" onClick={() => form.quoteType !== v && (!dirty || isNew || window.confirm('Switching the type replaces the notes and rules below with that type\'s standard ones. Continue?')) && changeType(v)}
-                  className={`text-left border rounded-lg p-3 cursor-pointer ${form.quoteType === v ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-200' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
+                  className={`text-left border rounded p-3 cursor-pointer ${form.quoteType === v ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-200' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
                   <div className="text-[13px] font-semibold text-gray-900">{l}</div><div className="text-[11.5px] text-gray-600 mt-0.5 leading-snug">{d}</div>
                 </button>
               ))}
             </div>
           )}
           {/* Client + terms of the quotation */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 grid md:grid-cols-2 gap-4">
+          <div className="bg-white border border-gray-200 rounded p-4 grid md:grid-cols-2 gap-4">
             <ClientFields client={form.client} editable={editable} companyState={meta.companyState}
               onChange={(client) => { setForm(f => ({ ...f, client })); setDirty(true); }} onGstMode={(m) => setF('gstMode', m)} />
             <div className="space-y-2">
@@ -233,7 +233,7 @@ export default function QuotationEditorPage() {
           {form.quoteType !== 'general' && form.plan && <ScopePreview items={form.items} services={meta.services || []} />}
           {form.quoteType !== 'general' && form.plan && <SectionsEditor sections={form.plan.sections || []} onChange={(sections) => setPlan({ ...form.plan, sections })} editable={editable} title={form.quoteType === 'retainer' ? 'Reporting, what we need from you, what is not included' : 'Deliverables, assumptions, exclusions, support and warranty'} />}
 
-          <div className="bg-white border border-gray-200 rounded-lg p-4 grid md:grid-cols-2 gap-4">
+          <div className="bg-white border border-gray-200 rounded p-4 grid md:grid-cols-2 gap-4">
             <div><label className={labelCls}>Terms & conditions</label><textarea disabled={!editable} value={form.terms} onChange={e => setF('terms', e.target.value)} rows={6} className="w-full text-[12.5px] border border-gray-300 rounded p-2.5 outline-none focus:border-blue-500 disabled:bg-gray-50" /></div>
             <div><label className={labelCls}>Notes on the quotation</label><textarea disabled={!editable} value={form.notes} onChange={e => setF('notes', e.target.value)} rows={6} placeholder="Timeline, deliverables, anything else printed on the PDF" className="w-full text-[12.5px] border border-gray-300 rounded p-2.5 outline-none focus:border-blue-500 disabled:bg-gray-50" /></div>
           </div>
@@ -247,7 +247,7 @@ export default function QuotationEditorPage() {
           </TotalsCard>
 
           {!isNew && quote.versions.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-white border border-gray-200 rounded p-4">
               <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1"><History size={12} /> Versions</div>
               <div className="space-y-1.5">
                 {[...quote.versions].reverse().map(v => (
@@ -262,7 +262,7 @@ export default function QuotationEditorPage() {
           )}
 
           {!isNew && events.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-white border border-gray-200 rounded p-4">
               <div className="text-xs font-semibold text-gray-700 mb-2">History</div>
               <ul className="space-y-2">
                 {events.map(e => <li key={e.id} className="text-[12px]"><div className="text-gray-800">{e.title}</div><div className="text-[11px] text-gray-500">{fmtWhen(e.at)} · {e.by}</div>{e.body && <div className="text-[11px] text-gray-600 mt-0.5 whitespace-pre-wrap">{e.body}</div>}</li>)}

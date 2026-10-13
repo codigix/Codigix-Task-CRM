@@ -63,10 +63,10 @@ const ManageColumnsDropdown = ({ columns, visibleColumns, onChange }) => {
                 </div>
                 <button
                   onClick={() => toggleColumn(col.key)}
-                  className={`w-8 h-4 rounded-full transition-all relative ${visibleColumns.includes(col.key) ? 'bg-red-600' : 'bg-gray-200'
+                  className={`w-8 h-4 rounded transition-all relative ${visibleColumns.includes(col.key) ? 'bg-red-600' : 'bg-gray-200'
                     }`}
                 >
-                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${visibleColumns.includes(col.key) ? 'left-[18px]' : 'left-0.5'
+                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded transition-all ${visibleColumns.includes(col.key) ? 'left-[18px]' : 'left-0.5'
                     }`} />
                 </button>
               </div>

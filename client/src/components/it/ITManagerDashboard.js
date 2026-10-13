@@ -339,7 +339,7 @@ const ITManagerDashboard = () => {
                     </div>
                     <h3 className="text-sm  text-transparent bg-clip-text bg-gradient-to-r from-indigo-900 to-blue-800">AI Task & Blocker Summary</h3>
                   </div>
-                  <span className="text-[10px]  tracking-wider text-indigo-500 bg-indigo-100/50 px-2 py-1 rounded-full uppercase">Live Analysis</span>
+                  <span className="text-[10px]  tracking-wider text-indigo-500 bg-indigo-100/50 px-2 py-1 rounded uppercase">Live Analysis</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6 text-[13px]">
@@ -394,7 +394,7 @@ const ITManagerDashboard = () => {
                   {projectHealthData.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between pr-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></div>
+                        <div className="w-2.5 h-2.5 rounded" style={{ backgroundColor: item.color }}></div>
                         <span className="text-xs text-gray-600">{item.name}</span>
                       </div>
                     </div>
@@ -404,7 +404,7 @@ const ITManagerDashboard = () => {
                 <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-700">Overall Project Health</span>
                   <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 bg-green-50 text-green-600 text-xs  rounded-full border border-green-100">Good</span>
+                    <span className="px-3 py-1 bg-green-50 text-green-600 text-xs  rounded border border-green-100">Good</span>
                     <span className="text-sm  text-gray-900">{projects.length > 0 ? `${onTrackCount} / ${projects.length}` : '0 / 0'}</span>
                   </div>
                 </div>
@@ -421,8 +421,8 @@ const ITManagerDashboard = () => {
                         <div className="text-xs  text-gray-900 truncate">{proj.name}</div>
                         <div className="text-xs text-gray-500">Progress {proj.progress}%</div>
                       </div>
-                      <div className="flex-1 h-2 bg-gray-100 rounded-full relative overflow-visible mr-8">
-                        <div className={`absolute h-2 rounded-full ${proj.color}`} style={{ left: `${proj.start}%`, width: `${proj.length}%` }}></div>
+                      <div className="flex-1 h-2 bg-gray-100 rounded relative overflow-visible mr-8">
+                        <div className={`absolute h-2 rounded ${proj.color}`} style={{ left: `${proj.start}%`, width: `${proj.length}%` }}></div>
                       </div>
                     </div>
                   ))}
@@ -436,7 +436,7 @@ const ITManagerDashboard = () => {
                 <div className="flex-1 flex flex-col gap-2 overflow-y-auto">
                   {activityFeed.map((activity, idx) => (
                     <div key={idx} className="flex gap-3">
-                      <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${activity.bg} ${activity.color}`}>
+                      <div className={`shrink-0 w-8 h-8 rounded flex items-center justify-center ${activity.bg} ${activity.color}`}>
                         <activity.icon size={14} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -477,8 +477,8 @@ const ITManagerDashboard = () => {
                         </div>
                         <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900">{stat.label}</span>
                       </div>
-                      <div className="flex-1 mx-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className={`h-full ${stat.color} rounded-full`} style={{ width: tasks.length > 0 ? `${(stat.count / tasks.length) * 100}%` : '0%' }}></div>
+                      <div className="flex-1 mx-3 h-1.5 bg-gray-100 rounded overflow-hidden">
+                        <div className={`h-full ${stat.color} rounded`} style={{ width: tasks.length > 0 ? `${(stat.count / tasks.length) * 100}%` : '0%' }}></div>
                       </div>
                       <div className="text-sm  text-gray-900 w-8 text-right">{stat.count}</div>
                     </div>
@@ -499,7 +499,7 @@ const ITManagerDashboard = () => {
                   {teamWorkload.map((member, idx) => (
                     <div key={idx} className="flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs  shrink-0">
+                        <div className="w-8 h-8 rounded bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs  shrink-0">
                           {member.name.split(' ').map(n => n[0]).join('')}
                         </div>
                         <div>
@@ -509,8 +509,8 @@ const ITManagerDashboard = () => {
                       </div>
                       <div className="flex flex-col items-end w-24">
                         <div className="text-xs  text-gray-700 mb-1">{member.progress}%</div>
-                        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full ${member.color} rounded-full`} style={{ width: `${member.progress}%` }}></div>
+                        <div className="w-full h-1.5 bg-gray-100 rounded overflow-hidden">
+                          <div className={`h-full ${member.color} rounded`} style={{ width: `${member.progress}%` }}></div>
                         </div>
                       </div>
                     </div>
@@ -558,7 +558,7 @@ const ITManagerDashboard = () => {
                     {timeTrackingData.map((item, idx) => (
                       <div key={idx} className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
+                          <div className="w-2 h-2 rounded" style={{ backgroundColor: item.color }}></div>
                           <span className="text-xs font-medium text-gray-600">{item.name}</span>
                         </div>
                         <div className="flex flex-col items-end">
@@ -697,10 +697,10 @@ const ITManagerDashboard = () => {
             </div>
 
             <div className="flex-1 flex justify-end">
-              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-full border border-gray-100">
+              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-gray-100">
                 <div className="text-xs text-gray-500 font-medium">System Status</div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <div className="w-2 h-2 rounded bg-green-500"></div>
                   <div className="text-xs  text-gray-900">All Systems Operational</div>
                 </div>
               </div>
@@ -731,7 +731,7 @@ const ITManagerDashboard = () => {
                   <span className="text-sm font-medium text-gray-700">{w.label}</span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={widgets[w.key]} onChange={() => setWidgets({ ...widgets, [w.key]: !widgets[w.key] })} />
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
               ))}

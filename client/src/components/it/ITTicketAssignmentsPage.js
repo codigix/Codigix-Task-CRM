@@ -395,7 +395,7 @@ const ITTicketAssignmentsPage = () => {
                       }`}
                   >
                     <span>{tab.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full  ${departmentFilter === tab.key ? 'bg-white text-black' : 'bg-gray-200 text-gray-700'
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded  ${departmentFilter === tab.key ? 'bg-white text-black' : 'bg-gray-200 text-gray-700'
                       }`}>
                       {tab.count}
                     </span>
@@ -483,7 +483,7 @@ const ITTicketAssignmentsPage = () => {
             <div className="overflow-x-auto">
               {loading ? (
                 <div className="p-16 text-center text-gray-400 flex flex-col items-center justify-center gap-3">
-                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded animate-spin"></div>
                   <span className="text-sm font-medium">Loading ticket assignments…</span>
                 </div>
               ) : (
@@ -541,7 +541,7 @@ const ITTicketAssignmentsPage = () => {
                           </td>
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
+                              <div className="w-6 h-6 rounded bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]  shrink-0">
                                 {(task.created_by_name || 'S').charAt(0).toUpperCase()}
                               </div>
                               <span className="text-gray-800 font-medium">{task.created_by_name || 'System'}</span>
@@ -551,7 +551,7 @@ const ITTicketAssignmentsPage = () => {
                             <div className="flex items-center gap-2">
                               {task.assigned_to_name ? (
                                 <>
-                                  <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]  shrink-0">
+                                  <div className="w-6 h-6 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]  shrink-0">
                                     {task.assigned_to_name.charAt(0).toUpperCase()}
                                   </div>
                                   <span className="text-gray-800 font-medium">{task.assigned_to_name}</span>
@@ -688,7 +688,7 @@ const ITTicketAssignmentsPage = () => {
               </div>
               <button
                 onClick={() => setSelectedTicket(null)}
-                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-full transition"
+                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded transition"
               >
                 <X size={18} />
               </button>
@@ -711,7 +711,7 @@ const ITTicketAssignmentsPage = () => {
               <div className="relative pl-6 space-y-7 before:absolute before:inset-y-0 before:left-2.5 before:w-[2px] before:bg-blue-100">
                 {/* Step 1: Initiation */}
                 <div className="relative">
-                  <div className="absolute -left-6 w-5 h-5 rounded-full bg-red-700 border-2 border-white flex items-center justify-center shadow-sm">
+                  <div className="absolute -left-6 w-5 h-5 rounded bg-red-700 border-2 border-white flex items-center justify-center shadow-sm">
                     <User size={10} className="text-white" />
                   </div>
                   <div className="flex items-center justify-between">
@@ -733,7 +733,7 @@ const ITTicketAssignmentsPage = () => {
 
                 {/* Step 2: Project Workspace */}
                 <div className="relative">
-                  <div className="absolute -left-6 w-5 h-5 rounded-full bg-purple-600 border-2 border-white flex items-center justify-center shadow-sm">
+                  <div className="absolute -left-6 w-5 h-5 rounded bg-purple-600 border-2 border-white flex items-center justify-center shadow-sm">
                     <Briefcase size={10} className="text-white" />
                   </div>
                   <div>
@@ -753,7 +753,7 @@ const ITTicketAssignmentsPage = () => {
 
                 {/* Step 3: Assignment */}
                 <div className="relative">
-                  <div className="absolute -left-6 w-5 h-5 rounded-full bg-emerald-600 border-2 border-white flex items-center justify-center shadow-sm">
+                  <div className="absolute -left-6 w-5 h-5 rounded bg-emerald-600 border-2 border-white flex items-center justify-center shadow-sm">
                     <UserCheck size={10} className="text-white" />
                   </div>
                   <div>
@@ -774,7 +774,7 @@ const ITTicketAssignmentsPage = () => {
 
                 {/* Step 4: Status & Priority */}
                 <div className="relative">
-                  <div className="absolute -left-6 w-5 h-5 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center shadow-sm">
+                  <div className="absolute -left-6 w-5 h-5 rounded bg-amber-500 border-2 border-white flex items-center justify-center shadow-sm">
                     <Activity size={10} className="text-white" />
                   </div>
                   <div className="flex items-center justify-between">

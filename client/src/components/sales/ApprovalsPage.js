@@ -71,7 +71,7 @@ const ApprovalsPage = () => {
             <Clock size={18} className="text-orange-500" />
             <h2 className="text-[16px]  text-gray-900">Request List</h2>
           </div>
-          <span className="text-[12px] bg-orange-50 text-orange-600 p-1  rounded-full ">
+          <span className="text-[12px] bg-orange-50 text-orange-600 p-1  rounded ">
             {approvals.filter(a => a.status === 'Pending').length} Pending Requests
           </span>
         </div>
@@ -106,7 +106,7 @@ const ApprovalsPage = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">
+                          <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center">
                             <User size={14} className="text-[#1F2020]" />
                           </div>
                           <span className="text-xs  text-gray-600">{req.requested_by_name || 'System'}</span>

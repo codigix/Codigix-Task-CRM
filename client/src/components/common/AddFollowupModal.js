@@ -542,7 +542,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null, onCre
 
         {error && (
           <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="w-5 h-5 flex-shrink-0 bg-red-100 text-red-600 rounded-full flex items-center justify-center  text-xs">!</div>
+            <div className="w-5 h-5 flex-shrink-0 bg-red-100 text-red-600 rounded flex items-center justify-center  text-xs">!</div>
             <p className="text-xs text-red-700 leading-relaxed">{error}</p>
           </div>
         )}
@@ -572,7 +572,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null, onCre
                 <div className="p-2 space-y-2 bg-white animate-in fade-in duration-200">
                   {formData.previous_outcome && (
                     <div className="p-2 mb-2 bg-blue-50 border border-blue-100 rounded flex items-start gap-3 animate-in slide-in-from-top-2 duration-300">
-                      <div className="w-6 h-6 flex-shrink-0 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center  text-xs">
+                      <div className="w-6 h-6 flex-shrink-0 bg-blue-100 text-blue-600 rounded flex items-center justify-center  text-xs">
                         i
                       </div>
                       <div className="flex flex-col gap-0.5">
@@ -1189,7 +1189,7 @@ const AddFollowUpModal = ({ isOpen, onClose, onSubmit, initialData = null, onCre
             >
               {isLoading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded animate-spin"></div>
                   Saving...
                 </>
               ) : (

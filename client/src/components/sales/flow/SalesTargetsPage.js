@@ -38,7 +38,7 @@ export default function SalesTargetsPage() {
   return (
     <div className="p-5 bg-[#F8FAFC] min-h-screen font-sans text-gray-900">
       <PageHead title="Targets" sub="Set per person each month. Progress comes from real won deals, payments received and logged calls.">
-        <div className="flex items-center bg-white border border-gray-200 rounded-lg">
+        <div className="flex items-center bg-white border border-gray-200 rounded">
           <button onClick={() => setMonth(shift(month, -1))} className="h-8 w-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 cursor-pointer rounded-l-lg" aria-label="Previous month"><ChevronLeft size={15} /></button>
           <span className="px-2 text-[13px] font-medium min-w-[120px] text-center">{label(month)}</span>
           <button onClick={() => setMonth(shift(month, 1))} className="h-8 w-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 cursor-pointer rounded-r-lg" aria-label="Next month"><ChevronRight size={15} /></button>
@@ -50,7 +50,7 @@ export default function SalesTargetsPage() {
       <ErrorNote text={error} />
 
       {edit ? (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto mt-2">
+        <div className="bg-white border border-gray-200 rounded overflow-x-auto mt-2">
           <table className="w-full text-[13px] min-w-[720px]">
             <thead className="text-xs text-gray-500 bg-gray-50"><tr><th className="text-left font-medium px-4 py-2.5">Salesperson</th>{FIELDS.map(([k, l]) => <th key={k} className="text-left font-medium px-2 py-2.5">{l}</th>)}</tr></thead>
             <tbody className="divide-y divide-gray-100">

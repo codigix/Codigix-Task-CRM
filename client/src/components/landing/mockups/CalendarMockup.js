@@ -40,7 +40,7 @@ const CalendarMockup = () => {
             <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-slate-600">
               <div className="text-slate-300">27</div><div className="text-slate-300">28</div><div className="text-slate-300">29</div><div className="text-slate-300">30</div><div>1</div><div>2</div><div>3</div>
               <div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div>
-              <div>11</div><div>12</div><div>13</div><div className="bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center mx-auto">14</div><div>15</div><div>16</div><div>17</div>
+              <div>11</div><div>12</div><div>13</div><div className="bg-red-600 text-white rounded w-5 h-5 flex items-center justify-center mx-auto">14</div><div>15</div><div>16</div><div>17</div>
               <div>18</div><div>19</div><div>20</div><div>21</div><div>22</div><div>23</div><div>24</div>
             </div>
           </div>
@@ -135,7 +135,7 @@ const CalendarMockup = () => {
 
             {/* Current Time Indicator */}
             <div className="absolute w-full z-20 flex items-center pointer-events-none" style={{ top: '440px' }}>
-              <div className="w-2 h-2 rounded-full bg-red-500 translate-x-1"></div>
+              <div className="w-2 h-2 rounded bg-red-500 translate-x-1"></div>
               <div className="flex-1 h-0.5 bg-red-500"></div>
             </div>
           </div>

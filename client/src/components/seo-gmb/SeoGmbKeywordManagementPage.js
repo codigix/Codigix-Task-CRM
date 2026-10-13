@@ -422,7 +422,7 @@ export default function SeoGmbKeywordManagementPage() {
                       <td className="py-3 px-3"><input type="checkbox" className="rounded" /></td>
                       <td className="py-3 px-3  text-slate-900">{kw.keyword}</td>
                       <td className="py-3 px-3">
-                        <span className="text-xs  px-2 py-0.5 rounded-full border" style={{
+                        <span className="text-xs  px-2 py-0.5 rounded border" style={{
                           color: INTENT_COLORS[kw.intent] || '#6B7280',
                           backgroundColor: `${INTENT_COLORS[kw.intent]}15`,
                           borderColor: `${INTENT_COLORS[kw.intent]}25`
@@ -449,7 +449,7 @@ export default function SeoGmbKeywordManagementPage() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5">
-                            <span className={`w-1.5 h-1.5 rounded-full ${(kw.current_ranking || 32) > 40 ? 'bg-amber-500' : 'bg-emerald-500'
+                            <span className={`w-1.5 h-1.5 rounded ${(kw.current_ranking || 32) > 40 ? 'bg-amber-500' : 'bg-emerald-500'
                               }`} />
                             <span className=" text-slate-800">{kw.current_ranking || 32}</span>
                           </div>
@@ -541,7 +541,7 @@ export default function SeoGmbKeywordManagementPage() {
                       { name: 'Transactional', value: '590 (12.3%)', color: '#8B5CF6' }
                     ].map((intent, i) => (
                       <div key={i} className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: intent.color }} />
+                        <span className="w-2.5 h-2.5 rounded shrink-0" style={{ backgroundColor: intent.color }} />
                         <span className="text-slate-500 w-16 truncate font-medium">{intent.name}</span>
                         <span className=" text-slate-900">{intent.value}</span>
                       </div>
@@ -566,7 +566,7 @@ export default function SeoGmbKeywordManagementPage() {
                         <span>{serp.label}</span>
                         <span className="text-slate-900 ">{serp.value.toLocaleString()} ({serp.pct})</span>
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div className="w-full bg-slate-100 rounded h-1.5 overflow-hidden">
                         <div className={`h-full ${serp.color}`} style={{ width: serp.pct }} />
                       </div>
                     </div>
@@ -820,7 +820,7 @@ export default function SeoGmbKeywordManagementPage() {
                     <td className="py-3 px-3  text-slate-800">{row.keyword}</td>
                     <td className="py-3 px-3  text-slate-600">{(row.search_volume || 1000).toLocaleString()}</td>
                     <td className="py-3 px-3">
-                      <span className="text-xs  px-2.5 py-0.5 rounded-full" style={{
+                      <span className="text-xs  px-2.5 py-0.5 rounded" style={{
                         color: INTENT_COLORS[row.intent || 'Informational'],
                         backgroundColor: `${INTENT_COLORS[row.intent || 'Informational']}15`
                       }}>

@@ -176,7 +176,7 @@ const LeadsKanban = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-[28px]  text-gray-900">Leads</h1>
-              <span className="bg-[#FFE5E5] text-[#F62416] px-2.5 py-0.5 rounded-full text-[12px] ">{leads.length}</span>
+              <span className="bg-[#FFE5E5] text-[#F62416] px-2.5 py-0.5 rounded text-[12px] ">{leads.length}</span>
             </div>
             <div className="flex items-center gap-1 text-xs  mt-1">
               <button className="text-[#F97316] hover:text-[#EA580C]   bg-transparent border-none cursor-pointer p-0">Home</button>
@@ -219,7 +219,7 @@ const LeadsKanban = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: column.color }}></div>
+                      <div className="w-2.5 h-2.5 rounded" style={{ backgroundColor: column.color }}></div>
                       <h2 className="text-[14px] font-[500] text-gray-900">{column.title}</h2>
                     </div>
                     <p className="text-[12px] text-[#6B7280] ">{column.count} Leads - {column.totalValue}</p>
@@ -268,7 +268,7 @@ const LeadsKanban = () => {
                         </div>
                         <div className="flex items-center gap-3">
                           <Filter size={16} className="text-gray-400" />
-                          <span className="px-3 py-0.5 bg-pink-50 text-pink-600 rounded-full text-[12px] ">
+                          <span className="px-3 py-0.5 bg-pink-50 text-pink-600 rounded text-[12px] ">
                             {lead.source || lead.lead_source || 'Referral'}
                           </span>
                         </div>

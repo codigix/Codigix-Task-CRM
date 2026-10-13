@@ -250,7 +250,7 @@ const ActivitiesPage = () => {
     return (
       <div className="p-2 bg-[#F7F8F9] min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading activities...</p>
         </div>
       </div>
@@ -273,7 +273,7 @@ const ActivitiesPage = () => {
           <div>
             <div className="flex items-center gap-3 mb-3">
               <h1 className="text-xl  text-gray-900">Activities</h1>
-              <span className="bg-red-100 text-red  text-xs  px-3 py-1 rounded-full">
+              <span className="bg-red-100 text-red  text-xs  px-3 py-1 rounded">
                 {activities.length}
               </span>
             </div>
@@ -468,7 +468,7 @@ const ActivitiesPage = () => {
                       </td>
                       <td className="px-6 py-5">
                         <span
-                          className={`inline-flex items-center gap-2 p-2 rounded-full text-xs  ${activityColor.bg} ${activityColor.text}`}
+                          className={`inline-flex items-center gap-2 p-2 rounded text-xs  ${activityColor.bg} ${activityColor.text}`}
                         >
                           {activity.type}
                         </span>
@@ -479,7 +479,7 @@ const ActivitiesPage = () => {
                       <td className="px-6 py-5 text-sm text-gray-600">{activity.dueDate}</td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 ${activity.ownerBg} rounded-full flex items-center justify-center text-white text-xs `}>
+                          <div className={`w-8 h-8 ${activity.ownerBg} rounded flex items-center justify-center text-white text-xs `}>
                             {activity.ownerInitial.substring(0, 1)}
                           </div>
                           <span className="text-sm text-gray-900  ">{activity.owner}</span>

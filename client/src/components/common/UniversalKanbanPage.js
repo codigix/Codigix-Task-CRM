@@ -829,7 +829,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                               >
                                 <div className="flex items-center space-x-2">
                                   <span>{col}</span>
-                                  <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] ">
+                                  <span className="w-5 h-5 rounded bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] ">
                                     {colCards.length}
                                   </span>
                                 </div>
@@ -894,7 +894,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                                                     <span>Subtasks ({completedSubtasksCount}/{totalSubtasksCount})</span>
                                                     <span>{Math.round((completedSubtasksCount / totalSubtasksCount) * 100)}%</span>
                                                   </div>
-                                                  <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                                  <div className="w-full bg-gray-100 h-1.5 rounded overflow-hidden">
                                                     <div
                                                       className="bg-green-500 h-full transition-all duration-300"
                                                       style={{ width: `${(completedSubtasksCount / totalSubtasksCount) * 100}%` }}
@@ -920,7 +920,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                                                 {/* ASSIGNEE AVATAR POPOVER TRIGGER */}
                                                 <button
                                                   onClick={(e) => handleOpenCardAssignee(e, cardKey)}
-                                                  className={`w-6 h-6 rounded-full  flex items-center justify-center text-[10px] hover:ring-2 hover:ring-blue-400 transition ${!card.assignee || card.assignee === 'Unassigned' ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}
+                                                  className={`w-6 h-6 rounded  flex items-center justify-center text-[10px] hover:ring-2 hover:ring-blue-400 transition ${!card.assignee || card.assignee === 'Unassigned' ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-700'}`}
                                                   title={`Assigned to: ${card.assignee || 'Unassigned'}`}
                                                 >
                                                   {!card.assignee || card.assignee === 'Unassigned' ? <User size={12} className="text-gray-500" /> : getInitials(card.assignee)}
@@ -1129,7 +1129,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
               onClick={() => handleUpdateCardAssignee(openCardAssigneeDropdown, 'Unassigned')}
               className="p-1.5 hover:bg-gray-50 rounded cursor-pointer flex items-center space-x-2 text-gray-700"
             >
-              <div className="w-5 h-5 rounded-full bg-gray-200 text-gray-600  flex items-center justify-center text-[9px]">U</div>
+              <div className="w-5 h-5 rounded bg-gray-200 text-gray-600  flex items-center justify-center text-[9px]">U</div>
               <span>Unassigned</span>
             </div>
             {departmentUsersList
@@ -1145,7 +1145,7 @@ const UniversalKanbanPage = ({ department = 'IT' }) => {
                     onClick={() => handleUpdateCardAssignee(openCardAssigneeDropdown, name)}
                     className="p-1.5 hover:bg-gray-50 rounded cursor-pointer flex items-center space-x-2 text-gray-700"
                   >
-                    <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700  flex items-center justify-center text-[9px]">
+                    <div className="w-5 h-5 rounded bg-blue-100 text-blue-700  flex items-center justify-center text-[9px]">
                       {getInitials(name)}
                     </div>
                     <span className="truncate">{name}</span>

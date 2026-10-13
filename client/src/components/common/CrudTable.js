@@ -165,7 +165,7 @@ export default function CrudTable({
             onClick={e => e.stopPropagation()}
           >
             <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded bg-rose-100 flex items-center justify-center mx-auto mb-3">
                 <Trash2 size={20} className="text-rose-500" />
               </div>
               <h4 className="text-sm  text-slate-900 m-0 mb-1">Delete Record?</h4>

@@ -259,7 +259,7 @@ const SeoGmbLocationIntelligencePage = () => {
               ].map((c, i) => (
                 <div key={i} className="flex items-center text-xs">
                   <span className={`w-28 font-medium ${c.name === 'Your Business' ? 'text-indigo-600' : 'text-gray-700'}`}>{c.name}</span>
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full mx-3 overflow-hidden">
+                  <div className="flex-1 h-2 bg-gray-100 rounded mx-3 overflow-hidden">
                     <div className={`h-full ${c.color}`} style={{ width: `${c.val}%` }}></div>
                   </div>
                   <span className="w-10 text-right  text-gray-900">{c.val}%</span>
@@ -538,9 +538,9 @@ const SeoGmbLocationIntelligencePage = () => {
               <button className="p-2 hover:bg-gray-50"><Minus size={16} className="text-gray-600" /></button>
             </div>
             {/* Heatmap Blobs Simulation */}
-            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-red-500 rounded-full blur-3xl opacity-40"></div>
-            <div className="absolute bottom-1/3 right-1/3 w-40 h-40 bg-green-500 rounded-full blur-3xl opacity-40"></div>
-            <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-yellow-500 rounded-full blur-2xl opacity-50"></div>
+            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-red-500 rounded blur-3xl opacity-40"></div>
+            <div className="absolute bottom-1/3 right-1/3 w-40 h-40 bg-green-500 rounded blur-3xl opacity-40"></div>
+            <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-yellow-500 rounded blur-2xl opacity-50"></div>
           </div>
 
           {/* Right Info Panel */}
@@ -662,15 +662,15 @@ const SeoGmbLocationIntelligencePage = () => {
 
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-700">Enable Location Tracking</span>
-            <div className="w-8 h-4 bg-green-500 rounded-full relative cursor-pointer">
-              <div className="w-3 h-3 bg-white rounded-full absolute right-0.5 top-0.5"></div>
+            <div className="w-8 h-4 bg-green-500 rounded relative cursor-pointer">
+              <div className="w-3 h-3 bg-white rounded absolute right-0.5 top-0.5"></div>
             </div>
           </div>
 
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-700">Auto Detect New Locations</span>
-            <div className="w-8 h-4 bg-green-500 rounded-full relative cursor-pointer">
-              <div className="w-3 h-3 bg-white rounded-full absolute right-0.5 top-0.5"></div>
+            <div className="w-8 h-4 bg-green-500 rounded relative cursor-pointer">
+              <div className="w-3 h-3 bg-white rounded absolute right-0.5 top-0.5"></div>
             </div>
           </div>
 

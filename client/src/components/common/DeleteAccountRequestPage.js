@@ -250,7 +250,7 @@ const DeleteAccountRequestPage = () => {
     return (
       <div className="bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+          <div className="inline-block animate-spin rounded h-12 w-12 border-b-2 border-red-600"></div>
           <p className="mt-4 text-gray-600">Loading delete requests...</p>
         </div>
       </div>
@@ -273,7 +273,7 @@ const DeleteAccountRequestPage = () => {
               <img
                 src={currentUser.avatar || `https://i.pravatar.cc/100?u=${currentUser.email}`}
                 alt={currentUser.first_name}
-                className="w-16 h-16 rounded-full object-cover"
+                className="w-16 h-16 rounded object-cover"
                 onError={(e) => { e.target.src = `https://i.pravatar.cc/100?u=${currentUser.email}` }}
               />
               <div>
@@ -307,7 +307,7 @@ const DeleteAccountRequestPage = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl  text-gray-900">Delete Account Requests</h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs   bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs   bg-red-100 text-red-800">
                 {requests.length}
               </span>
             </div>
@@ -354,7 +354,7 @@ const DeleteAccountRequestPage = () => {
               <Filter size={16} />
               Filter
               {(appliedFilters.statuses.length > 0 || appliedFilters.users.length > 0) && (
-                <span className="ml-1 p-1  bg-blue-500 text-white text-xs rounded-full ">
+                <span className="ml-1 p-1  bg-blue-500 text-white text-xs rounded ">
                   {appliedFilters.statuses.length + appliedFilters.users.length}
                 </span>
               )}
@@ -428,7 +428,7 @@ const DeleteAccountRequestPage = () => {
                               <img
                                 src={request.avatar || `https://i.pravatar.cc/100?u=${request.email}`}
                                 alt={request.first_name}
-                                className="w-10 h-10 rounded-full object-cover"
+                                className="w-10 h-10 rounded object-cover"
                                 onError={(e) => { e.target.src = `https://i.pravatar.cc/100?u=${request.email}` }}
                               />
                               <div>

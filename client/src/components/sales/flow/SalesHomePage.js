@@ -72,7 +72,7 @@ export default function SalesHomePage() {
                   const Icon = TYPE_ICON[a.type] || CalendarClock;
                   return (
                     <li key={a.id} className="px-4 py-2.5 flex items-center gap-3">
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${a.overdue ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}><Icon size={14} /></span>
+                      <span className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${a.overdue ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}><Icon size={14} /></span>
                       <button onClick={() => open(a.dealId ? { deal: a.dealId } : { lead: a.leadId })} className="min-w-0 flex-1 text-left cursor-pointer">
                         <div className="text-[13px] font-medium text-gray-900 truncate">{a.type} · {a.name}{a.company && a.company !== a.name ? <span className="text-gray-500 font-normal"> · {a.company}</span> : null}</div>
                         <div className={`text-[11.5px] truncate ${a.overdue ? 'text-red-700' : 'text-gray-500'}`}>{a.overdue ? (a.date < ymd() ? `Overdue since ${fmtDate(a.date)}` : `Was due at ${a.time}`) : `At ${a.time}`}{a.subject ? ` · ${a.subject}` : ''}{data.scope === 'team' && a.owner ? ` · ${a.owner}` : ''}</div>

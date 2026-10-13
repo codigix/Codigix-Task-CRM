@@ -1664,6 +1664,17 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         [key]
       );
       if (!curRow) return res.status(404).json({ error: 'Issue not found' });
+      // A meeting work item is only completed by submitting its MOM from the Meetings page.
+      if (updates.status !== undefined && isDoneStatus(updates.status) && String(curRow.type || '').toLowerCase() === 'meeting') {
+        const [[mtg]] = await db.query('SELECT id, status FROM meetings WHERE issue_key = ?', [key]).catch(() => [[null]]);
+        if (mtg && mtg.status !== 'Completed') {
+          return res.status(409).json({
+            error: 'This is a meeting. Submit the Minutes of Meeting (MOM) from the Meetings page to complete it.',
+            code: 'MOM_REQUIRED',
+            meetingId: mtg.id
+          });
+        }
+      }
       // Starting work (moving into In Progress) needs a planned time: either one already on
       // the ticket, one sent with this move, or one waiting for a manager's approval.
       {
@@ -2677,10 +2688,20 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         return res.status(403).json({ error: 'Only managers can delete tickets.', code: 'DELETE_NOT_ALLOWED' });
       }
 
+      // Deleting a meeting's work item cancels the meeting that is still ahead of us.
+      const [[linkedMeeting]] = await db.query("SELECT id, task_id FROM meetings WHERE issue_key = ? AND status = 'Scheduled'", [key]).catch(() => [[null]]);
+
       const [result] = await db.query('DELETE FROM it_kanban_issues WHERE issue_key = ?', [key]);
 
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Issue not found' });
+      }
+
+      if (linkedMeeting) {
+        await db.query("UPDATE meetings SET status = 'Cancelled', cancel_reason = 'Task deleted from task management', issue_key = NULL WHERE id = ?", [linkedMeeting.id]).catch(() => { });
+        if (linkedMeeting.task_id) await db.query("UPDATE general_tasks SET status = 'Cancelled' WHERE id = ?", [linkedMeeting.task_id]).catch(() => { });
+      } else {
+        await db.query('UPDATE meetings SET issue_key = NULL WHERE issue_key = ?', [key]).catch(() => { });
       }
 
       // Don't leave orphaned audit/worklog rows behind.

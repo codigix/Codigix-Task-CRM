@@ -171,8 +171,8 @@ const MonthlyReportingDashboard = () => {
             key={type}
             onClick={() => setReportType(type)}
             className={`p-2  border-b-2 transition-colors ${reportType === type
-                ? 'border-red-600  text-white '
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+              ? 'border-red-600  text-white '
+              : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
           >
             {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -301,8 +301,8 @@ const MonthlyReportingDashboard = () => {
                     <span className="text-sm  text-green-700">✓ Completed</span>
                     <span className="text-sm  ">{reportData.taskStatus.completed}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '60%' }} />
+                  <div className="w-full bg-gray-200 rounded h-2">
+                    <div className="bg-green-600 h-2 rounded" style={{ width: '60%' }} />
                   </div>
                 </div>
 
@@ -311,8 +311,8 @@ const MonthlyReportingDashboard = () => {
                     <span className="text-sm  text-blue-700">⚙ In Progress</span>
                     <span className="text-sm  ">{reportData.taskStatus.inProgress}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-red-600 h-2 rounded-full" style={{ width: '25%' }} />
+                  <div className="w-full bg-gray-200 rounded h-2">
+                    <div className="bg-red-600 h-2 rounded" style={{ width: '25%' }} />
                   </div>
                 </div>
 
@@ -321,8 +321,8 @@ const MonthlyReportingDashboard = () => {
                     <span className="text-sm  text-purple-700">○ To Do</span>
                     <span className="text-sm  ">{reportData.taskStatus.todo}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: '9%' }} />
+                  <div className="w-full bg-gray-200 rounded h-2">
+                    <div className="bg-purple-600 h-2 rounded" style={{ width: '9%' }} />
                   </div>
                 </div>
 
@@ -331,8 +331,8 @@ const MonthlyReportingDashboard = () => {
                     <span className="text-sm  text-orange-700">🔍 Review</span>
                     <span className="text-sm  ">{reportData.taskStatus.review}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-orange-600 h-2 rounded-full" style={{ width: '6%' }} />
+                  <div className="w-full bg-gray-200 rounded h-2">
+                    <div className="bg-orange-600 h-2 rounded" style={{ width: '6%' }} />
                   </div>
                 </div>
               </div>
@@ -399,9 +399,9 @@ const MonthlyReportingDashboard = () => {
                         ${(dept.revenue / 1000).toFixed(0)}K
                       </td>
                       <td className="px-6 py-3 text-right">
-                        <div className="w-24 bg-gray-200 rounded-full h-2 inline-block">
+                        <div className="w-24 bg-gray-200 rounded h-2 inline-block">
                           <div
-                            className="bg-red-600 h-2 rounded-full"
+                            className="bg-red-600 h-2 rounded"
                             style={{ width: `${dept.performance}%` }}
                           />
                         </div>

@@ -65,7 +65,7 @@ export default function SalesReportsPage() {
             {data.funnel.map((f, i) => (
               <div key={f.step}>
                 <div className="flex justify-between text-[12px]"><span className="text-gray-700">{f.step}</span><span className="tabular-nums font-medium">{f.count}{i > 0 && first > 0 && <span className="text-gray-500 font-normal"> · {pct(f.count, first)} of enquiries{i > 1 ? `, ${pct(f.count, data.funnel[i - 1].count)} of previous` : ''}</span>}</span></div>
-                <div className="h-2 mt-1 rounded-full bg-gray-100"><div className="h-full rounded-full bg-blue-600" style={{ width: `${first ? Math.max(f.count ? 2 : 0, (f.count / first) * 100) : 0}%` }} /></div>
+                <div className="h-2 mt-1 rounded bg-gray-100"><div className="h-full rounded bg-red-600" style={{ width: `${first ? Math.max(f.count ? 2 : 0, (f.count / first) * 100) : 0}%` }} /></div>
               </div>
             ))}
           </div>

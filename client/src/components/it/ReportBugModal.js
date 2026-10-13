@@ -401,14 +401,14 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
           {/* Attachments Section */}
           <div className="mb-8">
             <label className="block text-xs  text-gray-700 mb-2 flex items-center gap-1">
-              Attachments <span className="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center text-[10px] text-gray-500  ml-1">i</span>
+              Attachments <span className="w-4 h-4 rounded border border-gray-300 flex items-center justify-center text-[10px] text-gray-500  ml-1">i</span>
             </label>
             <div className="flex gap-4 items-stretch">
 
               {/* Drag Drop Area */}
               <label className="w-[300px] border-2 border-dashed border-blue-200 bg-blue-50/50 rounded flex flex-col items-center justify-center p-6 text-center hover:bg-blue-50 cursor-pointer transition-colors shrink-0">
                 <input type="file" className="hidden" onChange={handleFileUpload} />
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center  mb-3">
+                <div className="w-10 h-10 bg-white rounded flex items-center justify-center  mb-3">
                   <CloudUpload className="text-blue-500" size={20} />
                 </div>
                 <div className="text-sm font-medium text-blue-700 mb-1">
@@ -422,7 +422,7 @@ const ReportBugModal = ({ isOpen, onClose, onBugCreated }) => {
 
                 {attachments.map((file, i) => (
                   <div key={i} className="w-[160px] border border-gray-200 rounded p-2 bg-white flex flex-col shrink-0 group relative">
-                    <button onClick={() => removeAttachment(i)} className="absolute top-1 right-1 p-1 bg-white rounded-full shadow hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity z-10 text-gray-500">
+                    <button onClick={() => removeAttachment(i)} className="absolute top-1 right-1 p-1 bg-white rounded shadow hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity z-10 text-gray-500">
                       <X size={12} />
                     </button>
                     <div className="h-[80px] bg-gray-100 rounded mb-2 overflow-hidden flex items-center justify-center relative">

@@ -60,12 +60,12 @@ const STATUS_COLORS = {
 
 function Avatar({ name, size = 32 }) {
   const src = AVATARS[name];
-  if (src) return <img src={src} alt={name} className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />;
+  if (src) return <img src={src} alt={name} className="rounded object-cover shrink-0" style={{ width: size, height: size }} />;
   const colors = ['bg-purple-500', 'bg-blue-500', 'bg-green-500', 'bg-red-500', 'bg-amber-500', 'bg-teal-500', 'bg-gray-400'];
   const color = colors[name?.length % colors.length] || 'bg-gray-400';
   const initials = name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?';
   return (
-    <div className={`${color} rounded-full flex items-center justify-center text-white  shrink-0`} style={{ width: size, height: size, fontSize: size * 0.38 }}>
+    <div className={`${color} rounded flex items-center justify-center text-white  shrink-0`} style={{ width: size, height: size, fontSize: size * 0.38 }}>
       {initials}
     </div>
   );
@@ -216,7 +216,7 @@ export default function NotificationsPage() {
         <div className="flex items-center gap-2">
           {devicePermission === 'granted' ? (
             <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="w-2 h-2 rounded bg-emerald-500 animate-pulse" />
               <span className="text-xs  text-emerald-800">Device Alerts Active</span>
               <button
                 onClick={handleTestAlert}
@@ -256,7 +256,7 @@ export default function NotificationsPage() {
               className={`bg-white rounded p-4 border text-left transition-all hover:shadow-md
                 ${activeTab === kpi.tab ? 'border-blue-300 ring-1 ring-blue-200 ' : 'border-gray-100 '}`}>
               <div className="flex items-center gap-3 mb-2">
-                <div className={`w-10 h-10 rounded-full ${kpi.bg} flex items-center justify-center shrink-0`}>{kpi.icon}</div>
+                <div className={`w-10 h-10 rounded ${kpi.bg} flex items-center justify-center shrink-0`}>{kpi.icon}</div>
                 <div>
                   <p className="text-xs  text-gray-500  tracking-wider">{kpi.label}</p>
                   <p className="text-[22px] font-black text-gray-900 leading-none">{kpi.count}</p>
@@ -305,7 +305,7 @@ export default function NotificationsPage() {
                         ${isSelected ? 'bg-blue-50/40' : ''} ${notif.unread ? 'bg-white' : 'bg-white'}`}>
 
                       {/* Icon */}
-                      <div className={`w-9 h-9 rounded-full ${cfg.color} flex items-center justify-center shrink-0 mt-0.5`}>
+                      <div className={`w-9 h-9 rounded ${cfg.color} flex items-center justify-center shrink-0 mt-0.5`}>
                         {cfg.icon}
                       </div>
 
@@ -323,9 +323,9 @@ export default function NotificationsPage() {
                       <div className="flex flex-col items-end gap-2 shrink-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs  text-gray-400">{notif.time}</span>
-                          {notif.unread && <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />}
+                          {notif.unread && <div className="w-2 h-2 rounded bg-blue-500 shrink-0" />}
                         </div>
-                        <button onClick={e => e.stopPropagation()} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors">
+                        <button onClick={e => e.stopPropagation()} className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 transition-colors">
                           <MoreVertical size={13} />
                         </button>
                       </div>
@@ -373,7 +373,7 @@ export default function NotificationsPage() {
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
                 <h3 className="text-[14px]  text-gray-900">Notification Details</h3>
                 <button onClick={() => setSelectedNotif(null)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
                   <X size={15} />
                 </button>
               </div>

@@ -124,7 +124,7 @@ const RevenueForecastPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded h-12 w-12 border-b-2 border-red-600"></div>
       </div>
     );
   }
@@ -221,11 +221,11 @@ const RevenueForecastPage = () => {
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
+                <div className="w-3 h-3 rounded bg-blue-500" />
                 <span className="text-xs text-gray-500  ">Projected</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-purple-500" />
+                <div className="w-3 h-3 rounded bg-purple-500" />
                 <span className="text-xs text-gray-500  ">Weighted</span>
               </div>
             </div>
@@ -290,9 +290,9 @@ const RevenueForecastPage = () => {
                   <span className="font-medium text-gray-700">{stage.name}</span>
                   <span className=" text-gray-900">${stage.value.toLocaleString()}</span>
                 </div>
-                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-gray-100 rounded overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 rounded-full"
+                    className="h-full bg-blue-500 rounded"
                     style={{ width: `${(stage.value / metrics.totalPipeline) * 100}%`, backgroundColor: COLORS[i] }}
                   />
                 </div>
@@ -335,7 +335,7 @@ const RevenueForecastPage = () => {
                     <td className="px-4 py-3  text-gray-900">${(parseFloat(deal.deal_value) || 0).toLocaleString()}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden w-16">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded overflow-hidden w-16">
                           <div
                             className="h-full bg-orange-500"
                             style={{ width: `${deal.probability}%` }}

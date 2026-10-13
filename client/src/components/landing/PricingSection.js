@@ -62,8 +62,8 @@ const PricingSection = () => {
   return (
     <section className="py-20 lg:py-32 bg-white relative overflow-hidden" id="pricing">
       {/* Background flourishes */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-50 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-slate-50 rounded-full blur-[80px] -z-10 pointer-events-none"></div>
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-50 rounded blur-[100px] -z-10 pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-slate-50 rounded blur-[80px] -z-10 pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16 max-w-3xl mx-auto">
@@ -78,14 +78,14 @@ const PricingSection = () => {
           <div className="flex items-center justify-center gap-4">
             <span className={`text-sm  transition-colors ${!isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>Monthly</span>
             <button
-              className="relative inline-flex h-8 w-16 items-center rounded-full bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              className="relative inline-flex h-8 w-16 items-center rounded bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               onClick={() => setIsAnnual(!isAnnual)}
             >
-              <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${isAnnual ? 'translate-x-9' : 'translate-x-1'}`} />
+              <span className={`inline-block h-6 w-6 transform rounded bg-white shadow-sm transition-transform ${isAnnual ? 'translate-x-9' : 'translate-x-1'}`} />
             </button>
             <div className="flex items-center gap-2">
               <span className={`text-sm  transition-colors ${isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>Annually</span>
-              <span className="bg-red-100 text-red-700 text-[10px]  px-2 py-0.5 rounded-full">SAVE 20%</span>
+              <span className="bg-red-100 text-red-700 text-[10px]  px-2 py-0.5 rounded">SAVE 20%</span>
             </div>
           </div>
         </div>
@@ -97,7 +97,7 @@ const PricingSection = () => {
               className={`relative bg-white rounded-3xl border transition-all duration-300 ${plan.popular ? 'border-red-500 shadow-2xl shadow-red-900/10 scale-105 z-20' : 'border-slate-200 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:-translate-y-1 z-10'}`}
             >
               {plan.popular && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-red-600 to-rose-500 text-white text-xs  px-4 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-red-600 to-rose-500 text-white text-xs  px-4 py-1.5 rounded uppercase tracking-wider shadow-sm">
                   Most Popular
                 </div>
               )}
@@ -126,7 +126,7 @@ const PricingSection = () => {
                 <ul className="space-y-3">
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <div className="w-5 h-5 rounded bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
                         <Check size={12} className="text-emerald-600" />
                       </div>
                       <span className="text-sm text-slate-600">{feature}</span>
@@ -134,7 +134,7 @@ const PricingSection = () => {
                   ))}
                   {plan.notIncluded.map((feature, idx) => (
                     <li key={`not-${idx}`} className="flex items-start gap-3 opacity-60">
-                      <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <div className="w-5 h-5 rounded bg-slate-100 flex items-center justify-center shrink-0 mt-0.5">
                         <X size={12} className="text-slate-400" />
                       </div>
                       <span className="text-sm text-slate-500 line-through">{feature}</span>

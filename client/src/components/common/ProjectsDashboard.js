@@ -471,11 +471,11 @@ const ProjectsDashboard = ({ onViewProjectDetails, onViewCompanyDetails, departm
                 type="button"
                 onClick={() => handleDayClick(cell)}
                 onMouseEnter={() => handleDayHover(cell)}
-                className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${isStart || isEnd
-                    ? 'bg-red-500 text-white'
-                    : inRange
-                      ? 'bg-red-100 text-red '
-                      : 'text-gray-700 hover:bg-gray-100'
+                className={`h-8 w-8 rounded flex items-center justify-center transition-colors ${isStart || isEnd
+                  ? 'bg-red-500 text-white'
+                  : inRange
+                    ? 'bg-red-100 text-red '
+                    : 'text-gray-700 hover:bg-gray-100'
                   }`}
               >
                 {cell.getDate()}
@@ -491,7 +491,7 @@ const ProjectsDashboard = ({ onViewProjectDetails, onViewCompanyDetails, departm
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>

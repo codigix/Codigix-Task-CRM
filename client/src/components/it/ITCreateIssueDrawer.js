@@ -894,7 +894,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
               />
               {!formData.summary && (
                 <div className="text-sm text-red-500 mt-1.5 flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div> Summary is required
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded"></div> Summary is required
                 </div>
               )}
             </div>
@@ -906,7 +906,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
 
                 {/* Rich Text Toolbar */}
                 <div className="flex flex-wrap items-center gap-1 p-1 border-b border-gray-200 bg-gray-50/50">
-                  <button type="button" className="p-1 hover:bg-gray-200 rounded flex items-center gap-1 text-[12px] font-medium text-gray-600"><span className="w-3 h-3 rounded-full bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 block"></span> <ChevronDown size={12} /></button>
+                  <button type="button" className="p-1 hover:bg-gray-200 rounded flex items-center gap-1 text-[12px] font-medium text-gray-600"><span className="w-3 h-3 rounded bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 block"></span> <ChevronDown size={12} /></button>
                   <div className="w-px h-4 bg-gray-300 mx-1"></div>
                   <button
                     type="button"
@@ -971,7 +971,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
                 ></div>
                 {isUploadingFile && (
                   <div className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-blue-600 border-t border-gray-200 bg-blue-50/50">
-                    <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded animate-spin" />
                     Uploading file…
                   </div>
                 )}
@@ -999,11 +999,11 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
                 placeholder="Automatic"
                 labelRenderer={(u) => u.name || `${u.first_name} ${u.last_name}`}
                 iconRenderer={(u) => u ? (
-                  <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-xs text-blue-700  border border-white  overflow-hidden shrink-0">
+                  <div className="w-5 h-5 rounded bg-blue-100 flex items-center justify-center text-xs text-blue-700  border border-white  overflow-hidden shrink-0">
                     {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full object-cover" /> : (u.name ? u.name[0] : (u.first_name?.[0] || 'U'))}
                   </div>
                 ) : (
-                  <div className="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
+                  <div className="w-5 h-5 bg-gray-200 rounded flex items-center justify-center text-gray-500">
                     <Search size={12} />
                   </div>
                 )}
@@ -1118,7 +1118,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
                 placeholder="Select reporter"
                 labelRenderer={(u) => u.name || `${u.first_name} ${u.last_name}`}
                 iconRenderer={(u) => u ? (
-                  <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-xs text-blue-700  border border-white  overflow-hidden shrink-0 mr-2">
+                  <div className="w-5 h-5 rounded bg-blue-100 flex items-center justify-center text-xs text-blue-700  border border-white  overflow-hidden shrink-0 mr-2">
                     {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full object-cover" /> : (u.name ? u.name[0] : (u.first_name?.[0] || 'U'))}
                   </div>
                 ) : null}

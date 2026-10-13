@@ -219,7 +219,7 @@ const ITAnalyticsPage = () => {
                 {projectHealthData.map((d, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></div>
+                      <div className="w-2.5 h-2.5 rounded" style={{ backgroundColor: d.color }}></div>
                       <span className="text-sm font-medium text-gray-600">{d.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -287,7 +287,7 @@ const ITAnalyticsPage = () => {
                 {timeTrackingData.map((d, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></div>
+                      <div className="w-2.5 h-2.5 rounded" style={{ backgroundColor: d.color }}></div>
                       <span className="text-sm font-medium text-gray-600">{d.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -357,7 +357,7 @@ const ITAnalyticsPage = () => {
                 {teamPerf.map((t, i) => (
                   <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="py-3 flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700  text-[9px] shrink-0">
+                      <div className="w-7 h-7 rounded bg-indigo-100 flex items-center justify-center text-indigo-700  text-[9px] shrink-0">
                         {t.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <div className="truncate">
@@ -394,8 +394,8 @@ const ITAnalyticsPage = () => {
                     <stat.icon size={14} className={stat.text} />
                     <span className="text-sm  text-gray-700">{stat.label}</span>
                   </div>
-                  <div className="flex-1 mx-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${stat.color} rounded-full`} style={{ width: `${(stat.count / 402) * 100}%` }}></div>
+                  <div className="flex-1 mx-4 h-2 bg-gray-100 rounded overflow-hidden">
+                    <div className={`h-full ${stat.color} rounded`} style={{ width: `${(stat.count / 402) * 100}%` }}></div>
                   </div>
                   <div className="text-[13px]  text-gray-900 w-8 text-right">{stat.count}</div>
                 </div>
@@ -493,18 +493,18 @@ const ITAnalyticsPage = () => {
                     <div className="w-28 shrink-0 pr-3">
                       <div className="text-xs  text-gray-900 truncate group-hover:text-indigo-600 transition-colors" title={p.name}>{p.name}</div>
                     </div>
-                    <div className="flex-1 h-2.5 bg-gray-100 rounded-full relative overflow-hidden">
-                      <div className={`absolute h-full rounded-full ${p.color}  group-hover:opacity-80 transition-opacity`} style={{ left: `${p.start}%`, width: `${p.length}%` }}></div>
+                    <div className="flex-1 h-2.5 bg-gray-100 rounded relative overflow-hidden">
+                      <div className={`absolute h-full rounded ${p.color}  group-hover:opacity-80 transition-opacity`} style={{ left: `${p.start}%`, width: `${p.length}%` }}></div>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between text-xs font-medium text-gray-600 px-1">
-                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>On Track</div>
-                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>At Risk</div>
-                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>Delayed</div>
-                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>On Hold</div>
-                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-gray-300"></div>Completed</div>
+                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-green-500"></div>On Track</div>
+                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-amber-500"></div>At Risk</div>
+                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-rose-500"></div>Delayed</div>
+                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-purple-500"></div>On Hold</div>
+                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-gray-300"></div>Completed</div>
               </div>
             </div>
           </div>

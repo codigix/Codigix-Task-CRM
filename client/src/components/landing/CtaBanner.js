@@ -15,10 +15,10 @@ const CtaBanner = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a href="#demo" className="w-full sm:w-auto bg-red-600 text-white hover:bg-red-700 px-8 py-4 rounded-full  text-lg transition-all shadow-[0_8px_30px_rgb(220,38,38,0.2)] flex items-center justify-center gap-2 hover:-translate-y-1">
+          <a href="#demo" className="w-full sm:w-auto bg-red-600 text-white hover:bg-red-700 px-8 py-4 rounded  text-lg transition-all shadow-[0_8px_30px_rgb(220,38,38,0.2)] flex items-center justify-center gap-2 hover:-translate-y-1">
             Start your free trial <ArrowRight size={20} />
           </a>
-          <a href="#modules" className="w-full sm:w-auto bg-white hover:bg-slate-100 text-slate-700 border-2 border-slate-200 px-8 py-3.5 rounded-full  text-lg transition-all flex items-center justify-center gap-2">
+          <a href="#modules" className="w-full sm:w-auto bg-white hover:bg-slate-100 text-slate-700 border-2 border-slate-200 px-8 py-3.5 rounded  text-lg transition-all flex items-center justify-center gap-2">
             See all features
           </a>
         </div>

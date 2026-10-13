@@ -90,7 +90,7 @@ const renderFormattedDescription = (text) => {
           const content = trimmed.replace(/^[•\-\*]\s*/, '');
           return (
             <div key={idx} className="flex items-start gap-2.5 ml-2 my-1 text-gray-800">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0 mt-1.5 inline-block" />
+              <span className="w-1.5 h-1.5 rounded bg-red-600 shrink-0 mt-1.5 inline-block" />
               <span className="font-medium text-gray-800 text-xs">{content}</span>
             </div>
           );
@@ -386,7 +386,7 @@ const ITIssueDescription = ({
               />
               {isUploadingFile && (
                 <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 border-t border-gray-200 bg-blue-50/50">
-                  <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded animate-spin" />
                   Uploading file…
                 </div>
               )}
@@ -395,7 +395,7 @@ const ITIssueDescription = ({
             {/* Jira Rovo AI Floating Status Bar */}
             {isAiWriting && (
               <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded text-white text-xs shadow-lg animate-pulse my-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded animate-spin shrink-0" />
                 <span className=" flex-1">✨ AI is writing description...</span>
               </div>
             )}
@@ -497,7 +497,7 @@ const ITIssueDescription = ({
 
         {uploadingAttachment && (
           <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-            <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
+            <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded animate-spin shrink-0" />
             <span>Uploading attachment...</span>
           </div>
         )}

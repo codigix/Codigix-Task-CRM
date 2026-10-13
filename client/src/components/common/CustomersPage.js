@@ -171,7 +171,7 @@ const CustomersPage = () => {
           <div>
             <h1 className="text-xl font-[500] text-gray-900 ">
               Customers
-              <span className="inline-block p-1  bg-red-50 text-red  text-xs  rounded-full border border-red-100">
+              <span className="inline-block p-1  bg-red-50 text-red  text-xs  rounded border border-red-100">
                 {filteredCustomers.length}
               </span>
             </h1>
@@ -343,7 +343,7 @@ const CustomersPage = () => {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-xs    text-white border border-white  overflow-hidden">
+                        <div className="w-9 h-9 rounded bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-xs    text-white border border-white  overflow-hidden">
                           {customer.avatarImage ? <img src={customer.avatarImage} alt="" className="w-full h-full object-cover" /> : customer.avatar}
                         </div>
                         <div>
@@ -354,7 +354,7 @@ const CustomersPage = () => {
                     </td>
                     <td className="p-2  text-xs  text-gray-700 ">{customer.company}</td>
                     <td className="p-4">
-                      <span className="p-1  bg-blue-50 text-white  text-xs  rounded-full border border-blue-100">
+                      <span className="p-1  bg-blue-50 text-white  text-xs  rounded border border-blue-100">
                         {customer.industry}
                       </span>
                     </td>
@@ -366,7 +366,7 @@ const CustomersPage = () => {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center text-xs    text-purple-600 border border-purple-200">
+                        <div className="w-7 h-7 rounded bg-purple-100 flex items-center justify-center text-xs    text-purple-600 border border-purple-200">
                           {customer.owner[0]}
                         </div>
                         <span className="text-xs  text-gray-700">{customer.owner}</span>

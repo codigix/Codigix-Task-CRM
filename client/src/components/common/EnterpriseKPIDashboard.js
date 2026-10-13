@@ -455,9 +455,9 @@ const EnterpriseKPIDashboard = () => {
           <button
             key={dept.id}
             onClick={() => setSelectedDept(dept.id)}
-            className={`p-2 rounded-full  text-sm whitespace-nowrap transition ${selectedDept === dept.id
-                ? `${dept.color} shadow-lg`
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            className={`p-2 rounded  text-sm whitespace-nowrap transition ${selectedDept === dept.id
+              ? `${dept.color} shadow-lg`
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
           >
             {dept.label}

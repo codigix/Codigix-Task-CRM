@@ -141,7 +141,7 @@ const InvoiceReportPage = () => {
       <div className="p-2 bg-[#F7F8F9] min-h-screen">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+            <div className="inline-block animate-spin rounded h-12 w-12 border-b-2 border-red-600"></div>
             <p className="mt-4 text-gray-600  ">Loading report data...</p>
           </div>
         </div>
@@ -361,7 +361,7 @@ const InvoiceReportPage = () => {
                         <td className="px-4 py-3 text-gray-900">{inv.company_name || 'N/A'}</td>
                         <td className="px-4 py-3 text-center  text-gray-900">{formatCurrency(inv.total)}</td>
                         <td className="px-4 py-3 text-center">
-                          <span className="p-1  rounded-full text-xs "
+                          <span className="p-1  rounded text-xs "
                             style={{
                               backgroundColor: inv.status === 'Paid' ? '#dcfce7' : inv.status === 'Unpaid' ? '#fee2e2' : '#fef3c7',
                               color: inv.status === 'Paid' ? '#15803d' : inv.status === 'Unpaid' ? '#991b1b' : '#92400e'

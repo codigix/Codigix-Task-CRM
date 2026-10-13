@@ -36,10 +36,10 @@ const KanbanMockup = () => {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex -space-x-2 mr-3">
-            <img className="w-6 h-6 rounded-full border-2 border-white relative z-30" src="https://i.pravatar.cc/100?img=47" alt="User" />
-            <img className="w-6 h-6 rounded-full border-2 border-white relative z-20" src="https://i.pravatar.cc/100?img=33" alt="User" />
-            <img className="w-6 h-6 rounded-full border-2 border-white relative z-10" src="https://i.pravatar.cc/100?img=12" alt="User" />
-            <div className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px]  text-slate-500 z-0">+4</div>
+            <img className="w-6 h-6 rounded border-2 border-white relative z-30" src="https://i.pravatar.cc/100?img=47" alt="User" />
+            <img className="w-6 h-6 rounded border-2 border-white relative z-20" src="https://i.pravatar.cc/100?img=33" alt="User" />
+            <img className="w-6 h-6 rounded border-2 border-white relative z-10" src="https://i.pravatar.cc/100?img=12" alt="User" />
+            <div className="w-6 h-6 rounded border-2 border-white bg-slate-100 flex items-center justify-center text-[8px]  text-slate-500 z-0">+4</div>
           </div>
           <button className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded flex items-center gap-1.5 transition-colors">
             <Plus size={14} /> Add Task
@@ -58,7 +58,7 @@ const KanbanMockup = () => {
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xs  text-slate-700">{col.title}</h3>
-                  <span className="bg-slate-200 text-slate-500 text-[9px]  px-1.5 py-0.5 rounded-full">{col.count}</span>
+                  <span className="bg-slate-200 text-slate-500 text-[9px]  px-1.5 py-0.5 rounded">{col.count}</span>
                 </div>
                 {i === 0 && (
                   <button className="text-white bg-red-500 hover:bg-red-600 p-0.5 rounded">
@@ -91,8 +91,8 @@ const KanbanMockup = () => {
                           <span className="text-[9px] text-slate-500 font-medium">Progress</span>
                           <span className="text-[9px]  text-red-600">{task.progress}%</span>
                         </div>
-                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-red-500 rounded-full" style={{ width: `${task.progress}%` }}></div>
+                        <div className="h-1.5 w-full bg-slate-100 rounded overflow-hidden">
+                          <div className="h-full bg-red-500 rounded" style={{ width: `${task.progress}%` }}></div>
                         </div>
                       </div>
                     )}
@@ -124,7 +124,7 @@ const KanbanMockup = () => {
                           </div>
                         )}
                       </div>
-                      <img src={task.avatar} alt="Assignee" className="w-5 h-5 rounded-full border border-white" />
+                      <img src={task.avatar} alt="Assignee" className="w-5 h-5 rounded border border-white" />
                     </div>
                   </div>
                 ))}

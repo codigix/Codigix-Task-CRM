@@ -73,7 +73,7 @@ const CommissionPage = () => {
                   <td className="px-6 py-4 text-xs  text-gray-600">{item.rate}</td>
                   <td className="px-6 py-4 text-xs  text-gray-500">{item.date}</td>
                   <td className="px-6 py-4">
-                    <span className={`p-1  rounded-full text-xs  ${item.status === 'Paid' ? 'bg-green-100 text-green-600' :
+                    <span className={`p-1  rounded text-xs  ${item.status === 'Paid' ? 'bg-green-100 text-green-600' :
                       item.status === 'Processing' ? 'bg-blue-100 text-white ' :
                         'bg-orange-100 text-orange-600'
                       }`}>

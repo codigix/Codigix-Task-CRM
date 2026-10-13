@@ -448,9 +448,9 @@ const AddContactModal = ({ isOpen, onClose, onSubmit, initialData = null, isEdit
                     <button
                       type="button"
                       onClick={() => setEmailOptOut(!emailOptOut)}
-                      className={`w-10 h-6 rounded-full transition flex-shrink-0 ${emailOptOut ? 'bg-red-500' : 'bg-gray-300'} relative`}
+                      className={`w-10 h-6 rounded transition flex-shrink-0 ${emailOptOut ? 'bg-red-500' : 'bg-gray-300'} relative`}
                     >
-                      <span className={`block w-5 h-5 bg-white rounded-full shadow transform transition ${emailOptOut ? 'translate-x-4' : 'translate-x-0.5'}`}></span>
+                      <span className={`block w-5 h-5 bg-white rounded shadow transform transition ${emailOptOut ? 'translate-x-4' : 'translate-x-0.5'}`}></span>
                     </button>
                   </div>
                   <div className="text-right mt-1">
@@ -955,7 +955,7 @@ const AddContactModal = ({ isOpen, onClose, onSubmit, initialData = null, isEdit
                               <>
                                 <div className="flex -space-x-2">
                                   {getSelectedPeopleNames().slice(0, 3).map(user => (
-                                    <div key={user.id} className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs  border border-white">
+                                    <div key={user.id} className="w-6 h-6 rounded bg-red-500 text-white flex items-center justify-center text-xs  border border-white">
                                       {getInitials(user.first_name, user.last_name)}
                                     </div>
                                   ))}
@@ -993,7 +993,7 @@ const AddContactModal = ({ isOpen, onClose, onSubmit, initialData = null, isEdit
                                 readOnly
                                 className="w-4 h-4"
                               />
-                              <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-xs  flex-shrink-0">
+                              <div className="w-8 h-8 rounded bg-red-500 text-white flex items-center justify-center text-xs  flex-shrink-0">
                                 {getInitials(user.first_name, user.last_name)}
                               </div>
                               <div>

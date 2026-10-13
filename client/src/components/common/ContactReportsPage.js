@@ -409,7 +409,7 @@ function ContactsTable({ rows }) {
                 {visibleColumns.name && (
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <img src={r.avatar} alt={r.name} className="w-8 h-8 rounded-full object-cover" />
+                      <img src={r.avatar} alt={r.name} className="w-8 h-8 rounded object-cover" />
                       <div>
                         <div className=" text-gray-900">{r.name}</div>
                         <div className="text-xs text-gray-500">{r.role}</div>
@@ -583,7 +583,7 @@ const ContactReportsPage = () => {
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-xl  text-gray-900">Contact Reports</h1>
-            <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs ">{contacts.length}</span>
+            <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded text-xs ">{contacts.length}</span>
           </div>
           <div className="flex items-center gap-2 text-xs ">
             <a href="/" className="text-orange-500 hover:text-orange-600  ">

@@ -226,7 +226,7 @@ const TasksKanban = () => {
       <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-lg  text-gray-900">Task Board</h2>
-          <span className="bg-red-100 text-red  px-2.5 py-0.5 rounded-full text-[12px] ">{tasks.length}</span>
+          <span className="bg-red-100 text-red  px-2.5 py-0.5 rounded text-[12px] ">{tasks.length}</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -257,10 +257,10 @@ const TasksKanban = () => {
               >
                 <div className={`${colors.header} px-4 py-3 rounded-t flex items-center justify-between border-b ${colors.border}`}>
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${colors.dot}`}></div>
+                    <div className={`w-2 h-2 rounded ${colors.dot}`}></div>
                     <h3 className={`text-xs   ${colors.text}`}>{status}</h3>
                   </div>
-                  <span className="text-xs text-gray-500 bg-white/50 p-1  rounded-full border border-gray-200">
+                  <span className="text-xs text-gray-500 bg-white/50 p-1  rounded border border-gray-200">
                     {statusTasks.length}
                   </span>
                 </div>
@@ -298,11 +298,11 @@ const TasksKanban = () => {
                                 {formatDate(task.due_date)}
                               </div>
                             )}
-                            <span className={`text-xs  px-1.5 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
+                            <span className={`text-xs  px-1.5 py-0.5 rounded ${getPriorityColor(task.priority)}`}>
                               {task.priority}
                             </span>
                           </div>
-                          <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs   text-blue-700 border border-blue-200">
+                          <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-xs   text-blue-700 border border-blue-200">
                             {task.title?.[0]?.toUpperCase() || 'T'}
                           </div>
                         </div>

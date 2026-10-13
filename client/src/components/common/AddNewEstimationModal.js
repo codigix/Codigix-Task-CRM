@@ -1032,7 +1032,7 @@ const QuotationModal = ({ isOpen, onClose, onSubmit, initialData, onGeneratePDF,
           <button
             onClick={handleCancel}
             disabled={isLoading}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors group"
+            className="p-2 hover:bg-gray-100 rounded transition-colors group"
           >
             <X size={20} className="text-gray-400 text-gray-600" />
           </button>
@@ -1411,7 +1411,7 @@ const QuotationModal = ({ isOpen, onClose, onSubmit, initialData, onGeneratePDF,
                   <div className="flex justify-between items-center text-xs">
                     <div className="flex items-center gap-1">
                       <span className="text-gray-400">Discount</span>
-                      <div className="w-3.5 h-3.5 rounded-full border border-gray-200 flex items-center justify-center text-xs text-gray-300 cursor-help">i</div>
+                      <div className="w-3.5 h-3.5 rounded border border-gray-200 flex items-center justify-center text-xs text-gray-300 cursor-help">i</div>
                     </div>
                     <input
                       type="number"
@@ -1470,7 +1470,7 @@ const QuotationModal = ({ isOpen, onClose, onSubmit, initialData, onGeneratePDF,
                           </div>
                           <div className="flex items-center gap-2 text-xs text-gray-400">
                             <span>{v.date}</span>
-                            {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>}
+                            {isSelected && <span className="w-1.5 h-1.5 rounded bg-blue-500"></span>}
                           </div>
                         </div>
                       </div>
@@ -1494,9 +1494,9 @@ const QuotationModal = ({ isOpen, onClose, onSubmit, initialData, onGeneratePDF,
                           setFormData(prev => ({ ...prev, isRevision: false, isCreatingRevision: false }));
                         }
                       }}
-                      className={`w-10 h-5 rounded-full relative transition-colors duration-200 ${formData.isRevision ? 'bg-orange-600' : 'bg-gray-200'}`}
+                      className={`w-10 h-5 rounded relative transition-colors duration-200 ${formData.isRevision ? 'bg-orange-600' : 'bg-gray-200'}`}
                     >
-                      <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-0.75 transition-all duration-200 ${formData.isRevision ? 'right-1' : 'left-1'}`}></div>
+                      <div className={`w-3.5 h-3.5 bg-white rounded absolute top-0.75 transition-all duration-200 ${formData.isRevision ? 'right-1' : 'left-1'}`}></div>
                     </button>
                   </div>
                   {formData.isRevision && (

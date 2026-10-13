@@ -44,10 +44,10 @@ const AdminMockup = () => {
             <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
               <div className="relative">
                 <Bell size={14} className="text-slate-400 hover:text-slate-600 cursor-pointer" />
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></div>
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded border-2 border-white"></div>
               </div>
               <div className="flex items-center gap-2 cursor-pointer">
-                <img src="https://i.pravatar.cc/100?img=11" alt="Admin" className="w-6 h-6 rounded-full border border-slate-200" />
+                <img src="https://i.pravatar.cc/100?img=11" alt="Admin" className="w-6 h-6 rounded border border-slate-200" />
                 <div className="hidden lg:block leading-tight">
                   <div className="text-[10px]  text-slate-800">Alex R.</div>
                   <div className="text-[9px] text-slate-400">Super Admin</div>
@@ -65,10 +65,10 @@ const AdminMockup = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Status Card */}
               <div className="bg-gradient-to-br from-red-600 to-red-700 rounded p-4 text-white shadow-lg shadow-red-600/20 relative overflow-hidden flex flex-col justify-between h-32">
-                <div className="absolute -right-4 -top-4 w-24 h-24 bg-red-500 rounded-full blur-2xl opacity-50"></div>
+                <div className="absolute -right-4 -top-4 w-24 h-24 bg-red-500 rounded blur-2xl opacity-50"></div>
                 <div className="flex justify-between items-start relative z-10">
                   <span className="text-xs  opacity-90">System Status</span>
-                  <span className="text-[9px]  bg-white/20 px-2 py-0.5 rounded-full border border-white/20">Active</span>
+                  <span className="text-[9px]  bg-white/20 px-2 py-0.5 rounded border border-white/20">Active</span>
                 </div>
                 <div className="relative z-10">
                   <div className="text-3xl font-extrabold tracking-tight mb-1">99.98%</div>
@@ -99,7 +99,7 @@ const AdminMockup = () => {
               <div className="bg-white rounded border border-slate-200 p-4 shadow-sm flex flex-col justify-between h-32">
                 <div className="flex justify-between items-start">
                   <span className="text-xs  text-slate-600 flex items-center gap-1"><Cpu size={12} /> API Health</span>
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  <span className="w-2 h-2 rounded bg-green-500"></span>
                 </div>
                 <div>
                   <div className="text-2xl  text-slate-800">99.99%</div>

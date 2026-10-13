@@ -111,7 +111,7 @@ const AdvancedDateRangePicker = ({ range, onChange, initialRange = 'Today' }) =>
             }
             setSelectedPreset('Custom Range');
           }}
-          className={`h-8 w-8 flex items-center justify-center text-xs cursor-pointer rounded-full transition-colors
+          className={`h-8 w-8 flex items-center justify-center text-xs cursor-pointer rounded transition-colors
             ${isSelected ? 'bg-red-600 text-white' : isInRange ? 'bg-red-50 text-red ' : 'hover:bg-gray-100 text-gray-700'}
           `}
         >

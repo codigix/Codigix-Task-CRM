@@ -43,7 +43,7 @@ const timeAgo = (v) => {
 /* ───────── building blocks ───────── */
 
 const Card = ({ title, subtitle, right, children, className = '' }) => (
-  <section className={`bg-white border border-gray-200 rounded-lg ${className}`}>
+  <section className={`bg-white border border-gray-200 rounded ${className}`}>
     <div className="px-4 py-3 border-b border-gray-100 flex items-start justify-between gap-3">
       <div className="min-w-0">
         <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
@@ -57,7 +57,7 @@ const Card = ({ title, subtitle, right, children, className = '' }) => (
 
 const Kpi = ({ icon: Icon, label, value, hint, onOpen, tone }) => {
   const body = (
-    <div className={`h-full text-left bg-white border rounded-lg p-4 transition ${onOpen ? 'hover:border-blue-300 hover:shadow-sm' : ''} ${tone === 'critical' ? 'border-red-200' : 'border-gray-200'}`}>
+    <div className={`h-full text-left bg-white border rounded p-4 transition ${onOpen ? 'hover:border-blue-300 hover:shadow-sm' : ''} ${tone === 'critical' ? 'border-red-200' : 'border-gray-200'}`}>
       <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
         <Icon size={14} className={tone === 'critical' ? 'text-red-600' : 'text-gray-400'} aria-hidden="true" />
         <span className="truncate">{label}</span>
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
                 return (
                   <li key={item.label}>
                     <button type="button" onClick={open(item.label, item.params)} className="w-full text-left flex items-center gap-3 py-2.5 group cursor-pointer">
-                      <span className="w-8 h-8 rounded-md flex items-center justify-center shrink-0" style={{ background: `${toneDot[item.tone]}1a` }}>
+                      <span className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: `${toneDot[item.tone]}1a` }}>
                         <Icon size={15} style={{ color: toneDot[item.tone] }} aria-hidden="true" />
                       </span>
                       <span className="flex-1 min-w-0">
@@ -335,8 +335,8 @@ export default function AdminDashboard() {
                       <td className="py-2 px-3 text-xs text-gray-700">{x.status}</td>
                       <td className="py-2 px-3">
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden" aria-hidden="true">
-                            <div className="h-full rounded-full" style={{ width: `${x.progress}%`, background: C.s3 }} />
+                          <div className="flex-1 h-2 bg-gray-100 rounded overflow-hidden" aria-hidden="true">
+                            <div className="h-full rounded" style={{ width: `${x.progress}%`, background: C.s3 }} />
                           </div>
                           <span className="text-[11px] text-gray-600 tabular-nums whitespace-nowrap">{x.done}/{x.tasks} · {x.progress}%</span>
                         </div>
@@ -353,13 +353,13 @@ export default function AdminDashboard() {
           )}
           {(pr?.byStatus || []).length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
-              {pr.byStatus.map(b => <button type="button" key={b.status} onClick={open(`Projects: ${b.status}`, { type: 'projects', status: b.status })} className="text-[11px] bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-2 py-0.5 cursor-pointer">{b.status}: <strong>{b.count}</strong></button>)}
+              {pr.byStatus.map(b => <button type="button" key={b.status} onClick={open(`Projects: ${b.status}`, { type: 'projects', status: b.status })} className="text-[11px] bg-gray-100 hover:bg-gray-200 text-gray-700 rounded px-2 py-0.5 cursor-pointer">{b.status}: <strong>{b.count}</strong></button>)}
             </div>
           )}
         </Card>
 
         <Card title="Coming up" subtitle="Tasks due in the next 7 days"
->
+        >
           {dueSeries.some(d => d.count > 0) ? (
             <div style={{ height: 140 }} role="img" aria-label="Tasks due per day for the next 7 days">
               <ResponsiveContainer width="100%" height="100%">
@@ -420,7 +420,7 @@ export default function AdminDashboard() {
                   return (
                     <li key={st.stage} className="text-xs cursor-pointer hover:bg-gray-50 rounded" onClick={open(`Deals: ${st.stage}`, { type: 'deals', stage: st.stage })}>
                       <div className="flex justify-between"><span className="text-gray-700">{st.stage} ({st.count})</span><span className="tabular-nums text-gray-900">{money(st.value)}</span></div>
-                      <div className="h-2 bg-gray-100 rounded-full mt-0.5"><div className="h-full rounded-full" style={{ width: `${(st.value / max) * 100}%`, background: C.s1 }} /></div>
+                      <div className="h-2 bg-gray-100 rounded mt-0.5"><div className="h-full rounded" style={{ width: `${(st.value / max) * 100}%`, background: C.s1 }} /></div>
                     </li>
                   );
                 })}
@@ -440,7 +440,7 @@ export default function AdminDashboard() {
                 return (
                   <li key={d.department} className="text-xs cursor-pointer hover:bg-gray-50 rounded" onClick={open(`People: ${d.department}`, { type: 'people', department: d.department })}>
                     <div className="flex justify-between mb-0.5"><span className="text-gray-800">{d.department}</span><span className="tabular-nums font-semibold text-gray-900">{d.count}</span></div>
-                    <div className="h-2 bg-gray-100 rounded-full"><div className="h-full rounded-full" style={{ width: `${(d.count / max) * 100}%`, background: C.s1 }} /></div>
+                    <div className="h-2 bg-gray-100 rounded"><div className="h-full rounded" style={{ width: `${(d.count / max) * 100}%`, background: C.s1 }} /></div>
                   </li>
                 );
               })}
@@ -458,7 +458,7 @@ export default function AdminDashboard() {
             <ol className="relative border-l border-gray-200 ml-1.5 space-y-3">
               {data.activity.map((x, i) => (
                 <li key={i} className="ml-4">
-                  <span className="absolute -left-[5px] mt-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ background: x.field === 'status' ? C.s3 : C.s1 }} aria-hidden="true" />
+                  <span className="absolute -left-[5px] mt-1.5 w-2.5 h-2.5 rounded border-2 border-white" style={{ background: x.field === 'status' ? C.s3 : C.s1 }} aria-hidden="true" />
                   <div className="text-[11px] text-gray-500">{timeAgo(x.at)} · {x.by || 'System'}</div>
                   <div className="text-xs text-gray-800">
                     <span className="font-semibold">{x.key}</span>{' '}

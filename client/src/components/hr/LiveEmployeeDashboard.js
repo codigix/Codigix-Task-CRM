@@ -122,7 +122,7 @@ const LiveEmployeeDashboard = ({ employeeId, onClose, autoDownload }) => {
     return createPortal(
       <div className="fixed inset-0 z-[9999] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center">
         <div className="bg-white p-4 rounded shadow-xl flex flex-col items-center">
-          <div className="w-10 h-10 border-4 border-[#151B2B] border-t-transparent rounded-full animate-spin mb-4"></div>
+          <div className="w-10 h-10 border-4 border-[#151B2B] border-t-transparent rounded animate-spin mb-4"></div>
           <p className="text-slate-600 font-medium">Generating Live Performance Dashboard...</p>
         </div>
       </div>,
@@ -152,7 +152,7 @@ const LiveEmployeeDashboard = ({ employeeId, onClose, autoDownload }) => {
                 data-html2canvas-ignore
               >
                 {isDownloading ? (
-                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded animate-spin"></div>
                 ) : (
                   <Download size={16} />
                 )}
@@ -160,7 +160,7 @@ const LiveEmployeeDashboard = ({ employeeId, onClose, autoDownload }) => {
               </button>
               <button
                 onClick={onClose}
-                className="p-1 hover:bg-white/10 rounded-full transition-colors ml-2"
+                className="p-1 hover:bg-white/10 rounded transition-colors ml-2"
                 data-html2canvas-ignore
               >
                 <X size={24} />

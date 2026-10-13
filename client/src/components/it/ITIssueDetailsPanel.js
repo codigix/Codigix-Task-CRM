@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowUp, ArrowDown, CheckSquare, Megaphone, Palette, Video,
   FileText, Globe, Users
@@ -106,7 +107,17 @@ const STATUS_COLORS = {
 
 const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssueCreated, department, initialSubtaskKey, proofRequest, onProofClose }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const loggedUser = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username : 'Current User';
+
+  // A meeting work item carries a "meeting:<id>" label; it is completed from the Meetings page.
+  const meetingId = (() => {
+    if (String(issue?.type || '').toLowerCase() !== 'meeting') return null;
+    let labels = issue.labels;
+    if (typeof labels === 'string') { try { labels = JSON.parse(labels); } catch { labels = []; } }
+    const hit = (Array.isArray(labels) ? labels : []).find(l => /^meeting:\d+$/.test(String(l)));
+    return hit ? Number(String(hit).split(':')[1]) : null;
+  })();
 
   // Core issue state
   const [title, setTitle] = useState('');
@@ -1083,8 +1094,20 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
         <div className="flex-1 min-h-0 p-5 flex gap-6 overflow-hidden">
           {/* Left Column (Main Content - Independent Scroll) */}
           <div ref={leftColumnRef} className="flex-1 min-w-0 overflow-y-auto pr-3 custom-scrollbar space-y-6">
+            {meetingId && (
+              <div className="rounded border border-indigo-200 bg-indigo-50 px-4 py-3 flex items-center gap-3">
+                <Video size={18} className="text-indigo-500 flex-shrink-0" />
+                <div className="flex-1 min-w-0 text-sm text-indigo-900">
+                  This is a meeting. It can only be completed by submitting the Minutes of Meeting (MOM); reschedule, edit attendees or cancel it from the meeting.
+                </div>
+                <button
+                  onClick={() => { onClose?.(); navigate(`/meetings?open=${meetingId}`); }}
+                  className="h-8 px-3 text-xs font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer whitespace-nowrap"
+                >Open meeting</button>
+              </div>
+            )}
             {activeProof && (
-              <div className={`rounded-lg border-2 p-4 ${activeProof.kind === 'evidence' ? 'border-purple-300 bg-purple-50/40' : 'border-emerald-300 bg-emerald-50/40'}`}>
+              <div className={`rounded border-2 p-4 ${activeProof.kind === 'evidence' ? 'border-purple-300 bg-purple-50/40' : 'border-emerald-300 bg-emerald-50/40'}`}>
                 <div className="mb-3"><ProofHeading info={activeProof} /></div>
                 <ProofForm key={`${activeProof.issueKey}-${activeProof.kind}`} info={activeProof} onSubmit={submitProof} onCancel={closeProof} />
               </div>

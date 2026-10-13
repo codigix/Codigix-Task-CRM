@@ -8,7 +8,7 @@ import ProposalSettings from './ProposalSettings';
 const STATES = ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Jammu and Kashmir', 'Ladakh', 'Chandigarh', 'Puducherry'];
 
 // Outside the page component so inputs keep focus while typing.
-const Card = ({ title, children }) => <div className="bg-white border border-gray-200 rounded-lg p-4"><div className="text-[13px] font-semibold mb-3">{title}</div><div className="grid md:grid-cols-2 gap-3">{children}</div></div>;
+const Card = ({ title, children }) => <div className="bg-white border border-gray-200 rounded p-4"><div className="text-[13px] font-semibold mb-3">{title}</div><div className="grid md:grid-cols-2 gap-3">{children}</div></div>;
 
 export default function SalesSettingsPage() {
   const [s, setS] = useState(null);

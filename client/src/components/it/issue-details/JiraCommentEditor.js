@@ -308,7 +308,7 @@ const JiraCommentEditor = ({
                 className={`px-2.5 py-1.5 flex items-center gap-2 cursor-pointer transition ${idx === selectedMentionIndex ? 'bg-blue-50 text-blue-700 ' : 'text-gray-700 hover:bg-gray-50'
                   }`}
               >
-                <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700  text-[10px] flex items-center justify-center shrink-0">
+                <div className="w-5 h-5 rounded bg-blue-100 text-blue-700  text-[10px] flex items-center justify-center shrink-0">
                   {u.name.slice(0, 2).toUpperCase()}
                 </div>
                 <span className="truncate">{u.name}</span>
@@ -333,9 +333,9 @@ const JiraCommentEditor = ({
                 e.preventDefault();
                 insertMention(u.name);
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 text-[10px] font-medium transition cursor-pointer border border-gray-200/60"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 text-[10px] font-medium transition cursor-pointer border border-gray-200/60"
             >
-              <span className="w-3.5 h-3.5 rounded-full bg-gray-300 text-gray-700 text-[8px] flex items-center justify-center ">
+              <span className="w-3.5 h-3.5 rounded bg-gray-300 text-gray-700 text-[8px] flex items-center justify-center ">
                 {u.name[0]?.toUpperCase()}
               </span>
               <span>+ {u.name}</span>

@@ -96,9 +96,9 @@ const ModuleShowcase = () => {
               {/* Window Header */}
               <div className="bg-white/80 border-b border-slate-200/60 px-4 py-3 flex items-center gap-2 backdrop-blur-md relative z-20">
                 <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-400 shadow-sm border border-red-500/20"></div>
-                  <div className="w-3 h-3 rounded-full bg-amber-400 shadow-sm border border-amber-500/20"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-400 shadow-sm border border-green-500/20"></div>
+                  <div className="w-3 h-3 rounded bg-red-400 shadow-sm border border-red-500/20"></div>
+                  <div className="w-3 h-3 rounded bg-amber-400 shadow-sm border border-amber-500/20"></div>
+                  <div className="w-3 h-3 rounded bg-green-400 shadow-sm border border-green-500/20"></div>
                 </div>
                 <div className="flex-1 flex justify-center">
                   <div className="flex items-center text-xs font-medium text-slate-500 bg-slate-100/80 px-4 py-1.5 rounded shadow-sm border border-slate-200/50 max-w-[200px] truncate">

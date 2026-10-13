@@ -57,7 +57,7 @@ function DetailsCard({ kind, record, meta, onSaved }) {
   };
   const ownerName = (id) => meta.people.find(p => Number(p.id) === Number(id))?.name || '—';
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
+    <div className="bg-white border border-gray-200 rounded p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-semibold text-gray-700">Details</span>
         {!edit ? <button onClick={() => setEdit(true)} className="text-xs text-blue-700 hover:underline cursor-pointer inline-flex items-center gap-1"><Pencil size={11} /> Edit</button>
@@ -134,9 +134,9 @@ export default function SalesRecordPage({ kind }) {
       <button onClick={() => navigate(`${base}/pipeline${isLead ? '?tab=leads' : ''}`)} className="text-xs text-gray-500 hover:text-gray-800 inline-flex items-center gap-1 mb-2 cursor-pointer"><ArrowLeft size={13} /> Sales pipeline</button>
 
       {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+      <div className="bg-white border border-gray-200 rounded p-4 mb-4">
         <div className="flex flex-wrap items-start gap-3">
-          <span className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${isLead ? 'bg-sky-50 text-sky-700' : 'bg-indigo-50 text-indigo-700'}`}>{isLead ? <User size={20} /> : <Building2 size={20} />}</span>
+          <span className={`w-11 h-11 rounded flex items-center justify-center shrink-0 ${isLead ? 'bg-sky-50 text-sky-700' : 'bg-indigo-50 text-indigo-700'}`}>{isLead ? <User size={20} /> : <Building2 size={20} />}</span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-[18px] font-semibold text-gray-900">{isLead ? rec.lead_name : rec.deal_name}</h1>
@@ -174,13 +174,13 @@ export default function SalesRecordPage({ kind }) {
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-[11px] text-gray-500 mr-1">Status:</span>
               {['New', 'Contacted', 'Qualified'].map(s => (
-                <button key={s} disabled={closed} onClick={() => setLeadStatus(s)} className={`h-7 px-3 text-xs rounded-full border cursor-pointer disabled:cursor-default ${status === s ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50'}`}>{s}</button>
+                <button key={s} disabled={closed} onClick={() => setLeadStatus(s)} className={`h-7 px-3 text-xs rounded border cursor-pointer disabled:cursor-default ${status === s ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50'}`}>{s}</button>
               ))}
               {!closed && <>
-                <button onClick={() => setModal({ kind: 'leadReason', target: 'Unqualified' })} className="h-7 px-3 text-xs rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 cursor-pointer">Unqualified</button>
-                <button onClick={() => setModal({ kind: 'leadReason', target: 'Lost' })} className="h-7 px-3 text-xs rounded-full border border-red-200 text-red-700 hover:bg-red-50 cursor-pointer inline-flex items-center gap-1"><XCircle size={12} /> Lost</button>
+                <button onClick={() => setModal({ kind: 'leadReason', target: 'Unqualified' })} className="h-7 px-3 text-xs rounded border border-gray-300 text-gray-600 hover:bg-gray-50 cursor-pointer">Unqualified</button>
+                <button onClick={() => setModal({ kind: 'leadReason', target: 'Lost' })} className="h-7 px-3 text-xs rounded border border-red-200 text-red-700 hover:bg-red-50 cursor-pointer inline-flex items-center gap-1"><XCircle size={12} /> Lost</button>
               </>}
-              {(status === 'Lost' || status === 'Unqualified') && <button onClick={() => setLeadStatus('Contacted')} className="h-7 px-3 text-xs rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer">Re-open</button>}
+              {(status === 'Lost' || status === 'Unqualified') && <button onClick={() => setLeadStatus('Contacted')} className="h-7 px-3 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer">Re-open</button>}
             </div>
           ) : (
             <div className="flex items-center gap-1 overflow-x-auto pb-1">
@@ -190,7 +190,7 @@ export default function SalesRecordPage({ kind }) {
                 const special = /^(won|lost)$/i.test(s.name);
                 return (
                   <button key={s.id} onClick={() => moveStage(s)} title={`${s.name} · ${s.probability}%`}
-                    className={`shrink-0 h-8 px-3 text-[11.5px] font-medium rounded-md border cursor-pointer flex items-center gap-1 ${current ? (special ? stageTone(s.name, status).replace('ring-', 'border-') : 'bg-indigo-600 text-white border-indigo-600') : done && !special ? 'bg-indigo-50 text-indigo-800 border-indigo-100' : special ? (/won/i.test(s.name) ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' : 'border-red-200 text-red-700 hover:bg-red-50') : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                    className={`shrink-0 h-8 px-3 text-[11.5px] font-medium rounded border cursor-pointer flex items-center gap-1 ${current ? (special ? stageTone(s.name, status).replace('ring-', 'border-') : 'bg-indigo-600 text-white border-indigo-600') : done && !special ? 'bg-indigo-50 text-indigo-800 border-indigo-100' : special ? (/won/i.test(s.name) ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' : 'border-red-200 text-red-700 hover:bg-red-50') : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
                     {/won/i.test(s.name) && <Trophy size={12} />}{done && !special && <CheckCircle2 size={12} />}{s.name}
                   </button>
                 );
@@ -205,7 +205,7 @@ export default function SalesRecordPage({ kind }) {
       <div className="grid lg:grid-cols-[1fr_380px] gap-4">
         <div className="space-y-4 min-w-0">
           {!isLead && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-white border border-gray-200 rounded p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[13px] font-semibold text-gray-900 flex items-center gap-1.5"><FileText size={14} /> Quotations</span>
                 {!closed && <button onClick={() => setModal({ kind: 'newquote' })} className={btn.ghost}><FilePlus2 size={13} /> New quotation</button>}
@@ -215,8 +215,8 @@ export default function SalesRecordPage({ kind }) {
                   {Object.entries(quoteGroups).map(([num, versions]) => {
                     const latest = versions[0];
                     return (
-                      <div key={num} className="border border-gray-200 rounded-lg">
-                        <button onClick={() => navigate(`${base}/quotation/${latest.id}`)} className="w-full text-left p-3 flex flex-wrap items-center gap-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                      <div key={num} className="border border-gray-200 rounded">
+                        <button onClick={() => navigate(`${base}/quotation/${latest.id}`)} className="w-full text-left p-3 flex flex-wrap items-center gap-2 hover:bg-gray-50 rounded cursor-pointer">
                           <span className="font-mono text-[12px] text-gray-700">{num}</span>
                           <span className="text-[11px] text-gray-500">v{latest.version}</span>
                           <Badge text={latest.status} tone={QUOTE_STATUS_STYLE[latest.status]} />
@@ -235,8 +235,8 @@ export default function SalesRecordPage({ kind }) {
                 </div>
               )}
               {decks.map(dk => (
-                <div key={`dk${dk.id}`} className="border border-gray-200 rounded-lg">
-                  <button onClick={() => navigate(`${base}/proposal/${dk.id}`)} className="w-full text-left p-3 flex flex-wrap items-center gap-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                <div key={`dk${dk.id}`} className="border border-gray-200 rounded">
+                  <button onClick={() => navigate(`${base}/proposal/${dk.id}`)} className="w-full text-left p-3 flex flex-wrap items-center gap-2 hover:bg-gray-50 rounded cursor-pointer">
                     <span className="font-mono text-[12px] text-gray-700">{dk.number}</span>
                     <span className="inline-flex items-center gap-0.5 text-[10px] text-violet-700 bg-violet-50 ring-1 ring-violet-200 rounded px-1"><Presentation size={9} /> {dk.kind === 'marketing' ? 'DM' : 'IT'}</span>
                     <Badge text={dk.status} tone={QUOTE_STATUS_STYLE[dk.status]} />
@@ -250,12 +250,12 @@ export default function SalesRecordPage({ kind }) {
             </div>
           )}
 
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="bg-white border border-gray-200 rounded p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
               <span className="text-[13px] font-semibold text-gray-900">Timeline</span>
               <div className="flex gap-1">
                 {[['all', 'All'], ['communication', 'Communications'], ...(isLead ? [] : [['quotation', 'Quotations']]), ['status', 'Status & schedule']].map(([kk, l]) => (
-                  <button key={kk} onClick={() => setFilter(kk)} className={`h-7 px-2.5 text-xs rounded-full border cursor-pointer ${filter === kk ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}>{l}</button>
+                  <button key={kk} onClick={() => setFilter(kk)} className={`h-7 px-2.5 text-xs rounded border cursor-pointer ${filter === kk ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}>{l}</button>
                 ))}
               </div>
             </div>
@@ -264,7 +264,7 @@ export default function SalesRecordPage({ kind }) {
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="bg-white border border-gray-200 rounded p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-gray-700">Next steps ({openFollowups.length})</span>
               {!closed && <button onClick={() => setModal({ kind: 'schedule' })} className="text-xs text-blue-700 hover:underline cursor-pointer">+ Schedule</button>}

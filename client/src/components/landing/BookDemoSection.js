@@ -57,14 +57,14 @@ const BookDemoSection = () => {
     <section className="py-20 lg:py-32 bg-slate-900 relative overflow-hidden" id="demo">
       {/* Decorative background elements */}
       <div className="absolute top-0 right-0 w-1/2 h-full bg-red-600/5 blur-[150px] -z-10 pointer-events-none"></div>
-      <div className="absolute -left-32 bottom-0 w-[500px] h-[500px] bg-rose-600/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+      <div className="absolute -left-32 bottom-0 w-[500px] h-[500px] bg-rose-600/10 rounded blur-[120px] -z-10 pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex flex-col lg:flex-row gap-16 items-center">
 
           {/* Left Content */}
           <div className="w-full lg:w-1/2">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-sm  mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 text-sm  mb-6">
               <CalendarDays size={16} /> Free 30-minute consultation
             </div>
             <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 tracking-tight leading-tight">
@@ -90,8 +90,8 @@ const BookDemoSection = () => {
 
             <div className="flex items-center gap-4">
               <div className="flex -space-x-3">
-                <img src="https://i.pravatar.cc/100?img=12" alt="Sales" className="w-12 h-12 rounded-full border-2 border-slate-900 object-cover" />
-                <img src="https://i.pravatar.cc/100?img=33" alt="Sales" className="w-12 h-12 rounded-full border-2 border-slate-900 object-cover" />
+                <img src="https://i.pravatar.cc/100?img=12" alt="Sales" className="w-12 h-12 rounded border-2 border-slate-900 object-cover" />
+                <img src="https://i.pravatar.cc/100?img=33" alt="Sales" className="w-12 h-12 rounded border-2 border-slate-900 object-cover" />
               </div>
               <div className="text-sm text-slate-400">
                 Speak directly with our <span className=" text-white">product experts.</span>

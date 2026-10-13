@@ -110,7 +110,7 @@ const MarketingDashboard = () => {
 
         {/* Lead Growth */}
         <div className="bg-white p-5 rounded border border-gray-100 shadow-sm">
-          <SectionHeader title="Lead Growth Overview" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded-full outline-none"><option>This Week</option></select>} />
+          <SectionHeader title="Lead Growth Overview" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded outline-none"><option>This Week</option></select>} />
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={LEAD_GROWTH_DATA}>
@@ -148,7 +148,7 @@ const MarketingDashboard = () => {
             {LEADS_BY_SOURCE.slice(0, 2).map((src, i) => (
               <div key={i} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}></div>
+                  <div className="w-2 h-2 rounded" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}></div>
                   <span className="text-gray-700">{src.name}</span>
                 </div>
                 <div className="flex gap-4">
@@ -190,7 +190,7 @@ const MarketingDashboard = () => {
             {RECENT_LEADS.slice(0, 2).map((l, i) => (
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center  text-sm" style={{ backgroundColor: l.avatarBg || '#EDE9FE', color: l.badgeColor || '#4F46E5' }}>
+                  <div className="w-10 h-10 rounded flex items-center justify-center  text-sm" style={{ backgroundColor: l.avatarBg || '#EDE9FE', color: l.badgeColor || '#4F46E5' }}>
                     {l.avatar}
                   </div>
                   <div>
@@ -199,7 +199,7 @@ const MarketingDashboard = () => {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <span className="text-[10px]  px-2 py-0.5 rounded-full" style={{ backgroundColor: `${l.badgeColor}20`, color: l.badgeColor }}>{l.badge}</span>
+                  <span className="text-[10px]  px-2 py-0.5 rounded" style={{ backgroundColor: `${l.badgeColor}20`, color: l.badgeColor }}>{l.badge}</span>
                   <span className="text-[10px] text-gray-400">{l.time}</span>
                 </div>
               </div>
@@ -229,8 +229,8 @@ const MarketingDashboard = () => {
                   <span className="text-gray-600 font-medium">{f.label}</span>
                   <span className=" text-gray-900">{f.value}</span>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${f.width}%`, backgroundColor: f.color }}></div>
+                <div className="w-full bg-gray-100 rounded h-4 overflow-hidden">
+                  <div className="h-full rounded" style={{ width: `${f.width}%`, backgroundColor: f.color }}></div>
                 </div>
               </div>
             ))}
@@ -239,7 +239,7 @@ const MarketingDashboard = () => {
 
         {/* Engagement Overview */}
         <div className="bg-white p-5 rounded border border-gray-100 shadow-sm">
-          <SectionHeader title="Engagement Overview" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded-full outline-none"><option>This Week</option></select>} />
+          <SectionHeader title="Engagement Overview" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded outline-none"><option>This Week</option></select>} />
           <div className="space-y-4">
             {ENGAGEMENT.map((e, i) => {
               const icons = [Mail, MousePointer, Eye, FileText, Download];
@@ -269,7 +269,7 @@ const MarketingDashboard = () => {
             <div className="space-y-4 mt-2">
               {ACTIVITIES_DATA.slice(0, 2).map((a, i) => (
                 <div key={i} className="flex gap-3">
-                  <div className="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-7 h-7 rounded bg-indigo-50 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Users size={12} className="text-indigo-600" />
                   </div>
                   <div>
@@ -291,7 +291,7 @@ const MarketingDashboard = () => {
                     </div>
                     <span className={`text-sm ${checkedTasks[i] ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{t.label}</span>
                   </div>
-                  <span className="text-[10px]  px-2 py-0.5 rounded-full" style={{ backgroundColor: `${t.priorityColor}20`, color: t.priorityColor }}>{t.priority}</span>
+                  <span className="text-[10px]  px-2 py-0.5 rounded" style={{ backgroundColor: `${t.priorityColor}20`, color: t.priorityColor }}>{t.priority}</span>
                 </div>
               ))}
             </div>
@@ -305,7 +305,7 @@ const MarketingDashboard = () => {
 
         {/* Trend Bar Chart */}
         <div className="bg-white p-5 rounded border border-gray-100 shadow-sm col-span-2">
-          <SectionHeader title="Marketing Performance Trend" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded-full outline-none"><option>Monthly</option></select>} />
+          <SectionHeader title="Marketing Performance Trend" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded outline-none"><option>Monthly</option></select>} />
           <div className="h-[250px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={PERFORMANCE_TREND}>
@@ -326,7 +326,7 @@ const MarketingDashboard = () => {
         {/* Channel & Campaign */}
         <div className="flex flex-col gap-6">
           <div className="bg-white p-5 rounded border border-gray-100 shadow-sm flex-1">
-            <SectionHeader title="Channel Performance" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded-full outline-none"><option>This Month</option></select>} />
+            <SectionHeader title="Channel Performance" rightElement={<select className="bg-indigo-50 text-indigo-600 text-xs  px-3 py-1 rounded outline-none"><option>This Month</option></select>} />
             <div className="space-y-4 mt-2">
               {CHANNEL_PERF.slice(0, 2).map((c, i) => (
                 <div key={i}>
@@ -334,8 +334,8 @@ const MarketingDashboard = () => {
                     <span className="text-gray-700">{c.channel}</span>
                     <span className=" text-gray-900">${c.revenue} <span className="text-gray-400 font-normal">({c.pct}%)</span></span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${c.pct}%`, backgroundColor: c.color }}></div>
+                  <div className="w-full bg-gray-100 rounded h-2 overflow-hidden">
+                    <div className="h-full rounded" style={{ width: `${c.pct}%`, backgroundColor: c.color }}></div>
                   </div>
                 </div>
               ))}
@@ -343,9 +343,9 @@ const MarketingDashboard = () => {
           </div>
 
           <div className="bg-[#6D28D9] p-6 rounded shadow-lg flex-1 text-center text-white flex flex-col justify-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-full bg-white opacity-5 rounded-full blur-3xl transform -translate-y-1/2 -translate-x-1/2"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-white opacity-5 rounded blur-3xl transform -translate-y-1/2 -translate-x-1/2"></div>
             <h3 className=" mb-4 relative z-10 text-[15px]">Campaign Status</h3>
-            <div className="w-24 h-24 rounded-full border-4 border-white/20 mx-auto flex items-center justify-center relative z-10 mb-4" style={{ borderTopColor: 'white' }}>
+            <div className="w-24 h-24 rounded border-4 border-white/20 mx-auto flex items-center justify-center relative z-10 mb-4" style={{ borderTopColor: 'white' }}>
               <div className="text-center">
                 <p className="text-2xl ">78%</p>
                 <p className="text-[10px] opacity-80 uppercase tracking-widest">Active</p>

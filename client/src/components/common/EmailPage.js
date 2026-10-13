@@ -316,7 +316,7 @@ const EmailPage = () => {
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-white rounded   p-2 border border-border-light">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center text-white text-xs  ">
+                <div className="w-10 h-10 rounded bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center text-white text-xs  ">
                   {user?.name?.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <div>
@@ -350,7 +350,7 @@ const EmailPage = () => {
                       }`}
                   >
                     <span>{filter.label}</span>
-                    <span className={`text-xs  ${activeFilter === filter.value ? 'bg-red-200' : 'bg-gray-200'} p-1  rounded-full`}>
+                    <span className={`text-xs  ${activeFilter === filter.value ? 'bg-red-200' : 'bg-gray-200'} p-1  rounded`}>
                       {filter.count}
                     </span>
                   </button>
@@ -397,7 +397,7 @@ const EmailPage = () => {
                 <div className="border-b border-gray-200 pb-4 mb-4">
                   <h2 className="text-2xl  text-gray-900 mb-4">{selectedEmail.subject}</h2>
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full ${selectedEmail.avatarColor} flex items-center justify-center text-white text-xs  `}>
+                    <div className={`w-10 h-10 rounded ${selectedEmail.avatarColor} flex items-center justify-center text-white text-xs  `}>
                       {selectedEmail.type === 'email' ? selectedEmail.avatar : selectedEmail.icon}
                     </div>
                     <div>
@@ -461,7 +461,7 @@ const EmailPage = () => {
                       >
                         <div className="flex items-start gap-4">
                           <input type="checkbox" className="mt-1" />
-                          <div className={`w-10 h-10 rounded-full ${activity.avatarColor} flex items-center justify-center text-white text-xs  flex-shrink-0`}>
+                          <div className={`w-10 h-10 rounded ${activity.avatarColor} flex items-center justify-center text-white text-xs  flex-shrink-0`}>
                             {activity.icon}
                           </div>
                           <div className="flex-1 min-w-0">

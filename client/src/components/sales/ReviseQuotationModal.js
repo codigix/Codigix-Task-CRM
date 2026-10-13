@@ -506,7 +506,7 @@ const ReviseQuotationModal = ({ isOpen, onClose, quotation, onUpdate }) => {
             >
               Send Draft To Client <ArrowRight size={15} />
             </button>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors ml-2">
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded transition-colors ml-2">
               <X size={20} className="text-gray-400" />
             </button>
           </div>
@@ -803,7 +803,7 @@ const ReviseQuotationModal = ({ isOpen, onClose, quotation, onUpdate }) => {
                   </div>
                   <div className="w-1/2 p-4 bg-[#FFF9F0]/50 relative">
                     <div className="text-xs font-[500] text-[#F97316]  mb-2">Version v{formData.version} (₹ {formData.total.toLocaleString()}) - Revised</div>
-                    <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center z-10">
+                    <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded flex items-center justify-center z-10">
                       <ChevronDown size={14} className="text-gray-400 -rotate-90" />
                     </div>
                   </div>
@@ -860,7 +860,7 @@ const ReviseQuotationModal = ({ isOpen, onClose, quotation, onUpdate }) => {
                       comparisonData.reasons.map((reason, idx) => (
                         <div key={idx} className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${reason.color}`}></div>
+                            <div className={`w-3 h-3 rounded ${reason.color}`}></div>
                             <span className="text-sm text-[#475569]">{reason.name}</span>
                           </div>
                           <span className="text-sm font-[500] text-[#1F2937] text-xs flex">₹ {reason.amount.toLocaleString()}</span>

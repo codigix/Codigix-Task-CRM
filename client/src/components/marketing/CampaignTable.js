@@ -38,7 +38,7 @@ const CampaignTable = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-[28px]  text-gray-900">Campaign</h1>
-              <span className="bg-[#FFE5E5] text-[#F62416] px-2.5 py-0.5 rounded-full text-[12px] ">125</span>
+              <span className="bg-[#FFE5E5] text-[#F62416] px-2.5 py-0.5 rounded text-[12px] ">125</span>
             </div>
             <div className="flex items-center gap-1 text-xs  mt-1">
               <button className="text-[#F97316] hover:text-[#EA580C]   bg-transparent border-none cursor-pointer p-0">Home</button>
@@ -76,7 +76,7 @@ const CampaignTable = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F62416] mx-auto mb-4"></div>
+              <div className="animate-spin rounded h-12 w-12 border-b-2 border-[#F62416] mx-auto mb-4"></div>
               <p className="text-gray-600">Loading campaigns...</p>
             </div>
           </div>
@@ -113,9 +113,9 @@ const CampaignTable = () => {
                       </td>
                       <td className="p-2 ">
                         <span className={`inline-block px-3 py-1 rounded  text-[12px]   text-white ${campaign.status === 'Active' ? 'bg-green-500' :
-                            campaign.status === 'Draft' ? 'bg-blue-500' :
-                              campaign.status === 'Completed' ? 'bg-gray-500' :
-                                'bg-orange-500'
+                          campaign.status === 'Draft' ? 'bg-blue-500' :
+                            campaign.status === 'Completed' ? 'bg-gray-500' :
+                              'bg-orange-500'
                           }`}>
                           {campaign.status || 'Unknown'}
                         </span>

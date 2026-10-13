@@ -285,7 +285,7 @@ const DealReport = () => {
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-xl  text-gray-900">Deal Report</h1>
-            <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded-full text-xs ">{deals.length}</span>
+            <span className="bg-red-100 text-red-700 px-2.5 py-1 rounded text-xs ">{deals.length}</span>
           </div>
           <div className="flex items-center gap-2 text-xs ">
             <a href="/" className="text-orange-500 hover:text-orange-600  ">

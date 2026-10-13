@@ -807,6 +807,17 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
       const { taskId } = req.params;
       const { title, description, status, priority, assigned_to, due_date, due_time, tags, linked_type, linked_id, created_by, task_type, next_followup_date, timer_start_time, is_timer_running } = req.body;
 
+      // A meeting to-do is only completed by submitting its MOM from the Meetings page.
+      if (status && String(status).toLowerCase() === 'completed') {
+        const [[gt]] = await db.query('SELECT task_type, meeting_id FROM general_tasks WHERE id = ?', [taskId]).catch(() => [[null]]);
+        if (gt && gt.meeting_id && gt.task_type === 'Meeting') {
+          const [[mtg]] = await db.query('SELECT status FROM meetings WHERE id = ?', [gt.meeting_id]).catch(() => [[null]]);
+          if (mtg && mtg.status !== 'Completed') {
+            return res.status(409).json({ error: 'This is a meeting. Submit the Minutes of Meeting (MOM) from the Meetings page to complete it.', code: 'MOM_REQUIRED', meetingId: gt.meeting_id });
+          }
+        }
+      }
+
       // --- Automatic Timer Logic ---
       let final_time_running = is_timer_running;
       let final_start_time = timer_start_time;

@@ -43,28 +43,28 @@ export default function QuotationRegisterPage() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setAdding(true)} className={btn.primary}><Plus size={13} /> New quotation</button>
-          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded-lg p-0.5">
-            {[['all', 'Team'], ['mine', 'Mine']].map(([k, l]) => <button key={k} onClick={() => setScope(k)} className={`px-2.5 h-7 text-xs font-medium rounded-md cursor-pointer ${scope === k ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{l}</button>)}
+          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded p-0.5">
+            {[['all', 'Team'], ['mine', 'Mine']].map(([k, l]) => <button key={k} onClick={() => setScope(k)} className={`px-2.5 h-7 text-xs font-medium rounded cursor-pointer ${scope === k ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{l}</button>)}
           </div>
           <div className="relative"><Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Number, client, subject" className="h-8 w-56 pl-8 pr-2 text-xs border border-gray-300 rounded-lg outline-none focus:border-blue-500 bg-white" /></div>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Number, client, subject" className="h-8 w-56 pl-8 pr-2 text-xs border border-gray-300 rounded outline-none focus:border-blue-500 bg-white" /></div>
         </div>
       </div>
 
       {counts['Pending Approval'] > 0 && status !== 'Pending Approval' && (
-        <button onClick={() => setStatus('Pending Approval')} className="mb-3 w-full text-left text-[13px] bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 flex items-center gap-2 cursor-pointer">
+        <button onClick={() => setStatus('Pending Approval')} className="mb-3 w-full text-left text-[13px] bg-amber-50 border border-amber-200 rounded px-3 py-2 flex items-center gap-2 cursor-pointer">
           <AlertTriangle size={14} className="text-amber-700" /> {counts['Pending Approval']} quotation{counts['Pending Approval'] === 1 ? '' : 's'} waiting for discount approval.
         </button>
       )}
 
       <div className="flex flex-wrap gap-1.5 mb-3">
-        <button onClick={() => setStatus('')} className={`h-7 px-3 text-xs rounded-full border cursor-pointer ${!status ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700'}`}>All</button>
-        {STATUSES.map(s => <button key={s} onClick={() => setStatus(status === s ? '' : s)} className={`h-7 px-3 text-xs rounded-full border cursor-pointer ${status === s ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700'}`}>{s} <span className="opacity-60 tabular-nums">{counts[s] || 0}</span></button>)}
+        <button onClick={() => setStatus('')} className={`h-7 px-3 text-xs rounded border cursor-pointer ${!status ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700'}`}>All</button>
+        {STATUSES.map(s => <button key={s} onClick={() => setStatus(status === s ? '' : s)} className={`h-7 px-3 text-xs rounded border cursor-pointer ${status === s ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700'}`}>{s} <span className="opacity-60 tabular-nums">{counts[s] || 0}</span></button>)}
       </div>
 
       {error && <div className="text-sm text-red-700 mb-3">{error}</div>}
       {!data ? <div className="py-16 flex justify-center"><Loader2 className="animate-spin text-gray-400" size={18} /></div> : (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+        <div className="bg-white border border-gray-200 rounded overflow-x-auto">
           <table className="w-full text-[13px] min-w-[900px]">
             <thead className="bg-gray-50 border-b border-gray-200 text-xs text-gray-600"><tr>
               <th className="text-left font-medium px-3 py-2.5">Quotation</th><th className="text-left font-medium px-3 py-2.5">Client / deal</th><th className="text-left font-medium px-3 py-2.5">Status</th>

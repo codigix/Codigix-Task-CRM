@@ -218,7 +218,7 @@ export default function ITTesterDashboard() {
           <div className="flex flex-col gap-2 mt-2">
             {statusData.map((d, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }}></div><span className="text-gray-700">{d.name}</span></div>
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded" style={{ backgroundColor: d.color }}></div><span className="text-gray-700">{d.name}</span></div>
                 <div className="font-medium">{d.value} <span className="text-gray-400 font-normal">({Math.round((d.value / data.kpis.executedTests) * 100) || 0}%)</span></div>
               </div>
             ))}
@@ -245,7 +245,7 @@ export default function ITTesterDashboard() {
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
             {bugData.map((d, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }}></div><span className="text-gray-700">{d.name}</span></div>
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded" style={{ backgroundColor: d.color }}></div><span className="text-gray-700">{d.name}</span></div>
                 <div className="font-medium">{d.value} <span className="text-gray-400 font-normal hidden xl:inline">({Math.round((d.value / bugData.reduce((a, b) => a + b.value, 0)) * 100) || 0}%)</span></div>
               </div>
             ))}
@@ -307,7 +307,7 @@ export default function ITTesterDashboard() {
                   <p className="text-sm font-medium text-gray-800 truncate">{task.title}</p>
                   <p className="text-xs text-gray-500 truncate">{task.description}</p>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${task.priority === 'High' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>{task.priority}</span>
+                <span className={`text-xs px-2 py-0.5 rounded font-medium ${task.priority === 'High' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>{task.priority}</span>
               </div>
             )) : (
               [1, 2, 3, 4].map((i) => (
@@ -317,7 +317,7 @@ export default function ITTesterDashboard() {
                     <p className="text-sm font-medium text-gray-800 truncate">Execute Test Case {100 + i}</p>
                     <p className="text-xs text-gray-500 truncate">Project Alpha • Due Tomorrow</p>
                   </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">Medium</span>
+                  <span className="text-xs px-2 py-0.5 rounded font-medium bg-amber-100 text-amber-700">Medium</span>
                 </div>
               ))
             )}
@@ -400,8 +400,8 @@ export default function ITTesterDashboard() {
                 <span className="text-gray-600">High</span>
                 <span className="font-medium text-gray-900">{data.testsByPriority.high}</span>
               </div>
-              <div className="w-full bg-gray-100 rounded-full h-1.5">
-                <div className="bg-red-500 h-1.5 rounded-full" style={{ width: `${(data.testsByPriority.high / data.kpis.totalTestCases) * 100}%` }}></div>
+              <div className="w-full bg-gray-100 rounded h-1.5">
+                <div className="bg-red-500 h-1.5 rounded" style={{ width: `${(data.testsByPriority.high / data.kpis.totalTestCases) * 100}%` }}></div>
               </div>
             </div>
             <div>
@@ -409,8 +409,8 @@ export default function ITTesterDashboard() {
                 <span className="text-gray-600">Medium</span>
                 <span className="font-medium text-gray-900">{data.testsByPriority.medium}</span>
               </div>
-              <div className="w-full bg-gray-100 rounded-full h-1.5">
-                <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${(data.testsByPriority.medium / data.kpis.totalTestCases) * 100}%` }}></div>
+              <div className="w-full bg-gray-100 rounded h-1.5">
+                <div className="bg-amber-500 h-1.5 rounded" style={{ width: `${(data.testsByPriority.medium / data.kpis.totalTestCases) * 100}%` }}></div>
               </div>
             </div>
             <div>
@@ -418,8 +418,8 @@ export default function ITTesterDashboard() {
                 <span className="text-gray-600">Low</span>
                 <span className="font-medium text-gray-900">{data.testsByPriority.low}</span>
               </div>
-              <div className="w-full bg-gray-100 rounded-full h-1.5">
-                <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${(data.testsByPriority.low / data.kpis.totalTestCases) * 100}%` }}></div>
+              <div className="w-full bg-gray-100 rounded h-1.5">
+                <div className="bg-green-500 h-1.5 rounded" style={{ width: `${(data.testsByPriority.low / data.kpis.totalTestCases) * 100}%` }}></div>
               </div>
             </div>
           </div>
@@ -445,7 +445,7 @@ export default function ITTesterDashboard() {
         <div className="bg-white p-2 rounded  border border-gray-100">
           <h3 className=" text-gray-900 mb-4">Automation Summary</h3>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 bg-indigo-100 rounded flex items-center justify-center shrink-0">
               <Settings size={24} className="text-indigo-600" />
             </div>
             <div className="flex-1 space-y-1">

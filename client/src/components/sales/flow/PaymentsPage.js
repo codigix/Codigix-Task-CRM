@@ -73,7 +73,7 @@ export default function PaymentsPage() {
       </div>
 
       <div className="grid xl:grid-cols-[1fr_300px] gap-4">
-        <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto min-w-0">
+        <div className="bg-white border border-gray-200 rounded overflow-x-auto min-w-0">
           <table className="w-full text-[13px] min-w-[760px]">
             <thead className="text-xs text-gray-500 bg-gray-50"><tr>
               <th className="text-left font-medium px-4 py-2.5">Receipt</th><th className="text-left font-medium px-2 py-2.5">Date</th><th className="text-left font-medium px-2 py-2.5">Customer</th>

@@ -167,7 +167,7 @@ const ITManagerReviewGate = ({ isOpen, onClose, issue, onReviewComplete }) => {
 
           {loading ? (
             <div className="flex items-center justify-center py-10">
-              <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded animate-spin"></div>
             </div>
           ) : rows.length > 0 ? (
             <div className="border border-gray-200 rounded overflow-hidden">

@@ -169,7 +169,7 @@ export function ProofForm({ info, onSubmit, onCancel, autoFocus = true }) {
                   : <div className="h-20 w-28 rounded border border-gray-200 bg-gray-50 flex items-center justify-center"><FileText size={20} className="text-gray-400" /></div>}
                 {f.uploading && <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded"><Loader2 size={16} className="animate-spin text-gray-500" /></div>}
                 <div className="text-[10px] text-gray-600 truncate mt-0.5" title={f.error || f.name}>{f.error ? `Failed: ${f.error}` : f.name}</div>
-                <button onClick={() => setFiles(prev => prev.filter(x => x.id !== f.id))} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-gray-300 text-gray-500 hover:text-red-600 flex items-center justify-center cursor-pointer" aria-label="Remove file"><Trash2 size={10} /></button>
+                <button onClick={() => setFiles(prev => prev.filter(x => x.id !== f.id))} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded bg-white border border-gray-300 text-gray-500 hover:text-red-600 flex items-center justify-center cursor-pointer" aria-label="Remove file"><Trash2 size={10} /></button>
               </div>
             ))}
           </div>
@@ -222,7 +222,7 @@ export default function TransitionProofModal({ info, onDone }) {
   return (
     <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40" onClick={() => onDone(null)} aria-hidden="true" />
-      <div className="relative w-full max-w-[560px] max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-2xl">
+      <div className="relative w-full max-w-[560px] max-h-[90vh] overflow-y-auto bg-white rounded shadow-2xl">
         <div className="px-5 py-4 border-b border-gray-200 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <ProofHeading info={info} />

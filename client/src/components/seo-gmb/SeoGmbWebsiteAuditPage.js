@@ -1327,7 +1327,7 @@ export default function SeoGmbWebsiteAuditPage() {
             <RefreshCw size={40} className="text-blue-600 animate-spin" />
             <h3 className="text-sm font-extrabold text-slate-900 m-0">Running Automated Audit Scan</h3>
             <p className="text-xs text-slate-400 m-0">{auditStep}</p>
-            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+            <div className="w-full bg-slate-100 h-1.5 rounded overflow-hidden mt-1">
               <div className="h-full bg-red-600 animate-[pulse_1.5s_infinite]" style={{ width: '70%' }} />
             </div>
           </div>
@@ -1446,10 +1446,10 @@ export default function SeoGmbWebsiteAuditPage() {
             </ResponsiveContainer>
             {/* Chart Legends */}
             <div className="flex justify-around text-[9px]  text-slate-500 mt-4 border-t border-slate-100 pt-3">
-              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Critical</div>
-              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> Warnings</div>
-              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /> Passed</div>
-              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /> Total</div>
+              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-red-500" /> Critical</div>
+              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-500" /> Warnings</div>
+              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-green-500" /> Passed</div>
+              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-blue-500" /> Total</div>
             </div>
           </div>
 
@@ -1498,7 +1498,7 @@ export default function SeoGmbWebsiteAuditPage() {
               <div className="flex flex-col gap-1.5">
                 {CRAWL_STATUS_DATA.map((stat, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: stat.color }} />
+                    <span className="w-2 h-2 rounded shrink-0" style={{ backgroundColor: stat.color }} />
                     <span className="text-xs text-slate-500 w-16 truncate">{stat.name}</span>
                     <span className="text-xs  text-slate-900">{stat.value} ({stat.pct})</span>
                   </div>

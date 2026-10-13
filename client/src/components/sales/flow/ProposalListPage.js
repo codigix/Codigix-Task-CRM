@@ -33,7 +33,7 @@ function NewProposalModal({ onClose, onCreated, preset }) {
       <div className="space-y-4">
         <div className="grid sm:grid-cols-2 gap-2">
           {KINDS.map(([v, l, d, Icon]) => (
-            <button key={v} type="button" onClick={() => setKind(v)} className={`text-left border rounded-lg p-3 cursor-pointer ${kind === v ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
+            <button key={v} type="button" onClick={() => setKind(v)} className={`text-left border rounded p-3 cursor-pointer ${kind === v ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-200' : 'border-gray-200 hover:bg-gray-50'}`}>
               <div className="flex items-center gap-1.5 text-[13px] font-semibold"><Icon size={14} /> {l}</div><div className="text-[11.5px] text-gray-600 mt-1 leading-snug">{d}</div>
             </button>
           ))}
@@ -77,7 +77,7 @@ export default function ProposalListPage() {
         <Chips value={status} onChange={setStatus} options={[['', 'All'], ['Draft', 'Draft', c.Draft], ['Sent', 'Sent', c.Sent], ['Accepted', 'Accepted', c.Accepted], ['Declined', 'Declined', c.Declined]]} />
         <div className="relative ml-auto"><Search size={14} className="absolute left-2.5 top-2.5 text-gray-400" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Number, client, title" className="h-9 w-64 text-[13px] border border-gray-300 rounded pl-8 pr-2 outline-none focus:border-blue-500 bg-white" /></div>
       </div>
-      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+      <div className="bg-white border border-gray-200 rounded overflow-x-auto">
         <table className="w-full text-[13px] min-w-[860px]">
           <thead className="text-xs text-gray-500 bg-gray-50"><tr>
             <th className="text-left font-medium px-4 py-2.5">Proposal</th><th className="text-left font-medium px-2 py-2.5">Client</th><th className="text-left font-medium px-2 py-2.5">Status</th>

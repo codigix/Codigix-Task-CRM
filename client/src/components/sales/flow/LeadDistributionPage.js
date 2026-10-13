@@ -49,7 +49,7 @@ export default function LeadDistributionPage() {
           <div className="flex flex-wrap items-center gap-3 mb-3">
             <Chips value={filter} onChange={(v) => { setFilter(v); setSel(new Set()); }} options={[['new', 'Not yet contacted', count('new')], ['unassigned', 'No owner', count('unassigned')], ['hold', 'On hold', count('hold')], ['all', 'All open', count('all')]]} />
           </div>
-          <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+          <div className="bg-white border border-gray-200 rounded overflow-x-auto">
             <table className="w-full text-[13px] min-w-[640px]">
               <thead className="text-xs text-gray-500 bg-gray-50"><tr>
                 <th className="w-10 px-4"><input type="checkbox" checked={allOn} onChange={() => setSel(allOn ? new Set() : new Set(leads.map(l => l.id)))} aria-label="Select all" /></th>
@@ -78,7 +78,7 @@ export default function LeadDistributionPage() {
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   {data.people.map(p => (
-                    <label key={p.id} className={`flex items-center gap-2.5 border rounded-lg px-2.5 py-2 cursor-pointer ${to.includes(p.id) ? 'border-blue-400 bg-blue-50/40' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <label key={p.id} className={`flex items-center gap-2.5 border rounded px-2.5 py-2 cursor-pointer ${to.includes(p.id) ? 'border-blue-400 bg-blue-50/40' : 'border-gray-200 hover:bg-gray-50'}`}>
                       <input type="checkbox" checked={to.includes(p.id)} onChange={() => setTo(t => (t.includes(p.id) ? t.filter(x => x !== p.id) : [...t, p.id]))} />
                       <span className="min-w-0 flex-1"><span className="block text-[13px] font-medium truncate">{p.name}</span><span className="block text-[11px] text-gray-500">{p.openLeads} enquiries · {p.openDeals} deals{p.newLeads ? ` · ${p.newLeads} uncontacted` : ''}{p.overdue ? ` · ${p.overdue} overdue` : ''}</span></span>
                     </label>

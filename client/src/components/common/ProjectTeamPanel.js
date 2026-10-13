@@ -125,7 +125,7 @@ const ProjectTeamPanel = ({ projectId }) => {
           teamMembers.map(member => (
             <div key={member.user_id} className="border border-gray-200 rounded  p-2 flex items-center justify-between hover: transition bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center  text-xs  flex-shrink-0">
+                <div className="w-10 h-10 rounded bg-red-500 text-white flex items-center justify-center  text-xs  flex-shrink-0">
                   {member.first_name?.[0]}{member.last_name?.[0]}
                 </div>
                 <div>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search, ChevronDown, ChevronRight,
   Share2, Download, MoreHorizontal, LayoutList,
-  CheckSquare, Plus, AlertCircle, ArrowUp, ArrowDown, Trash2
+  CheckSquare, Plus, AlertCircle, ArrowUp, ArrowDown, Trash2, Video
 } from 'lucide-react';
 import ITCreateIssueDrawer from '../it/ITCreateIssueDrawer';
 import ITIssueDetailsPanel from '../it/ITIssueDetailsPanel';
@@ -28,7 +29,8 @@ const TYPE_ICONS = {
   Task: <CheckSquare size={14} className="text-blue-500 fill-blue-100" />,
   Story: <BookmarkIcon size={14} className="text-green-500 fill-green-100" />, // Using a generic icon for story
   Bug: <AlertCircle size={14} className="text-red-500 fill-red-100" />,
-  Test: <TestTubeIcon size={14} className="text-purple-500 fill-purple-100" />
+  Test: <TestTubeIcon size={14} className="text-purple-500 fill-purple-100" />,
+  Meeting: <Video size={14} className="text-indigo-500" />
 };
 
 // SVG substitutes for lucide icons that might be missing or not perfectly matched
@@ -68,6 +70,19 @@ const TasksPage = ({ department }) => {
     fetchTasks();
     fetchProjects();
   }, [currentDept]);
+
+  // Deep link from the Meetings page: /tasks?issue=KEY opens that work item.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const issueParam = searchParams.get('issue');
+  useEffect(() => {
+    if (!issueParam || tasks.length === 0) return;
+    if (tasks.some(t => (t.issue_key || t.key) === issueParam)) {
+      setSelectedIssue(issueParam);
+      const next = new URLSearchParams(searchParams);
+      next.delete('issue');
+      setSearchParams(next, { replace: true });
+    }
+  }, [issueParam, tasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Issues live in it_kanban_issues (the same source as the Kanban board). The old
   // /api/tasks call read project_tasks, which is empty, so this page always showed
@@ -401,7 +416,7 @@ const TasksPage = ({ department }) => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <span className="text-sm  text-gray-900">All Issues</span>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-1.5 rounded-full">{filteredTasks.length}</span>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-1.5 rounded">{filteredTasks.length}</span>
                   </div>
                   <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 p-2 rounded border border-gray-200">
                     <LayoutList size={14} /> Columns <ChevronDown size={14} />
@@ -469,7 +484,7 @@ const TasksPage = ({ department }) => {
                               </span>
                             </td>
                             <td className="p-3 flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] ">{assignee.charAt(0).toUpperCase()}</div>
+                              <div className="w-5 h-5 rounded bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] ">{assignee.charAt(0).toUpperCase()}</div>
                               {assignee}
                             </td>
                             <td className="p-3">

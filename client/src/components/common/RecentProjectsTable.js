@@ -106,7 +106,7 @@ const RecentProjectsTable = ({ projects, onDateRangeChange, onAddProject, onEdit
                       className="inline-flex items-center gap-2 p-1  rounded bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors truncate"
                       title={project.company}
                     >
-                      <span className="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0"></span>
+                      <span className="w-2 h-2 rounded bg-orange-500 flex-shrink-0"></span>
                       <span className="truncate">{project.company}</span>
                     </button>
                   ) : (

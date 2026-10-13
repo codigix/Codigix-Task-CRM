@@ -241,7 +241,7 @@ const DealsKanbanBoard = ({ onDealClick, onDealUpdate }) => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl  text-slate-800 tracking-tight">Deal Pipeline</h1>
-              <span className="bg-red-100 text-red  px-2.5 py-0.5 rounded-full text-[12px] ">{deals.length}</span>
+              <span className="bg-red-100 text-red  px-2.5 py-0.5 rounded text-[12px] ">{deals.length}</span>
             </div>
             <div className="flex items-center gap-1 text-xs  mt-1">
               <button className="text-orange-500 hover:text-orange-600   bg-transparent border-none cursor-pointer p-0">Home</button>
@@ -317,7 +317,7 @@ const DealsKanbanBoard = ({ onDealClick, onDealUpdate }) => {
                           <h4 className="text-sm  text-slate-800 hover:text-indigo-600 truncate mb-1 transition-colors">{deal.name}</h4>
                           <p className="text-xs text-gray-500 truncate">{getCompanyName(deal.company_id)}</p>
                           <p className="text-xs text-blue-600  truncate mt-0.5">{deal.service}</p>
-                          <p className={`text-[9px] font-[500] mt-1 px-1.5 py-0.5 rounded-full inline-block ${deal.status === 'Qualified' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                          <p className={`text-[9px] font-[500] mt-1 px-1.5 py-0.5 rounded inline-block ${deal.status === 'Qualified' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                             {deal.status}
                           </p>
                         </div>
@@ -329,7 +329,7 @@ const DealsKanbanBoard = ({ onDealClick, onDealUpdate }) => {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs   text-gray-900">{formatCurrency(deal.value)}</span>
-                          <span className={`text-xs p-1  rounded-full ${getPriorityColor(deal.priority)}`}>
+                          <span className={`text-xs p-1  rounded ${getPriorityColor(deal.priority)}`}>
                             {deal.priority}
                           </span>
                         </div>
@@ -351,7 +351,7 @@ const DealsKanbanBoard = ({ onDealClick, onDealUpdate }) => {
                         <div className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-1">
                             <span className="text-gray-500">Probability:</span>
-                            <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="w-16 h-1.5 bg-gray-200 rounded overflow-hidden">
                               <div
                                 className="h-full bg-blue-500"
                                 style={{ width: `${deal.probability}%` }}

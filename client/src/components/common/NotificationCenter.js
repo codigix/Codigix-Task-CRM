@@ -110,7 +110,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
             <Bell size={24} />
             <h2 className="text-xl  ">Notifications</h2>
             {notifications.length > 0 && (
-              <span className="bg-red-900 text-white p-1  rounded-full text-sm ">
+              <span className="bg-red-900 text-white p-1  rounded text-sm ">
                 {notifications.length}
               </span>
             )}
@@ -126,9 +126,9 @@ const NotificationCenter = ({ isOpen, onClose }) => {
             <button
               key={sev}
               onClick={() => setFilter(sev)}
-              className={`px-3 py-1 rounded-full text-sm  whitespace-nowrap transition ${filter === sev
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              className={`px-3 py-1 rounded text-sm  whitespace-nowrap transition ${filter === sev
+                ? 'bg-red-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
             >
               {sev === 'all' ? 'All' : `${sev} Severity`}

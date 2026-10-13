@@ -340,11 +340,11 @@ const AllBlogsPage = () => {
 
                   <div>
                     {post.status === 'Active' ? (
-                      <span className="status-badge inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs ">
+                      <span className="status-badge inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded text-xs ">
                         Active
                       </span>
                     ) : (
-                      <span className="status-badge inline-block bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-xs ">
+                      <span className="status-badge inline-block bg-rose-100 text-rose-700 px-3 py-1 rounded text-xs ">
                         Inactive
                       </span>
                     )}

@@ -118,8 +118,8 @@ const AutomationRulesPage = () => {
                         <span className="text-xs text-gray-600 truncate max-w-xs block">{rule.trigger_condition}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs   ${rule.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${rule.is_active ? 'bg-green-600' : 'bg-red-600'}`}></span>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs   ${rule.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          <span className={`w-1.5 h-1.5 rounded ${rule.is_active ? 'bg-green-600' : 'bg-red-600'}`}></span>
                           {rule.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
