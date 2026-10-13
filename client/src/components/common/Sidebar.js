@@ -499,6 +499,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
 
       <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Communication & Knowledge</div>
       <SubmenuItem label="Team Chat" page="it-chat" icon={MessageCircle} prefix="/it" />
+      <SubmenuItem label="Meetings" page="meetings" icon={Video} />
       <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} prefix="/it" />
 
       <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">System</div>
