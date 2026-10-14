@@ -497,6 +497,7 @@ function MeetingDetail({ meetingId, me, onClose, onRefresh, onFlash }) {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [linkInput, setLinkInput] = useState('');
+  const [inviteCopied, setInviteCopied] = useState(false);
 
   const load = useCallback(() => mApi(`/${meetingId}`).then(d => { setData(d); setError(''); }).catch(e => setError(e.message)), [meetingId]);
   useEffect(() => { load(); }, [load]);
@@ -532,6 +533,22 @@ function MeetingDetail({ meetingId, me, onClose, onRefresh, onFlash }) {
     if (r.warning) onFlash({ type: 'warn', text: r.warning }); else onFlash({ type: 'ok', text: 'Meeting link updated.' });
     setLinkInput(''); setPanel(null); await refresh();
   });
+  const copyInvite = async () => {
+    const start = new Date(m.scheduled_at);
+    const end = new Date(start.getTime() + (m.duration_min || 60) * 60000);
+    const time = (d) => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const text = [
+      m.title,
+      `Host: ${m.host_name || '—'}`,
+      `Date: ${start.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}`,
+      `Time: ${time(start)} – ${time(end)} (${m.duration_min} min)`,
+      m.location ? `Location: ${m.location}` : '',
+      m.agenda ? `\nAgenda / Description:\n${m.agenda}` : '',
+      m.meet_link ? `\nJoin: ${m.meet_link}` : ''
+    ].filter(Boolean).join('\n');
+    try { await navigator.clipboard.writeText(text); setInviteCopied(true); setTimeout(() => setInviteCopied(false), 1800); }
+    catch { window.prompt('Copy the invite:', text); }
+  };
   const openTasks = () => navigate(`/tasks?issue=${encodeURIComponent(m.issue_key)}`);
 
   return (
@@ -581,7 +598,8 @@ function MeetingDetail({ meetingId, me, onClose, onRefresh, onFlash }) {
                     <Video size={14} className="text-blue-500 flex-shrink-0" />
                     <span className="text-[11px] font-medium text-blue-700 bg-blue-50 border border-blue-100 rounded px-1.5 py-0.5 flex-shrink-0">{providerLabel(m)}</span>
                     <a href={m.meet_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm truncate">{m.meet_link}</a>
-                    {scheduled && <a href={m.meet_link} target="_blank" rel="noopener noreferrer" className={`${btn.primary} !h-7 !px-2.5 text-xs ml-auto`}>Join</a>}
+                    <button onClick={copyInvite} className={`${btn.ghost} !h-7 !px-2.5 text-xs ml-auto`}>{inviteCopied ? 'Copied' : 'Copy invite'}</button>
+                    {scheduled && <a href={m.meet_link} target="_blank" rel="noopener noreferrer" className={`${btn.primary} !h-7 !px-2.5 text-xs`}>Join</a>}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2"><Link2 size={13} /> No meeting link yet.</div>

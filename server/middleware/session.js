@@ -114,6 +114,7 @@ const createSessionMiddleware = (pool) => async (req, res, next) => {
       department_role: user.department_role,
       job_title: user.job_title,
       name: displayName,
+      username: user.username,
       email: user.email,
       department: user.department,
       isManager: roleIsManager(user.role_name) || isDeptManager,

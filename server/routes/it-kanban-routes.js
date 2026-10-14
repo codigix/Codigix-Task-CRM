@@ -1288,12 +1288,26 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         `;
         params.push(deptPattern, deptNorm, deptPattern, deptPattern);
       }
-      // Sales staff work in Sales, not in other departments' task boards: they see Sales tasks and anything
-      // assigned to or reported by them. Managers and admins keep the full view.
+      // Sales staff work in Sales, not in IT/Marketing task boards: they see Sales tasks and work
+      // assigned to them. Managers and admins keep the full view.
+      // Tickets store people by name, and names collide (a sales executive can share a name with
+      // the admin who reports hundreds of Marketing tickets), so reporter is not matched at all and
+      // the display name only counts when no other user has it. The username is always unique.
       if (req.user && !req.user.isManager && !req.user.isAdmin && /sales/i.test(String(req.user.department || ''))) {
-        const me = String(req.user.name || '').trim().toLowerCase();
-        query += ((department && req.query.strict === 'true') ? ' AND ' : ' WHERE ') + "(LOWER(COALESCE(i.department, '')) LIKE '%sales%' OR LOWER(TRIM(i.assignee)) = ? OR LOWER(TRIM(i.reporter)) = ?)";
-        params.push(me, me);
+        const myNames = [String(req.user.username || '').trim().toLowerCase()];
+        const fullName = String(req.user.name || '').trim().toLowerCase();
+        if (fullName) {
+          const [[{ n }]] = await db.query(
+            `SELECT COUNT(*) AS n FROM users
+              WHERE LOWER(TRIM(CONCAT(TRIM(COALESCE(first_name, '')), ' ', TRIM(COALESCE(last_name, ''))))) = ?`,
+            [fullName]
+          );
+          if (Number(n) <= 1) myNames.push(fullName);
+        }
+        const mine = myNames.filter(Boolean);
+        query += ((department && req.query.strict === 'true') ? ' AND ' : ' WHERE ') +
+          `(LOWER(COALESCE(i.department, '')) LIKE '%sales%'${mine.length ? ' OR LOWER(TRIM(i.assignee)) IN (?)' : ''})`;
+        if (mine.length) params.push(mine);
       }
       // Rank first, so the List and Board show the priority order set by dragging in the
       // Backlog. Unranked rows keep the old newest-first behaviour at the end.

@@ -213,7 +213,7 @@ module.exports = (app, pool) => {
   };
   const redirectUriFor = (req) => process.env.GOOGLE_OAUTH_REDIRECT_URI
     || `${(process.env.API_PUBLIC_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '')}/api/meetings/google/callback`;
-  const OAUTH_SCOPES = ['https://www.googleapis.com/auth/calendar.events', 'openid', 'email'];
+  const OAUTH_SCOPES = ['https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/meetings.space.created', 'openid', 'email'];
 
   /** Which Google identity should create this host's events? Returns an owner key or null. */
   const pickOwner = async (hostId) => {
@@ -328,6 +328,25 @@ module.exports = (app, pool) => {
       }
     }
     return { eventId: null, meetLink: null, warning: `Google Calendar sync failed (${firstError}).`, owner: null };
+  };
+
+  /**
+   * "Ask to join" requests from outside guests go to the Meet organizer, i.e. the connected Google account.
+   * Make the real host a co-host of the space so the requests reach them. Best effort: never fails the meeting.
+   */
+  const makeHostCohost = async (owner, meetLink, hostEmail) => {
+    if (!owner || owner === 'dwd' || !meetLink || !hostEmail) return;
+    const code = (String(meetLink).match(/meet\.google\.com\/([a-z]{3}-[a-z]{4}-[a-z]{3})/i) || [])[1];
+    if (!code) return;
+    try {
+      const uid = Number(String(owner).split(':')[1]);
+      const [row] = await q('SELECT refresh_token, email FROM google_oauth WHERE user_id = ?', [uid]);
+      if (!row || String(row.email || '').toLowerCase() === hostEmail) return; // host already owns the event
+      const auth = makeOAuth(); auth.setCredentials({ refresh_token: unseal(row.refresh_token) });
+      const meet = google.meet({ version: 'v2', auth });
+      const space = await meet.spaces.get({ name: `spaces/${code}` });
+      await meet.spaces.members.create({ parent: space.data.name, requestBody: { email: hostEmail, role: 'COHOST' } });
+    } catch (e) { console.warn('[meetings] could not make host a Meet co-host (join requests go to the organiser):', shortErr(e)); }
   };
 
   const deleteGoogle = async (eventId, owner) => {
@@ -499,7 +518,7 @@ module.exports = (app, pool) => {
       }
       if (g) {
         if (g.owner) { googleEventId = g.eventId; googleOwner = g.owner; }
-        if (wantMeet && g.meetLink) { meetLink = g.meetLink; provider = 'google'; }
+        if (wantMeet && g.meetLink) { meetLink = g.meetLink; provider = 'google'; await makeHostCohost(g.owner, g.meetLink, String(host.email || '').trim().toLowerCase()); }
         warning = g.warning || dropNote;
         if (wantMeet && !g.meetLink) warning = `${g.warning || 'Google did not return a Meet link.'} A Jitsi Meet link was used instead.`;
       } else if (wantMeet) {
