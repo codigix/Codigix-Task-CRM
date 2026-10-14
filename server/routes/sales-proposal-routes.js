@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const mailError = require('../services/mailError');
 const { buildDeck } = require('../services/proposalDeck');
 const { newContent } = require('../services/proposalTemplates');
 
@@ -303,7 +304,7 @@ module.exports = function setupSalesProposalRoutes(app, pool) {
         html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#111827;white-space:pre-wrap">${body.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
         attachments: [{ filename: `${p.proposal_number}.pdf`, content: buf, contentType: 'application/pdf' }]
       });
-    } catch (e) { return res.status(502).json({ error: `Could not send the email: ${e.message}. Download the PDF and send it yourself, then use "Mark as sent".` }); }
+    } catch (e) { const m = mailError(e); return res.status(m.status).json({ error: m.error }); }
     await markSent(req, p, to.join(', '));
     await event(req, { leadId: p.lead_id, dealId: p.deal_id, companyId: p.company_id, kind: 'communication', title: `Email to client · Proposal ${p.proposal_number} sent`, body: `To: ${to.join(', ')}\nSubject: ${subject}`, meta: { channel: 'Email', direction: 'out' } });
     res.json({ ok: true });

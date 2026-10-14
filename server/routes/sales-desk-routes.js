@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const mailError = require('../services/mailError');
 const { computeTotals, round2 } = require('../services/salesPdf');
 
 /**
@@ -601,7 +602,7 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
       html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#111827;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
       attachments: [{ filename: `${inv.invoice_number}.pdf`, content: out.buf, contentType: 'application/pdf' }]
     });
-    } catch (e) { return res.status(502).json({ error: `Could not send the email: ${e.message}. Download the PDF and send it yourself, then use "Mark as sent".` }); }
+    } catch (e) { const m = mailError(e); return res.status(m.status).json({ error: m.error }); }
     await issue(req, inv, to.join(', '));
     await event(req, { invoiceId: inv.id, dealId: inv.deal_id, companyId: inv.client_id, kind: 'communication', title: `Email to client · Invoice ${inv.invoice_number} sent`, body: `To: ${to.join(', ')}${cc.length ? `\nCc: ${cc.join(', ')}` : ''}\nSubject: ${subject}`, meta: { channel: 'Email', direction: 'out' } });
     res.json({ ok: true });

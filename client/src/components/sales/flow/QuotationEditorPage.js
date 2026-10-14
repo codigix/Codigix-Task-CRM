@@ -7,6 +7,38 @@ import {
 import { api, pdfUrl, useSalesBase, useSalesMeta, money2, fmtDate, fmtWhen, Badge, QUOTE_STATUS_STYLE, Modal, inputCls, labelCls, btn, ErrorNote, ReasonModal, addDays, dayOf } from './salesShared';
 import { ItemsTable, TotalsCard, ClientFields, totalsOf, blankItem } from './LineItems';
 import { RetainerPanel, ProjectPanel, SectionsEditor, ScopePreview, BillingCard } from './PlanPanels';
+import { itemsFromServices, suggestFormat, originText, FORMAT_INFO } from './enquiryShared';
+
+/** What a revision changed compared with the version it replaced: lines added, removed or re-priced, and the total. */
+function RevisionChanges({ previous, items, total, onOpen }) {
+  const key = (i) => String(i.name || '').trim().toLowerCase();
+  const before = new Map(previous.items.map(i => [key(i), i]));
+  const now = new Map(items.filter(i => i.name).map(i => [key(i), i]));
+  const rows = [];
+  now.forEach((i, k) => {
+    const p = before.get(k);
+    if (!p) { rows.push({ tone: 'text-emerald-700', text: `Added: ${i.name} (${i.qty} × ${money2(i.rate)})` }); return; }
+    const diffs = [];
+    if (Number(p.qty) !== Number(i.qty)) diffs.push(`qty ${p.qty} → ${i.qty}`);
+    if (Number(p.rate) !== Number(i.rate)) diffs.push(`rate ${money2(p.rate)} → ${money2(i.rate)}`);
+    if (Number(p.discountPct) !== Number(i.discountPct)) diffs.push(`discount ${p.discountPct}% → ${i.discountPct || 0}%`);
+    if (Number(p.taxPct) !== Number(i.taxPct)) diffs.push(`GST ${p.taxPct}% → ${i.taxPct}%`);
+    if (diffs.length) rows.push({ tone: 'text-gray-800', text: `${i.name}: ${diffs.join(', ')}` });
+  });
+  before.forEach((p, k) => { if (!now.has(k)) rows.push({ tone: 'text-red-700', text: `Removed: ${p.name}` }); });
+  const delta = Math.round((total - previous.total) * 100) / 100;
+  return (
+    <div className="bg-white border border-orange-200 rounded p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <span className="text-xs font-semibold text-gray-700 flex items-center gap-1"><History size={12} /> Changes from v{previous.version}</span>
+        <button onClick={onOpen} className="text-[11px] text-blue-700 hover:underline cursor-pointer">Open v{previous.version} ({previous.status})</button>
+      </div>
+      {rows.length ? <ul className="space-y-0.5 text-[12.5px]">{rows.map((r, i) => <li key={i} className={r.tone}>• {r.text}</li>)}</ul> : <div className="text-[12px] text-gray-500">No line changes yet. Edit the lines below; the client will see this as revision v{previous.version + 1}.</div>}
+      <div className="mt-2 pt-2 border-t border-gray-100 text-[12.5px] flex justify-between"><span className="text-gray-500">Total v{previous.version} {money2(previous.total)} → now {money2(total)}</span>
+        {delta !== 0 && <span className={`font-semibold tabular-nums ${delta < 0 ? 'text-emerald-700' : 'text-orange-700'}`}>{delta < 0 ? '−' : '+'}{money2(Math.abs(delta))}</span>}</div>
+    </div>
+  );
+}
 
 const TYPES = [
   ['retainer', 'Monthly retainer', 'Digital marketing: SEO, GMB, AEO, GEO, social media, Meta and Google Ads. Billed every month for the quota you set.'],
@@ -83,21 +115,40 @@ export default function QuotationEditorPage() {
   }, [id, isNew]);
   useEffect(() => { load(); }, [load]);
 
-  // New quotation: start from the deal's client details.
+  // New quotation: start from everything the enquiry captured (bill-to, services asked for, the
+  // format they call for, requirement and timeline), falling back to the customer record.
+  const [prefill, setPrefill] = useState(null);
   useEffect(() => {
     if (!isNew || !meta || form) return;
     (async () => {
-      let client = {};
+      let client = {}; let lead = null; let dealName = '';
       if (dealParam) {
         try {
           const d = await api(`/deals/${dealParam}`);
-          client = { name: d.deal.company_name || d.lead?.company || d.deal.deal_name, contact: d.lead?.name || d.deal.contact?.name || '', email: d.deal.company_email || d.lead?.email || '', phone: d.deal.company_phone || d.lead?.phone || '', address: [d.deal.company_address, d.deal.city].filter(Boolean).join(', '), state: d.deal.company_state || '' };
+          lead = d.lead; dealName = d.deal.deal_name || '';
+          const contact = lead?.name || d.deal.contact?.name || '';
+          client = {
+            name: d.deal.company_name || lead?.company || d.deal.deal_name,
+            contact: contact && lead?.designation ? `${contact} (${lead.designation})` : contact,
+            email: d.deal.company_email || lead?.email || '', phone: d.deal.company_phone || lead?.phone || '',
+            address: [d.deal.company_address || lead?.address, d.deal.city || lead?.city].filter(Boolean).join(', '),
+            state: d.deal.company_state || lead?.state || '', gstin: d.deal.company_gstin || lead?.gstin || ''
+          };
         } catch (e) { /* fill by hand */ }
       }
-      const type = ['retainer', 'project', 'general'].includes(typeParam) ? typeParam : 'retainer';
-      setForm({ quoteType: type, plan: planFor(type, meta), subject: '', date: addDays(0), validUntil: addDays(meta.quotation.validityDays || 15), gstMode: client.state && meta.companyState && client.state.toLowerCase() !== meta.companyState.toLowerCase() ? 'inter' : 'intra', terms: termsFor(type, meta), notes: '', client, items: [blankItem(meta.quotation.defaultTaxPct)] });
+      const services = meta.services || [];
+      const fromLead = itemsFromServices(lead?.services, services);
+      const type = ['retainer', 'project', 'general'].includes(typeParam) ? typeParam : suggestFormat(lead?.services, services);
+      const plan = planFor(type, meta);
+      if (plan && type === 'project' && lead?.timeline) plan.timeline = lead.timeline;
+      setForm({
+        quoteType: type, plan, subject: lead?.requirement || dealName, date: addDays(0), validUntil: addDays(meta.quotation.validityDays || 15),
+        gstMode: client.state && meta.companyState && client.state.toLowerCase() !== meta.companyState.toLowerCase() ? 'inter' : 'intra',
+        terms: termsFor(type, meta), notes: '', client, items: fromLead.length ? fromLead : [blankItem(meta.quotation.defaultTaxPct)]
+      });
+      if (lead) setPrefill({ lines: fromLead.length, format: type, origin: originText(lead), requirement: lead.requirement, notes: lead.notes, timeline: lead.timeline });
     })();
-  }, [isNew, meta, dealParam, form]);
+  }, [isNew, meta, dealParam, form, typeParam]);
 
   const editable = isNew || (quote && ['Draft', 'Approved'].includes(quote.status));
   const t = useMemo(() => (form ? totalsOf(form.items, form.gstMode) : null), [form]);
@@ -194,13 +245,26 @@ export default function QuotationEditorPage() {
       {quote?.approvalStatus === 'rejected' && status === 'Draft' && (
         <div className="mb-4 text-[13px] bg-red-50 border border-red-200 rounded px-3 py-2">Sent back by {quote.approvedBy}: {quote.approvalNote}</div>
       )}
-      {quote?.declineReason && status === 'Declined' && <div className="mb-4 text-[13px] bg-red-50 border border-red-200 rounded px-3 py-2">Declined: {quote.declineReason}</div>}
+      {quote?.declineReason && status === 'Declined' && (
+        <div className="mb-4 text-[13px] bg-red-50 border border-red-200 rounded px-3 py-2 flex flex-wrap items-center gap-2">
+          <span className="flex-1">Declined: {quote.declineReason}. If the client is still interested, revise it with the changes they want.</span>
+          <button onClick={() => setModal('revise')} className={btn.ghost}><RotateCcw size={13} /> Revise now</button>
+        </div>
+      )}
       {quote?.revisionNote && quote.version > 1 && <div className="mb-4 text-[13px] bg-orange-50 border border-orange-200 rounded px-3 py-2">Revision {quote.version}: {quote.revisionNote}</div>}
+      {isNew && prefill && (
+        <div className="mb-4 text-[12.5px] bg-sky-50 border border-sky-200 rounded px-3 py-2 space-y-0.5">
+          <div className="text-sky-900 font-medium">Filled from the enquiry{prefill.origin ? ` (${prefill.origin})` : ''}: bill-to details{prefill.lines ? `, ${prefill.lines} service line${prefill.lines === 1 ? '' : 's'}` : ''} and the {FORMAT_INFO[prefill.format]?.label.toLowerCase()} format. Check and edit anything before saving.</div>
+          {prefill.requirement && <div className="text-gray-700">Requirement: {prefill.requirement}{prefill.timeline ? ` · needed: ${prefill.timeline}` : ''}</div>}
+          {prefill.notes && <div className="text-gray-600">Enquiry notes: {prefill.notes}</div>}
+        </div>
+      )}
       <ErrorNote text={error} />
 
       <div className="grid xl:grid-cols-[1fr_320px] gap-4 mt-2">
         <div className="space-y-4 min-w-0">
           {!isNew && status === 'Accepted' && form.quoteType !== 'general' && <BillingCard quoteId={quote.id} base={base} />}
+          {!isNew && quote.previous && <RevisionChanges previous={quote.previous} items={form.items} total={t.total} onOpen={() => navigate(`${base}/quotation/${quote.previous.id}`)} />}
           {editable && (
             <div className="grid md:grid-cols-3 gap-2">
               {TYPES.map(([v, l, d]) => (

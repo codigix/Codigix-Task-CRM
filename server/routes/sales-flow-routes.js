@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const { buildPdf, computeTotals, round2 } = require('../services/salesPdf');
 const push = require('../services/push');
+const mailError = require('../services/mailError');
 const catalog = require('../services/salesCatalog');
 const { DEFAULT_PROPOSAL_SETTINGS } = require('../services/proposalTemplates');
 
@@ -96,6 +97,17 @@ const planProblem = (data) => {
   return null;
 };
 const fill = (tpl, vars) => String(tpl || '').replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m));
+/** Services asked for on an enquiry: [{ id, qty }] with ids from the Sales Settings catalog. */
+const cleanReqServices = (list) => (Array.isArray(list) ? list : [])
+  .map(x => ({ id: String(x?.id || '').slice(0, 40), qty: Math.max(1, Math.min(9999, parseInt(x?.qty, 10) || 1)) }))
+  .filter(x => x.id).slice(0, 30);
+const GSTIN_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/;
+/** Checks the intake fields shared by create and edit; returns an error message or null. */
+const leadIntakeProblem = (b) => {
+  if (b.lead_source === 'Referral' && b.referral_name !== undefined && !String(b.referral_name || '').trim()) return 'Who referred this enquiry? Enter the referrer\'s name.';
+  if (b.gstin && !GSTIN_RE.test(String(b.gstin).trim().toUpperCase())) return 'The GSTIN does not look right (15 characters, e.g. 27ABCDE1234F1Z5).';
+  return null;
+};
 
 module.exports = function setupSalesFlowRoutes(app, pool) {
   const q = async (sql, params = []) => (await pool.query(sql, params))[0];
@@ -123,6 +135,13 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     await addCol('leads', 'hold_reason', 'VARCHAR(255) NULL');
     await addCol('leads', 'lost_reason', 'VARCHAR(255) NULL');
     await addCol('leads', 'status_changed_at', 'DATETIME NULL');
+    // Enquiry intake: where it came from (beyond the source), who the contact is, the billing
+    // details a quotation needs, and the services asked for (catalog ids + quantity).
+    for (const [c, d] of [
+      ['source_detail', 'VARCHAR(255) NULL'], ['contact_designation', 'VARCHAR(120) NULL'], ['address', 'VARCHAR(255) NULL'],
+      ['city', 'VARCHAR(100) NULL'], ['state', 'VARCHAR(100) NULL'], ['gstin', 'VARCHAR(20) NULL'],
+      ['requirement_services', 'JSON NULL'], ['timeline', 'VARCHAR(120) NULL']
+    ]) await addCol('leads', c, d);
     // Deals: On Hold, Won value, Lost reason, origin lead
     await addCol('deals', 'on_hold', 'TINYINT(1) NOT NULL DEFAULT 0');
     await addCol('deals', 'hold_until', 'DATE NULL');
@@ -272,11 +291,12 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       if (!needUser(req, res)) return;
       await ready;
       const settings = await getSettings();
+      const canQuoteIds = new Set(await quoters());
       const people = (await q("SELECT id, first_name, last_name, username, email, department FROM users WHERE COALESCE(status, 'Active') = 'Active' ORDER BY first_name"))
-        .map(u => ({ id: u.id, name: userName(u), department: u.department || '' }));
+        .map(u => ({ id: u.id, name: userName(u), department: u.department || '', canQuote: canQuoteIds.has(Number(u.id)) }));
       res.json({
         stages: await stages(), leadStatuses: LEAD_STATUSES, channels: CHANNELS, followupTypes: FOLLOWUP_TYPES, people,
-        me: { id: req.user.id, name: req.user.name, isManager: isMgr(req) },
+        me: { id: req.user.id, name: req.user.name, isManager: isMgr(req), canQuote: canQuote(req) },
         quotation: { validityDays: settings.quotation.validityDays, defaultTaxPct: settings.quotation.defaultTaxPct, discountApprovalPct: settings.quotation.discountApprovalPct, terms: settings.quotation.terms, termsRetainer: settings.quotation.termsRetainer, termsProject: settings.quotation.termsProject },
         services: (settings.services || []).filter(x => x.active !== false),
         planDefaults: { sections: catalog.PLAN_SECTIONS, milestones: catalog.DEFAULT_MILESTONES },
@@ -432,7 +452,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       const [deal] = lead.converted_deal_id ? await q('SELECT id, deal_name, deal_stage, status, on_hold FROM deals WHERE id = ?', [lead.converted_deal_id]) : [];
       const t = await timeline({ leadId: lead.id });
       res.json({
-        lead: { ...lead, status: lead.lead_status === 'Not Contacted' ? 'New' : lead.lead_status, owner: names.get(Number(lead.owner_id)) || '', tags: parseJson(lead.tags, lead.tags) },
+        lead: { ...lead, status: lead.lead_status === 'Not Contacted' ? 'New' : lead.lead_status, owner: names.get(Number(lead.owner_id)) || '', tags: parseJson(lead.tags, lead.tags), services: cleanReqServices(parseJson(lead.requirement_services, [])) },
         deal: deal || null, timeline: t.items, followups: t.followups
       });
     } catch (e) { fail(res, e, 'Could not load the lead'); }
@@ -447,13 +467,21 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       const name = String(b.lead_name || '').trim();
       if (!name) return res.status(400).json({ error: 'Enter the contact or company name.' });
       if (!String(b.phone || '').trim() && !String(b.email || '').trim()) return res.status(400).json({ error: 'Enter a phone number or an email.' });
+      const intake = leadIntakeProblem({ ...b, referral_name: b.referral_name ?? '' });
+      if (intake) return res.status(400).json({ error: intake });
       // An enquiry from an existing customer keeps the link (repeat business).
       const [company] = Number(b.company_id) ? await q('SELECT id, company_name FROM companies WHERE id = ?', [b.company_id]) : [];
-      const [r] = await pool.query(`INSERT INTO leads (lead_name, project_name, company, company_id, email, phone, lead_source, lead_status, value, currency, notes, owner_id, industry, status_changed_at, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'New', ?, ?, ?, ?, ?, NOW(), NOW(), NOW())`,
+      const services = cleanReqServices(b.services);
+      const [r] = await pool.query(`INSERT INTO leads (lead_name, project_name, company, company_id, email, phone, lead_source, lead_status, value, currency, notes, owner_id, industry,
+          source_detail, referral_name, referral_contact, contact_designation, address, city, state, gstin, requirement_services, timeline, status_changed_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'New', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())`,
       [name, b.project_name || null, b.company || company?.company_name || null, company?.id || null, b.email || null, String(b.phone || '').slice(0, 20) || null, b.lead_source || null, Number(b.value) || 0, b.currency || 'INR',
-        b.notes || null, Number(b.owner_id) || req.user.id, b.industry || null]);
-      await event(req, { leadId: r.insertId, companyId: company?.id || null, kind: 'created', title: 'Enquiry received', body: b.notes || null, meta: { source: b.lead_source || '' } });
+        b.notes || null, Number(b.owner_id) || req.user.id, b.industry || null,
+        trimTo(b.source_detail, 255) || null, trimTo(b.referral_name, 255) || null, trimTo(b.referral_contact, 255) || null, trimTo(b.contact_designation, 120) || null,
+        trimTo(b.address, 255) || null, trimTo(b.city, 100) || null, trimTo(b.state, 100) || null, trimTo(b.gstin, 20).toUpperCase() || null,
+        services.length ? JSON.stringify(services) : null, trimTo(b.timeline, 120) || null]);
+      const origin = [b.lead_source, b.lead_source === 'Referral' && b.referral_name ? `referred by ${trimTo(b.referral_name, 255)}${b.referral_contact ? ` (${trimTo(b.referral_contact, 255)})` : ''}` : '', trimTo(b.source_detail, 255)].filter(Boolean).join(' · ');
+      await event(req, { leadId: r.insertId, companyId: company?.id || null, kind: 'created', title: origin ? `Enquiry received · ${origin}` : 'Enquiry received', body: b.notes || null, meta: { source: b.lead_source || '' } });
       if (b.followup && isDay(b.followup.date)) {
         await createFollowup(req, { leadId: r.insertId, ...b.followup });
       }
@@ -468,9 +496,17 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     try {
       if (!needUser(req, res)) return;
       if (onlyManagerAssigns(req, res, req.body?.owner_id)) return;
-      const allowed = ['lead_name', 'project_name', 'company', 'email', 'phone', 'lead_source', 'value', 'currency', 'notes', 'industry', 'owner_id', 'rating'];
+      const allowed = ['lead_name', 'project_name', 'company', 'email', 'phone', 'lead_source', 'value', 'currency', 'notes', 'industry', 'owner_id', 'rating',
+        'source_detail', 'referral_name', 'referral_contact', 'contact_designation', 'address', 'city', 'state', 'gstin', 'timeline'];
+      const intake = leadIntakeProblem(req.body || {});
+      if (intake) return res.status(400).json({ error: intake });
       const sets = []; const vals = [];
-      allowed.forEach(k => { if (req.body?.[k] !== undefined) { sets.push(`${k} = ?`); vals.push(req.body[k] === '' ? null : req.body[k]); } });
+      allowed.forEach(k => {
+        if (req.body?.[k] === undefined) return;
+        const v = req.body[k] === '' ? null : req.body[k];
+        sets.push(`${k} = ?`); vals.push(k === 'gstin' && v ? String(v).trim().toUpperCase() : v);
+      });
+      if (req.body?.services !== undefined) { const s = cleanReqServices(req.body.services); sets.push('requirement_services = ?'); vals.push(s.length ? JSON.stringify(s) : null); }
       if (!sets.length) return res.json({ ok: true });
       const [before] = await q('SELECT owner_id, lead_name FROM leads WHERE id = ?', [req.params.id]);
       if (!before) return res.status(404).json({ error: 'Lead not found' });
@@ -518,6 +554,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       const [[lead]] = await conn.query('SELECT * FROM leads WHERE id = ? FOR UPDATE', [req.params.id]);
       if (!lead) { await conn.rollback(); return res.status(404).json({ error: 'Lead not found' }); }
       if (lead.converted_deal_id) { await conn.rollback(); return res.json({ dealId: lead.converted_deal_id, already: true }); }
+      if (['Lost', 'Unqualified'].includes(lead.lead_status)) { await conn.rollback(); return res.status(400).json({ error: `This enquiry is marked ${lead.lead_status}. Re-open it before making a deal or quotation.` }); }
       const b = req.body || {};
       if (!isMgr(req) && b.assignee_id && Number(b.assignee_id) !== Number(req.user.id)) { await conn.rollback(); return res.status(403).json({ error: 'Only a manager can assign work to someone else.' }); }
       const dealName = String(b.deal_name || lead.project_name || lead.company || lead.lead_name).trim();
@@ -527,10 +564,17 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
         const [[match]] = await conn.query('SELECT id FROM companies WHERE company_name = ? LIMIT 1', [companyName]);
         if (match) companyId = match.id;
         else {
-          const [ins] = await conn.query("INSERT INTO companies (company_name, email, phone, industry, status, source, created_at, updated_at) VALUES (?, ?, ?, ?, 'Active', ?, NOW(), NOW())",
-            [companyName, lead.email || null, lead.phone || null, lead.industry || null, lead.lead_source || 'Enquiry']);
+          const [ins] = await conn.query(`INSERT INTO companies (company_name, email, phone, industry, address, city, state, gstin, status, source, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Active', ?, NOW(), NOW())`,
+          [companyName, lead.email || null, lead.phone || null, lead.industry || null, lead.address || null, lead.city || null, lead.state || null, lead.gstin || null, lead.lead_source || 'Enquiry']);
           companyId = ins.insertId;
         }
+      }
+      // The enquiry's billing details fill whatever the customer record is missing (never overwrite).
+      if (companyId) {
+        await conn.query(`UPDATE companies SET address = COALESCE(NULLIF(address, ''), ?), city = COALESCE(NULLIF(city, ''), ?), state = COALESCE(NULLIF(state, ''), ?),
+            gstin = COALESCE(NULLIF(gstin, ''), ?), email = COALESCE(NULLIF(email, ''), ?), phone = COALESCE(NULLIF(phone, ''), ?) WHERE id = ?`,
+        [lead.address || null, lead.city || null, lead.state || null, lead.gstin || null, lead.email || null, lead.phone || null, companyId]);
       }
       const [[first]] = await conn.query("SELECT id, name, probability FROM pipeline_stages WHERE COALESCE(status, 'Active') = 'Active' ORDER BY position, id LIMIT 1");
       const stageRow = b.stage ? (await conn.query('SELECT id, name, probability FROM pipeline_stages WHERE name = ?', [b.stage]))[0][0] : first;
@@ -575,7 +619,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     try {
       if (!needUser(req, res)) return;
       await ready;
-      const [deal] = await q(`SELECT d.*, c.company_name, c.email AS company_email, c.phone AS company_phone, c.address AS company_address, c.city, c.state AS company_state
+      const [deal] = await q(`SELECT d.*, c.company_name, c.email AS company_email, c.phone AS company_phone, c.address AS company_address, c.city, c.state AS company_state, c.gstin AS company_gstin
         FROM deals d LEFT JOIN companies c ON c.id = d.company_id WHERE d.id = ?`, [req.params.id]);
       if (!deal) return res.status(404).json({ error: 'Deal not found' });
       const names = await usersById();
@@ -588,7 +632,14 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
           ...deal, owner: names.get(Number(deal.assignee_id)) || '', status: deal.on_hold ? 'On Hold' : (deal.status || 'Open'),
           contact: contact ? { ...contact, name: `${contact.first_name || ''} ${contact.last_name || ''}`.trim() } : null
         },
-        lead: lead ? { id: lead.id, name: lead.lead_name, email: lead.email, phone: lead.phone, company: lead.company, source: lead.lead_source } : null,
+        // Everything the enquiry captured, so a new quotation starts from it.
+        lead: lead ? {
+          id: lead.id, name: lead.lead_name, email: lead.email, phone: lead.phone, company: lead.company, source: lead.lead_source,
+          sourceDetail: lead.source_detail || '', referralName: lead.referral_name || '', referralContact: lead.referral_contact || '',
+          designation: lead.contact_designation || '', address: lead.address || '', city: lead.city || '', state: lead.state || '', gstin: lead.gstin || '',
+          requirement: lead.project_name || '', notes: lead.notes || '', timeline: lead.timeline || '', value: Number(lead.value) || 0,
+          services: cleanReqServices(parseJson(lead.requirement_services, []))
+        } : null,
         stages: await stages(), quotations: await loadQuotations(deal.id), decks: (await deckRows()).filter(x => Number(x.dealId) === Number(deal.id)), timeline: t.items, followups: t.followups
       });
     } catch (e) { fail(res, e, 'Could not load the deal'); }
@@ -637,6 +688,8 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       await pool.query(`UPDATE deals SET deal_stage = ?, pipeline_stage_id = ?, probability = ?, status = ?, on_hold = 0, hold_until = NULL, hold_reason = NULL,
           lost_reason = ?, won_value = ?, closed_at = ?, updated_at = NOW() WHERE id = ?`,
       [stage.name, stage.id, stage.probability, won ? 'Won' : lost ? 'Lost' : 'Open', lost ? reason : null, won ? wonValue : null, won || lost ? new Date() : null, deal.id]);
+      // Moving the stage takes the deal off hold, so its "back from hold" reminder is no longer needed.
+      if (deal.on_hold) await cancelHoldReminder('deal_id', deal.id);
       await event(req, {
         dealId: deal.id, kind: won ? 'won' : lost ? 'lost' : 'stage',
         title: won ? `Deal won · ${round2(wonValue).toLocaleString('en-IN')}` : lost ? 'Deal lost' : `Stage: ${deal.deal_stage || '—'} → ${stage.name}`,
@@ -666,21 +719,57 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       res.json({ ok: true });
     } catch (e) { fail(res, e, 'Could not put it on hold'); }
   });
+  // Putting something on hold schedules a "Back from hold" call; resuming early makes it pointless.
+  const cancelHoldReminder = (col, id) => pool.query(`UPDATE followups SET status = 'Cancelled', remarks = CONCAT(COALESCE(remarks, ''), ' [Taken off hold]'), updated_at = NOW()
+    WHERE ${col} = ? AND status IN (?) AND subject = 'Back from hold: check in'`, [id, OPEN_FU]);
   app.post('/api/sales-flow/deals/:id/resume', async (req, res) => {
     try {
       if (!needUser(req, res)) return;
-      await pool.query('UPDATE deals SET on_hold = 0, hold_until = NULL, hold_reason = NULL, updated_at = NOW() WHERE id = ?', [req.params.id]);
-      await event(req, { dealId: Number(req.params.id), kind: 'resume', title: 'Taken off hold' });
+      const [deal] = await q('SELECT id, on_hold FROM deals WHERE id = ?', [req.params.id]);
+      if (!deal) return res.status(404).json({ error: 'Deal not found' });
+      if (!deal.on_hold) return res.status(400).json({ error: 'This deal is not on hold.' });
+      await pool.query('UPDATE deals SET on_hold = 0, hold_until = NULL, hold_reason = NULL, updated_at = NOW() WHERE id = ?', [deal.id]);
+      await cancelHoldReminder('deal_id', deal.id);
+      await event(req, { dealId: deal.id, kind: 'resume', title: 'Taken off hold' });
       res.json({ ok: true });
     } catch (e) { fail(res, e, 'Could not resume'); }
   });
   app.post('/api/sales-flow/leads/:id/resume', async (req, res) => {
     try {
       if (!needUser(req, res)) return;
-      await pool.query("UPDATE leads SET lead_status = 'Contacted', hold_until = NULL, hold_reason = NULL, status_changed_at = NOW(), updated_at = NOW() WHERE id = ?", [req.params.id]);
-      await event(req, { leadId: Number(req.params.id), kind: 'resume', title: 'Taken off hold' });
+      const [lead] = await q('SELECT id, lead_status FROM leads WHERE id = ?', [req.params.id]);
+      if (!lead) return res.status(404).json({ error: 'Lead not found' });
+      if (lead.lead_status !== 'On Hold') return res.status(400).json({ error: 'This enquiry is not on hold.' });
+      await pool.query("UPDATE leads SET lead_status = 'Contacted', hold_until = NULL, hold_reason = NULL, status_changed_at = NOW(), updated_at = NOW() WHERE id = ?", [lead.id]);
+      await cancelHoldReminder('lead_id', lead.id);
+      await event(req, { leadId: lead.id, kind: 'resume', title: 'Taken off hold' });
       res.json({ ok: true });
     } catch (e) { fail(res, e, 'Could not resume'); }
+  });
+
+  // A sales employee adds the enquiry and works the first calls; deals and quotations are made by a
+  // sales executive or manager, so the owner can hand the enquiry to one of them.
+  const quoters = async () => (await q(`SELECT u.id FROM users u LEFT JOIN roles r ON r.id = u.role_id
+    WHERE COALESCE(u.status, 'Active') = 'Active' AND (LOWER(COALESCE(r.name, '')) REGEXP 'manager|admin|executive' OR u.department_role = 'Manager')`)).map(r => Number(r.id));
+  app.post('/api/sales-flow/leads/:id/handover', async (req, res) => {
+    try {
+      if (!needUser(req, res)) return;
+      await ready;
+      const to = Number(req.body?.to);
+      const note = String(req.body?.note || '').trim();
+      const [lead] = await q('SELECT id, lead_name, owner_id, lead_status, converted_deal_id FROM leads WHERE id = ?', [req.params.id]);
+      if (!lead) return res.status(404).json({ error: 'Lead not found' });
+      if (lead.converted_deal_id) return res.status(400).json({ error: 'This enquiry is already a deal.' });
+      if (!to || !(await quoters()).includes(to)) return res.status(400).json({ error: 'Choose a sales executive or manager to hand it to.' });
+      if (to === Number(lead.owner_id)) return res.status(400).json({ error: 'They already own this enquiry.' });
+      await pool.query('UPDATE leads SET owner_id = ?, updated_at = NOW() WHERE id = ?', [to, lead.id]);
+      // Open follow-ups go with the enquiry, so nothing is left on the previous owner's agenda.
+      const names = await usersById();
+      await pool.query('UPDATE followups SET assigned_to = ?, assigned_to_name = ? WHERE lead_id = ? AND status IN (?)', [to, names.get(to) || null, lead.id, OPEN_FU]);
+      await event(req, { leadId: lead.id, kind: 'assigned', title: `Handed over to ${names.get(to) || 'a sales executive'} for the quotation`, body: note || null });
+      notify([to], `Enquiry handed to you: ${lead.lead_name}`, `${req.user.name} passed this enquiry to you for the quotation.${note ? ` ${note}` : ''}`, null);
+      res.json({ ok: true });
+    } catch (e) { fail(res, e, 'Could not hand it over'); }
   });
 
   // ── Communications ────────────────────────────────────────────────────
@@ -742,6 +831,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       if (!needUser(req, res)) return;
       const [f] = await q('SELECT * FROM followups WHERE id = ?', [req.params.id]);
       if (!f) return res.status(404).json({ error: 'Not found' });
+      if (!OPEN_FU.includes(f.status)) return res.status(400).json({ error: `This ${String(f.type || 'follow-up').toLowerCase()} is already ${String(f.status).toLowerCase()}.` });
       const outcome = String(req.body?.outcome || '').trim();
       const notes = String(req.body?.notes || '').trim();
       if (!notes && !outcome) return res.status(400).json({ error: 'Write how it went.' });
@@ -761,6 +851,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       if (!needUser(req, res)) return;
       const [f] = await q('SELECT * FROM followups WHERE id = ?', [req.params.id]);
       if (!f) return res.status(404).json({ error: 'Not found' });
+      if (!OPEN_FU.includes(f.status)) return res.status(400).json({ error: `This ${String(f.type || 'follow-up').toLowerCase()} is already ${String(f.status).toLowerCase()}; schedule a new one instead.` });
       if (!isDay(req.body?.date)) return res.status(400).json({ error: 'Choose a date.' });
       const time = isTime(req.body?.time) ? req.body.time : String(f.scheduled_time || '11:00').slice(0, 5);
       await pool.query("UPDATE followups SET scheduled_date = ?, scheduled_time = ?, status = 'Scheduled', updated_at = NOW() WHERE id = ?", [req.body.date, time, f.id]);
@@ -774,6 +865,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       if (!needUser(req, res)) return;
       const [f] = await q('SELECT * FROM followups WHERE id = ?', [req.params.id]);
       if (!f) return res.status(404).json({ error: 'Not found' });
+      if (!OPEN_FU.includes(f.status)) return res.status(400).json({ error: `This ${String(f.type || 'follow-up').toLowerCase()} is already ${String(f.status).toLowerCase()}.` });
       await pool.query("UPDATE followups SET status = 'Cancelled', remarks = ?, updated_at = NOW() WHERE id = ?", [req.body?.reason || null, f.id]);
       await event(req, { leadId: f.lead_id, dealId: f.deal_id, kind: 'cancelled', title: `${f.type} cancelled`, body: req.body?.reason || null });
       res.json({ ok: true });
@@ -867,9 +959,14 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     const items = await q('SELECT * FROM estimation_line_items WHERE estimation_id = ? ORDER BY position, id', [id]);
     const versions = await q('SELECT id, estimation_number, version, status, total, created_at, revision_note FROM estimations WHERE quote_base = ? ORDER BY version', [e.quote_base || e.estimation_number]);
     const [deal] = e.deal_id ? await q('SELECT d.id, d.deal_name, d.deal_stage, c.company_name FROM deals d LEFT JOIN companies c ON c.id = d.company_id WHERE d.id = ?', [e.deal_id]) : [];
+    const shapeItem = (i) => ({ id: i.id, name: i.item_name, description: i.description || '', hsn: i.hsn_sac || '', unit: i.unit || '', qty: Number(i.quantity), rate: Number(i.rate), discountPct: Number(i.discount_percent) || 0, taxPct: Number(i.tax_percent) || 0, total: Number(i.total) || 0 });
+    // A revision is compared with the version it replaced.
+    const [prev] = e.parent_id ? await q('SELECT id, version, total, status FROM estimations WHERE id = ?', [e.parent_id]) : [];
+    const prevItems = prev ? await q('SELECT * FROM estimation_line_items WHERE estimation_id = ? ORDER BY position, id', [prev.id]) : [];
     return {
       ...shapeQuote(e),
-      items: items.map(i => ({ id: i.id, name: i.item_name, description: i.description || '', hsn: i.hsn_sac || '', unit: i.unit || '', qty: Number(i.quantity), rate: Number(i.rate), discountPct: Number(i.discount_percent) || 0, taxPct: Number(i.tax_percent) || 0, total: Number(i.total) || 0 })),
+      items: items.map(shapeItem),
+      previous: prev ? { id: prev.id, version: prev.version, status: prev.status, total: Number(prev.total) || 0, items: prevItems.map(shapeItem) } : null,
       versions: versions.map(v => ({ id: v.id, number: v.estimation_number, version: v.version, status: v.status, total: Number(v.total) || 0, createdAt: v.created_at, revisionNote: v.revision_note })),
       deal: deal ? { id: deal.id, name: deal.deal_name, stage: deal.deal_stage, company: deal.company_name } : null
     };
@@ -921,7 +1018,7 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
     try {
       if (!needUser(req, res)) return;
       await ready;
-      const [deal] = await q(`SELECT d.*, c.company_name, c.email AS c_email, c.phone AS c_phone, c.address AS c_address, c.city, c.state AS c_state
+      const [deal] = await q(`SELECT d.*, c.company_name, c.email AS c_email, c.phone AS c_phone, c.address AS c_address, c.city, c.state AS c_state, c.gstin AS c_gstin
         FROM deals d LEFT JOIN companies c ON c.id = d.company_id WHERE d.id = ?`, [req.params.id]);
       if (!deal) return res.status(404).json({ error: 'Deal not found' });
       const settings = await getSettings();
@@ -929,7 +1026,10 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       if (!items.length) return res.status(400).json({ error: 'Add at least one item with a name and quantity.' });
       let [lead] = deal.lead_id ? await q('SELECT * FROM leads WHERE id = ?', [deal.lead_id]) : [];
       if (!lead) [lead] = await q('SELECT * FROM leads WHERE converted_deal_id = ? LIMIT 1', [deal.id]);
-      const fallbackClient = { name: deal.company_name || lead?.company || lead?.lead_name || deal.deal_name, contact: lead?.lead_name || '', email: deal.c_email || lead?.email || '', phone: deal.c_phone || lead?.phone || '', address: [deal.c_address, deal.city].filter(Boolean).join(', '), state: deal.c_state || '' };
+      const fallbackClient = {
+        name: deal.company_name || lead?.company || lead?.lead_name || deal.deal_name, contact: lead?.lead_name || '', email: deal.c_email || lead?.email || '', phone: deal.c_phone || lead?.phone || '',
+        address: [deal.c_address || lead?.address, deal.city || lead?.city].filter(Boolean).join(', '), state: deal.c_state || lead?.state || '', gstin: deal.c_gstin || lead?.gstin || ''
+      };
       const data = quoteInput(req.body || {}, settings, fallbackClient);
       const problem = planProblem(data); if (problem) return res.status(400).json({ error: problem });
       const base = await nextBase(settings.quotation.prefix);
@@ -981,8 +1081,15 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       if (e.status !== 'Draft') return res.status(400).json({ error: 'Only drafts can be deleted.' });
       await pool.query('DELETE FROM estimation_line_items WHERE estimation_id = ?', [e.id]);
       await pool.query('DELETE FROM estimations WHERE id = ?', [e.id]);
-      // Deleting a revision draft brings the previous version back.
-      if (e.parent_id) await pool.query("UPDATE estimations SET status = IF(sent_at IS NULL, 'Approved', 'Sent') WHERE id = ? AND status = 'Revised'", [e.parent_id]);
+      // Deleting a revision draft brings the previous version back as it was: accepted / declined
+      // if the client had answered, sent if it went out, otherwise approved.
+      if (e.parent_id) {
+        await pool.query(`UPDATE estimations SET status = CASE
+            WHEN responded_at IS NOT NULL AND decline_reason IS NOT NULL THEN 'Declined'
+            WHEN responded_at IS NOT NULL THEN 'Accepted'
+            WHEN sent_at IS NOT NULL THEN 'Sent' ELSE 'Approved' END
+          WHERE id = ? AND status = 'Revised'`, [e.parent_id]);
+      }
       await event(req, { dealId: e.deal_id, kind: 'quotation', title: `Draft ${e.estimation_number} deleted` });
       res.json({ ok: true });
     } catch (err) { fail(res, err, 'Could not delete the draft'); }
@@ -1175,15 +1282,21 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       const subject = String(req.body?.subject || fill(settings.email.subject, vars)).slice(0, 250);
       const text = String(req.body?.message || fill(settings.email.message, vars));
       const fromAddr = process.env.EMAIL_FROM || user;
-      await transporter.sendMail({
-        from: fromAddr, to: to.join(', '), cc: cc.length ? cc.join(', ') : undefined, replyTo: req.user.email || undefined, subject, text,
-        html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#111827;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
-        attachments: [{ filename: `${out.quote.base}${out.quote.version > 1 ? `-Rev${out.quote.version}` : ''}.pdf`, content: out.buf, contentType: 'application/pdf' }]
-      });
+      try {
+        await transporter.sendMail({
+          from: fromAddr, to: to.join(', '), cc: cc.length ? cc.join(', ') : undefined, replyTo: req.user.email || undefined, subject, text,
+          html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#111827;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
+          attachments: [{ filename: `${out.quote.base}${out.quote.version > 1 ? `-Rev${out.quote.version}` : ''}.pdf`, content: out.buf, contentType: 'application/pdf' }]
+        });
+      } catch (mailErr) {
+        console.error(`sales flow: quotation ${e.id} email failed:`, mailErr.code || '', mailErr.message);
+        const m = mailError(mailErr);
+        return res.status(m.status).json({ error: m.error });
+      }
       await markSent(req, e, 'Email', to.join(', '));
       await event(req, { leadId: e.lead_id, dealId: e.deal_id, quotationId: e.id, kind: 'communication', title: `Email to client · Quotation ${vars.number} sent`, body: `To: ${to.join(', ')}${cc.length ? `\nCc: ${cc.join(', ')}` : ''}\nSubject: ${subject}`, meta: { channel: 'Email', direction: 'out' } });
       res.json({ ok: true });
-    } catch (err) { fail(res, err, `Could not send the email: ${err.message}`); }
+    } catch (err) { fail(res, err, 'Could not send the quotation'); }
   });
 
   app.post('/api/sales-flow/quotations/:id/mark-sent', async (req, res) => {

@@ -8,6 +8,7 @@ import {
   api, useSalesBase, useSalesMeta, money, fmtDate, relDay, isOverdue, Badge, LEAD_STATUS_STYLE, QUOTE_STATUS_STYLE, stageTone,
   Modal, inputCls, labelCls, btn, ErrorNote, ReasonModal, LOST_REASONS, HOLD_REASONS, NextStepFields, addDays
 } from './salesShared';
+import { SourceFields, ClientIntakeFields, ServicePicker, suggestFormat, FORMAT_INFO, estimateOf, expectedValueOf, RETAINER_MONTHS } from './enquiryShared';
 
 /**
  * Sales pipeline: enquiries (leads) by status and deals by stage, with the figures that matter
@@ -15,7 +16,6 @@ import {
  */
 
 const LEAD_COLUMNS = ['New', 'Contacted', 'Qualified', 'On Hold', 'Lost'];
-const SOURCES = ['Website', 'Phone call', 'WhatsApp', 'Referral', 'Walk-in', 'Social media', 'Google Ads', 'IndiaMART', 'JustDial', 'Email', 'Event', 'Other'];
 
 const Tile = ({ icon: Icon, label, value, hint, tone = 'text-gray-500', onClick, warn }) => (
   <button type="button" onClick={onClick} disabled={!onClick}
@@ -26,14 +26,33 @@ const Tile = ({ icon: Icon, label, value, hint, tone = 'text-gray-500', onClick,
   </button>
 );
 
+const Section = ({ n, title, hint, children }) => (
+  <section className="border border-gray-200 rounded p-3">
+    <div className="mb-2.5"><div className="text-[13px] font-semibold text-gray-900"><span className="text-gray-400 mr-1">{n}.</span>{title}</div>{hint && <div className="text-[11.5px] text-gray-500">{hint}</div>}</div>
+    {children}
+  </section>
+);
+
 function NewLeadModal({ meta, onClose, onSaved }) {
-  const [f, setF] = useState({ lead_name: '', company: '', phone: '', email: '', lead_source: 'Website', value: '', owner_id: '', notes: '', project_name: '' });
+  const [f, setF] = useState({
+    lead_name: '', contact_designation: '', company: '', phone: '', email: '', gstin: '', address: '', city: '', state: '',
+    lead_source: 'Website', source_detail: '', referral_name: '', referral_contact: '',
+    services: [], project_name: '', notes: '', timeline: '', value: '', owner_id: ''
+  });
+  const [valueTouched, setValueTouched] = useState(false);
   const [first, setFirst] = useState({ type: 'Call', date: addDays(0), time: '16:00', subject: 'First call' });
   const [planFirst, setPlanFirst] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const set = (k, v) => setF(x => ({ ...x, [k]: v }));
+  const services = meta.services || [];
+  // The expected value follows the services picked until it is typed by hand.
+  const setServices = (list) => setF(x => ({ ...x, services: list, ...(valueTouched ? {} : { value: list.length ? String(expectedValueOf(list, services)) : '' }) }));
+  const format = suggestFormat(f.services, services);
   const save = async () => {
+    if (!f.lead_name.trim()) { setError('Enter the contact name.'); return; }
+    if (!f.phone.trim() && !f.email.trim()) { setError('Enter a phone number or an email.'); return; }
+    if (f.lead_source === 'Referral' && !f.referral_name.trim()) { setError('Who referred this enquiry? Enter the referrer\'s name.'); return; }
     setSaving(true); setError('');
     try {
       const d = await api('/leads', { method: 'POST', body: { ...f, owner_id: f.owner_id || meta.me.id, followup: planFirst ? first : null } });
@@ -41,24 +60,33 @@ function NewLeadModal({ meta, onClose, onSaved }) {
     } catch (e) { setError(e.message); setSaving(false); }
   };
   return (
-    <Modal title="New enquiry" onClose={onClose} width="max-w-2xl"
+    <Modal title="New enquiry" onClose={onClose} width="max-w-3xl"
       footer={<><button onClick={onClose} className={btn.ghost}>Cancel</button><button onClick={save} disabled={saving} className={btn.primary}>{saving && <Loader2 size={13} className="animate-spin" />} Save enquiry</button></>}>
       <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div><label className={labelCls}>Contact name <span className="text-red-600">*</span></label><input autoFocus value={f.lead_name} onChange={e => set('lead_name', e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Company / business</label><input value={f.company} onChange={e => set('company', e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Phone</label><input value={f.phone} onChange={e => set('phone', e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Email</label><input type="email" value={f.email} onChange={e => set('email', e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Source</label><select value={f.lead_source} onChange={e => set('lead_source', e.target.value)} className={inputCls}>{SOURCES.map(s => <option key={s}>{s}</option>)}</select></div>
-          <div><label className={labelCls}>Expected value (₹)</label><input value={f.value} onChange={e => set('value', e.target.value.replace(/[^\d.]/g, ''))} className={inputCls} /></div>
-          <div><label className={labelCls}>Requirement / service</label><input value={f.project_name} onChange={e => set('project_name', e.target.value)} placeholder="e.g. Website + GMB" className={inputCls} /></div>
-          <div><label className={labelCls}>Owner</label><select value={f.owner_id} onChange={e => set('owner_id', e.target.value)} className={inputCls}><option value="">Me</option>{meta.people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-        </div>
-        <div><label className={labelCls}>Enquiry details</label><textarea value={f.notes} onChange={e => set('notes', e.target.value)} rows={3} className="w-full text-[13px] border border-gray-300 rounded p-2.5 outline-none focus:border-blue-500" placeholder="What they asked for, budget, timeline" /></div>
-        <div className="border border-gray-200 rounded p-3 bg-gray-50/60">
+        <Section n={1} title="Where did it come from?" hint="Be specific: a referral needs the referrer, an ad needs the campaign, a portal needs its enquiry ID.">
+          <SourceFields value={f} onChange={setF} />
+        </Section>
+        <Section n={2} title="Contact and billing details" hint="These go straight into the quotation's “Bill to”, so the quotation needs no retyping.">
+          <ClientIntakeFields value={f} onChange={setF} />
+        </Section>
+        <Section n={3} title="Requirement" hint="Pick the services asked for. They decide the quotation format and become its first lines.">
+          <ServicePicker services={services} value={f.services} onChange={setServices} />
+          {f.services.length > 0 && <div className="mt-2 text-[11.5px] text-gray-600">Quotation format: <b>{FORMAT_INFO[format].label}</b> — {FORMAT_INFO[format].why}</div>}
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <div><label className={labelCls}>Requirement in one line</label><input value={f.project_name} onChange={e => set('project_name', e.target.value)} placeholder="e.g. Website + GMB for their bakery" className={inputCls} /></div>
+            <div><label className={labelCls}>When do they need it?</label><input value={f.timeline} onChange={e => set('timeline', e.target.value)} placeholder="e.g. Live before 1 Dec, start next month" className={inputCls} /></div>
+            <div><label className={labelCls}>Expected value (₹)</label><input value={f.value} onChange={e => { setValueTouched(true); set('value', e.target.value.replace(/[^\d.]/g, '')); }} className={inputCls} />
+              {!valueTouched && f.services.length > 0 && <p className="text-[10.5px] text-gray-500 mt-0.5">From list prices{estimateOf(f.services, services).monthly > 0 ? ` (monthly × ${RETAINER_MONTHS})` : ''}. Type to change.</p>}</div>
+            <div><label className={labelCls}>Budget, scope, anything else</label><input value={f.notes} onChange={e => set('notes', e.target.value)} placeholder="Budget, pages, modules, competitors…" className={inputCls} /></div>
+          </div>
+        </Section>
+        <Section n={4} title="Owner and first contact">
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div><label className={labelCls}>Owner</label><select value={f.owner_id} onChange={e => set('owner_id', e.target.value)} className={inputCls}><option value="">Me</option>{meta.people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+          </div>
           <label className="flex items-center gap-2 text-[13px] font-medium text-gray-800 cursor-pointer mb-2"><input type="checkbox" checked={planFirst} onChange={e => setPlanFirst(e.target.checked)} /> Schedule the first contact</label>
           {planFirst && <NextStepFields value={first} onChange={setFirst} types={meta.followupTypes} people={meta.people} />}
-        </div>
+        </Section>
         <ErrorNote text={error} />
       </div>
     </Modal>

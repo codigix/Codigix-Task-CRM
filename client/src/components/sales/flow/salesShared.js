@@ -140,13 +140,15 @@ export function NextStepFields({ value, onChange, types, people, compact }) {
 }
 
 const QUICK_OUTCOMES = {
-  Call: ['Interested', 'Call back later', 'Not reachable', 'Needs quotation', 'Negotiating price', 'Not interested'],
-  WhatsApp: ['Replied', 'No reply yet', 'Shared details', 'Needs quotation'],
-  Email: ['Replied', 'No reply yet', 'Shared details', 'Needs quotation'],
-  Meeting: ['Requirement understood', 'Demo done', 'Price discussed', 'Decision pending', 'Not a fit'],
-  Visit: ['Requirement understood', 'Price discussed', 'Decision pending'],
+  Call: ['Interested', 'Asked for quotation', 'Call back later', 'Not reachable', 'Negotiating price', 'Not interested'],
+  WhatsApp: ['Replied', 'Asked for quotation', 'No reply yet', 'Shared details'],
+  Email: ['Replied', 'Asked for quotation', 'No reply yet', 'Shared details'],
+  Meeting: ['Requirement understood', 'Asked for quotation', 'Demo done', 'Price discussed', 'Decision pending', 'Not a fit'],
+  Visit: ['Requirement understood', 'Asked for quotation', 'Price discussed', 'Decision pending'],
   Note: [], SMS: ['Replied', 'No reply yet']
 };
+/** The client asked for a quotation / proposal: the page offers to create one right away. */
+export const asksForQuote = (outcome) => /quotation|proposal/i.test(String(outcome || ''));
 
 /** Log a call / email / WhatsApp / meeting / visit / note, with an optional next step. */
 export function LogCommunicationModal({ meta, leadId, dealId, defaultChannel = 'Call', onClose, onSaved }) {
@@ -164,7 +166,7 @@ export function LogCommunicationModal({ meta, leadId, dealId, defaultChannel = '
     setSaving(true); setError('');
     try {
       await api('/communications', { method: 'POST', body: { leadId, dealId, channel, direction, outcome, summary, durationMin: duration, next: planNext && channel !== 'Note' ? next : null } });
-      onSaved();
+      onSaved({ outcome });
     } catch (e) { setError(e.message); setSaving(false); }
   };
   return (
@@ -243,7 +245,7 @@ export function CompleteFollowupModal({ meta, followup, onClose, onSaved }) {
   const channel = /meet|visit|demo/i.test(followup.type) ? 'Meeting' : /whatsapp/i.test(followup.type) ? 'WhatsApp' : /email/i.test(followup.type) ? 'Email' : 'Call';
   const save = async () => {
     setSaving(true); setError('');
-    try { await api(`/followups/${followup.id}/complete`, { method: 'POST', body: { outcome, notes, next: planNext ? next : null } }); onSaved(); } catch (e) { setError(e.message); setSaving(false); }
+    try { await api(`/followups/${followup.id}/complete`, { method: 'POST', body: { outcome, notes, next: planNext ? next : null } }); onSaved({ outcome }); } catch (e) { setError(e.message); setSaving(false); }
   };
   return (
     <Modal title={`Done: ${followup.type}${followup.subject ? ` · ${followup.subject}` : ''}`} onClose={onClose} width="max-w-2xl"
@@ -289,7 +291,7 @@ export function RescheduleModal({ followup, onClose, onSaved }) {
   );
 }
 
-/** Follow-ups and meetings list with done / reschedule / cancel. */
+/** Follow-ups and meetings list with done / reschedule / cancel. onChanged gets { outcome } when one is marked done. */
 export function FollowupList({ items, meta, onChanged, emptyText = 'Nothing scheduled.' }) {
   const [completing, setCompleting] = useState(null);
   const [moving, setMoving] = useState(null);
@@ -325,7 +327,7 @@ export function FollowupList({ items, meta, onChanged, emptyText = 'Nothing sche
           </div>
         </div>
       ))}
-      {completing && <CompleteFollowupModal meta={meta} followup={completing} onClose={() => setCompleting(null)} onSaved={() => { setCompleting(null); onChanged(); }} />}
+      {completing && <CompleteFollowupModal meta={meta} followup={completing} onClose={() => setCompleting(null)} onSaved={(r) => { setCompleting(null); onChanged(r); }} />}
       {moving && <RescheduleModal followup={moving} onClose={() => setMoving(null)} onSaved={() => { setMoving(null); onChanged(); }} />}
     </div>
   );
