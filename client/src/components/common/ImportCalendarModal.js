@@ -133,7 +133,7 @@ const ImportCalendarModal = ({ isOpen, department, sprints = [], defaultSprintId
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Import failed');
       reset();
-      onImported(data.created);
+      onImported(data.created, data.skipped || 0);
     } catch (err) {
       setError(err.message);
       setIsBusy(false);

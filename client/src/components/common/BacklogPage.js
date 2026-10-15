@@ -1077,12 +1077,12 @@ const BacklogPage = ({ department }) => {
         defaultSprintId={importSprintId}
         currentUserName={currentUserName}
         onCancel={() => setIsImporting(false)}
-        onImported={(count) => {
+        onImported={(count, skipped = 0) => {
           setIsImporting(false);
           load();
           Swal.fire({
             icon: 'success', title: 'Calendar imported',
-            text: `${count} work item${count === 1 ? '' : 's'} created.`,
+            text: `${count} work item${count === 1 ? '' : 's'} created.${skipped ? ` ${skipped} already in the system ${skipped === 1 ? 'was' : 'were'} skipped.` : ''}`,
             timer: 2600, showConfirmButton: false
           });
         }}

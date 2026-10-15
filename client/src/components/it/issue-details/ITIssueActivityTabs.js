@@ -484,10 +484,13 @@ const ITIssueActivityTabs = ({
           'Not started': 'bg-gray-50 text-gray-600 border-gray-200',
           'No plan': 'bg-amber-50 text-amber-800 border-amber-200'
         };
+        const isSub = worklogData.scope === 'subtask';
         const planned = worklogData.plannedSeconds || 0;
         const logged = worklogData.totalSeconds || 0;
         const withLive = logged + (timer.running ? liveElapsed : 0);
-        const pctUsed = planned ? Math.round((withLive / planned) * 100) : null;
+        // A subtask uses the main task's plan: the bar shows what the whole main task has used.
+        const pctUsed = planned ? Math.round((((isSub ? worklogData.mainSpentSeconds || 0 : logged) + (timer.running ? liveElapsed : 0)) / planned) * 100) : null;
+        const hm = (sec) => { const v = Math.max(0, Math.round(sec)); const h = Math.floor(v / 3600); const m = Math.floor((v % 3600) / 60); return h ? `${h}h ${m}m` : `${m}m`; };
         const sourceBadge = {
           automatic: 'bg-blue-50 text-blue-700 border-blue-200',
           timer: 'bg-violet-50 text-violet-700 border-violet-200',
@@ -498,12 +501,17 @@ const ITIssueActivityTabs = ({
           <div className="space-y-3">
             {/* Planned vs actual */}
             <div className="grid grid-cols-4 gap-2 text-center">
-              {[
+              {(isSub ? [
+                { label: 'This subtask', value: hm(withLive), cls: 'text-blue-700' },
+                { label: 'Main task plan', value: worklogData.originalEstimate || '0h', cls: 'text-gray-800' },
+                { label: 'Main task used', value: hm((worklogData.mainSpentSeconds || 0) + (timer.running ? liveElapsed : 0)), cls: 'text-gray-800' },
+                { label: 'Main task left', value: planned ? hm(planned - (worklogData.mainSpentSeconds || 0) - (timer.running ? liveElapsed : 0)) : '—', cls: planned && planned - (worklogData.mainSpentSeconds || 0) - (timer.running ? liveElapsed : 0) < 0 ? 'text-red-600' : 'text-emerald-700' }
+              ] : [
                 { label: 'Planned', value: worklogData.originalEstimate || '0h', cls: 'text-gray-800' },
                 { label: 'Logged', value: worklogData.totalSpent || '0h', cls: 'text-blue-700' },
                 { label: 'Remaining', value: worklogData.remainingEstimate || '0h', cls: String(worklogData.remainingEstimate || '').includes('Overdue') ? 'text-red-600' : 'text-emerald-700' },
                 { label: 'Efficiency', value: worklogData.efficiency != null ? `${worklogData.efficiency}%` : '—', cls: worklogData.efficiency == null ? 'text-gray-500' : worklogData.efficiency >= 90 ? 'text-green-700' : worklogData.efficiency >= 75 ? 'text-amber-700' : 'text-red-700' }
-              ].map(s => (
+              ]).map(s => (
                 <div key={s.label} className="p-2 bg-gray-50 rounded border border-gray-100">
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider block">{s.label}</span>
                   <span className={`text-sm font-semibold ${s.cls}`}>{s.value}</span>
@@ -513,8 +521,8 @@ const ITIssueActivityTabs = ({
             {planned > 0 ? (
               <div>
                 <div className="flex justify-between text-[11px] text-gray-600 mb-1">
-                  <span>{pctUsed}% of planned time used{timer.running ? ' (including the running timer)' : ''}</span>
-                  <span className={`px-1.5 py-0.5 rounded border text-[10px] font-semibold ${verdictStyle[worklogData.verdict] || verdictStyle['Not started']}`}>{worklogData.verdict || 'Not started'}</span>
+                  <span>{pctUsed}% of {isSub ? "the main task's" : 'planned'} time used{timer.running ? ' (including the running timer)' : ''}</span>
+                  {!isSub && <span className={`px-1.5 py-0.5 rounded border text-[10px] font-semibold ${verdictStyle[worklogData.verdict] || verdictStyle['Not started']}`}>{worklogData.verdict || 'Not started'}</span>}
                 </div>
                 <div className="h-2 bg-gray-100 rounded overflow-hidden" aria-hidden="true">
                   <div className={`h-full rounded ${pctUsed > 110 ? 'bg-red-500' : pctUsed > 90 ? 'bg-amber-500' : 'bg-red-600'}`} style={{ width: `${Math.min(100, pctUsed)}%` }} />
@@ -522,7 +530,9 @@ const ITIssueActivityTabs = ({
               </div>
             ) : (
               <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">
-                No planned time yet. Set <strong>Planned time</strong> in Details (e.g. 6h or 1d) so efficiency and effort points can be calculated.
+                {isSub
+                  ? <>The main task has no planned time yet. Set it on the main task: subtasks need no plan of their own and use the main task's.</>
+                  : <>No planned time yet. Set <strong>Planned time</strong> in Details (e.g. 6h or 1d) so efficiency and effort points can be calculated.</>}
               </p>
             )}
 
@@ -532,8 +542,8 @@ const ITIssueActivityTabs = ({
                 <div>
                   <span className="text-xs text-slate-700 font-medium block">
                     {timer.running
-                      ? `Timer running · ${timer.owner || 'someone'}${timer.source === 'auto' ? ' · started by moving to In Progress' : ''}`
-                      : 'Timer stopped'}
+                      ? `${isSub ? 'Subtask clock' : 'Timer'} running · ${timer.owner || 'someone'}${timer.source === 'auto' ? ' · started by moving to In Progress' : ''}`
+                      : isSub ? 'Subtask clock not running' : 'Timer stopped'}
                   </span>
                   <span className={`font-mono text-lg tracking-tight ${timer.running ? 'text-red-600' : 'text-slate-400'}`}>
                     {formatLiveElapsed(liveElapsed)}
@@ -558,7 +568,9 @@ const ITIssueActivityTabs = ({
                 )}
               </div>
               <p className="text-[10px] text-slate-500 mt-1.5">
-                Moving a ticket to In Progress starts the clock automatically (working hours only). Use Start / Pause for breaks or overtime; leaving In Progress logs the session.
+                {isSub
+                  ? "Moving this subtask to In Progress starts its clock (working hours only); leaving In Progress or Pause logs the session. Its time comes off the main task's plan."
+                  : 'Moving a ticket to In Progress starts the clock automatically (working hours only). Use Start / Pause for breaks or overtime; leaving In Progress logs the session.'}
               </p>
             </div>
 
@@ -616,7 +628,7 @@ const ITIssueActivityTabs = ({
 
             <div className="space-y-2 pt-1">
               {worklogData.worklogs.length === 0 ? (
-                <p className="text-xs text-gray-400 text-center py-4">No time recorded on this ticket yet.</p>
+                <p className="text-xs text-gray-400 text-center py-4">{isSub ? 'No time recorded on this subtask yet.' : 'No time recorded on this ticket yet.'}</p>
               ) : (
                 worklogData.worklogs.map(log => {
                   const start = log.started_at ? new Date(log.started_at) : null;

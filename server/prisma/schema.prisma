@@ -1286,7 +1286,26 @@ model it_kanban_worklogs {
 
   approval    String    @default("approved") @db.VarChar(10)
   reviewed_by String?   @db.VarChar(120)
+  /// Set when the time was spent on a subtask: logged on the main task, so it counts against its plan.
+  subtask_id  String?   @db.VarChar(64)
+
   @@index([issue_key], map: "idx_issue_key")
+  @@index([issue_key, subtask_id], map: "idx_wl_subtask")
+}
+
+/// A subtask's running clock (subtasks live in it_kanban_issues.subtasks JSON and have no planned
+/// time of their own; their sessions are written to it_kanban_worklogs with subtask_id).
+model it_kanban_subtask_timers {
+  id            Int      @id @default(autoincrement())
+  issue_key     String   @db.VarChar(50)
+  subtask_id    String   @db.VarChar(64)
+  subtask_title String?  @db.VarChar(500)
+  owner         String   @db.VarChar(120)
+  started_at    DateTime @db.DateTime(0)
+  source        String   @default("auto") @db.VarChar(10)
+
+  @@unique([issue_key, subtask_id], map: "uniq_subtask")
+  @@index([owner], map: "idx_owner")
 }
 
 model it_projects {
@@ -1369,6 +1388,16 @@ model leads {
   hold_reason                                     String?             @db.VarChar(255)
   lost_reason                                     String?             @db.VarChar(255)
   status_changed_at                               DateTime?           @db.DateTime(0)
+  /// Enquiry intake: where it came from beyond the source, the contact's role, the billing
+  /// details a quotation needs, the services asked for ([{ id, qty }] from the catalog) and when.
+  source_detail                                   String?             @db.VarChar(255)
+  contact_designation                             String?             @db.VarChar(120)
+  address                                         String?             @db.VarChar(255)
+  city                                            String?             @db.VarChar(100)
+  state                                           String?             @db.VarChar(100)
+  gstin                                           String?             @db.VarChar(20)
+  requirement_services                            Json?
+  timeline                                        String?             @db.VarChar(120)
   activities                                      activities[]
   entity_notes                                    entity_notes[]
   estimations                                     estimations[]

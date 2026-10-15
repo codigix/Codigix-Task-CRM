@@ -512,15 +512,6 @@ const ITKanbanPage = ({ department }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilterDropdown, setActiveFilterDropdown] = useState(null);
 
-  useEffect(() => {
-    const handleDocumentClick = (e) => {
-      if (!e.target.closest('.relative')) {
-        setActiveFilterDropdown(null);
-      }
-    };
-    document.addEventListener('mousedown', handleDocumentClick);
-    return () => document.removeEventListener('mousedown', handleDocumentClick);
-  }, []);
   const [openCardAssigneeDropdown, setOpenCardAssigneeDropdown] = useState(null);
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
   const [cardAssigneePos, setCardAssigneePos] = useState({ top: 0, left: 0 });
@@ -1138,6 +1129,10 @@ const ITKanbanPage = ({ department }) => {
           isSubtask: true,
           parentKey: issue.issue_key || issue.key,
           parentTitle: issue.title,
+          // A subtask card shows the subtask's own clock, not the main task's it was copied from.
+          is_timer_running: false,
+          timer_start_time: null,
+          timer_owner: null,
           title: st.title,
           type: 'Task',
           priority: st.priority || 'Medium',
@@ -1304,7 +1299,9 @@ const ITKanbanPage = ({ department }) => {
         setActiveCreateColumn(null);
         setOpenInlineDropdown(null);
       }
-      if (activeFilterDropdown && !e.target.closest('.relative')) {
+      // Close the open filter on any click outside it. (Matching any ".relative" ancestor
+      // kept it open almost everywhere, since most of the page sits inside one.)
+      if (activeFilterDropdown && !e.target.closest(`[data-filter-dropdown="${activeFilterDropdown}"]`)) {
         setActiveFilterDropdown(null);
       }
       if (openCardAssigneeDropdown && !e.target.closest('.card-assignee-dropdown')) {
@@ -1544,6 +1541,14 @@ const ITKanbanPage = ({ department }) => {
           // The plan was above the limit: it is waiting for a manager, the ticket is unchanged.
           Swal.fire({ icon: 'info', title: 'Sent for approval', text: `${okData.pendingEstimate.requested} is more than 1.5× the standard for ${okData.pendingEstimate.workType} (${okData.pendingEstimate.standardHours} h). Your manager has been asked to approve it.` });
           fetchKanbanData();
+        }
+        // A subtask clock started or stopped: starting one can move the main task to In Progress
+        // and pause the person's other clock, so reload the board and say what happened.
+        if (okData.parentStarted || okData.subtaskTimers) {
+          fetchKanbanData();
+          window.dispatchEvent(new CustomEvent('crm-subtask-time', { detail: key }));
+          if (okData.parentStarted) showSuccessToast('Subtask started: the main task is now In Progress');
+          if (okData.subtaskTimers?.paused?.length) showSuccessToast(`Paused your other clock: ${okData.subtaskTimers.paused.join(', ')}`);
         }
       } else {
         const data = await res.json().catch(() => ({}));
@@ -1938,7 +1943,7 @@ const ITKanbanPage = ({ department }) => {
                     </div>
 
                     {/* Status Filter Dropdown */}
-                    <div className="relative">
+                    <div className="relative" data-filter-dropdown="status">
                       <button
                         onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'status' ? null : 'status')}
                         className={`flex items-center gap-1.5 h-8 px-2.5 rounded text-xs font-medium border whitespace-nowrap hover:bg-gray-50 transition-colors ${selectedStatus !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700'}`}
@@ -1961,7 +1966,7 @@ const ITKanbanPage = ({ department }) => {
                     </div>
 
                     {/* Priority Filter Dropdown */}
-                    <div className="relative">
+                    <div className="relative" data-filter-dropdown="priority">
                       <button
                         onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'priority' ? null : 'priority')}
                         className={`flex items-center gap-1.5 h-8 px-2.5 rounded text-xs font-medium border whitespace-nowrap hover:bg-gray-50 transition-colors ${selectedPriority !== 'ALL' ? 'bg-blue-50  ' : 'bg-white border-gray-300 text-gray-700'}`}
@@ -1984,7 +1989,7 @@ const ITKanbanPage = ({ department }) => {
                     </div>
 
                     {/* Labels Filter Dropdown */}
-                    <div className="relative">
+                    <div className="relative" data-filter-dropdown="labels">
                       <button
                         onClick={() => { setActiveFilterDropdown(activeFilterDropdown === 'labels' ? null : 'labels'); setLabelSearch(''); }}
                         className={`flex items-center gap-1.5 h-8 px-2.5 rounded text-xs font-medium border whitespace-nowrap hover:bg-gray-50 transition-colors ${selectedLabels.length > 0 ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-300 text-gray-700'}`}
@@ -2037,7 +2042,7 @@ const ITKanbanPage = ({ department }) => {
                     </div>
 
                     {/* Date Filter Dropdown */}
-                    <div className="relative">
+                    <div className="relative" data-filter-dropdown="date">
                       <button
                         onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'date' ? null : 'date')}
                         className={`flex items-center gap-1.5 h-8 px-2.5 rounded text-xs font-medium border whitespace-nowrap hover:bg-gray-50 transition-colors ${dateFilter !== 'ALL' ? 'bg-blue-50 border-blue-200 text-blue-700 ' : 'bg-white border-gray-300 text-gray-700'}`}
@@ -2442,8 +2447,8 @@ const ITKanbanPage = ({ department }) => {
                                                               </span>
                                                             )}
                                                             {card.isSubtask && (
-                                                              <span className="text-[10px]  uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200">
-                                                                Subtask
+                                                              <span className="text-[10px]  uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200 max-w-[180px] truncate" title={`Subtask of ${card.parentKey}: ${card.parentTitle || ''}`}>
+                                                                Subtask of {card.parentKey}
                                                               </span>
                                                             )}
                                                             {labels.map(label => (

@@ -8,6 +8,9 @@ import { API_BASE_URL } from '../../config/environment';
 import { useAuth } from '../../hooks/useAuth';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 
+// New work is planned for today unless someone picks another day.
+const todayYmd = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
 const PRIORITIES = [
   { name: 'High', icon: ArrowUp, color: 'text-red-600' },
   { name: 'Medium', icon: ArrowUp, color: 'text-orange-500' },
@@ -28,7 +31,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
   const [description, setDescription] = useState('');
   const [assignee, setAssignee] = useState('Unassigned');
   const [priority, setPriority] = useState('Medium');
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState(todayYmd);
   const [storyPoints, setStoryPoints] = useState('');
 
   // UI states
@@ -43,7 +46,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
       setStatus('TO DO');
       setAssignee('Unassigned');
       setPriority('Medium');
-      setDueDate('');
+      setDueDate(todayYmd());
       setStoryPoints('');
       fetchUsers();
     }
@@ -151,7 +154,7 @@ const UniversalCreateIssueDrawer = ({ department = 'IT', isOpen, onClose, onIssu
     setStatus('TO DO');
     setAssignee('Unassigned');
     setPriority('Medium');
-    setDueDate('');
+    setDueDate(todayYmd());
     setStoryPoints('');
     onClose();
   };

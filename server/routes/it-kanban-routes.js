@@ -851,6 +851,29 @@ Acceptance Criteria
     } catch (e) {
       console.error('Error adding worklog approval column:', e.message);
     }
+    // Subtasks have no planned time of their own: they use the main task's. Their time is
+    // logged on the main task (issue_key) tagged with the subtask, so it comes off the main
+    // task's plan, and a subtask's running clock lives here (not in the subtasks JSON, which
+    // the browser rewrites on every edit).
+    try {
+      const [cols] = await pool.query("SHOW COLUMNS FROM it_kanban_worklogs LIKE 'subtask_id'");
+      if (!cols.length) await pool.query('ALTER TABLE it_kanban_worklogs ADD COLUMN subtask_id VARCHAR(64) NULL, ADD INDEX idx_wl_subtask (issue_key, subtask_id)');
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS it_kanban_subtask_timers (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          issue_key VARCHAR(50) NOT NULL,
+          subtask_id VARCHAR(64) NOT NULL,
+          subtask_title VARCHAR(500) NULL,
+          owner VARCHAR(120) NOT NULL,
+          started_at DATETIME NOT NULL,
+          source VARCHAR(10) NOT NULL DEFAULT 'auto',
+          UNIQUE KEY uniq_subtask (issue_key, subtask_id),
+          INDEX idx_owner (owner)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+    } catch (e) {
+      console.error('Error setting up subtask time tracking:', e.message);
+    }
   })();
 
   // ── Work-log time helpers ──────────────────────────────────────────────
@@ -962,7 +985,74 @@ Acceptance Criteria
         [row.issue_key]
       );
     }
-    return rows.map(r => r.issue_key);
+    // The same person's subtask clocks count too: one running clock per person.
+    const pausedSubtasks = await pauseSubtaskTimersOf(owner, null, `Auto-paused: started work on ${exceptKey}`);
+    return [...rows.map(r => r.issue_key), ...pausedSubtasks];
+  };
+
+  // ── Subtask clocks ─────────────────────────────────────────────────
+  const isActiveStatus = (s) => ['IN PROGRESS', 'IN-PROGRESS', 'IN_PROGRESS'].includes(String(s || '').trim().toUpperCase());
+  const parseList = (v) => { if (Array.isArray(v)) return v; try { const p = JSON.parse(v || '[]'); return Array.isArray(p) ? p : []; } catch (e) { return []; } };
+
+  /** Ends a running subtask clock: its time goes to the main task's work log, tagged with the subtask. */
+  const closeSubtaskSession = async (row, reason) => {
+    // Claim the clock first, so a session is never logged twice when two paths close it.
+    const [claimed] = await db.query('DELETE FROM it_kanban_subtask_timers WHERE id = ?', [row.id]);
+    if (!claimed.affectedRows) return 0;
+    const start = new Date(row.started_at);
+    const now = new Date();
+    const seconds = isNaN(start) ? 0 : row.source === 'manual'
+      ? Math.min(Math.max(0, Math.round((now - start) / 1000)), MAX_MANUAL_SESSION)
+      : workingSecondsBetween(start, now);
+    if (seconds > 0) {
+      await db.query(
+        'INSERT INTO it_kanban_worklogs (issue_key, subtask_id, author, seconds, description, started_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [row.issue_key, row.subtask_id, row.owner, seconds, `Subtask "${String(row.subtask_title || row.subtask_id).slice(0, 200)}": ${reason}`, start]
+      );
+      await recalcIssueTime(row.issue_key);
+    }
+    return seconds;
+  };
+
+  /** Stops every subtask clock this person has running, except one; returns labels of what was paused. */
+  async function pauseSubtaskTimersOf(owner, except, reason) {
+    if (!isPersonName(owner)) return [];
+    const [rows] = await db.query('SELECT * FROM it_kanban_subtask_timers WHERE owner = ?', [owner]);
+    const paused = [];
+    for (const row of rows) {
+      if (except && row.issue_key === except.issueKey && String(row.subtask_id) === String(except.subtaskId)) continue;
+      await closeSubtaskSession(row, reason);
+      paused.push(`${row.issue_key} › ${row.subtask_title || 'subtask'}`);
+    }
+    return paused;
+  }
+
+  /**
+   * When a person finishes their subtask, their main-task clock picks up again: if they own the
+   * main task, it is still In Progress, and nothing else of theirs is running.
+   */
+  const resumeMainClock = async (issueKey, owner) => {
+    if (!isPersonName(owner)) return false;
+    const [[iss]] = await db.query('SELECT status, assignee, is_timer_running FROM it_kanban_issues WHERE issue_key = ?', [issueKey]);
+    if (!iss || iss.is_timer_running || !isActiveStatus(iss.status)) return false;
+    if (String(iss.assignee || '').trim().toLowerCase() !== String(owner).trim().toLowerCase()) return false;
+    const [[busy]] = await db.query(
+      `SELECT (SELECT COUNT(*) FROM it_kanban_issues WHERE is_timer_running = 1 AND (timer_owner = ? OR (timer_owner IS NULL AND assignee = ?)))
+            + (SELECT COUNT(*) FROM it_kanban_subtask_timers WHERE owner = ?) AS n`, [owner, owner, owner]);
+    if (Number(busy.n)) return false;
+    await db.query("UPDATE it_kanban_issues SET is_timer_running = 1, timer_start_time = ?, timer_owner = ?, timer_source = 'auto' WHERE issue_key = ?", [new Date(), owner, issueKey]);
+    return true;
+  };
+
+  /** Starts a subtask clock for `owner`, pausing whatever else they had running (main tasks included). */
+  const startSubtaskTimer = async (issueKey, st, owner, source = 'auto') => {
+    const paused = await pauseOtherTimers(owner, '');
+    await db.query(
+      `INSERT INTO it_kanban_subtask_timers (issue_key, subtask_id, subtask_title, owner, started_at, source) VALUES (?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE owner = VALUES(owner), started_at = VALUES(started_at), source = VALUES(source), subtask_title = VALUES(subtask_title)`,
+      [issueKey, String(st.id), String(st.title || '').slice(0, 500), owner, new Date(), source]
+    );
+    return paused;
   };
 
   // Recomputes time_spent / remaining_estimate from the issue's logged time.
@@ -1367,6 +1457,15 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       const labelsJson = JSON.stringify(Array.isArray(labels) ? labels.filter(Boolean) : []);
       const linkedJson = JSON.stringify(Array.isArray(linked_issues) ? linked_issues.filter(Boolean) : []);
 
+      // New work is planned for the day it is created unless a date is given; anyone can move
+      // it afterwards (each move is in History). With only one date given, the other follows it.
+      const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+      let startDay = toDate(start_date);
+      let dueDay = toDate(due_date);
+      if (!startDay && !dueDay) { startDay = todayStr; dueDay = todayStr; }
+      else if (!startDay) startDay = dueDay < todayStr ? dueDay : todayStr;
+      else if (!dueDay) dueDay = startDay;
+
       let dept = String(department || 'IT').replace(/\s*department\s*$/i, '').trim();
 
       // Created into a sprint? Then the sprint decides both the project and the board
@@ -1410,6 +1509,25 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       const resolvedCreator = headerUser || sessionUser || '';
       const finalReporter = (reporter && reporter !== 'Unassigned') ? reporter : (resolvedCreator || 'Unassigned');
 
+      // A double click or a retried request sends the same ticket twice. The same title in the
+      // same project from the same person within two minutes is that ticket: hand it back.
+      const cleanTitle = String(title || '').trim();
+      if (!cleanTitle) return res.status(400).json({ error: 'Give the work item a title.' });
+      const [[recent]] = await db.query(
+        `SELECT * FROM it_kanban_issues
+          WHERE LOWER(TRIM(title)) = LOWER(?) AND project_id <=> ? AND reporter = ? AND created_at >= NOW() - INTERVAL 2 MINUTE
+          ORDER BY id DESC LIMIT 1`,
+        [cleanTitle, resolvedProjectId, finalReporter]
+      );
+      if (recent) {
+        const parse = (v) => (typeof v === 'string' ? JSON.parse(v) : (v || []));
+        return res.status(200).json({
+          message: 'This work item was just created; returning it instead of making a duplicate',
+          duplicate: true, id: recent.id, issue_key: recent.issue_key,
+          issue: { ...recent, subtasks: parse(recent.subtasks), linked_issues: parse(recent.linked_issues), comments: parse(recent.comments), labels: parse(recent.labels) }
+        });
+      }
+
       const [result] = await db.query(`
         INSERT INTO it_kanban_issues (issue_key, title, type, priority, status, assignee, reporter, team, team_id, project_id, description, department, due_date, start_date, sprint, sprint_id, labels, story_points, flagged, parent_id, subtasks, linked_issues, comments, progress, original_estimate, remaining_estimate, time_spent, components, environment, vulnerability)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '0h', '0h', '0h', '', '', '')
@@ -1426,8 +1544,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         resolvedProjectId,
         description || '',
         dept,
-        toDate(due_date),
-        toDate(start_date),
+        dueDay,
+        startDay,
         cleanSprint || null,
         // Lets the Backlog create work straight into a sprint section; NULL means backlog.
         sprint_id == null || sprint_id === '' ? null : Number(sprint_id),
@@ -1696,7 +1814,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       // ── Fair-play rules (see isManagerReq above) ──
       const isMgr = isManagerReq(req);
       const [[curRow]] = await db.query(
-        'SELECT status, assignee, reporter, due_date, start_date, original_estimate, priority, type, labels, sprint_id FROM it_kanban_issues WHERE issue_key = ?',
+        'SELECT status, assignee, reporter, due_date, start_date, original_estimate, requested_estimate, priority, type, labels, sprint_id, subtasks FROM it_kanban_issues WHERE issue_key = ?',
         [key]
       );
       if (!curRow) return res.status(404).json({ error: 'Issue not found' });
@@ -1936,6 +2054,35 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       // labels could be set at creation but never changed afterwards.
       const jsonFields = ['subtasks', 'linked_issues', 'comments', 'labels'];
 
+      // --- Subtasks run on the main task's plan ---
+      // A subtask has no planned time: moving one to In Progress needs the main task to have
+      // a plan, and puts a To Do main task In Progress too. The main task's own clock then
+      // stays off: its time is what its subtasks log (see the clocks after the update).
+      let subtasksBefore = parseList(curRow.subtasks);
+      let subtasksAfter = null;
+      let parentStarted = false;
+      if (updates.subtasks !== undefined) {
+        subtasksAfter = parseList(updates.subtasks).map((st, i) => (st && st.id != null && st.id !== '' ? st : { ...st, id: `st-${Date.now()}-${i}` }));
+        updates.subtasks = subtasksAfter;
+        const wasActive = new Map(subtasksBefore.map(s => [String(s.id), isActiveStatus(s.status)]));
+        const starting = subtasksAfter.filter(s => isActiveStatus(s.status) && !s.completed && !wasActive.get(String(s.id)));
+        if (starting.length) {
+          const planned = parseDurationToSeconds(updates.original_estimate !== undefined ? updates.original_estimate : curRow.original_estimate)
+            || parseDurationToSeconds(curRow.requested_estimate);
+          if (!planned) {
+            return res.status(400).json({
+              error: 'Set the main task\'s planned time before starting a subtask. Subtasks don\'t need their own: their time comes off the main task\'s plan.',
+              code: 'PLAN_REQUIRED'
+            });
+          }
+          const parentStatus = updates.status !== undefined ? updates.status : curRow.status;
+          if (!isActiveStatus(parentStatus) && !isDoneStatus(parentStatus) && !hasStarted(parentStatus)) {
+            updates.status = 'IN PROGRESS';
+            parentStarted = true;
+          }
+        }
+      }
+
       // --- Automatic time tracking ---
       // While a ticket is In Progress its timer runs; leaving In Progress (from any screen:
       // board drag, details panel, list, backlog) logs the elapsed *working* time to the
@@ -1979,6 +2126,9 @@ app.get('/api/it-kanban/labels', async (req, res) => {
             // 2. (Re)start the clock whenever the ticket is In Progress afterwards and the
             //    clock isn't already running for the same owner.
             const stillRunning = running && !leaving && !handover;
+            // The main task's clock runs while it is In Progress, subtasks or not. The same
+            // hours are never counted twice: a person has one running clock, so starting
+            // their subtask pauses this one (and it resumes when that subtask is finished).
             if (isActive(nextStatus) && !stillRunning) {
               // The board's "start work" dialog may send the time work actually began;
               // accept it only if it is in the last 24 hours and not in the future.
@@ -1994,6 +2144,12 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         } catch (timerErr) {
           console.error('Failed to process automatic time tracking:', timerErr);
         }
+      }
+      // A start time sent by the browser (the start-work dialog) only means something when a
+      // clock is actually running; otherwise the panel would show "Timer started" with no clock.
+      if (updates.timer_start_time !== undefined && updates.is_timer_running !== true) {
+        const [[clock]] = await db.query('SELECT is_timer_running FROM it_kanban_issues WHERE issue_key = ?', [key]);
+        if (!clock?.is_timer_running || updates.is_timer_running === false) delete updates.timer_start_time;
       }
       // --- End time tracking ---
 
@@ -2376,6 +2532,45 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         return res.status(404).json({ error: 'Issue not found' });
       }
 
+      // Subtask clocks follow each subtask's status and assignee: In Progress starts it,
+      // leaving In Progress (or being removed) logs it, a new assignee takes it over.
+      let subtaskTimers = null;
+      if (subtasksAfter) {
+        try {
+          const actor = req.headers['x-user-name'] || 'System';
+          const [runningRows] = await db.query('SELECT * FROM it_kanban_subtask_timers WHERE issue_key = ?', [key]);
+          const runningById = new Map(runningRows.map(r => [String(r.subtask_id), r]));
+          const started = []; const stopped = []; let paused = [];
+          const finishedBy = new Set(); // people whose subtask left In Progress: their main clock may resume
+          for (const st of subtasksAfter) {
+            const id = String(st.id);
+            const active = isActiveStatus(st.status) && !st.completed;
+            const owner = isPersonName(st.assignee) ? st.assignee : actor;
+            const row = runningById.get(id);
+            runningById.delete(id);
+            if (row && (!active || row.owner !== owner)) {
+              await closeSubtaskSession(row, !active ? `In Progress → ${st.completed ? 'Done' : (st.status || 'To Do')}` : `reassigned to ${owner}`);
+              stopped.push(st.title || id);
+              if (!active) finishedBy.add(row.owner);
+            }
+            if (active && (!row || row.owner !== owner)) {
+              paused = paused.concat(await startSubtaskTimer(key, st, owner));
+              started.push(st.title || id);
+            }
+          }
+          for (const row of runningById.values()) { // subtask deleted while its clock ran
+            await closeSubtaskSession(row, 'subtask removed');
+            stopped.push(row.subtask_title || row.subtask_id);
+            finishedBy.add(row.owner);
+          }
+          let mainResumed = false;
+          for (const owner of finishedBy) { if (await resumeMainClock(key, owner)) mainResumed = true; }
+          if (started.length || stopped.length) subtaskTimers = { started, stopped, mainResumed, paused: paused.filter(p => !p.startsWith(`${key} ›`)) };
+        } catch (e) {
+          console.error('Failed to update subtask clocks:', e.message);
+        }
+      }
+
       for (const c of subtaskDateChanges) {
         await db.query(
           'INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
@@ -2417,7 +2612,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
           `Standard for ${pendingEstimate.workType} is ${pendingEstimate.standardHours} h. Approve or reject in the ticket's Details.`
         ).catch(() => { });
       }
-      res.json({ message: 'Issue updated successfully', pausedTimers, pendingEstimate, planWarning });
+      res.json({ message: 'Issue updated successfully', pausedTimers, pendingEstimate, planWarning, parentStarted, subtaskTimers });
     } catch (error) {
       responseError(res, 500, 'Failed to update IT Kanban issue', error);
     }
@@ -2463,7 +2658,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
     try {
       const { key } = req.params;
       const [rows] = await db.query(
-        "SELECT id, author, seconds, description, started_at, created_at, COALESCE(approval, 'approved') AS approval, reviewed_by FROM it_kanban_worklogs WHERE issue_key = ? ORDER BY COALESCE(started_at, created_at) DESC, id DESC",
+        "SELECT id, author, seconds, description, started_at, created_at, COALESCE(approval, 'approved') AS approval, reviewed_by, subtask_id FROM it_kanban_worklogs WHERE issue_key = ? ORDER BY COALESCE(started_at, created_at) DESC, id DESC",
         [key]
       );
       const [[issue]] = await db.query(
@@ -2471,6 +2666,36 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         [key]
       );
       if (!issue) return res.status(404).json({ error: 'Issue not found' });
+
+      // A subtask's own work log: its entries and its clock, against the main task's plan
+      // (a subtask has no plan of its own; it shares the main task's remaining time).
+      if (req.query.subtask) {
+        const sid = String(req.query.subtask);
+        const mine = rows.filter(r => String(r.subtask_id ?? '') === sid);
+        const [[clock]] = await db.query('SELECT owner, started_at, source FROM it_kanban_subtask_timers WHERE issue_key = ? AND subtask_id = ?', [key, sid]);
+        const me = actorOf(req).toLowerCase();
+        const subtaskSeconds = mine.filter(r => r.approval === 'approved').reduce((s, r) => s + (Number(r.seconds) || 0), 0);
+        const allSeconds = rows.filter(r => r.approval === 'approved').reduce((s, r) => s + (Number(r.seconds) || 0), 0);
+        const planned = parseDurationToSeconds(issue.original_estimate);
+        const byPerson = new Map();
+        mine.forEach(r => byPerson.set(r.author, (byPerson.get(r.author) || 0) + (Number(r.seconds) || 0)));
+        return res.json({
+          scope: 'subtask',
+          subtaskId: sid,
+          worklogs: mine.map(r => ({ ...r, timeSpent: formatSecondsToDuration(r.seconds), source: sourceOf(r.description), canDelete: isManagerReq(req) || String(r.author || '').toLowerCase() === me })),
+          pendingCount: mine.filter(r => r.approval === 'pending').length,
+          canApprove: isManagerReq(req),
+          totalSeconds: subtaskSeconds,
+          totalSpent: formatSecondsToDuration(subtaskSeconds),
+          plannedSeconds: planned,
+          originalEstimate: planned ? formatSecondsToDuration(planned) : '0h',
+          mainSpentSeconds: allSeconds,
+          mainSpent: formatSecondsToDuration(allSeconds),
+          remainingEstimate: planned ? formatSecondsToDuration(planned - allSeconds) : '0h',
+          byPerson: [...byPerson.entries()].map(([author, seconds]) => ({ author, seconds, time: formatSecondsToDuration(seconds) })).sort((a, b) => b.seconds - a.seconds),
+          timer: clock ? { running: true, startedAt: clock.started_at, owner: clock.owner, source: clock.source || 'auto' } : { running: false }
+        });
+      }
       const me = actorOf(req).toLowerCase();
       const totalSeconds = rows.filter(r => r.approval === 'approved').reduce((sum, r) => sum + (Number(r.seconds) || 0), 0);
       const plannedSeconds = parseDurationToSeconds(issue.original_estimate);
@@ -2539,6 +2764,74 @@ app.get('/api/it-kanban/labels', async (req, res) => {
     }
   });
 
+  // Time per subtask, and the main task's plan they all draw from.
+  app.get('/api/it-kanban/issues/:key/subtask-time', async (req, res) => {
+    try {
+      const { key } = req.params;
+      const [[issue]] = await db.query('SELECT original_estimate, time_spent, is_timer_running, timer_start_time, timer_owner FROM it_kanban_issues WHERE issue_key = ?', [key]);
+      if (!issue) return res.status(404).json({ error: 'Issue not found' });
+      const [logged] = await db.query(
+        "SELECT subtask_id, SUM(seconds) AS seconds FROM it_kanban_worklogs WHERE issue_key = ? AND subtask_id IS NOT NULL AND COALESCE(approval, 'approved') = 'approved' GROUP BY subtask_id",
+        [key]
+      );
+      const [[all]] = await db.query("SELECT COALESCE(SUM(seconds), 0) AS s FROM it_kanban_worklogs WHERE issue_key = ? AND COALESCE(approval, 'approved') = 'approved'", [key]);
+      const [running] = await db.query('SELECT subtask_id, owner, started_at, source FROM it_kanban_subtask_timers WHERE issue_key = ?', [key]);
+      const subtasks = {};
+      logged.forEach(r => { subtasks[r.subtask_id] = { seconds: Number(r.seconds) || 0, running: null }; });
+      running.forEach(r => { subtasks[r.subtask_id] = { seconds: subtasks[r.subtask_id]?.seconds || 0, running: { owner: r.owner, startedAt: r.started_at, source: r.source } }; });
+      const plannedSeconds = parseDurationToSeconds(issue.original_estimate);
+      res.json({
+        plannedSeconds,
+        spentSeconds: Number(all.s) || 0, // approved logs: main task + subtasks; running clocks are added live by the page
+        mainTimer: issue.is_timer_running && issue.timer_start_time ? { owner: issue.timer_owner, startedAt: issue.timer_start_time } : null,
+        subtasks,
+        now: new Date()
+      });
+    } catch (error) {
+      responseError(res, 500, 'Failed to load subtask time', error);
+    }
+  });
+
+  // Resume / pause a subtask's clock by hand (e.g. after it was paused by starting other work).
+  app.post('/api/it-kanban/issues/:key/subtasks/:sid/timer/:action', async (req, res) => {
+    try {
+      const { key, sid, action } = req.params;
+      if (!['start', 'stop'].includes(action)) return res.status(404).json({ error: 'Unknown timer action' });
+      const actor = actorOf(req);
+      const [[issue]] = await db.query('SELECT status, original_estimate, requested_estimate, subtasks FROM it_kanban_issues WHERE issue_key = ?', [key]);
+      if (!issue) return res.status(404).json({ error: 'Issue not found' });
+      const list = parseList(issue.subtasks);
+      const st = list.find(s => String(s.id) === String(sid));
+      if (!st) return res.status(404).json({ error: 'Subtask not found' });
+      const [[row]] = await db.query('SELECT * FROM it_kanban_subtask_timers WHERE issue_key = ? AND subtask_id = ?', [key, String(sid)]);
+      if (action === 'stop') {
+        if (!row) return res.status(409).json({ error: 'This subtask\'s clock is not running' });
+        if (row.owner.toLowerCase() !== actor.toLowerCase() && !isManagerReq(req)) return res.status(403).json({ error: `Only ${row.owner} or a manager can pause this clock` });
+        const seconds = await closeSubtaskSession(row, 'paused');
+        return res.json({ success: true, seconds, logged: formatSecondsToDuration(seconds) });
+      }
+      if (row) return res.status(409).json({ error: `The clock is already running for ${row.owner}` });
+      if (isSubtaskDone(st)) return res.status(409).json({ error: 'This subtask is done' });
+      if (!parseDurationToSeconds(issue.original_estimate) && !parseDurationToSeconds(issue.requested_estimate)) {
+        return res.status(400).json({ error: 'Set the main task\'s planned time before starting a subtask.', code: 'PLAN_REQUIRED' });
+      }
+      const owner = isPersonName(st.assignee) ? st.assignee : actor;
+      const paused = await startSubtaskTimer(key, st, owner, 'manual');
+      // Starting the clock means the subtask (and a not-yet-started main task) is in progress.
+      if (!isActiveStatus(st.status)) {
+        const updated = list.map(s => (String(s.id) === String(sid) ? { ...s, status: 'In Progress', completed: false } : s));
+        await db.query('UPDATE it_kanban_issues SET subtasks = ? WHERE issue_key = ?', [JSON.stringify(updated), key]);
+      }
+      if (!hasStarted(issue.status)) {
+        await db.query("UPDATE it_kanban_issues SET status = 'IN PROGRESS' WHERE issue_key = ?", [key]);
+        await db.query('INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)', [key, 'status', issue.status || '', 'IN PROGRESS', `${actor} (subtask started)`]).catch(() => { });
+      }
+      res.json({ success: true, owner, pausedTimers: paused });
+    } catch (error) {
+      responseError(res, 500, 'Failed to change the subtask clock', error);
+    }
+  });
+
   // Pause/stop the running timer and log the session. The ticket keeps its status.
   app.post('/api/it-kanban/issues/:key/timer/stop', async (req, res) => {
     try {
@@ -2571,6 +2864,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
     try {
       const { key } = req.params;
       const { timeSpent, description, startedAt, originalEstimate } = req.body || {};
+      const subtaskId = req.body?.subtaskId != null && req.body.subtaskId !== '' ? String(req.body.subtaskId).slice(0, 64) : null;
       const seconds = parseDurationToSeconds(timeSpent);
       if (!seconds) return res.status(400).json({ error: 'Enter time as 3h, 30m, 2h 15m or 1d' });
       if (seconds > 16 * 3600) return res.status(400).json({ error: 'One entry can be at most 16 hours; add separate entries per day' });
@@ -2613,7 +2907,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         if (Date.now() - started.getTime() > 2 * 24 * 3600 * 1000) approval = 'pending';
       }
 
-      if (originalEstimate && (isMgr || !hasStarted(issue.status))) {
+      if (originalEstimate && !subtaskId && (isMgr || !hasStarted(issue.status))) {
         const planned = parseDurationToSeconds(originalEstimate);
         const std = isMgr ? null : await standardSizeFor(key);
         const withinLimit = isMgr || !std.hours || planned <= std.hours * PLAN_LIMIT_FACTOR * 3600;
@@ -2622,8 +2916,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         }
       }
       await db.query(
-        'INSERT INTO it_kanban_worklogs (issue_key, author, seconds, description, started_at, approval) VALUES (?, ?, ?, ?, ?, ?)',
-        [key, author, seconds, String(description || '').trim().slice(0, 2000) || null, started, approval]
+        'INSERT INTO it_kanban_worklogs (issue_key, subtask_id, author, seconds, description, started_at, approval) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [key, subtaskId, author, seconds, String(description || '').trim().slice(0, 2000) || null, started, approval]
       );
       if (approval === 'pending') {
         // Tell the board's managers there is time waiting for them.
@@ -2759,6 +3053,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Issue not found' });
       }
+      await db.query('DELETE FROM it_kanban_subtask_timers WHERE issue_key = ?', [key]).catch(() => { });
 
       if (linkedMeeting) {
         await db.query("UPDATE meetings SET status = 'Cancelled', cancel_reason = 'Task deleted from task management', issue_key = NULL WHERE id = ?", [linkedMeeting.id]).catch(() => { });

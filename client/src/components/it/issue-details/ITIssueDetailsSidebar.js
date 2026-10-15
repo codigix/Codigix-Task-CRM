@@ -9,6 +9,8 @@ import { normalizeLabel } from '../../../utils/labels';
 import { hasWorkStarted, isUserTaskReporter, canSeeEffort } from '../../../utils/access';
 import Swal from 'sweetalert2';
 import { API_BASE_URL } from '../../../config/environment';
+import SubtaskClockRow from './SubtaskClockRow';
+import { useAuth } from '../../../context/AuthContext';
 
 // Read-only timestamp, shown in local time.
 const formatStamp = (value) => {
@@ -81,6 +83,8 @@ const ITIssueDetailsSidebar = ({
   onRefresh
 }) => {
   const [loadingPoints, setLoadingPoints] = useState(false);
+  const { user: authUser } = useAuth();
+  const loggedUserName = authUser ? (`${authUser.first_name || ''} ${authUser.last_name || ''}`.trim() || authUser.username) : '';
 
   const currentUser = React.useMemo(() => {
     try {
@@ -806,7 +810,10 @@ const ITIssueDetailsSidebar = ({
                 </select>
               </div>
             </div>
-            {/* Estimated Time */}
+            {/* Estimated Time: a subtask has none of its own; it uses the main task's plan */}
+            {currentSubtask ? (
+              <SubtaskClockRow parentKey={parentIssueKey} subtask={currentSubtask} me={loggedUserName} onStarted={() => setCurrentStatus && setCurrentStatus('In Progress')} />
+            ) : (
             <div className="flex items-center min-h-[32px] gap-2">
               <span className="w-24 shrink-0 text-gray-500 font-medium text-xs" title="How long this should take. 1d = one working day (9h). Used for efficiency and effort points.">Planned time</span>
               <div className="flex-1 min-w-0">
@@ -846,6 +853,7 @@ const ITIssueDetailsSidebar = ({
                 )}
               </div>
             </div>
+            )}
 
             {/* Timer Start Time */}
             {issue?.timer_start_time && (

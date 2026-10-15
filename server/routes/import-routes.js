@@ -40,6 +40,23 @@ module.exports = function setupImportRoutes(app, pool) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
 
+  // One piece of calendar work: the same title on the same day in the same project. Case,
+  // spacing and dash style don't make a different task.
+  const normTitle = (t) => String(t || '').toLowerCase().replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim();
+  const workKey = (title, date, projectId) => `${normTitle(title)}|${String(date || '').slice(0, 10)}|${projectId ?? ''}`;
+  /** Keys of the work already in these projects (and, for work with no project, in this department). */
+  const existingWorkKeys = async (q, projectIds, department) => {
+    const ids = [...new Set(projectIds.filter(v => v != null && v !== '').map(Number))];
+    const [rows] = await q.query(
+      `SELECT title, project_id, DATE_FORMAT(due_date, '%Y-%m-%d') AS due, DATE_FORMAT(start_date, '%Y-%m-%d') AS start
+         FROM it_kanban_issues WHERE ${ids.length ? 'project_id IN (?) OR ' : ''}(project_id IS NULL AND department = ?)`,
+      ids.length ? [ids, department] : [department]
+    );
+    const keys = new Set();
+    rows.forEach(e => [e.due, e.start].filter(Boolean).forEach(d => keys.add(workKey(e.title, d, e.project_id))));
+    return keys;
+  };
+
   const isWeekdayWord = (str) => {
     if (!str || typeof str !== 'string') return false;
     const s = str.trim().toLowerCase();
@@ -479,23 +496,17 @@ module.exports = function setupImportRoutes(app, pool) {
         }
       });
 
-      // Flag anything already imported so a re-upload doesn't duplicate the calendar.
+      // Flag anything already imported so a re-upload doesn't duplicate the calendar. Work is
+      // matched by project, not by the page's department: imported work takes its sprint's
+      // department, so a calendar imported from the IT board can live on the Marketing board.
       let duplicates = 0;
       if (rows.length > 0) {
-        const [existing] = await db.query(
-          'SELECT title, due_date, start_date, project_id FROM it_kanban_issues WHERE department = ?',
-          [department]
-        );
-        const seen = new Set();
-        for (const e of existing) {
-          for (const d of [e.due_date, e.start_date]) {
-            if (!d) continue;
-            const iso = d instanceof Date ? toISODate(d) : String(d).slice(0, 10);
-            seen.add(`${String(e.title).toLowerCase().trim()}|${iso}|${e.project_id ?? ''}`);
-          }
-        }
+        const seen = await existingWorkKeys(db, rows.map(r => r.projectId), department);
+        const inFile = new Set();
         for (const r of rows) {
-          r.duplicate = seen.has(`${r.title.toLowerCase().trim()}|${r.date}|${r.projectId ?? ''}`);
+          const k = workKey(r.title, r.date, r.projectId);
+          r.duplicate = seen.has(k) || inFile.has(k);
+          inFile.add(k);
           if (r.duplicate) duplicates++;
         }
       }
@@ -578,14 +589,22 @@ module.exports = function setupImportRoutes(app, pool) {
 
       const baseLabels = Array.isArray(labels) ? labels.filter(Boolean) : [];
       const created = [];
+      // The preview unticks rows already in the system, but the server is the one that writes:
+      // the same work (title + date + project) is never created twice, whatever is sent.
+      const projectOf = (row) => sprintProjectId ?? (row.projectId != null ? Number(row.projectId) : null);
+      const seen = await existingWorkKeys(conn, rows.map(projectOf), dept);
+      let skipped = 0;
 
       await conn.beginTransaction();
       for (const row of rows) {
         const title = String(row.title || '').trim();
         if (!title) continue;
+        const projectId = projectOf(row);
+        const k = workKey(title, row.date, projectId);
+        if (seen.has(k)) { skipped++; continue; }
+        seen.add(k);
 
         const key = `${prefix}-${nextNum++}`;
-        const projectId = sprintProjectId ?? (row.projectId != null ? Number(row.projectId) : null);
         const description = String(row.description || '').trim();
         const service = String(row.service || row.column || '').trim();
 
@@ -617,7 +636,7 @@ module.exports = function setupImportRoutes(app, pool) {
       }
       await conn.commit();
 
-      res.json({ success: true, created: created.length, items: created });
+      res.json({ success: true, created: created.length, skipped, items: created });
     } catch (error) {
       try { await conn.rollback(); } catch (e) { /* already rolled back */ }
       responseError(res, 500, 'Could not import the work items', error);

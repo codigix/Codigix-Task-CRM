@@ -13,6 +13,9 @@ import { insertFilesIntoEditor, makeEditorPasteHandler } from '../../utils/descr
 import { normalizeLabel, suggestionsFor } from '../../utils/labels';
 import Swal from 'sweetalert2';
 
+// New work is planned for today unless someone picks another day.
+const todayYmd = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
 const WORK_TYPES = [
   { name: 'Task', icon: CheckSquare, color: 'text-blue-500 bg-blue-50', description: 'General task or deliverable' },
   { name: 'Campaign', icon: Megaphone, color: 'text-orange-500 bg-orange-50', description: 'Marketing campaign or promo' },
@@ -172,8 +175,8 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
     reporter: null,
     priority: 'Medium',
     parent: null,
-    startDate: '',
-    dueDate: '',
+    startDate: todayYmd(),
+    dueDate: todayYmd(),
     storyPoints: '',
     sprint: null,
     labels: [],
@@ -210,8 +213,8 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
         reporter: null,
         priority: 'Medium',
         parent: null,
-        startDate: '',
-        dueDate: '',
+        startDate: todayYmd(),
+        dueDate: todayYmd(),
         storyPoints: '',
         sprint: null,
         labels: [],
@@ -243,8 +246,8 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
           reporter: null,
           priority: 'Medium',
           parent: null,
-          startDate: '',
-          dueDate: '',
+          startDate: todayYmd(),
+          dueDate: todayYmd(),
           storyPoints: '',
           sprint: null,
           labels: [],
@@ -532,8 +535,8 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
             summary: '',
             description: '',
             labels: [],
-            startDate: '',
-            dueDate: '',
+            startDate: todayYmd(),
+            dueDate: todayYmd(),
             storyPoints: '',
             linkedTarget: null,
             flagged: false
@@ -566,8 +569,8 @@ const MarketingCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId
       reporter: null,
       priority: 'Medium',
       parent: null,
-      startDate: '',
-      dueDate: '',
+      startDate: todayYmd(),
+      dueDate: todayYmd(),
       storyPoints: '',
       sprint: null,
       labels: [],

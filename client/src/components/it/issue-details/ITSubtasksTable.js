@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Sparkles, ChevronDown, User, Trash2, X, CheckSquare, Edit3, Search, Check } from 'lucide-react';
+import { Plus, Sparkles, ChevronDown, User, Trash2, X, CheckSquare, Edit3, Search, Check, Play, Pause, Timer } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
+import { useSubtaskTime, fmtDuration, fmtClock } from './subtaskTime';
 
 const AVATAR_COLORS = [
   'bg-red-600 text-white',
@@ -308,6 +310,28 @@ const ITSubtasksTable = ({
 }) => {
   const [selectedSubtaskForView, setSelectedSubtaskForView] = useState(null);
   const [subtaskViewIndex, setSubtaskViewIndex] = useState(null);
+  const { user } = useAuth();
+  const me = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : '';
+  // Subtasks use the main task's plan: their time is shown against it, with live clocks.
+  const parentKey = issue?.issue_key || issue?.key;
+  const time = useSubtaskTime(parentKey, subtasks.map(s => `${s.id}:${s.status}:${s.assignee}:${s.completed}`).join('|'));
+  const [clockBusy, setClockBusy] = useState(null);
+  const toggleClock = async (st) => {
+    setClockBusy(st.id);
+    try {
+      const running = time.runningOf(st.id);
+      const r = running ? await time.stop(st.id, me) : await time.start(st.id, me);
+      if (!running && !/in progress/i.test(st.status || '')) {
+        // The server moved it In Progress; mirror that here.
+        setSubtasks(subtasks.map(x => (x.id === st.id ? { ...x, status: 'In Progress', completed: false } : x)));
+      }
+      if (r?.pausedTimers?.length) window.alert(`Paused your other running clock: ${r.pausedTimers.join(', ')}`);
+    } catch (e) {
+      window.alert(e.message);
+    } finally {
+      setClockBusy(null);
+    }
+  };
 
   const handleAssigneeChange = (stId, newAssignee) => {
     const updatedSubtasks = subtasks.map(item =>
@@ -345,6 +369,12 @@ const ITSubtasksTable = ({
     handleUpdate({ subtasks: updatedSubtasks });
   };
 
+  // Delete is always on screen, so it asks first.
+  const confirmDelete = (st, idx) => {
+    if (!window.confirm(`Delete subtask "${st.title || 'Untitled'}"? This cannot be undone.`)) return;
+    deleteSubtask(st.id, idx);
+  };
+
   return (
     <div className="space-y-3">
       {/* Subtasks Header & Progress */}
@@ -380,6 +410,28 @@ const ITSubtasksTable = ({
             className="bg-emerald-500 h-1.5 rounded transition-all duration-300"
             style={{ width: `${(subtasks.filter(s => s.completed || s.status === 'Done').length / subtasks.length) * 100}%` }}
           />
+        </div>
+      )}
+
+      {/* The main task's plan, which every subtask draws from */}
+      {subtasks.length > 0 && time.budget && (
+        <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] px-2.5 py-1.5 rounded border ${time.budget.planned && time.budget.left < 0 ? 'bg-red-50 border-red-200 text-red-800' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
+          <Timer size={12} className="shrink-0" />
+          {time.budget.planned ? (
+            <>
+              <span>Main task plan <b>{fmtDuration(time.budget.planned)}</b></span>
+              <span>used <b>{fmtDuration(time.budget.used)}</b></span>
+              <span>{time.budget.left >= 0 ? <>left <b>{fmtDuration(time.budget.left)}</b></> : <>over by <b>{fmtDuration(-time.budget.left)}</b></>}</span>
+              {time.data?.mainTimer && (
+                <span className="inline-flex items-center gap-1 text-emerald-700 font-medium" title="The main task's own clock">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />main task {fmtClock(time.runningSeconds(time.data.mainTimer.startedAt))} · {time.data.mainTimer.owner}
+                </span>
+              )}
+              <span className="text-gray-400">Subtasks need no planned time; their clocks take time from this plan.</span>
+            </>
+          ) : (
+            <span className="text-amber-700">Set the main task's <b>Planned time</b> first. Subtasks use it, and can't start until it is set.</span>
+          )}
         </div>
       )}
 
@@ -457,152 +509,141 @@ const ITSubtasksTable = ({
         );
       })()}
 
-      {/* JIRA SUBTASKS DATA TABLE - CLEAN TABLE-FIXED FIT */}
+      {/* SUBTASK LIST: two lines per subtask, so it reads well at any panel width.
+          Line 1: key, clock and the title on one line (full title on hover and in the subtask view). Line 2: priority, assignee, status, actions. */}
       {subtasks.length > 0 && (
-        <div className="border border-gray-200 rounded overflow-hidden my-3 shadow-2xs font-sans text-xs bg-white">
-          <table className="w-full text-left border-collapse table-fixed">
-            <thead>
-              <tr className="bg-gray-50/90 border-b border-gray-200 text-xs  text-gray-500 uppercase tracking-wider">
-                <th className="py-2 px-3  text-gray-600 w-[42%] truncate">Work</th>
-                <th className="py-2 px-1  text-gray-600 w-[14%] text-center truncate">Priority</th>
-                <th className="py-2 px-1  text-gray-600 w-[24%] text-center truncate">Assignee</th>
-                <th className="py-2 px-2  text-gray-600 w-[16%] text-right truncate">Status</th>
-                <th className="py-2 px-1 w-[4%] text-center"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {subtasks.map((st, idx) => {
-                const subtaskKey = `${issue?.issue_key || issue?.key || 'WR-101'}-${idx + 1}`;
-                const isDone = st.completed || st.status === 'Done' || st.status === 'DONE';
-                const currentSubtaskStatus = isDone ? 'Done' : (st.status || 'To Do');
-                const stAssignee = (!st.assignee || st.assignee === 'Unassigned' || st.assignee.includes('Manager') || st.assignee.includes('Admin')) ? 'Unassigned' : st.assignee;
+        <ul className="border border-gray-200 rounded my-3 font-sans text-xs bg-white divide-y divide-gray-100">
+          {subtasks.map((st, idx) => {
+            const subtaskKey = `${issue?.issue_key || issue?.key || 'WR-101'}-${idx + 1}`;
+            const isDone = st.completed || st.status === 'Done' || st.status === 'DONE';
+            const currentSubtaskStatus = isDone ? 'Done' : (st.status || 'To Do');
+            const stAssignee = (!st.assignee || st.assignee === 'Unassigned' || st.assignee.includes('Manager') || st.assignee.includes('Admin')) ? 'Unassigned' : st.assignee;
+            const openIt = () => {
+              if (onSelectSubtask) onSelectSubtask(st, subtaskKey);
+              else {
+                setSelectedSubtaskForView({ ...st, subtaskKey, assignee: stAssignee });
+                setSubtaskViewIndex(idx);
+              }
+            };
+            const run = time.runningOf(st.id);
+            const used = time.usedBy(st.id);
 
-                return (
-                  <tr key={st.id || idx} className="hover:bg-blue-50/30 transition group">
-                    {/* WORK COLUMN: Icon + Key + Title (Clickable & Hover Edit Pencil!) */}
-                    <td className="py-2 px-3 align-middle">
-                      <div className="flex items-center gap-2 min-w-0 group/title">
-                        <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="6" y1="3" x2="6" y2="15"></line>
-                          <circle cx="18" cy="6" r="3"></circle>
-                          <circle cx="6" cy="18" r="3"></circle>
-                          <path d="M18 9a9 9 0 0 1-9 9"></path>
-                        </svg>
-                        <span
-                          onClick={() => {
-                            if (onSelectSubtask) onSelectSubtask(st, subtaskKey);
-                            else {
-                              setSelectedSubtaskForView({ ...st, subtaskKey, assignee: stAssignee });
-                              setSubtaskViewIndex(idx);
-                            }
-                          }}
-                          className="text-xs text-blue-600  hover:underline cursor-pointer shrink-0"
-                          title="Click to view subtask details"
-                        >
-                          {subtaskKey}
-                        </span>
-                        <span
-                          onClick={() => {
-                            if (onSelectSubtask) onSelectSubtask(st, subtaskKey);
-                            else {
-                              setSelectedSubtaskForView({ ...st, subtaskKey, assignee: stAssignee });
-                              setSubtaskViewIndex(idx);
-                            }
-                          }}
-                          className={`text-xs font-medium truncate cursor-pointer hover:text-blue-600 transition ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}
-                          title={`Click to view: ${st.title}`}
-                        >
-                          {st.title}
-                        </span>
-                        <button
-                          onClick={() => {
-                            if (onSelectSubtask) onSelectSubtask(st, subtaskKey);
-                            else {
-                              setSelectedSubtaskForView({ ...st, subtaskKey, assignee: stAssignee });
-                              setSubtaskViewIndex(idx);
-                            }
-                          }}
-                          className="opacity-0 group-hover/title:opacity-100 text-gray-400 hover:text-blue-600 p-0.5 rounded transition cursor-pointer shrink-0 ml-0.5"
-                          title="Edit subtask"
-                        >
-                          <Edit3 size={11} />
-                        </button>
-                      </div>
-                    </td>
+            return (
+              <li key={st.id || idx} className={`px-3 py-2.5 hover:bg-blue-50/30 transition ${run ? 'bg-emerald-50/30' : ''}`}>
+                {/* Line 1: what it is */}
+                <div className="flex items-start gap-2 min-w-0">
+                  <svg className="w-3.5 h-3.5 mt-0.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="6" y1="3" x2="6" y2="15"></line>
+                    <circle cx="18" cy="6" r="3"></circle>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <path d="M18 9a9 9 0 0 1-9 9"></path>
+                  </svg>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 text-[11px] leading-4">
+                      <button type="button" onClick={openIt} className="text-blue-600 hover:underline cursor-pointer whitespace-nowrap" title="Open subtask details">{subtaskKey}</button>
+                      {run
+                        ? <span className="inline-flex items-center gap-1 text-emerald-700 font-medium tabular-nums whitespace-nowrap" title={`Clock running for ${run.owner}`}><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />{fmtClock(used)}</span>
+                        : used > 0 && <span className="text-gray-500 tabular-nums whitespace-nowrap" title="Time logged on this subtask">{used < 60 ? '<1m' : fmtDuration(used)} logged</span>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={openIt}
+                      title={st.title}
+                      className={`block w-full text-left text-[13px] font-medium leading-snug truncate cursor-pointer hover:text-blue-600 transition ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}
+                    >
+                      {st.title}
+                    </button>
+                  </div>
+                </div>
 
-                    {/* PRIORITY COLUMN */}
-                    <td className="py-2 px-1 align-middle text-center">
-                      <div className="flex items-center justify-center gap-1" title={`Priority: ${st.priority || 'Medium'}`}>
-                        {PRIORITY_ICONS[st.priority || 'Medium'] || PRIORITY_ICONS.Medium}
-                        <span className="text-xs text-gray-600 font-medium">{st.priority || 'Medium'}</span>
-                      </div>
-                    </td>
+                {/* Line 2: who, where it is, what you can do */}
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5" style={{ paddingLeft: 22 }}>
+                  <span className="inline-flex items-center gap-1 text-[11px] text-gray-600" title={`Priority: ${st.priority || 'Medium'}`}>
+                    {PRIORITY_ICONS[st.priority || 'Medium'] || PRIORITY_ICONS.Medium}
+                    {st.priority || 'Medium'}
+                  </span>
+                  <div className="min-w-0">
+                    <SubtaskAssigneePicker
+                      assignee={stAssignee}
+                      usersList={usersList}
+                      getInitials={getInitials}
+                      onChange={(newAssignee) => handleAssigneeChange(st.id, newAssignee)}
+                    />
+                  </div>
+                  <div className="relative inline-block">
+                    <select
+                      value={currentSubtaskStatus}
+                      aria-label={`Status of ${st.title}`}
+                      onChange={(e) => {
+                        const newStatus = e.target.value;
+                        const updatedSubtasks = subtasks.map(item =>
+                          item.id === st.id
+                            ? { ...item, status: newStatus, completed: newStatus === 'Done' }
+                            : item
+                        );
+                        setSubtasks(updatedSubtasks);
+                        handleUpdate({ subtasks: updatedSubtasks });
+                      }}
+                      className={`text-xs pl-2 pr-6 py-1 rounded border appearance-none cursor-pointer focus:outline-none transition ${currentSubtaskStatus === 'Done'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                        : currentSubtaskStatus === 'In Progress'
+                          ? 'bg-blue-50 text-blue-700 border-blue-300'
+                          : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        }`}
+                    >
+                      <option value="To Do">To Do</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Done">Done</option>
+                    </select>
+                    <ChevronDown size={11} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                  </div>
 
-                    {/* ASSIGNEE COLUMN: Searchable Select Dropdown */}
-                    <td className="py-2 px-1 align-middle text-center">
-                      <SubtaskAssigneePicker
-                        assignee={stAssignee}
-                        usersList={usersList}
-                        getInitials={getInitials}
-                        onChange={(newAssignee) => handleAssigneeChange(st.id, newAssignee)}
-                      />
-                    </td>
-
-                    {/* STATUS COLUMN: Interactive Status Dropdown */}
-                    <td className="py-2 px-2 align-middle text-right">
-                      <div className="relative inline-block text-left">
-                        <select
-                          value={currentSubtaskStatus}
-                          onChange={(e) => {
-                            const newStatus = e.target.value;
-                            const updatedSubtasks = subtasks.map(item =>
-                              item.id === st.id
-                                ? { ...item, status: newStatus, completed: newStatus === 'Done' }
-                                : item
-                            );
-                            setSubtasks(updatedSubtasks);
-                            handleUpdate({ subtasks: updatedSubtasks });
-                          }}
-                          className={`text-xs  px-2 py-0.5 rounded border appearance-none cursor-pointer pr-5 focus:outline-none transition ${currentSubtaskStatus === 'Done'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                            : currentSubtaskStatus === 'In Progress'
-                              ? 'bg-blue-50 text-blue-700 border-blue-300'
-                              : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                            }`}
-                        >
-                          <option value="To Do">To Do</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Done">Done</option>
-                        </select>
-                        <ChevronDown size={10} className="absolute right-1.5 top-1.5 text-gray-500 pointer-events-none" />
-                      </div>
-                    </td>
-
-                    {/* ACTIONS COLUMN */}
-                    <td className="py-2 px-1 align-middle text-right">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition justify-end">
-                        <button
-                          onClick={() => handleSubtaskAiImprove(st, idx)}
-                          className="text-indigo-500 hover:text-indigo-700 p-0.5 rounded hover:bg-indigo-50 transition cursor-pointer"
-                          title="✨ AI Subtask Spec Sheet"
-                        >
-                          <Sparkles size={11} className="fill-indigo-100" />
-                        </button>
-                        <button
-                          onClick={() => deleteSubtask(st.id)}
-                          className="text-gray-400 hover:text-red-500 p-0.5 rounded transition cursor-pointer"
-                          title="Delete subtask"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  <div className="ml-auto flex items-center gap-0.5">
+                    {!isDone && (
+                      <button
+                        type="button"
+                        disabled={clockBusy === st.id}
+                        onClick={() => toggleClock(st)}
+                        className={`p-1.5 rounded transition cursor-pointer disabled:opacity-50 ${run ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                        title={run ? `Pause the clock (running for ${run.owner})` : 'Start the clock on this subtask'}
+                        aria-label={run ? `Pause clock on ${st.title}` : `Start clock on ${st.title}`}
+                      >
+                        {run ? <Pause size={15} /> : <Play size={15} />}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={openIt}
+                      className="p-1.5 rounded text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                      title="Edit subtask"
+                      aria-label={`Edit subtask ${st.title}`}
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSubtaskAiImprove(st, idx)}
+                      className="p-1.5 rounded text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 transition cursor-pointer"
+                      title="AI spec sheet for this subtask"
+                      aria-label={`AI spec sheet for ${st.title}`}
+                    >
+                      <Sparkles size={15} className="fill-indigo-100" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => confirmDelete(st, idx)}
+                      className="p-1.5 rounded text-gray-500 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                      title="Delete subtask"
+                      aria-label={`Delete subtask ${st.title}`}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       {/* SUBTASK QUICK VIEW / INSPECT MODAL */}
@@ -708,7 +749,8 @@ const ITSubtasksTable = ({
             <div className="p-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center text-xs">
               <button
                 onClick={() => {
-                  deleteSubtask(selectedSubtaskForView.id);
+                  if (!window.confirm(`Delete subtask "${selectedSubtaskForView.title || 'Untitled'}"? This cannot be undone.`)) return;
+                  deleteSubtask(selectedSubtaskForView.id, subtaskViewIndex);
                   setSelectedSubtaskForView(null);
                 }}
                 className="text-red-600 hover:text-red-700  cursor-pointer flex items-center gap-1"

@@ -85,7 +85,8 @@ export default function SheetSyncBar({ department, onSynced }) {
     try {
       const check = await postJson(`${API_BASE_URL}/sheet-sync/sources/${source.id}/run`, { dryRun: true });
       const skipped = (check.skippedTabs || []).filter(t => !/No tasks filled/.test(t.reason));
-      if (!check.created && !check.updated) {
+      const moved = check.moved || 0;
+      if (!check.created && !check.updated && !moved) {
         setBusy(false);
         if (skipped.length) {
           Swal.fire({ icon: 'info', title: 'Nothing new to add', html: skippedHtml(skipped) });
@@ -95,23 +96,23 @@ export default function SheetSyncBar({ department, onSynced }) {
         load();
         return;
       }
-      const tabsWithChanges = (check.tabs || []).filter(t => t.created || t.updated);
+      const tabsWithChanges = (check.tabs || []).filter(t => t.created || t.updated || t.moved);
       const html = `
         <div style="text-align:left;font-size:13px;color:#374151">
-          <p style="margin:0 0 8px"><b>${check.created}</b> new task${check.created === 1 ? '' : 's'}${check.updated ? `, <b>${check.updated}</b> updated` : ''}. ${check.alreadyInSystem + check.unchanged} already in the system are left as they are.</p>
+          <p style="margin:0 0 8px"><b>${check.created}</b> new task${check.created === 1 ? '' : 's'}${check.updated ? `, <b>${check.updated}</b> updated` : ''}${moved ? `, <b>${moved}</b> moved to the new date set in the sheet (no duplicate is created)` : ''}. ${check.alreadyInSystem + check.unchanged} already in the system are left as they are.</p>
           <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">
-            <tr style="color:#6b7280;text-align:left"><th style="padding:3px 4px">Client tab</th><th style="padding:3px 4px">Goes to</th><th style="padding:3px 4px;text-align:right">New</th><th style="padding:3px 4px;text-align:right">Updated</th></tr>
-            ${tabsWithChanges.map(t => `<tr style="border-top:1px solid #f3f4f6"><td style="padding:3px 4px">${esc(t.tab)}</td><td style="padding:3px 4px">${t.sprint ? `Sprint: ${esc(t.sprint)}` : 'Backlog'}</td><td style="padding:3px 4px;text-align:right">${t.created}</td><td style="padding:3px 4px;text-align:right">${t.updated}</td></tr>`).join('')}
+            <tr style="color:#6b7280;text-align:left"><th style="padding:3px 4px">Client tab</th><th style="padding:3px 4px">Goes to</th><th style="padding:3px 4px;text-align:right">New</th><th style="padding:3px 4px;text-align:right">Updated</th><th style="padding:3px 4px;text-align:right">Moved</th></tr>
+            ${tabsWithChanges.map(t => `<tr style="border-top:1px solid #f3f4f6"><td style="padding:3px 4px">${esc(t.tab)}</td><td style="padding:3px 4px">${t.sprint ? `Sprint: ${esc(t.sprint)}` : 'Backlog'}</td><td style="padding:3px 4px;text-align:right">${t.created}</td><td style="padding:3px 4px;text-align:right">${t.updated}</td><td style="padding:3px 4px;text-align:right">${t.moved || 0}</td></tr>`).join('')}
           </table>
           <div style="max-height:180px;overflow:auto;border:1px solid #e5e7eb;border-radius:4px;padding:4px 6px;font-size:12px">
-            ${(check.preview || []).slice(0, 60).map(p => `<div style="padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.kind === 'update' ? '✎' : '+'} <span style="color:#6b7280">${fmtDay(p.date)}${p.service ? ` · ${esc(p.service)}` : ''}</span> ${esc(p.title)}</div>`).join('')}
+            ${(check.preview || []).slice(0, 60).map(p => `<div style="padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.kind === 'update' ? '✎' : p.kind === 'move' ? '⇄' : '+'} <span style="color:#6b7280">${p.kind === 'move' && p.from ? `${fmtDay(p.from)} → ` : ''}${fmtDay(p.date)}${p.service ? ` · ${esc(p.service)}` : ''}</span> ${p.kind === 'move' && p.issueKey ? `<b>${esc(p.issueKey)}</b> ` : ''}${esc(p.title)}</div>`).join('')}
           </div>
           ${skipped.length ? skippedHtml(skipped) : ''}
         </div>`;
-      const go = await Swal.fire({ title: 'Sync from Google Sheet', html, width: 640, showCancelButton: true, confirmButtonText: `Add ${check.created + check.updated} to backlog` });
+      const go = await Swal.fire({ title: 'Sync from Google Sheet', html, width: 640, showCancelButton: true, confirmButtonText: `Apply ${check.created + check.updated + moved} change${check.created + check.updated + moved === 1 ? '' : 's'}` });
       if (!go.isConfirmed) { setBusy(false); return; }
       const done = await postJson(`${API_BASE_URL}/sheet-sync/sources/${source.id}/run`, {});
-      showSuccessToast(`Synced: ${done.created} new, ${done.updated} updated`);
+      showSuccessToast(`Synced: ${done.created} new, ${done.updated} updated${done.moved ? `, ${done.moved} moved` : ''}`);
       load();
       if (onSynced) onSynced();
     } catch (e) {
@@ -151,7 +152,7 @@ export default function SheetSyncBar({ department, onSynced }) {
               </a>
               <span className="text-gray-500 truncate">
                 · Last synced {ago(s.lastSyncedAt)}{s.lastSyncedBy ? ` by ${s.lastSyncedBy}` : ''}
-                {last && s.lastSyncedAt ? ` · ${last.created} added${last.updated ? `, ${last.updated} updated` : ''}` : ''}
+                {last && s.lastSyncedAt ? ` · ${last.created} added${last.updated ? `, ${last.updated} updated` : ''}${last.moved ? `, ${last.moved} moved` : ''}` : ''}
               </span>
             </div>
             <div className="flex items-center gap-1.5">

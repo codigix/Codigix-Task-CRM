@@ -10,6 +10,9 @@ import { useAuth } from '../../context/AuthContext';
 import { insertFilesIntoEditor, makeEditorPasteHandler } from '../../utils/descriptionFiles';
 import Swal from 'sweetalert2';
 
+// New work is planned for today unless someone picks another day.
+const todayYmd = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 
@@ -221,10 +224,10 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
     assignee: null,
     reporter: getLoggedInUserOption(),
     parent: null,
-    dueDate: '',
+    dueDate: todayYmd(),
     labels: [],
     team: null,
-    startDate: '',
+    startDate: todayYmd(),
     sprint: null,
     linkedType: 'blocks',
     linkedTarget: null,
@@ -251,10 +254,10 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
         assignee: defaultUser,
         reporter: defaultUser,
         parent: null,
-        dueDate: '',
+        dueDate: todayYmd(),
         labels: [],
         team: null,
-        startDate: '',
+        startDate: todayYmd(),
         sprint: null,
         linkedType: 'blocks',
         linkedTarget: null,
@@ -284,10 +287,10 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
           assignee: null,
           reporter: null,
           parent: null,
-          dueDate: '',
+          dueDate: todayYmd(),
           labels: [],
           team: null,
-          startDate: '',
+          startDate: todayYmd(),
           sprint: null,
           linkedType: 'blocks',
           linkedTarget: null,
@@ -711,8 +714,8 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
           summary: '',
           description: '',
           labels: [],
-          dueDate: '',
-          startDate: '',
+          dueDate: todayYmd(),
+          startDate: todayYmd(),
           linkedTarget: null,
           flagged: false
         }));
@@ -738,10 +741,10 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
       assignee: null,
       reporter: null,
       parent: null,
-      dueDate: '',
+      dueDate: todayYmd(),
       labels: [],
       team: null,
-      startDate: '',
+      startDate: todayYmd(),
       sprint: null,
       linkedType: 'blocks',
       linkedTarget: null,

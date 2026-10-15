@@ -18,6 +18,7 @@ import ITIssueLinkedItems from './issue-details/ITIssueLinkedItems';
 import ITIssueActivityTabs from './issue-details/ITIssueActivityTabs';
 import ITIssueDetailsSidebar from './issue-details/ITIssueDetailsSidebar';
 import ITSubtaskAiModal from './issue-details/ITSubtaskAiModal';
+import { SUBTASK_TIME_EVENT } from './issue-details/subtaskTime';
 import ITManagerReviewGate from './issue-details/ITManagerReviewGate';
 import { ProofForm, ProofHeading } from '../common/TransitionProofModal';
 
@@ -545,13 +546,23 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       .catch(err => console.error('Failed to load history:', err));
   }, [issueKey]);
 
+  // In a subtask, the Work log shows that subtask only: its entries and its own clock,
+  // against the main task's plan (a subtask has no plan of its own).
+  const worklogSubtaskId = currentSubtask?.id != null ? String(currentSubtask.id) : null;
   const loadWorklogs = React.useCallback(() => {
     if (!issueKey) return;
-    fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/worklogs`)
+    const q = worklogSubtaskId ? `?subtask=${encodeURIComponent(worklogSubtaskId)}` : '';
+    fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/worklogs${q}`)
       .then(res => res.json())
       .then(data => setWorklogData(data && data.worklogs ? data : { worklogs: [], totalSpent: '0h', originalEstimate: '0h', remainingEstimate: '0h' }))
       .catch(err => console.error('Failed to load work logs:', err));
-  }, [issueKey]);
+  }, [issueKey, worklogSubtaskId]);
+  // A subtask clock started or paused elsewhere in the panel (table, Details): refresh the log.
+  useEffect(() => {
+    const onChange = (e) => { if (!e.detail || e.detail === issueKey) loadWorklogs(); };
+    window.addEventListener(SUBTASK_TIME_EVENT, onChange);
+    return () => window.removeEventListener(SUBTASK_TIME_EVENT, onChange);
+  }, [issueKey, loadWorklogs]);
 
   // Load stored attachments for this issue/subtask so they persist across page refreshes
   const loadAttachments = React.useCallback(() => {
@@ -745,8 +756,12 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
     }
   };
 
-  const deleteSubtask = (id) => {
-    const updated = subtasks.filter(st => st.id !== id);
+  // By id when the subtask has one; older subtasks saved without an id are removed by position,
+  // so deleting one of them never removes every other id-less subtask too.
+  const deleteSubtask = (id, index) => {
+    const updated = id != null
+      ? subtasks.filter(st => st.id !== id)
+      : subtasks.filter((st, i) => i !== index);
     setSubtasks(updated);
     handleUpdate({ subtasks: updated });
   };
@@ -976,7 +991,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // The server credits the entry to the signed-in user.
-        body: JSON.stringify({ timeSpent, description, startedAt, originalEstimate })
+        body: JSON.stringify({ timeSpent, description, startedAt, originalEstimate: worklogSubtaskId ? undefined : originalEstimate, subtaskId: worklogSubtaskId || undefined })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to log work');
@@ -1009,6 +1024,32 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
   // the board is refreshed afterwards.
   const handleTimerAction = async (action, note) => {
     if (!issueKey) return;
+    // In a subtask, Start / Pause drive that subtask's own clock.
+    if (worklogSubtaskId) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/subtasks/${encodeURIComponent(worklogSubtaskId)}/timer/${action === 'start' ? 'start' : 'stop'}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-name': loggedUser }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Timer action failed');
+        if (action === 'start') {
+          const paused = (data.pausedTimers || []).length ? ` · paused ${data.pausedTimers.join(', ')}` : '';
+          showSuccessToast(`Subtask clock started${paused}`);
+          if (!/in progress/i.test(currentSubtask?.status || '')) {
+            setCurrentSubtask(prev => (prev ? { ...prev, status: 'In Progress', completed: false } : prev));
+            setSubtasks(prev => prev.map(st => (String(st.id) === worklogSubtaskId ? { ...st, status: 'In Progress', completed: false } : st)));
+          }
+        } else {
+          showSuccessToast(data.seconds ? `Logged ${data.logged} on this subtask` : 'Clock paused (no time to log)');
+        }
+        window.dispatchEvent(new CustomEvent(SUBTASK_TIME_EVENT, { detail: issueKey }));
+        loadWorklogs();
+        if (onIssueCreated) onIssueCreated();
+      } catch (err) {
+        showErrorToast(err.message);
+      }
+      return;
+    }
     try {
       const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${issueKey}/timer/${action === 'start' ? 'start' : 'stop'}`, {
         method: 'POST',

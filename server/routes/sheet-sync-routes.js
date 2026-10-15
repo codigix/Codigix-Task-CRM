@@ -209,6 +209,9 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
       const sheetId = sheetIdFrom(url);
       if (!sheetId) return res.status(400).json({ error: 'Paste the link of a Google Sheet (it contains /spreadsheets/d/…).' });
       const dept = deptOf(req.body.department);
+      // Linking the same sheet twice would sync every cell twice.
+      const [[already]] = await pool.query('SELECT * FROM sheet_sync_sources WHERE sheet_id = ? LIMIT 1', [sheetId]);
+      if (already) return res.status(409).json({ error: `This sheet is already linked${already.department !== dept ? ` on the ${already.department} board` : ''} as "${already.name}". Sync that one instead.`, source: publicSource(already) });
       // Opening it now tells the manager straight away if sharing is wrong.
       const wb = await download(sheetId);
       const tabs = wb.worksheets.filter(s => !NON_CALENDAR_TAB.test(s.name) && readCalendarTab(s)).map(s => s.name);
@@ -264,13 +267,36 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
       const [linkedRows] = await pool.query('SELECT cell_key, issue_key, title FROM sheet_sync_items WHERE source_id = ?', [sourceId]);
       const linked = new Map(linkedRows.map(r => [r.cell_key, r]));
 
-      const summary = { created: 0, updated: 0, alreadyInSystem: 0, unchanged: 0, deletedInSystem: 0, noDate: 0, tabs: [], skippedTabs: [] };
-      const plan = []; // { kind: 'create'|'link'|'update', ... }
-
+      // Read every tab and name its cells first, so a link whose cell is gone from the sheet
+      // (its date or column was changed) is known before any cell is matched.
+      const tabsRead = [];
+      const presentKeys = new Set();
       for (const sheet of wb.worksheets) {
         if (NON_CALENDAR_TAB.test(sheet.name)) continue;
         const cal = readCalendarTab(sheet);
         if (!cal) continue;
+        const seenKeys = new Map();
+        cal.cells.forEach(cell => {
+          if (!cell.date) return;
+          // Tab + date + service names a cell even if rows are inserted above it; a second
+          // cell for the same day and service (a repeated date row) gets "#2".
+          const baseKey = `${norm(sheet.name)}|${cell.date}|${norm(cell.service)}`;
+          const nth = (seenKeys.get(baseKey) || 0) + 1;
+          seenKeys.set(baseKey, nth);
+          cell.cellKey = nth === 1 ? baseKey : `${baseKey}#${nth}`;
+          presentKeys.add(cell.cellKey);
+        });
+        tabsRead.push({ sheet, cal });
+      }
+      const linkedIssueKeys = new Set(linkedRows.map(r => r.issue_key));
+      // Ticket -> its old cell, for cells no longer in the sheet.
+      const orphanCellOf = new Map(linkedRows.filter(r => !presentKeys.has(r.cell_key)).map(r => [r.issue_key, r.cell_key]));
+      const claimed = new Set(); // tickets matched to a cell in this run
+
+      const summary = { created: 0, updated: 0, moved: 0, alreadyInSystem: 0, unchanged: 0, deletedInSystem: 0, noDate: 0, tabs: [], skippedTabs: [] };
+      const plan = []; // { kind: 'create'|'link'|'update'|'move', ... }
+
+      for (const { sheet, cal } of tabsRead) {
         if (cal.cells.length === 0) { summary.skippedTabs.push({ tab: sheet.name, reason: 'No tasks filled in' }); continue; }
         const project = projectByName.get(norm(sheet.name))
           || projects.find(p => { const n = norm(p.name || p.title); return n && n.length >= 4 && (n.includes(norm(sheet.name)) || norm(sheet.name).includes(n)); });
@@ -288,22 +314,19 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
         const byKey = new Map(existing.map(e => [e.issue_key, e]));
         const keyByTitleDate = new Map();
         existing.forEach(e => [e.due, e.start].filter(Boolean).forEach(d => keyByTitleDate.set(`${String(e.title).toLowerCase().trim()}|${d}`, e.issue_key)));
+        const byTitle = new Map();
+        existing.forEach(e => { const t = String(e.title).toLowerCase().trim(); if (!byTitle.has(t)) byTitle.set(t, []); byTitle.get(t).push(e); });
 
-        const seenKeys = new Map();
-        const tab = { tab: sheet.name, project: projectName, sprint: sprint ? sprint.name : null, created: 0, updated: 0, existing: 0 };
+        const tab = { tab: sheet.name, project: projectName, sprint: sprint ? sprint.name : null, created: 0, updated: 0, moved: 0, existing: 0 };
         for (const cell of cal.cells) {
           if (!cell.date) { summary.noDate += 1; continue; }
-          // Tab + date + service names a cell even if rows are inserted above it; a second
-          // cell for the same day and service (a repeated date row) gets "#2".
-          const baseKey = `${norm(sheet.name)}|${cell.date}|${norm(cell.service)}`;
-          const nth = (seenKeys.get(baseKey) || 0) + 1;
-          seenKeys.set(baseKey, nth);
-          const cellKey = nth === 1 ? baseKey : `${baseKey}#${nth}`;
+          const { cellKey } = cell;
           const title = `${sheet.name.trim()} - ${cell.title}`.slice(0, 480);
           const link = linked.get(cellKey);
           if (link) {
             const issue = byKey.get(link.issue_key);
             if (!issue) { summary.deletedInSystem += 1; continue; }
+            claimed.add(issue.issue_key);
             const changed = issue.title !== title || (cell.description && cell.description !== (issue.description || ''));
             if (changed && NOT_STARTED.includes(String(issue.status || '').trim().toUpperCase())) {
               plan.push({ kind: 'update', cellKey, issueKey: issue.issue_key, title, description: cell.description, oldTitle: issue.title });
@@ -314,9 +337,24 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
             continue;
           }
           const match = keyByTitleDate.get(`${title.toLowerCase()}|${cell.date}`);
-          if (match) {
+          if (match && match !== '(new)') {
             plan.push({ kind: 'link', cellKey, issueKey: match, title });
+            claimed.add(match);
             summary.alreadyInSystem += 1; tab.existing += 1;
+            continue;
+          }
+          // The same task moved to another day in the sheet: its old cell is gone (or it was
+          // never linked, e.g. imported by hand before the sheet was linked). Move that ticket
+          // instead of creating a second one. The nearest date wins when there are several.
+          const candidates = (byTitle.get(title.toLowerCase()) || []).filter(e => !claimed.has(e.issue_key)
+            && (!linkedIssueKeys.has(e.issue_key) || orphanCellOf.has(e.issue_key)));
+          if (candidates.length) {
+            const dist = (e) => Math.abs(new Date(`${e.due || e.start || cell.date}T00:00:00Z`) - new Date(`${cell.date}T00:00:00Z`));
+            const issue = candidates.sort((a, b) => dist(a) - dist(b))[0];
+            claimed.add(issue.issue_key);
+            const done = /^(DONE|CLOSED|COMPLETED|RESOLVED)$/i.test(String(issue.status || '').trim());
+            plan.push({ kind: 'move', cellKey, oldCellKey: orphanCellOf.get(issue.issue_key) || null, issueKey: issue.issue_key, title, date: cell.date, oldDue: issue.due, updateDate: !done && issue.due !== cell.date, service: cell.service });
+            summary.moved += 1; tab.moved += 1;
             continue;
           }
           plan.push({
@@ -330,8 +368,8 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
       }
 
       const preview = plan.filter(p => p.kind !== 'link').slice(0, 300).map(p => ({
-        kind: p.kind, title: p.title, date: p.date || null, service: p.service || null,
-        sprint: p.sprint ? p.sprint.name : (p.kind === 'create' ? null : undefined), from: p.oldTitle
+        kind: p.kind, title: p.title, date: p.date || null, service: p.service || null, issueKey: p.issueKey || null,
+        sprint: p.sprint ? p.sprint.name : (p.kind === 'create' ? null : undefined), from: p.kind === 'move' ? p.oldDue : p.oldTitle
       }));
       if (dryRun) return res.json({ dryRun: true, ...summary, preview });
 
@@ -342,6 +380,15 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
       for (const p of plan) {
         if (p.kind === 'link') {
           await conn.query('INSERT IGNORE INTO sheet_sync_items (source_id, cell_key, issue_key, title) VALUES (?, ?, ?, ?)', [sourceId, p.cellKey, p.issueKey, p.title]);
+        } else if (p.kind === 'move') {
+          // Re-point the ticket's link at its new cell, and follow the sheet's date unless it is done.
+          if (p.oldCellKey) await conn.query('UPDATE sheet_sync_items SET cell_key = ?, title = ? WHERE source_id = ? AND cell_key = ?', [p.cellKey, p.title, sourceId, p.oldCellKey]);
+          else await conn.query('INSERT IGNORE INTO sheet_sync_items (source_id, cell_key, issue_key, title) VALUES (?, ?, ?, ?)', [sourceId, p.cellKey, p.issueKey, p.title]);
+          if (p.updateDate) {
+            await conn.query('UPDATE it_kanban_issues SET due_date = ?, start_date = ? WHERE issue_key = ?', [p.date, p.date, p.issueKey]);
+            await conn.query('INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
+              [p.issueKey, 'due_date', p.oldDue || '', p.date, `${actor} (Google Sheet sync: date changed in the sheet)`]).catch(() => {});
+          }
         } else if (p.kind === 'update') {
           await conn.query('UPDATE it_kanban_issues SET title = ?, description = COALESCE(NULLIF(?, \'\'), description) WHERE issue_key = ?', [p.title, p.description || '', p.issueKey]);
           await conn.query('UPDATE sheet_sync_items SET title = ? WHERE source_id = ? AND cell_key = ?', [p.title, sourceId, p.cellKey]);
