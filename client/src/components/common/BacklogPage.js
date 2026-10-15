@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   ChevronDown, ChevronRight, Plus, MoreHorizontal, Calendar,
-  CheckSquare, ArrowUp, ArrowDown, Inbox, Search, Check, Trash2, RefreshCw
+  CheckSquare, ArrowUp, ArrowDown, Inbox, Search, Check, Trash2, RefreshCw, X
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
@@ -323,7 +323,7 @@ const InlineCreateRow = ({ sprintId, onCreate }) => {
 };
 
 // A single work item row, shared by sprint sections and the backlog.
-const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUserName, isSelected, onMove, onOpen, onUpdate, onDelete, onCopy }) => {
+const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUserName, isSelected, onMove, onOpen, onUpdate, onDelete, onCopy, dragDisabled = false }) => {
   const canMove = typeof onMove === 'function';
   const [menuOpen, setMenuOpen] = useState(false);
   const [anchorRect, setAnchorRect] = useState(null);
@@ -335,7 +335,7 @@ const WorkItemRow = ({ item, index, sprints, currentSprintId, users, currentUser
   ];
 
   return (
-    <Draggable draggableId={item.issue_key} index={index} isDragDisabled={!canMove}>
+    <Draggable draggableId={item.issue_key} index={index} isDragDisabled={!canMove || dragDisabled}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -548,6 +548,8 @@ const BacklogPage = ({ department }) => {
     return () => window.removeEventListener('crm-proof-needed', onNeeded);
   }, []);
   const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState('ALL');
+  // Search across sprints (name, project, goal, status) and work items (key, title, assignee, status, priority).
+  const [searchText, setSearchText] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -625,15 +627,31 @@ const BacklogPage = ({ department }) => {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [usersList, currentDept, isManager]);
 
+  const searchQ = searchText.trim().toLowerCase();
+  const itemMatches = React.useCallback((it) => !searchQ
+    || [it.issue_key, it.title, it.assignee, it.status, it.priority].some(v => String(v || '').toLowerCase().includes(searchQ)), [searchQ]);
+  const sprintMatches = React.useCallback((sp) =>
+    [sp.name, sp.project_name, sp.goal, sp.status, sp.department].some(v => String(v || '').toLowerCase().includes(searchQ)), [searchQ]);
+
+  // A sprint whose name / project / goal matches shows all its work; otherwise only the matching
+  // work items are shown, and a sprint with none is hidden.
   const displayedSprints = React.useMemo(() => {
-    if (!isManager || selectedDepartmentFilter === 'ALL') return sprints;
-    return sprints.filter(s => (s.department || 'IT').toLowerCase() === selectedDepartmentFilter.toLowerCase());
-  }, [sprints, isManager, selectedDepartmentFilter]);
+    const byDept = !isManager || selectedDepartmentFilter === 'ALL'
+      ? sprints
+      : sprints.filter(s => (s.department || 'IT').toLowerCase() === selectedDepartmentFilter.toLowerCase());
+    if (!searchQ) return byDept;
+    return byDept
+      .map(sp => (sprintMatches(sp) ? { ...sp, searchHit: 'sprint' } : { ...sp, issues: (sp.issues || []).filter(itemMatches), searchHit: 'items' }))
+      .filter(sp => sp.searchHit === 'sprint' || sp.issues.length > 0);
+  }, [sprints, isManager, selectedDepartmentFilter, searchQ, sprintMatches, itemMatches]);
 
   const displayedBacklog = React.useMemo(() => {
-    if (!isManager || selectedDepartmentFilter === 'ALL') return backlog;
-    return backlog.filter(b => (b.department || 'IT').toLowerCase() === selectedDepartmentFilter.toLowerCase());
-  }, [backlog, isManager, selectedDepartmentFilter]);
+    const byDept = !isManager || selectedDepartmentFilter === 'ALL'
+      ? backlog
+      : backlog.filter(b => (b.department || 'IT').toLowerCase() === selectedDepartmentFilter.toLowerCase());
+    return searchQ ? byDept.filter(itemMatches) : byDept;
+  }, [backlog, isManager, selectedDepartmentFilter, searchQ, itemMatches]);
+  const matchedItemCount = searchQ ? displayedBacklog.length + displayedSprints.reduce((n, sp) => n + (sp.issues || []).length, 0) : 0;
 
   // Clicking a row opens the same details panel the board uses, right here in the backlog.
   const openIssue = (key) => setSelectedKey(key);
@@ -1107,6 +1125,33 @@ const BacklogPage = ({ department }) => {
         <div className="p-6">
           <SheetSyncBar department={currentDept} onSynced={load} />
 
+          {/* Search sprints and work items */}
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="relative w-full sm:w-96">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="search"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') setSearchText(''); }}
+                placeholder="Search sprints, projects and work items…"
+                aria-label="Search sprints and work items"
+                className="w-full h-9 pl-9 pr-8 text-sm border border-gray-300 rounded bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              />
+              {searchText && (
+                <button type="button" onClick={() => setSearchText('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-gray-400 hover:text-gray-700 cursor-pointer" aria-label="Clear search">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            {searchQ && (
+              <span className="text-xs text-gray-500">
+                {displayedSprints.length} sprint{displayedSprints.length === 1 ? '' : 's'} · {matchedItemCount} work item{matchedItemCount === 1 ? '' : 's'} match “{searchText.trim()}”
+                <span className="text-gray-400"> · dragging is paused while searching</span>
+              </span>
+            )}
+          </div>
+
           {/* Department Filter Toolbar for Managers */}
           {isManager && (
             <div className="flex flex-wrap items-center justify-between gap-4 mb-5 pb-3 border-b border-gray-200">
@@ -1170,14 +1215,14 @@ const BacklogPage = ({ department }) => {
                   >
                     <InlineCreateRow sprintId={null} onCreate={createWorkItem} />
                     {displayedBacklog.map((item, i) => (
-                      <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints}
+                      <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints} dragDisabled={Boolean(searchQ)}
                         currentSprintId={null} users={assignableUsers}
                         currentUserName={currentUserName} isSelected={selectedKey === item.issue_key}
                         onMove={canPlanSprints ? moveItem : undefined} onOpen={openIssue} onUpdate={updateItem}
                         onDelete={canDelete ? (item) => deleteItem(item.issue_key) : undefined} onCopy={copyToClipboard} />
                     ))}
                     {displayedBacklog.length === 0 && (
-                      <div className="px-4 py-8 text-center text-xs text-gray-400">Your backlog is empty.</div>
+                      <div className="px-4 py-8 text-center text-xs text-gray-400">{searchQ ? 'No backlog work items match your search.' : 'Your backlog is empty.'}</div>
                     )}
                     {provided.placeholder}
                   </div>
@@ -1188,7 +1233,9 @@ const BacklogPage = ({ department }) => {
 
           {/* Sprint sections */}
           {displayedSprints.map((sprint, idx) => {
-            const isCollapsed = collapsed[`s${sprint.id}`] === undefined ? true : Boolean(collapsed[`s${sprint.id}`]);
+            const isCollapsed = searchQ && sprint.searchHit === 'items' && collapsed[`s${sprint.id}`] !== true
+              ? false
+              : (collapsed[`s${sprint.id}`] === undefined ? true : Boolean(collapsed[`s${sprint.id}`]));
             const dates = formatDate(sprint.start_date) && formatDate(sprint.end_date)
               ? `${formatDate(sprint.start_date)} – ${formatDate(sprint.end_date)}` : null;
 
@@ -1289,7 +1336,7 @@ const BacklogPage = ({ department }) => {
                       >
                         {canPlanSprints && <InlineCreateRow sprintId={sprint.id} onCreate={createWorkItem} />}
                         {sprint.issues.map((item, i) => (
-                          <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints}
+                          <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints} dragDisabled={Boolean(searchQ)}
                             currentSprintId={sprint.id} users={assignableUsers}
                             currentUserName={currentUserName} isSelected={selectedKey === item.issue_key}
                             onMove={canPlanSprints ? moveItem : undefined} onOpen={openIssue} onUpdate={updateItem}

@@ -918,13 +918,35 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
 
   // Links are saved on the issue, so they survive closing the panel. A typed key is
   // matched against this board's tickets so the link shows the real title.
-  const handleCreateLinkedIssue = () => {
-    const raw = linkSearchInput.trim();
+  // Accepts a key ("BCS-131"), a ticket link (".../kanban?ticketKey=BCS-131"), or any text that
+  // contains a key ("BCS-131: GMB post"). Of the keys found in the text, the longest wins, so
+  // "PRJ-2026-0051-104" is never mistaken for a shorter key it happens to start with.
+  const findLinkTarget = (raw) => {
+    const text = String(raw || '').trim();
+    let fromUrl = null;
+    try { fromUrl = new URL(text).searchParams.get('ticketKey'); } catch (e) { /* not a URL */ }
+    const hay = ` ${(fromUrl || text).toUpperCase()} `;
+    const isBoundary = (ch) => !/[A-Z0-9-]/.test(ch || ' ');
+    let best = null;
+    for (const i of issuesList) {
+      const k = String(i.issue_key || '').toUpperCase();
+      if (!k) continue;
+      const at = hay.indexOf(k);
+      if (at > 0 && isBoundary(hay[at - 1]) && isBoundary(hay[at + k.length]) && (!best || k.length > best.issue_key.length)) best = i;
+    }
+    return best;
+  };
+
+  const handleCreateLinkedIssue = (pickedKey) => {
+    const raw = (typeof pickedKey === 'string' ? pickedKey : linkSearchInput).trim();
     if (!raw) return;
-    const typedKey = raw.split(/[:s]/)[0].toUpperCase();
-    const match = issuesList.find(i => String(i.issue_key || '').toUpperCase() === typedKey);
+    const match = findLinkTarget(raw);
     if (!match) {
-      showErrorToast(`No ticket ${typedKey} found on this board`);
+      let isPageLink = false;
+      try { isPageLink = Boolean(new URL(raw)) && !new URL(raw).searchParams.get('ticketKey'); } catch (e) { /* not a URL */ }
+      showErrorToast(isPageLink
+        ? 'That link is a page, not a ticket. Paste a ticket\'s link (its Share button copies it), or search by key or title.'
+        : `No work item matches "${raw.length > 40 ? `${raw.slice(0, 40)}…` : raw}". Search by key or title and pick one from the list.`);
       return;
     }
     if (match.issue_key === issueKey) {
@@ -1335,6 +1357,9 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               setLinkSearchInput={setLinkSearchInput}
               handleCreateLinkedIssue={handleCreateLinkedIssue}
               deleteLinkedIssue={deleteLinkedIssue}
+              issuesList={issuesList}
+              currentKey={issueKey}
+              onOpenLinked={(key) => navigate(`${window.location.pathname}?ticketKey=${encodeURIComponent(key)}`)}
             />
 
             {/* Activity Tabs, Comments & AI Docs */}
