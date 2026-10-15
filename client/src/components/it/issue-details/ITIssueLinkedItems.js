@@ -17,6 +17,7 @@ const ITIssueLinkedItems = ({
   deleteLinkedIssue,
   issuesList = [],
   currentKey,
+  inSubtask = false,
   onOpenLinked
 }) => {
   // Suggestions while typing: key or title contains what was typed. A pasted link isn't searched.
@@ -25,11 +26,12 @@ const ITIssueLinkedItems = ({
     if (!q || /^https?:\/\//.test(q)) return [];
     const linked = new Set(linkedIssues.map(l => `${l.key}|${l.relation}`));
     return issuesList
-      .filter(i => i.issue_key && i.issue_key !== currentKey && !linked.has(`${i.issue_key}|${linkRelation}`))
+      // A task can't link to itself; from a subtask, its main task is offered (labelled).
+      .filter(i => i.issue_key && (inSubtask || i.issue_key !== currentKey) && !linked.has(`${i.issue_key}|${linkRelation}`))
       .filter(i => String(i.issue_key).toLowerCase().includes(q) || String(i.title || '').toLowerCase().includes(q))
       .sort((a, b) => Number(!String(a.issue_key).toLowerCase().startsWith(q)) - Number(!String(b.issue_key).toLowerCase().startsWith(q)))
       .slice(0, 8);
-  }, [linkSearchInput, issuesList, linkedIssues, currentKey, linkRelation]);
+  }, [linkSearchInput, issuesList, linkedIssues, linkRelation, inSubtask, currentKey]);
 
   return (
     <div className="space-y-3">
@@ -99,6 +101,7 @@ const ITIssueLinkedItems = ({
                     >
                       <span className="text-blue-600 shrink-0">{i.issue_key}</span>
                       <span className="text-gray-700 truncate">{i.title}</span>
+                      {inSubtask && i.issue_key === currentKey && <span className="ml-auto shrink-0 text-[10px] text-gray-400">main task</span>}
                     </button>
                   </li>
                 ))}

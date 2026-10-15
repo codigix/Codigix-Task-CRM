@@ -934,7 +934,34 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
       const at = hay.indexOf(k);
       if (at > 0 && isBoundary(hay[at - 1]) && isBoundary(hay[at + k.length]) && (!best || k.length > best.issue_key.length)) best = i;
     }
-    return best;
+    if (best) return best;
+    // No key in the text: match the title. Exact title first, then a title that is the only one
+    // containing what was typed (at least 4 characters, so a short word can't pick at random).
+    const norm = (v) => String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const q = norm(text);
+    const exact = issuesList.filter(i => norm(i.title) === q);
+    if (exact.length === 1) return exact[0];
+    if (q.length >= 4) {
+      const partial = issuesList.filter(i => norm(i.title).includes(q));
+      if (partial.length === 1) return partial[0];
+    }
+    return null;
+  };
+
+  // In a subtask, links belong to that subtask (kept in its entry of the subtasks list);
+  // on the main task they are the issue's own linked_issues.
+  const shownLinks = currentSubtask ? (Array.isArray(currentSubtask.linked_issues) ? currentSubtask.linked_issues : []) : linkedIssues;
+  const saveLinks = (next) => {
+    if (currentSubtask) {
+      const sid = String(currentSubtask.id);
+      const updated = subtasks.map(st => (String(st.id) === sid ? { ...st, linked_issues: next } : st));
+      setCurrentSubtask(prev => (prev ? { ...prev, linked_issues: next } : prev));
+      setSubtasks(updated);
+      handleUpdate({ subtasks: updated });
+    } else {
+      setLinkedIssues(next);
+      handleUpdate({ linked_issues: next });
+    }
   };
 
   const handleCreateLinkedIssue = (pickedKey) => {
@@ -949,25 +976,23 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
         : `No work item matches "${raw.length > 40 ? `${raw.slice(0, 40)}…` : raw}". Search by key or title and pick one from the list.`);
       return;
     }
-    if (match.issue_key === issueKey) {
+    // A subtask may link to its own main task (it is a different item); a task can't link to itself.
+    if (match.issue_key === issueKey && !currentSubtask) {
       showErrorToast('A ticket cannot be linked to itself');
       return;
     }
-    if (linkedIssues.some(l => l.key === match.issue_key && l.relation === linkRelation)) {
+    if (shownLinks.some(l => l.key === match.issue_key && l.relation === linkRelation)) {
       showErrorToast('That link already exists');
       return;
     }
-    const next = [...linkedIssues, { relation: linkRelation, key: match.issue_key, title: match.title }];
-    setLinkedIssues(next);
-    handleUpdate({ linked_issues: next });
+    saveLinks([...shownLinks, { relation: linkRelation, key: match.issue_key, title: match.title }]);
+    showSuccessToast(`Linked: ${linkRelation} ${match.issue_key}`);
     setLinkSearchInput('');
     setIsLinkingIssue(false);
   };
 
   const deleteLinkedIssue = (key) => {
-    const next = linkedIssues.filter(l => l.key !== key);
-    setLinkedIssues(next);
-    handleUpdate({ linked_issues: next });
+    saveLinks(shownLinks.filter(l => l.key !== key));
   };
 
   // Comments are stored on the issue itself (comments JSON column), so every change
@@ -1348,7 +1373,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
 
             {/* Linked Work Items */}
             <ITIssueLinkedItems
-              linkedIssues={linkedIssues}
+              linkedIssues={shownLinks}
               isLinkingIssue={isLinkingIssue}
               setIsLinkingIssue={setIsLinkingIssue}
               linkRelation={linkRelation}
@@ -1359,6 +1384,7 @@ const ITIssueDetailsPanel = ({ issue, updateIssue, deleteIssue, onClose, onIssue
               deleteLinkedIssue={deleteLinkedIssue}
               issuesList={issuesList}
               currentKey={issueKey}
+              inSubtask={Boolean(currentSubtask)}
               onOpenLinked={(key) => navigate(`${window.location.pathname}?ticketKey=${encodeURIComponent(key)}`)}
             />
 
