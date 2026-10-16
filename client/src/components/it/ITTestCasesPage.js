@@ -54,6 +54,8 @@ const ITTestCasesPage = () => {
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [selectedPriority, setSelectedPriority] = useState('All Priorities');
   const [selectedType, setSelectedType] = useState('All Types');
+  const [tcPage, setTcPage] = useState(1);
+  const [tcPageSize, setTcPageSize] = useState(10);
 
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef(null);
@@ -193,6 +195,9 @@ const ITTestCasesPage = () => {
 
     return true;
   });
+  const tcPageCount = Math.max(1, Math.ceil(filteredTestCases.length / tcPageSize));
+  const tcSafePage = Math.min(tcPage, tcPageCount);
+  const pageTestCases = filteredTestCases.slice((tcSafePage - 1) * tcPageSize, tcSafePage * tcPageSize);
 
   const tabs = [
     { name: 'All Test Cases', count: testCases.length, color: 'text-blue-600' },
@@ -448,7 +453,7 @@ const ITTestCasesPage = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {filteredTestCases.map((tc) => (
+                      {pageTestCases.map((tc) => (
                         <tr key={tc.id} className="hover:bg-gray-50 cursor-pointer transition-colors group">
                           <td className="p-2">
                             <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" onClick={e => e.stopPropagation()} />
@@ -480,17 +485,20 @@ const ITTestCasesPage = () => {
 
                 {/* Pagination */}
                 <div className="flex items-center justify-between p-4 border-t border-gray-100 text-sm text-gray-500">
-                  <div>Showing 1 to {filteredTestCases.length} of {filteredTestCases.length} test cases</div>
+                  <div>{filteredTestCases.length ? `Showing ${(tcSafePage - 1) * tcPageSize + 1} to ${Math.min(tcSafePage * tcPageSize, filteredTestCases.length)} of ${filteredTestCases.length} test cases` : 'Showing 0 test cases'}</div>
                   <div className="flex items-center gap-1">
-                    <button className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100">&lt;&lt;</button>
-                    <button className="w-7 h-7 flex items-center justify-center rounded border border-blue-600 bg-blue-50 text-blue-600 font-medium">1</button>
-                    <button className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100">&gt;&gt;</button>
+                    <button disabled={tcSafePage <= 1} onClick={() => setTcPage(tcSafePage - 1)} className="w-7 h-7 flex items-center justify-center rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40" aria-label="Previous page">&lt;</button>
+                    {Array.from({ length: tcPageCount }, (_, i) => i + 1).filter(n => n === 1 || n === tcPageCount || Math.abs(n - tcSafePage) <= 1).map((n, i, arr) => (
+                      <React.Fragment key={n}>
+                        {i > 0 && n - arr[i - 1] > 1 && <span className="mx-1 text-gray-400">…</span>}
+                        <button onClick={() => setTcPage(n)} className={`w-7 h-7 flex items-center justify-center rounded ${n === tcSafePage ? 'border border-blue-600 bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-100'}`}>{n}</button>
+                      </React.Fragment>
+                    ))}
+                    <button disabled={tcSafePage >= tcPageCount} onClick={() => setTcPage(tcSafePage + 1)} className="w-7 h-7 flex items-center justify-center rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40" aria-label="Next page">&gt;</button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-2 p-2 border border-gray-200 rounded text-gray-700 bg-white">
-                      10 / page <ChevronDown size={12} />
-                    </button>
-                  </div>
+                  <select value={tcPageSize} onChange={(e) => { setTcPageSize(Number(e.target.value)); setTcPage(1); }} className="p-2 border border-gray-200 rounded text-gray-700 bg-white text-xs" aria-label="Test cases per page">
+                    {[10, 25, 50].map(n => <option key={n} value={n}>{n} / page</option>)}
+                  </select>
                 </div>
               </div>
             </div>
@@ -502,20 +510,23 @@ const ITTestCasesPage = () => {
               <div className="bg-white rounded border border-gray-100  p-2">
                 <h3 className="text-[13px]  text-gray-900 mb-4">Test Case Summary</h3>
                 <div className="flex items-center gap-4">
-                  {/* Mock CSS Donut Chart */}
+                  {/* Donut from the real status counts */}
                   <div className="relative w-28 h-28 shrink-0">
-                    <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                    <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90" aria-hidden="true">
                       <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f3f4f6" strokeWidth="16" />
-                      {/* Approved: 60.16% (Green) */}
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#10b981" strokeWidth="16" strokeDasharray="151.2 251.2" />
-                      {/* In Review: 17.58% (Orange) */}
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f59e0b" strokeWidth="16" strokeDasharray="44.2 251.2" strokeDashoffset="-151.2" />
-                      {/* Ready for Test: 13.60% (Blue) */}
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#3b82f6" strokeWidth="16" strokeDasharray="34.2 251.2" strokeDashoffset="-195.4" />
-                      {/* Rejected: 5.36% (Red) */}
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#ef4444" strokeWidth="16" strokeDasharray="13.5 251.2" strokeDashoffset="-229.6" />
-                      {/* Draft: 3.30% (Gray) */}
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#9ca3af" strokeWidth="16" strokeDasharray="8.3 251.2" strokeDashoffset="-243.1" />
+                      {(() => {
+                        const C = 2 * Math.PI * 40;
+                        const parts = [['Approved', '#10b981'], ['In Review', '#f59e0b'], ['Ready for Test', '#3b82f6'], ['Rejected', '#ef4444'], ['Draft', '#9ca3af']]
+                          .map(([st, color]) => ({ color, n: testCases.filter(t => t.status === st).length }));
+                        const total = testCases.length;
+                        let offset = 0;
+                        return total ? parts.filter(x => x.n).map((x) => {
+                          const len = (x.n / total) * C;
+                          const el = <circle key={x.color} cx="50" cy="50" r="40" fill="transparent" stroke={x.color} strokeWidth="16" strokeDasharray={`${len} ${C}`} strokeDashoffset={-offset} />;
+                          offset += len;
+                          return el;
+                        }) : null;
+                      })()}
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center mt-0.5">
                       <span className="text-lg  text-gray-900">{testCases.length}</span>
@@ -547,56 +558,26 @@ const ITTestCasesPage = () => {
                 </div>
               </div>
 
-              {/* Type Distribution */}
+              {/* Type Distribution (real counts) */}
               <div className="bg-white rounded border border-gray-100  p-2">
                 <h3 className="text-[13px]  text-gray-900 mb-4">Type Distribution</h3>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded bg-indigo-500"></span><span className="text-gray-700 font-medium">Functional</span></div>
-                      <div className="text-gray-500">1,102 <span className="text-gray-400">(75.69%)</span></div>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded h-1">
-                      <div className="bg-indigo-500 h-1 rounded" style={{ width: '75.69%' }}></div>
-                    </div>
+                {testCases.length ? (
+                  <div className="space-y-4">
+                    {[['Functional', 'bg-indigo-500'], ['Integration', 'bg-orange-500'], ['Performance', 'bg-green-500'], ['Security', 'bg-red-500']].map(([type, bar]) => {
+                      const n = testCases.filter(t => (t.type || 'Functional') === type).length;
+                      const share = Math.round((n / testCases.length) * 1000) / 10;
+                      return (
+                        <div key={type}>
+                          <div className="flex items-center justify-between text-sm mb-1.5">
+                            <div className="flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded ${bar}`}></span><span className="text-gray-700 font-medium">{type}</span></div>
+                            <div className="text-gray-500">{n} <span className="text-gray-400">({share}%)</span></div>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded h-1"><div className={`${bar} h-1 rounded`} style={{ width: `${share}%` }}></div></div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded bg-blue-500"></span><span className="text-gray-700 font-medium">Regression</span></div>
-                      <div className="text-gray-500">198 <span className="text-gray-400">(13.60%)</span></div>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded h-1">
-                      <div className="bg-blue-500 h-1 rounded" style={{ width: '13.60%' }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded bg-orange-500"></span><span className="text-gray-700 font-medium">Integration</span></div>
-                      <div className="text-gray-500">98 <span className="text-gray-400">(6.73%)</span></div>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded h-1">
-                      <div className="bg-orange-500 h-1 rounded" style={{ width: '6.73%' }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded bg-green-500"></span><span className="text-gray-700 font-medium">Performance</span></div>
-                      <div className="text-gray-500">38 <span className="text-gray-400">(2.61%)</span></div>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded h-1">
-                      <div className="bg-green-500 h-1 rounded" style={{ width: '2.61%' }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded bg-red-500"></span><span className="text-gray-700 font-medium">Security</span></div>
-                      <div className="text-gray-500">20 <span className="text-gray-400">(1.37%)</span></div>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded h-1">
-                      <div className="bg-red-500 h-1 rounded" style={{ width: '1.37%' }}></div>
-                    </div>
-                  </div>
-                </div>
+                ) : <div className="text-xs text-gray-400 py-4 text-center">No test cases yet.</div>}
               </div>
 
               {/* Recently Created */}

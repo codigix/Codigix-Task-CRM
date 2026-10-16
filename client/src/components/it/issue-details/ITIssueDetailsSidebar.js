@@ -942,15 +942,23 @@ const ITIssueDetailsSidebar = ({
             <div className="flex items-center min-h-[32px] gap-2">
               <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Type</span>
               <div className="flex-1 min-w-0">
-                <select
-                  value={issue?.type || 'Task'}
-                  disabled={lockSize}
-                  title={lockSize ? lockedTitle : undefined}
-                  onChange={(e) => handleUpdate({ type: e.target.value })}
-                  className={`text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full ${lockedCls}`}
-                >
-                  {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
+                {currentSubtask ? (
+                  <select value="Subtask" disabled title="Subtasks are created in a task's Subtasks list"
+                    className="text-xs border border-gray-200 rounded px-2 py-1 outline-none text-gray-700 bg-gray-50 font-medium w-full">
+                    <option value="Subtask">Subtask</option>
+                  </select>
+                ) : (
+                  <select
+                    value={issue?.type || 'Task'}
+                    disabled={lockSize}
+                    title={lockSize ? lockedTitle : undefined}
+                    onChange={(e) => handleUpdate({ type: e.target.value })}
+                    className={`text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white font-medium cursor-pointer w-full ${lockedCls}`}
+                  >
+                    {[...typeOptions, ...(issue?.type && !typeOptions.includes(issue.type) ? [issue.type] : [])]
+                      .map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                )}
               </div>
             </div>
 

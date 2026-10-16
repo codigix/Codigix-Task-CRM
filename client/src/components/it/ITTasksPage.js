@@ -318,6 +318,11 @@ const ITTasksPage = () => {
             }
           }
         }
+        // Use the link once: drop ticketKey from the address so reloading the list (or the page)
+        // doesn't keep reopening the ticket after it was closed.
+        params.delete('ticketKey');
+        const qs = params.toString();
+        window.history.replaceState(window.history.state, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
       }
     }
   }, [tasks]);

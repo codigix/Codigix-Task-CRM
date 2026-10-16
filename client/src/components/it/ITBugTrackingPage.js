@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Search, Filter, ChevronDown, Download, Upload, Plus,
+  Search, Filter, Download, Plus,
   MoreHorizontal, Bug, AlertCircle, CheckCircle, Clock,
-  List, LayoutGrid, Maximize2, X, Paperclip
+  List, Maximize2, X, Paperclip
 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import ReportBugModal from './ReportBugModal';
@@ -66,6 +66,9 @@ const ITBugTrackingPage = () => {
   const [selectedPriority, setSelectedPriority] = useState('All Priorities');
   const [selectedSeverity, setSelectedSeverity] = useState('All Severities');
   const [selectedAssignee, setSelectedAssignee] = useState('All Assignees');
+  const [sortBy, setSortBy] = useState('updated');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetchData();
@@ -85,13 +88,12 @@ const ITBugTrackingPage = () => {
       if (bugsData.success) {
         setBugs(bugsData.data);
       }
-      if (Array.isArray(usersData)) {
-        setUsersList(usersData.map(u => `${u.first_name || ''} ${u.last_name || ''}`.trim()));
-      }
-      if (Array.isArray(pData)) {
-        setProjectsData(pData);
-        setProjectsList(pData.map(p => p.name));
-      }
+      const asList = (d) => (Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : Array.isArray(d?.value) ? d.value : []);
+      const users = asList(usersData);
+      setUsersList([...new Set(users.map(u => `${u.first_name || ''} ${u.last_name || ''}`.trim()).filter(Boolean))]);
+      const projects = asList(pData);
+      setProjectsData(projects);
+      setProjectsList([...new Set(projects.map(p => p.name || p.title).filter(Boolean))]);
     } catch (err) {
       console.error('Error fetching data:', err);
     }
@@ -102,18 +104,15 @@ const ITBugTrackingPage = () => {
     setIsReportModalOpen(false);
   };
 
-  const filteredBugs = bugs.filter((bug) => {
-    // Tab filter
-    if (activeTab === 'Open' && bug.status !== 'Open') return false;
-    if (activeTab === 'In Progress' && bug.status !== 'In Progress') return false;
-    if (activeTab === 'Resolved' && bug.status !== 'Resolved') return false;
-    if (activeTab === 'Closed' && bug.status !== 'Closed') return false;
-
-    // Search filter
-    if (searchTerm && !bug.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !bug.id.toLowerCase().includes(searchTerm.toLowerCase())) {
+  // Everything but the status tab, so each tab's count stays right whichever tab is open.
+  const selectedProjectId = selectedProject === 'All Projects' ? null
+    : (projectsData.find(p => (p.name || p.title) === selectedProject) || {}).id;
+  const baseBugs = bugs.filter((bug) => {
+    const q = searchTerm.trim().toLowerCase();
+    if (q && !String(bug.title || '').toLowerCase().includes(q) && !`bug-${bug.id}`.includes(q) && !String(bug.description || '').toLowerCase().includes(q)) {
       return false;
     }
+    if (selectedProjectId != null && Number(bug.project_id) !== Number(selectedProjectId)) return false;
 
     // Dropdown filters
     // Note: MOCK_BUGS doesn't have a explicit project field in this mock, we can ignore project for now or mock it
@@ -123,25 +122,51 @@ const ITBugTrackingPage = () => {
     if (selectedSeverity !== 'All Severities' && bug.severity !== selectedSeverity) return false;
     if (selectedAssignee !== 'All Assignees' && bug.assignee !== selectedAssignee) return false;
 
-    // Check Project
-    // Since bugs only have project_id, we would map the ID to name, but bugs don't return project name. 
-    // This is purely for demonstration of filter integration
-    if (selectedProject !== 'All Projects') {
-      // Filter logic requires mapping project names, skipping full implementation for simplicity 
-      // but options are populated dynamically!
-    }
-
     return true;
   });
+  const RANK = { High: 3, Critical: 3, Major: 2, Medium: 2, Minor: 1, Low: 1 };
+  const sorted = [...baseBugs].sort((a, b) => {
+    if (sortBy === 'reported') return new Date(b.created_at) - new Date(a.created_at);
+    if (sortBy === 'priority') return (RANK[b.priority] || 0) - (RANK[a.priority] || 0) || new Date(b.updated_at) - new Date(a.updated_at);
+    if (sortBy === 'severity') return (RANK[b.severity] || 0) - (RANK[a.severity] || 0) || new Date(b.updated_at) - new Date(a.updated_at);
+    return new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at);
+  });
+  const filteredBugs = activeTab === 'All Bugs' ? sorted : sorted.filter(b => b.status === activeTab);
+  const pageCount = Math.max(1, Math.ceil(filteredBugs.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const pageBugs = filteredBugs.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  // Real month-on-month figure: bugs reported this month vs last month.
+  const monthKey = (d) => { const x = new Date(d); return `${x.getFullYear()}-${x.getMonth()}`; };
+  const nowD = new Date();
+  const thisMonth = `${nowD.getFullYear()}-${nowD.getMonth()}`;
+  const prevD = new Date(nowD.getFullYear(), nowD.getMonth() - 1, 1);
+  const lastMonth = `${prevD.getFullYear()}-${prevD.getMonth()}`;
+  const newThisMonth = bugs.filter(b => b.created_at && monthKey(b.created_at) === thisMonth).length;
+  const newLastMonth = bugs.filter(b => b.created_at && monthKey(b.created_at) === lastMonth).length;
+  const shareOf = (n) => (bugs.length ? `${Math.round((n / bugs.length) * 100)}% of all bugs` : 'No bugs yet');
+
+  const exportCsv = () => {
+    const cols = ['Bug ID', 'Title', 'Module', 'Priority', 'Severity', 'Status', 'Assignee', 'Reporter', 'Reported On', 'Updated On'];
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = filteredBugs.map(b => [`BUG-${b.id}`, b.title, b.module, b.priority, b.severity, b.status, b.assignee, b.reporter,
+      b.created_at ? new Date(b.created_at).toLocaleDateString('en-GB') : '', b.updated_at ? new Date(b.updated_at).toLocaleDateString('en-GB') : ''].map(esc).join(','));
+    const blob = new Blob([[cols.map(esc).join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `bugs-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
 
   const dynamicModules = ['All Modules', ...new Set(bugs.map(b => b.module).filter(Boolean))];
 
   const tabs = [
-    { name: 'All Bugs', count: filteredBugs.length, color: 'text-blue-600' },
-    { name: 'Open', count: filteredBugs.filter(b => b.status === 'Open').length, color: 'text-gray-500' },
-    { name: 'In Progress', count: filteredBugs.filter(b => b.status === 'In Progress').length, color: 'text-gray-500' },
-    { name: 'Resolved', count: filteredBugs.filter(b => b.status === 'Resolved').length, color: 'text-gray-500' },
-    { name: 'Closed', count: filteredBugs.filter(b => b.status === 'Closed').length, color: 'text-gray-500' },
+    { name: 'All Bugs', count: baseBugs.length, color: 'text-blue-600' },
+    { name: 'Open', count: baseBugs.filter(b => b.status === 'Open').length, color: 'text-gray-500' },
+    { name: 'In Progress', count: baseBugs.filter(b => b.status === 'In Progress').length, color: 'text-gray-500' },
+    { name: 'Resolved', count: baseBugs.filter(b => b.status === 'Resolved').length, color: 'text-gray-500' },
+    { name: 'Closed', count: baseBugs.filter(b => b.status === 'Closed').length, color: 'text-gray-500' },
   ];
 
   return (
@@ -162,11 +187,8 @@ const ITBugTrackingPage = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 p-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 ">
+              <button onClick={exportCsv} disabled={!filteredBugs.length} className="flex items-center gap-2 p-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-50" title="Download the bugs shown as a CSV file">
                 <Download size={14} /> Export
-              </button>
-              <button className="flex items-center gap-2 p-2 border border-gray-200 bg-white rounded text-gray-600 hover:bg-gray-50 ">
-                <Upload size={14} /> Import
               </button>
               <button
                 onClick={() => setIsReportModalOpen(true)}
@@ -186,9 +208,7 @@ const ITBugTrackingPage = () => {
               <div className="pl-14">
                 <div className="text-xs text-gray-500 font-medium">Total Bugs</div>
                 <div className="text-2xl  text-gray-900 mt-1">{bugs.length}</div>
-                <div className="text-xs text-green-500 mt-1 font-medium flex items-center gap-1">
-                  <span className="text-green-500">↑</span> 12% <span className="text-gray-400">vs last month</span>
-                </div>
+                <div className="text-xs text-gray-500 mt-1">{newThisMonth} new this month · {newLastMonth} last month</div>
               </div>
             </div>
 
@@ -199,9 +219,7 @@ const ITBugTrackingPage = () => {
               <div className="pl-14">
                 <div className="text-xs text-gray-500 font-medium">Open Bugs</div>
                 <div className="text-2xl  text-gray-900 mt-1">{bugs.filter(b => b.status === 'Open').length}</div>
-                <div className="text-xs text-red-500 mt-1 font-medium flex items-center gap-1">
-                  <span className="text-red-500">↑</span> 15% <span className="text-gray-400">vs last month</span>
-                </div>
+                <div className="text-xs text-gray-500 mt-1">{shareOf(bugs.filter(b => b.status === 'Open').length)}</div>
               </div>
             </div>
 
@@ -212,9 +230,7 @@ const ITBugTrackingPage = () => {
               <div className="pl-14">
                 <div className="text-xs text-gray-500 font-medium">In Progress</div>
                 <div className="text-2xl  text-gray-900 mt-1">{bugs.filter(b => b.status === 'In Progress').length}</div>
-                <div className="text-xs text-green-500 mt-1 font-medium flex items-center gap-1">
-                  <span className="text-green-500">↓</span> 5% <span className="text-gray-400">vs last month</span>
-                </div>
+                <div className="text-xs text-gray-500 mt-1">{shareOf(bugs.filter(b => b.status === 'In Progress').length)}</div>
               </div>
             </div>
 
@@ -225,9 +241,7 @@ const ITBugTrackingPage = () => {
               <div className="pl-14">
                 <div className="text-xs text-gray-500 font-medium">Resolved</div>
                 <div className="text-2xl  text-gray-900 mt-1">{bugs.filter(b => b.status === 'Resolved').length}</div>
-                <div className="text-xs text-green-500 mt-1 font-medium flex items-center gap-1">
-                  <span className="text-green-500">↓</span> 10% <span className="text-gray-400">vs last month</span>
-                </div>
+                <div className="text-xs text-gray-500 mt-1">{shareOf(bugs.filter(b => b.status === 'Resolved').length)}</div>
               </div>
             </div>
 
@@ -238,9 +252,7 @@ const ITBugTrackingPage = () => {
               <div className="pl-14">
                 <div className="text-xs text-gray-500 font-medium">Closed</div>
                 <div className="text-2xl  text-gray-900 mt-1">{bugs.filter(b => b.status === 'Closed').length}</div>
-                <div className="text-xs text-red-500 mt-1 font-medium flex items-center gap-1">
-                  <span className="text-red-500">↑</span> 20% <span className="text-gray-400">vs last month</span>
-                </div>
+                <div className="text-xs text-gray-500 mt-1">{shareOf(bugs.filter(b => b.status === 'Closed').length)}</div>
               </div>
             </div>
           </div>
@@ -328,16 +340,15 @@ const ITBugTrackingPage = () => {
               ))}
             </div>
             <div className="flex items-center gap-4 pb-3">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <label className="flex items-center gap-2 text-xs text-gray-500">
                 <span>Sort by:</span>
-                <button className="flex items-center gap-1 font-medium text-gray-700">
-                  Updated At (Latest) <ChevronDown size={12} />
-                </button>
-              </div>
-              <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded text-gray-500 shadow-inner">
-                <button className="p-1 bg-white rounded "><List size={14} /></button>
-                <button className="p-1 hover:text-gray-700"><LayoutGrid size={14} /></button>
-              </div>
+                <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1); }} className="font-medium text-gray-700 bg-transparent border border-gray-200 rounded px-1.5 py-1 outline-none cursor-pointer">
+                  <option value="updated">Updated (latest)</option>
+                  <option value="reported">Reported (latest)</option>
+                  <option value="priority">Priority (high first)</option>
+                  <option value="severity">Severity (critical first)</option>
+                </select>
+              </label>
             </div>
           </div>
 
@@ -363,7 +374,10 @@ const ITBugTrackingPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredBugs.map((bug) => (
+                  {pageBugs.length === 0 && (
+                    <tr><td colSpan={11} className="p-8 text-center text-gray-400">{bugs.length ? 'No bugs match these filters.' : 'No bugs reported yet. Use “Report New Bug” to add one.'}</td></tr>
+                  )}
+                  {pageBugs.map((bug) => (
                     <tr
                       key={bug.id}
                       className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedBug?.id === bug.id && isDrawerOpen ? 'bg-blue-50/50' : ''}`}
@@ -387,8 +401,8 @@ const ITBugTrackingPage = () => {
                           <span className="text-gray-700 font-medium">{bug.assignee}</span>
                         </div>
                       </td>
-                      <td className="p-2 text-gray-500">{new Date(bug.created_at).toLocaleDateString()}</td>
-                      <td className="p-2 text-gray-500">{new Date(bug.updated_at).toLocaleDateString()}</td>
+                      <td className="p-2 text-gray-500">{bug.created_at ? new Date(bug.created_at).toLocaleDateString('en-GB') : '—'}</td>
+                      <td className="p-2 text-gray-500">{bug.updated_at ? new Date(bug.updated_at).toLocaleDateString('en-GB') : '—'}</td>
                       <td className="p-2 text-right">
                         <button className="text-gray-400 hover:text-gray-600 p-1" onClick={e => e.stopPropagation()}>
                           <MoreHorizontal size={16} />
@@ -402,23 +416,26 @@ const ITBugTrackingPage = () => {
 
             {/* Pagination */}
             <div className="flex items-center justify-between p-4 border-t border-gray-100 text-xs text-gray-500">
-              <div>Showing 1 to {bugs.length} of {bugs.length} bugs</div>
+              <div>
+                {filteredBugs.length
+                  ? `Showing ${(safePage - 1) * pageSize + 1} to ${Math.min(safePage * pageSize, filteredBugs.length)} of ${filteredBugs.length} bugs`
+                  : 'Showing 0 bugs'}
+              </div>
               <div className="flex items-center gap-1">
-                <button className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100">&lt;&lt;</button>
-                <button className="w-8 h-8 flex items-center justify-center rounded border border-blue-600 bg-blue-50 text-blue-600 font-medium">1</button>
-                <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100">2</button>
-                <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100">3</button>
-                <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100">4</button>
-                <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100">5</button>
-                <span className="mx-1 text-gray-400">...</span>
-                <button className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100">10</button>
-                <button className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100">&gt;&gt;</button>
+                <button disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} className="w-8 h-8 flex items-center justify-center rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40" aria-label="Previous page">&lt;</button>
+                {Array.from({ length: pageCount }, (_, i) => i + 1)
+                  .filter(n => n === 1 || n === pageCount || Math.abs(n - safePage) <= 1)
+                  .map((n, i, arr) => (
+                    <React.Fragment key={n}>
+                      {i > 0 && n - arr[i - 1] > 1 && <span className="mx-1 text-gray-400">…</span>}
+                      <button onClick={() => setPage(n)} className={`w-8 h-8 flex items-center justify-center rounded ${n === safePage ? 'border border-blue-600 bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-100'}`}>{n}</button>
+                    </React.Fragment>
+                  ))}
+                <button disabled={safePage >= pageCount} onClick={() => setPage(safePage + 1)} className="w-8 h-8 flex items-center justify-center rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40" aria-label="Next page">&gt;</button>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="flex items-center gap-2 p-2 border border-gray-200 rounded text-gray-700 bg-white">
-                  10 / page <ChevronDown size={12} />
-                </button>
-              </div>
+              <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="p-2 border border-gray-200 rounded text-gray-700 bg-white text-xs" aria-label="Bugs per page">
+                {[10, 25, 50].map(n => <option key={n} value={n}>{n} / page</option>)}
+              </select>
             </div>
           </div>
         </div>

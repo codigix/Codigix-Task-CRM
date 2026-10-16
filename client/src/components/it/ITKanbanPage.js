@@ -1178,19 +1178,21 @@ const ITKanbanPage = ({ department }) => {
   // Opens a ticket straight from a URL like ...&/kanban?ticketKey=MKT-104, which is how
   // notifications deep-link. Depends on location.search so clicking a notification while
   // already on this board still opens the ticket.
+  // The link is used once: after opening, ticketKey is taken off the address, so later board
+  // updates (any click, filter, live refresh) and a page refresh don't keep reopening it.
   useEffect(() => {
     const params = new URLSearchParams(location.search || window.location.search);
     const ticketKey = params.get('ticketKey');
-    if (ticketKey) {
-      const allIssues = Object.values(boardData).flat();
-      if (allIssues.length > 0) {
-        const exists = allIssues.some(t => t.key === ticketKey || t.issue_key === ticketKey);
-        if (exists) {
-          setSelectedIssue(ticketKey);
-        }
-      }
+    if (!ticketKey) return;
+    const allIssues = Object.values(boardData).flat();
+    if (allIssues.length === 0) return; // wait until the board has loaded
+    if (allIssues.some(t => t.key === ticketKey || t.issue_key === ticketKey)) {
+      setSelectedIssue(ticketKey);
     }
-  }, [boardData, location.search]);
+    params.delete('ticketKey');
+    const qs = params.toString();
+    navigate(`${location.pathname}${qs ? `?${qs}` : ''}`, { replace: true });
+  }, [boardData, location.search, location.pathname, navigate]);
 
 
 

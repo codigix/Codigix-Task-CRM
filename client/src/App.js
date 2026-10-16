@@ -295,6 +295,14 @@ const routeMap = {
 };
 
 // Admins land on the organisation-wide Admin overview; ?view=sales shows the Sales dashboard.
+// The IT dashboard is chosen by the signed-in person's role, not by the words in the URL:
+// a tester always gets the tester dashboard, whatever link they followed.
+const ITDashboardForRole = () => {
+  const { user } = useAuth();
+  const role = String(user?.role || user?.role_name || '');
+  return role === 'Tester' ? <ITTesterDashboard /> : <ITManagerDashboard />;
+};
+
 const SalesOrAdminDashboard = () => {
   const { user } = useAuth();
   const role = String(user?.role || user?.role_name || '');
@@ -584,8 +592,7 @@ function AppContent() {
         <Route path="/seo-gmb/:designation/:username/location-intelligence" element={<SeoGmbLocationIntelligencePage />} />
         
         {/* IT Routes */}
-        <Route path="/it/tester/:username/dashboard" element={<ITTesterDashboard />} />
-        <Route path="/it/:designation/:username/dashboard" element={<ITManagerDashboard />} />
+        <Route path="/it/:designation/:username/dashboard" element={<ITDashboardForRole />} />
         <Route path="/it/:designation/:username/repositories" element={<ITRepositoriesPage />} />
         <Route path="/it/:designation/:username/projects" element={<CrmProjectsPage department="IT" />} />
         <Route path="/it/:designation/:username/tasks" element={<ITTasksPage />} />

@@ -4,7 +4,7 @@ import {
   GitBranch, Github, Search, Plus, GitPullRequest, CircleDot,
   Clock, CheckCircle, AlertCircle, RefreshCw, Filter, MoreVertical,
   Activity, ArrowUpRight, FolderGit2, ChevronDown, Download, Lock, Globe,
-  ActivitySquare, ArrowUp, ExternalLink, Settings, Webhook, ChevronRight,
+  ActivitySquare, ExternalLink, Settings, Webhook, ChevronRight,
   GitCommit, Check, ChevronLeft, GitMerge, FilePlus, PlayCircle, Code, X, Info
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
@@ -87,7 +87,6 @@ export default function ITRepositoriesPage() {
 
   // Details panel flow state
   const [showConnectionModal, setShowConnectionModal] = useState(false);
-  const [githubOrg, setGithubOrg] = useState('codigix-infotech');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showWebhookModal, setShowWebhookModal] = useState(false);
   const [showContributorsModal, setShowContributorsModal] = useState(false);
@@ -308,10 +307,12 @@ export default function ITRepositoriesPage() {
               <div>
                 <div className='flex gap-2'>
                   <p className="text-sm  text-gray-900">GitHub </p><div className="flex items-center gap-2">
-                    <span className="text-emerald-700 text-xs">● Connected</span>
+                    {totalRepos > 0
+                      ? <span className="text-emerald-700 text-xs">● Linked</span>
+                      : <span className="text-amber-700 text-xs">● Not connected yet</span>}
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mb-2">Connected to <strong>{githubOrg}</strong></p>
+                <p className="text-xs text-gray-500 mb-2">{totalRepos > 0 ? <>{totalRepos} repositor{totalRepos === 1 ? 'y' : 'ies'} linked</> : 'Import or add a repository to start'}</p>
 
               </div>
             </div>
@@ -331,9 +332,6 @@ export default function ITRepositoriesPage() {
               <p className="text-xs text-gray-500 font-medium mb-1">Total Repositories</p>
               <div className="flex items-end gap-2">
                 <h3 className="text-xl  text-gray-900 leading-none">{totalRepos}</h3>
-                <span className="flex items-center text-xs font-medium text-emerald-600 mb-0.5">
-                  <ArrowUp size={12} /> 12% <span className="text-gray-400 ml-1">vs last month</span>
-                </span>
               </div>
             </div>
           </div>
@@ -372,9 +370,6 @@ export default function ITRepositoriesPage() {
               <p className="text-xs text-gray-500 font-medium mb-1">Active Repositories</p>
               <div className="flex items-end gap-2">
                 <h3 className="text-xl  text-gray-900 leading-none">{activeRepos}</h3>
-                <span className="flex items-center text-xs font-medium text-emerald-600 mb-0.5">
-                  <ArrowUp size={12} /> 8% <span className="text-gray-400 ml-1">vs last month</span>
-                </span>
               </div>
             </div>
           </div>
@@ -385,8 +380,15 @@ export default function ITRepositoriesPage() {
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium mb-1">Last Sync</p>
-              <h3 className="text-lg  text-gray-900 leading-none mb-1">2 mins ago</h3>
-              <p className="text-[10px] text-gray-400">May 30, 2026 10:45 AM</p>
+              {(() => {
+                // Newest update time the repositories carry; "Never" until something is linked.
+                const times = repositories.map(r => r.last_synced_at || r.updated_at || r.github_updated_at).filter(Boolean).map(t => new Date(t)).filter(d => !isNaN(d));
+                if (!times.length) return <h3 className="text-lg  text-gray-900 leading-none mb-1">Never</h3>;
+                const last = new Date(Math.max(...times));
+                const mins = Math.max(0, Math.round((Date.now() - last) / 60000));
+                const rel = mins < 1 ? 'Just now' : mins < 60 ? `${mins} min${mins === 1 ? '' : 's'} ago` : mins < 1440 ? `${Math.round(mins / 60)} h ago` : `${Math.round(mins / 1440)} days ago`;
+                return <><h3 className="text-lg  text-gray-900 leading-none mb-1">{rel}</h3><p className="text-[10px] text-gray-400">{last.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p></>;
+              })()}
             </div>
           </div>
         </div>
@@ -663,37 +665,25 @@ export default function ITRepositoriesPage() {
                 </div>
               </div>
 
-              {/* Repository Health */}
+              {/* Repository activity (from the repositories' own data) */}
               <div className="bg-white border border-gray-200 rounded  p-5 flex flex-col">
-                <h3 className="text-sm  text-gray-900 mb-4">Repository Health</h3>
-                <div className="flex items-center gap-6 mb-4">
-                  <div className="relative w-20 h-20 flex-shrink-0 flex items-center justify-center rounded border-[6px] border-emerald-500 border-r-emerald-100">
-                    <div className="text-center">
-                      <span className="text-xl  text-emerald-600 leading-none">92</span>
-                      <p className="text-[10px] text-emerald-600 font-medium">Excellent</p>
+                <h3 className="text-sm  text-gray-900 mb-4">Repository Activity</h3>
+                {repositories.length ? (() => {
+                  const ageDays = (r) => { const t = r.github_updated_at || r.updated_at; return t ? (Date.now() - new Date(t)) / 86400000 : Infinity; };
+                  const rows = [
+                    ['Active', repositories.filter(r => r.status === 'Active').length, 'text-emerald-600'],
+                    ['Inactive', repositories.filter(r => r.status !== 'Active').length, 'text-gray-500'],
+                    ['Updated in the last 30 days', repositories.filter(r => ageDays(r) <= 30).length, 'text-blue-600'],
+                    ['No update for 90+ days', repositories.filter(r => ageDays(r) > 90).length, 'text-amber-600']
+                  ];
+                  return (
+                    <div className="space-y-2">
+                      {rows.map(([label, n, tone]) => (
+                        <div key={label} className="flex items-center justify-between text-xs"><span className="text-gray-600">{label}</span><span className={`font-semibold ${tone}`}>{n}</span></div>
+                      ))}
                     </div>
-                  </div>
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" /> Repository is up to date
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" /> No vulnerabilities found
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" /> CI/CD pipeline active
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" /> Branch protection enabled
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" /> Code coverage: 86%
-                    </div>
-                  </div>
-                </div>
-                <button className="mt-auto w-full py-2 text-xs  text-[#4F46E5] bg-indigo-50 hover:bg-indigo-100 rounded transition-colors">
-                  View Full Report
-                </button>
+                  );
+                })() : <p className="text-xs text-gray-400">No repositories linked yet.</p>}
               </div>
 
             </div>

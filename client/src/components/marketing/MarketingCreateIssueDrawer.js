@@ -3,8 +3,8 @@ import {
   X, Maximize2, Minus, ChevronDown,
   Bold, Italic, Link, List, MoreHorizontal,
   Type, Calendar, UploadCloud, Check, HelpCircle,
-  Paperclip, Image, Code, CheckSquare, Search, Columns, Clock,
-  Sparkles, Megaphone, Palette, Video, FileText, AlertCircle, Layers
+  Paperclip, Image, Code, CheckSquare, Bookmark, Search, Columns, Clock,
+  Sparkles, FileText, AlertCircle, Layers
 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -16,12 +16,10 @@ import Swal from 'sweetalert2';
 // New work is planned for today unless someone picks another day.
 const todayYmd = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
+// Work item types; what kind of work it is (GMB, SEO, design, video, content...) goes in Labels.
 const WORK_TYPES = [
   { name: 'Task', icon: CheckSquare, color: 'text-blue-500 bg-blue-50', description: 'General task or deliverable' },
-  { name: 'Campaign', icon: Megaphone, color: 'text-orange-500 bg-orange-50', description: 'Marketing campaign or promo' },
-  { name: 'Design', icon: Palette, color: 'text-purple-500 bg-purple-50', description: 'Graphic asset or UI design' },
-  { name: 'Video', icon: Video, color: 'text-red-500 bg-red-50', description: 'Video editing or motion graphics' },
-  { name: 'Content', icon: FileText, color: 'text-green-500 bg-green-50', description: 'Blog post, copy, or SEO article' },
+  { name: 'Story', icon: Bookmark, color: 'text-green-500 bg-green-50', description: 'A larger piece of work or feature' },
   { name: 'Bug', icon: AlertCircle, color: 'text-red-600 bg-red-100', description: 'Website error or tracking pixel issue' },
 ];
 

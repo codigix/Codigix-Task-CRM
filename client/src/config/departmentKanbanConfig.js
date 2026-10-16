@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckSquare, Bookmark, AlertCircle, Megaphone, Palette, Video, FileText, Users, Briefcase, TestTube, Code, Globe, Shield } from 'lucide-react';
+import { CheckSquare, Bookmark, AlertCircle, Users, Briefcase, Code, Shield } from 'lucide-react';
 
 export const DEPARTMENT_KANBAN_CONFIG = {
   IT: {
@@ -11,11 +11,12 @@ export const DEPARTMENT_KANBAN_CONFIG = {
       { id: 'DEV', name: 'DevOps & Infra (DEV)', code: 'DEV' },
       { id: 'QA', name: 'QA & Testing (QA)', code: 'QA' },
     ],
+    // Work item types (Jira style). The kind of work (GMB, SEO, design, video...) is a label.
+    // Subtasks are created inside a task (its Subtasks list), so "Subtask" is not picked here.
     issueTypes: [
       { name: 'Task', icon: CheckSquare, color: 'text-blue-500 bg-blue-50', description: 'General task or deliverable' },
       { name: 'Story', icon: Bookmark, color: 'text-green-500 bg-green-50', description: 'User story or feature' },
-      { name: 'Bug', icon: AlertCircle, color: 'text-red-500 bg-red-50', description: 'Software defect or bug' },
-      { name: 'Test', icon: TestTube, color: 'text-purple-500 bg-purple-50', description: 'QA test case or regression test' },
+      { name: 'Bug', icon: AlertCircle, color: 'text-red-500 bg-red-50', description: 'Defect or something broken' },
     ],
     roles: ['All Roles', 'Developer', 'Tester', 'DevOps Engineer', 'IT Manager']
   },
@@ -30,14 +31,11 @@ export const DEPARTMENT_KANBAN_CONFIG = {
       { id: 'CRV', name: 'Creative & Video (CRV)', code: 'CRV' },
       { id: 'CNT', name: 'Content & Copy (CNT)', code: 'CNT' }
     ],
+    // Same work item types as IT; campaign / design / video / content / SEO / GMB / social are labels.
     issueTypes: [
       { name: 'Task', icon: CheckSquare, color: 'text-blue-500 bg-blue-50', description: 'General marketing task' },
-      { name: 'Campaign', icon: Megaphone, color: 'text-orange-500 bg-orange-50', description: 'Marketing campaign or strategy' },
-      { name: 'Design', icon: Palette, color: 'text-purple-500 bg-purple-50', description: 'Graphics, banners, visual assets' },
-      { name: 'Video', icon: Video, color: 'text-red-500 bg-red-50', description: 'Reels, shorts, motion graphics' },
-      { name: 'Content', icon: FileText, color: 'text-green-500 bg-green-50', description: 'Blogs, articles, ad copy' },
-      { name: 'Search', icon: Globe, color: 'text-indigo-500 bg-indigo-50', description: 'SEO, GMB, GEO, AEO updates' },
-      { name: 'Social', icon: Users, color: 'text-pink-500 bg-pink-50', description: 'Social media scheduling & posts' }
+      { name: 'Story', icon: Bookmark, color: 'text-green-500 bg-green-50', description: 'A larger piece of work or feature' },
+      { name: 'Bug', icon: AlertCircle, color: 'text-red-500 bg-red-50', description: 'Website error, tracking or publishing issue' }
     ],
     roles: [
       'All Roles',
