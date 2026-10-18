@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ITCreateIssueDrawer from './ITCreateIssueDrawer';
+import BulkAssignBar from './BulkAssignBar';
 import ITIssueDetailsPanel from './ITIssueDetailsPanel';
 import MarketingCreateIssueDrawer from '../marketing/MarketingCreateIssueDrawer';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
@@ -348,6 +349,10 @@ const ITKanbanPage = ({ department }) => {
   );
 
   const [usersList, setUsersList] = useState([]);
+  // Picking several tickets on the board to assign them in one go (managers).
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkKeys, setBulkKeys] = useState([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [allRawIssues, setAllRawIssues] = useState([]);
   const [projectsList, setProjectsList] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState('ALL');
@@ -1587,6 +1592,61 @@ const ITKanbanPage = ({ department }) => {
     }
   };
 
+  const exitBulk = () => { setBulkMode(false); setBulkKeys([]); };
+  const toggleBulkKey = (key) => setBulkKeys(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
+  useEffect(() => {
+    if (!bulkMode) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape' && !bulkBusy) { setBulkMode(false); setBulkKeys([]); } };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [bulkMode, bulkBusy]);
+
+  // Same save as changing the assignee in a ticket, once per picked ticket (a few at a time),
+  // then one reload of the board.
+  const bulkAssign = async (name) => {
+    const keys = [...bulkKeys];
+    if (!keys.length) return;
+    const who = name === 'Unassigned' ? 'nobody (Unassigned)' : name;
+    const ok = await Swal.fire({
+      icon: 'question',
+      title: `Assign ${keys.length} ticket${keys.length === 1 ? '' : 's'}?`,
+      text: `They will be assigned to ${who}.`,
+      showCancelButton: true,
+      confirmButtonText: 'Assign',
+      confirmButtonColor: '#2563eb'
+    });
+    if (!ok.isConfirmed) return;
+    setBulkBusy(true);
+    const actor = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : (username || 'System');
+    const failed = [];
+    for (let i = 0; i < keys.length; i += 5) {
+      await Promise.all(keys.slice(i, i + 5).map(async (key) => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'x-user-name': actor },
+            body: JSON.stringify({ assignee: name })
+          });
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}));
+            failed.push({ key, why: d.error || `error ${res.status}` });
+          }
+        } catch (e) { failed.push({ key, why: e.message }); }
+      }));
+    }
+    setBulkBusy(false);
+    fetchKanbanData();
+    window.dispatchEvent(new Event('crm-refresh-notifications'));
+    const done = keys.length - failed.length;
+    if (failed.length) {
+      Swal.fire({ icon: 'warning', title: `${done} of ${keys.length} assigned`, html: `<div style="text-align:left;font-size:13px">Not changed:<ul style="margin:6px 0 0;padding-left:18px">${failed.map(f => `<li>${f.key}: ${f.why}</li>`).join('')}</ul></div>` });
+      setBulkKeys(failed.map(f => f.key));
+    } else {
+      showSuccessToast(`${done} ticket${done === 1 ? '' : 's'} assigned to ${name}`);
+      exitBulk();
+    }
+  };
+
   // Completing from the board reloads the issues too: the finished sprint's work leaves the
   // board and anything rolled into a still-running sprint stays visible.
   const handleCompleteSprint = async (sprint, moveTo) => {
@@ -1795,6 +1855,16 @@ const ITKanbanPage = ({ department }) => {
 
   return (
     <>
+      {bulkMode && (
+        <BulkAssignBar
+          count={bulkKeys.length}
+          usersList={usersList}
+          busy={bulkBusy}
+          onAssign={bulkAssign}
+          onClear={() => setBulkKeys([])}
+          onExit={exitBulk}
+        />
+      )}
       {currentDept === 'Marketing' ? (
         <MarketingCreateIssueDrawer
           isOpen={isCreateDrawerOpen}
@@ -2306,6 +2376,15 @@ const ITKanbanPage = ({ department }) => {
                       </div>
                     </>
                   )}
+                  {isManager && activeSprints.length > 0 && (
+                    <button
+                      onClick={() => (bulkMode ? exitBulk() : setBulkMode(true))}
+                      className={`h-8 px-3 flex items-center gap-1.5 rounded border text-xs font-medium whitespace-nowrap cursor-pointer ${bulkMode ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}`}
+                      title="Pick several tickets and assign them to one person"
+                    >
+                      <CheckSquare size={14} /> {bulkMode ? 'Cancel selection' : 'Select'}
+                    </button>
+                  )}
                   <button className="h-8 px-3 flex items-center gap-1.5 rounded border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap cursor-pointer"><Download size={14} /> Export</button>
                   {/* <button className="text-gray-400 hover:text-gray-600"><MoreHorizontal size={16} /></button> */}
                 </div>
@@ -2371,6 +2450,21 @@ const ITKanbanPage = ({ department }) => {
                                         {columnTitle(col)}
                                       </span>
                                       <span className="text-xs text-gray-400 font-medium">{boardData[col] ? boardData[col].length : 0}</span>
+                                      {bulkMode && (() => {
+                                        // Only the cards showing in the column, not the ones further down still to load.
+                                        const colKeys = (boardData[col] || []).slice(0, limitFor(col)).filter(c => !c.isSubtask).map(c => c.key);
+                                        if (!colKeys.length) return null;
+                                        const all = colKeys.every(k => bulkKeys.includes(k));
+                                        return (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); setBulkKeys(prev => (all ? prev.filter(k => !colKeys.includes(k)) : [...new Set([...prev, ...colKeys])])); }}
+                                            className="ml-auto text-[11px] font-medium text-blue-600 hover:underline cursor-pointer"
+                                          >
+                                            {all ? 'Unselect all' : 'Select all'}
+                                          </button>
+                                        );
+                                      })()}
                                     </div>
 
                                     <Droppable droppableId={col} type="task">
@@ -2381,13 +2475,14 @@ const ITKanbanPage = ({ department }) => {
                                           className={`flex-1 overflow-y-auto min-h-0 flex flex-col gap-2 pb-2 transition-colors rounded custom-scrollbar ${snapshot.isDraggingOver ? 'bg-blue-50/50' : ''}`}
                                         >
                                           {(boardData[col] || []).slice(0, limitFor(col)).map((card, idx) => (
-                                            <Draggable key={card.key} draggableId={card.key} index={idx}>
+                                            <Draggable key={card.key} draggableId={card.key} index={idx} isDragDisabled={bulkMode}>
                                               {(provided, snapshot) => (
                                                 <div
                                                   ref={provided.innerRef}
                                                   {...provided.draggableProps}
                                                   {...provided.dragHandleProps}
                                                   onClick={() => {
+                                                    if (bulkMode) { if (!card.isSubtask) toggleBulkKey(card.key); return; }
                                                     if (card.isSubtask) {
                                                       setSelectedIssue(card.parentKey);
                                                       setSelectedSubtaskKey(card.subtaskId || card.key);
@@ -2399,10 +2494,15 @@ const ITKanbanPage = ({ department }) => {
                                                   style={{
                                                     ...provided.draggableProps.style,
                                                   }}
-                                                  className={`relative group bg-white border border-gray-200 border-l-4 ${getLabelStyle(getCardLabels(card)[0]).accent} rounded px-3 pt-2.5 pb-2 ${(selectedIssue === card.key || (card.isSubtask && selectedIssue === card.parentKey && String(selectedSubtaskKey) === String(card.subtaskId))) ? 'ring-2 ring-blue-500 shadow-sm' : ''} ${snapshot.isDragging ? 'shadow-lg' : 'shadow-sm hover:shadow-md transition-shadow duration-150'}`}
+                                                  className={`relative group bg-white border border-gray-200 border-l-4 ${getLabelStyle(getCardLabels(card)[0]).accent} rounded px-3 pt-2.5 pb-2 ${bulkMode && bulkKeys.includes(card.key) ? 'ring-2 ring-blue-500 bg-blue-50/60' : ''} ${bulkMode && card.isSubtask ? 'opacity-50' : ''} ${!bulkMode && (selectedIssue === card.key || (card.isSubtask && selectedIssue === card.parentKey && String(selectedSubtaskKey) === String(card.subtaskId))) ? 'ring-2 ring-blue-500 shadow-sm' : ''} ${snapshot.isDragging ? 'shadow-lg' : 'shadow-sm hover:shadow-md transition-shadow duration-150'}`}
                                                 >
+                                                  {bulkMode && !card.isSubtask && (
+                                                    <span className={`absolute top-2.5 right-2.5 w-4 h-4 rounded border flex items-center justify-center z-10 ${bulkKeys.includes(card.key) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-400'}`}>
+                                                      {bulkKeys.includes(card.key) && <Check size={11} strokeWidth={3} />}
+                                                    </span>
+                                                  )}
                                                   {/* Delete Trash Button (managers only) */}
-                                                  {canDelete && <button
+                                                  {canDelete && !bulkMode && <button
                                                     onClick={(e) => {
                                                       e.stopPropagation();
                                                       if (card.isSubtask) {
