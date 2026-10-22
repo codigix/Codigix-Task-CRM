@@ -1,5 +1,5 @@
 const OpenAI = require('openai');
-const nodemailer = require('nodemailer');
+const { sendMailAs } = require('../services/userMail');
 const { workingSecondsBetween, parseDurationToSeconds: parseWorkDuration, formatHours } = require('../services/workTime');
 const { resolvePrefix, nextIssueKey } = require('../utils/issueKeys');
 const effort = require('../services/effort');
@@ -175,28 +175,9 @@ module.exports = function setupItKanbanRoutes(app, pool) {
     return null;
   };
 
-  const sendAssignmentEmail = async (assigneeEmail, assigneeName, ticketKey, ticketTitle, ticketType, ticketDescription, ticketStatus, ticketPriority, ticketDepartment) => {
-    const SMTP_HOST = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com';
-    const SMTP_PORT = process.env.EMAIL_PORT || process.env.SMTP_PORT || '587';
-    const SMTP_USER = process.env.EMAIL_USER || process.env.SMTP_USER;
-    const SMTP_PASS = process.env.EMAIL_PASS || process.env.SMTP_PASS;
-
-    if (!SMTP_USER || !SMTP_PASS) {
-      console.warn('⚠️ SMTP credentials missing. Cannot send assignment notification email.');
-      return false;
-    }
-
+  // senderId: the logged-in user who made the change. The email goes from their Gmail when they connected it.
+  const sendAssignmentEmail = async (assigneeEmail, assigneeName, ticketKey, ticketTitle, ticketType, ticketDescription, ticketStatus, ticketPriority, ticketDepartment, senderId) => {
     try {
-      const transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: parseInt(SMTP_PORT),
-        secure: SMTP_PORT == 465,
-        auth: {
-          user: SMTP_USER,
-          pass: SMTP_PASS
-        }
-      });
-
       const clientBaseUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3001';
       // Point at the assignee's own workspace. This was hardcoded to /it/..., so someone
       // assigned a Marketing ticket landed on the IT board looking at another department.
@@ -205,7 +186,7 @@ module.exports = function setupItKanbanRoutes(app, pool) {
       const link = `${clientBaseUrl}/${workspace}/employee/${workspace}/tasks?ticketKey=${ticketKey}`;
 
       const mailOptions = {
-        from: `"CRM Notifications" <${SMTP_USER}>`,
+        from: `"CRM Notifications" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
         to: assigneeEmail,
         subject: `[CRM Notification] New Task Assigned: ${ticketTitle} (${ticketKey})`,
         html: `
@@ -256,12 +237,12 @@ module.exports = function setupItKanbanRoutes(app, pool) {
         `
       };
 
-      const info = await transporter.sendMail(mailOptions);
+      const { info, from } = await sendMailAs(pool, senderId, mailOptions);
       // Log what the mail server actually said, not just that we tried. "Accepted" with a
       // 250 means delivery is the receiving server's responsibility from here — which is the
       // difference between "we failed to send" and "it was delivered but filed as spam".
       console.log(
-        `✉️ Assignment email for ${ticketKey} → ${assigneeEmail}\n` +
+        `✉️ Assignment email for ${ticketKey} → ${assigneeEmail} (from ${from})\n` +
         `   accepted: ${JSON.stringify(info.accepted)}  rejected: ${JSON.stringify(info.rejected)}\n` +
         `   server said: ${info.response}\n` +
         `   messageId: ${info.messageId}`
@@ -281,36 +262,17 @@ module.exports = function setupItKanbanRoutes(app, pool) {
     ticketTitle,
     ticketType,
     ticketPriority,
-    ticketDepartment
+    ticketDepartment,
+    senderId
   }) => {
-    const SMTP_HOST = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com';
-    const SMTP_PORT = process.env.EMAIL_PORT || process.env.SMTP_PORT || '587';
-    const SMTP_USER = process.env.EMAIL_USER || process.env.SMTP_USER;
-    const SMTP_PASS = process.env.EMAIL_PASS || process.env.SMTP_PASS;
-
-    if (!SMTP_USER || !SMTP_PASS) {
-      console.warn('⚠️ SMTP credentials missing. Cannot send review notification email.');
-      return false;
-    }
-
     try {
-      const transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: parseInt(SMTP_PORT),
-        secure: SMTP_PORT == 465,
-        auth: {
-          user: SMTP_USER,
-          pass: SMTP_PASS
-        }
-      });
-
       const clientBaseUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3001';
       const workspace = String(ticketDepartment || '')
         .replace(/\s*department\s*$/i, '').trim().toLowerCase() === 'marketing' ? 'marketing' : 'it';
       const link = `${clientBaseUrl}/${workspace}/tasks?ticketKey=${ticketKey}`;
 
       const mailOptions = {
-        from: `"Codigix CRM" <${SMTP_USER}>`,
+        from: `"Codigix CRM" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
         to: reporterEmail,
         subject: `[Task Ready for Review] ${ticketKey}: ${ticketTitle}`,
         html: `
@@ -361,8 +323,8 @@ module.exports = function setupItKanbanRoutes(app, pool) {
         `
       };
 
-      const info = await transporter.sendMail(mailOptions);
-      console.log(`✉️ Review notification email sent for ${ticketKey} to reporter ${reporterEmail}`);
+      const { from } = await sendMailAs(pool, senderId, mailOptions);
+      console.log(`✉️ Review notification email sent for ${ticketKey} to reporter ${reporterEmail} (from ${from})`);
       return true;
     } catch (error) {
       console.error('❌ Failed to send review notification email:', error.message);
@@ -380,34 +342,20 @@ module.exports = function setupItKanbanRoutes(app, pool) {
     ticketKey,
     ticketTitle,
     commentText,
-    ticketDepartment
+    ticketDepartment,
+    senderId
   }) => {
-    const SMTP_HOST = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com';
-    const SMTP_PORT = process.env.EMAIL_PORT || process.env.SMTP_PORT || '587';
-    const SMTP_USER = process.env.EMAIL_USER || process.env.SMTP_USER;
-    const SMTP_PASS = process.env.EMAIL_PASS || process.env.SMTP_PASS;
-
-    if (!SMTP_USER || !SMTP_PASS || !recipientEmail) {
+    if (!recipientEmail) {
       return false;
     }
 
     try {
-      const transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: parseInt(SMTP_PORT),
-        secure: SMTP_PORT == 465,
-        auth: {
-          user: SMTP_USER,
-          pass: SMTP_PASS
-        }
-      });
-
       const clientBaseUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3001';
       const link = `${clientBaseUrl}/it/kanban?ticketKey=${encodeURIComponent(ticketKey)}`;
       const cleanComment = stripHtml(commentText || '');
 
       const mailOptions = {
-        from: `"${actorName || 'Codigix CRM'}" <${process.env.EMAIL_FROM || SMTP_USER}>`,
+        from: `"${actorName || 'Codigix CRM'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER}>`,
         to: recipientEmail,
         subject: `[CRM] (${ticketKey}) ${actorName || 'Team member'} mentioned you on "${ticketTitle}"`,
         html: `
@@ -445,8 +393,8 @@ module.exports = function setupItKanbanRoutes(app, pool) {
         `
       };
 
-      const info = await transporter.sendMail(mailOptions);
-      console.log(`✉️ Mention email sent for ${ticketKey} → ${recipientEmail} (messageId: ${info.messageId})`);
+      const { info, from } = await sendMailAs(pool, senderId, mailOptions);
+      console.log(`✉️ Mention email sent for ${ticketKey} → ${recipientEmail} from ${from} (messageId: ${info.messageId})`);
       return true;
     } catch (error) {
       console.error('❌ Failed to send mention notification email:', error.message);
@@ -1568,7 +1516,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       if (assignee && assignee !== 'Unassigned') {
         getAssigneeEmail(assignee, dept).then(email => {
           if (email) {
-            sendAssignmentEmail(email, assignee, newKey, title, type, description, status, priority, dept);
+            sendAssignmentEmail(email, assignee, newKey, title, type, description, status, priority, dept, req.user?.id);
           }
         }).catch(err => console.error('Failed to trigger email notify:', err));
 
@@ -1614,7 +1562,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
                 st.description || `Subtask of ${newKey}: ${title}`,
                 st.status || 'TO DO',
                 st.priority || 'Medium',
-                dept
+                dept,
+                req.user?.id
               );
             }
           } catch (err) {
@@ -2243,7 +2192,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
                     updates.description || currentIssue.description,
                     updates.status || currentIssue.status,
                     updates.priority || currentIssue.priority,
-                    currentIssue.department
+                    currentIssue.department,
+                    req.user?.id
                   );
                 }
               }).catch(err => console.error('Failed to trigger email notify on update:', err));
@@ -2310,7 +2260,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
                         ticketTitle: updates.title || currentIssue.title,
                         ticketType: updates.type || currentIssue.type,
                         ticketPriority: updates.priority || currentIssue.priority,
-                        ticketDepartment: currentIssue.department
+                        ticketDepartment: currentIssue.department,
+                        senderId: req.user?.id
                       });
                     } else {
                       console.log(`ℹ️ No email address found for reporter "${reporterName}".`);
@@ -2373,7 +2324,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
                   st.description || `Subtask of ${key}: ${stored?.title || ''}`,
                   st.status || 'TO DO',
                   st.priority || 'Medium',
-                  stored?.department
+                  stored?.department,
+                  req.user?.id
                 );
               }
             } catch (err) {
@@ -2473,7 +2425,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
                     ticketKey: key,
                     ticketTitle: issueData?.title || 'Task',
                     commentText: cleanText,
-                    ticketDepartment: issueData?.department || 'IT'
+                    ticketDepartment: issueData?.department || 'IT',
+                    senderId: req.user?.id
                   }).catch(eErr => console.error('Failed to send mention email:', eErr));
                 }
               }

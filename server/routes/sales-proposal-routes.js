@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const { sendMailAs, canSendMail } = require('../services/userMail');
 const mailError = require('../services/mailError');
 const { buildDeck } = require('../services/proposalDeck');
 const { newContent } = require('../services/proposalTemplates');
@@ -289,18 +289,16 @@ module.exports = function setupSalesProposalRoutes(app, pool) {
     const valid = (v) => String(v || '').split(/[;,]/).map(s => s.trim()).filter(s => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s));
     const to = valid(req.body?.to); const cc = valid(req.body?.cc);
     if (!to.length) return res.status(400).json({ error: 'Enter the client\'s email address.' });
-    const host = process.env.EMAIL_HOST || process.env.SMTP_HOST; const user = process.env.EMAIL_USER || process.env.SMTP_USER; const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
-    if (!host || !user || !pass) return res.status(503).json({ error: 'Email is not set up on the server. Download the PDF and send it yourself, then use "Mark as sent".' });
+    if (!(await canSendMail(pool, req.user.id))) return res.status(503).json({ error: 'Email is not set up on the server. Download the PDF and send it yourself, then use "Mark as sent".' });
     const settings = await getSettings();
     const buf = await buildDeck(await deckDoc(p, settings));
-    const port = Number(process.env.EMAIL_PORT || process.env.SMTP_PORT || 587);
     const client = await clientOf(p);
     const vars = { number: p.proposal_number, company: settings.company.name, client: client.name, sender: req.user.name, title: p.title };
     const subject = str(req.body?.subject, 250) || fill('Proposal {number} from {company}', vars);
     const body = str(req.body?.message, 4000) || fill('Dear {client},\n\nThank you for the opportunity. Please find our proposal "{title}" attached.\n\nPlease go through it and tell us which option suits you. We are happy to walk you through any part of it.\n\nRegards,\n{sender}\n{company}', vars);
     try {
-      await nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } }).sendMail({
-        from: process.env.EMAIL_FROM || user, to: to.join(', '), cc: cc.length ? cc.join(', ') : undefined, replyTo: req.user.email || undefined, subject, text: body,
+      await sendMailAs(pool, req.user.id, {
+        to: to.join(', '), cc: cc.length ? cc.join(', ') : undefined, replyTo: req.user.email || undefined, subject, text: body,
         html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#111827;white-space:pre-wrap">${body.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
         attachments: [{ filename: `${p.proposal_number}.pdf`, content: buf, contentType: 'application/pdf' }]
       });

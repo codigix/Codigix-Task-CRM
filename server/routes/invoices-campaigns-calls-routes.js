@@ -1,6 +1,6 @@
 const { requireAuth, requireRole } = require('../middleware/authMiddleware');
 const { generateEstimationNumber } = require('../middleware/helpers');
-const nodemailer = require('nodemailer');
+const { sendMailAs } = require('../services/userMail');
 
 module.exports = function(app, pool) {
   
@@ -1481,15 +1481,6 @@ module.exports = function(app, pool) {
         SELECT * FROM estimation_line_items WHERE estimation_id = ? ORDER BY id ASC
       `, [id]);
 
-      // 3. Configure Nodemailer with optimized Gmail settings
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER || process.env.SMTP_USER,
-          pass: (process.env.EMAIL_PASS || process.env.SMTP_PASS)?.trim() // Ensure no accidental spaces
-        }
-      });
-
       // 4. Build Email Content
       const currencySymbol = est.currency === 'USD' ? '$' : (est.currency === 'INR' ? '₹' : est.currency);
       const itemsHtml = items.map(item => `
@@ -1692,7 +1683,8 @@ module.exports = function(app, pool) {
 
       // 5. Send Email
       console.log(`📧 Attempting to send email to: ${targetEmail}`);
-      const info = await transporter.sendMail({
+      // From the logged-in user's Gmail when they connected it, otherwise the shared account.
+      const { info } = await sendMailAs(pool, req.user?.id, {
         from: `"Codigix Quotations" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER}>`,
         to: targetEmail,
         subject: `Quotation ${est.estimation_number} - ${est.client_name || est.lead_name || ''}`,
@@ -2247,14 +2239,6 @@ module.exports = function(app, pool) {
       // Send Email via nodemailer
       if (targetEmail) {
         try {
-          const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-              user: process.env.EMAIL_USER || process.env.SMTP_USER,
-              pass: (process.env.EMAIL_PASS || process.env.SMTP_PASS)?.trim()
-            }
-          });
-
           const emailSubject = customSubject || `Proposal #${prop.proposal_number || id} - ${prop.client_name || prop.lead_name || 'Valued Client'} - Codigix Infotech`;
 
           let attachments = [];
@@ -2316,7 +2300,7 @@ module.exports = function(app, pool) {
             </div>
           `;
 
-          await transporter.sendMail({
+          await sendMailAs(pool, req.user?.id, {
             from: `"Codigix Proposals" <${process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER}>`,
             to: targetEmail,
             subject: emailSubject,

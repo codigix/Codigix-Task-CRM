@@ -7,6 +7,7 @@ const FALLBACK = 'Download the PDF and send it yourself, then use "Mark as sent"
 module.exports = function mailError(e) {
   const code = String(e?.code || '');
   const text = String(e?.response || e?.message || '');
+  if (code === 'ENOSETUP') return { status: 503, error: `${text} ${FALLBACK}` };
   // Gmail and most providers refuse an account password over SMTP; they need an app password.
   if (code === 'EAUTH' || /\b535\b|Invalid login|BadCredentials|Username and Password not accepted/i.test(text)) {
     return { status: 503, error: `The email account on the server rejected the login (EMAIL_USER / EMAIL_PASS in server/.env). For Gmail, EMAIL_PASS must be an App Password, not the account password. ${FALLBACK}` };

@@ -210,7 +210,7 @@ function ScheduleModal({ onClose, onSaved, me, edit }) {
           <div>
             <label className={labelCls}>Meeting link (optional)</label>
             <input value={form.meet_link} onChange={e => set('meet_link', e.target.value)} className={inputCls} placeholder="Leave empty to auto-generate a Google Meet link" />
-            <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1"><Video size={11} /> Leave empty and a link is generated automatically (Google Meet when Google is connected, otherwise Jitsi Meet). Paste a Zoom/Teams link to use that instead.</p>
+            <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1"><Video size={11} /> Leave empty and a Google Meet link is created automatically (from your Google account when connected, otherwise from the main account). Paste a Zoom/Teams link to use that instead.</p>
           </div>
         ) : (
           <div>
@@ -719,7 +719,7 @@ function GoogleSetupModal({ status, onClose }) {
   return (
     <Modal title="Set up Google Meet" onClose={onClose} width="max-w-xl" z="z-[60]" footer={<button onClick={onClose} className={btn.primary}>Got it</button>}>
       <div className="space-y-3 text-sm text-gray-700">
-        <p>Google only creates Meet links for a real Google account, so an administrator needs to do this <strong>once</strong>. Until then meetings get a working <strong>Jitsi Meet</strong> link automatically.</p>
+        <p>Google only creates Meet links for a real Google account, so an administrator needs to do this <strong>once</strong>, then connect the main account and click <strong>Use as fallback</strong>. Until a Google account is available, online meetings cannot be scheduled without pasting a link.</p>
         <ol className="list-decimal pl-5 space-y-2">
           <li>Open <strong>Google Cloud Console</strong> for the project that has the Calendar API, go to <em>APIs &amp; Services → Library</em> and make sure <strong>Google Calendar API</strong> is enabled.</li>
           <li><em>OAuth consent screen</em> (Google Auth Platform → Audience): either add the connecting account under <strong>Test users</strong>, or click <strong>Publish app</strong> so the link does not expire after 7 days. Only the one organiser account signs in; employees never do.</li>
@@ -760,40 +760,38 @@ function GoogleConnect({ onFlash, refreshKey }) {
     setBusy(false);
   };
   const disconnect = async () => {
-    if (!window.confirm('Disconnect your Google account? New meetings will get Jitsi links until you reconnect.')) return;
+    if (!window.confirm('Disconnect your Google account? Until you reconnect, your meetings and the emails you send from the CRM go from the shared account.')) return;
     setBusy(true);
     try { await mApi('/google/disconnect', { method: 'POST', body: {} }); await load(); onFlash({ type: 'ok', text: 'Google disconnected.' }); }
     catch (e) { onFlash({ type: 'warn', text: e.message }); }
     setBusy(false);
   };
 
-  const who = status.connected ? status.email : status.orgEmail ? status.orgEmail : status.delegation ? 'workspace account' : null;
+  // Everyone connects their own Google account: meetings they schedule are hosted from it (they admit people)
+  // and the emails they send from the CRM go from their Gmail. A manager can still share theirs as the
+  // fallback for people who have not connected yet.
+  const fallback = status.orgEmail || (status.delegation ? 'workspace account' : null);
   return (
     <>
-      {/* Once Google is connected and shared there is nothing left to do, so the bar is hidden.
-          A manager keeps a small muted icon to open it again (to disconnect or switch account). */}
-      {status.active && !(status.connected && status.canConnectOrg && !status.shared) && !showManage ? (
-        status.canConnectOrg ? (
-          <button onClick={() => setShowManage(true)} className="h-9 w-9 inline-flex items-center justify-center text-gray-300 hover:text-gray-600 cursor-pointer" title={`Google Meet is automatic${who ? ` (${who})` : ''}. Click to manage.`}><Link2 size={15} /></button>
-        ) : null
-      ) : status.active ? (
-        <div className="inline-flex items-center gap-2 h-9 pl-3 pr-2 rounded border border-emerald-200 bg-emerald-50 text-xs text-emerald-800" title="Meetings are created on this Google Calendar with a Meet link, and attendees are invited automatically">
-          <CheckCircle2 size={13} /> Google Meet automatic{who ? ` · ${who}` : ''}
-          {status.connected && status.canConnectOrg && !status.shared && <button onClick={() => share(true)} disabled={busy} className="ml-1 px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" title="Use this Google account for every employee's meetings">Use for everyone</button>}
-          {status.connected && status.shared && <span className="ml-1 text-emerald-700">· shared with everyone</span>}
-          {status.connected && <button onClick={disconnect} disabled={busy} className="ml-1 text-emerald-700 hover:underline cursor-pointer">Disconnect</button>}
+      {/* Fully set up: nothing left to do, so only a small muted icon remains to manage it. A manager keeps the
+          full bar while there is no main account, since people who have not connected need one for Google Meet. */}
+      {status.connected && status.gmail && !(status.canConnectOrg && !status.orgEmail) && !showManage ? (
+        <button onClick={() => setShowManage(true)} className="h-9 w-9 inline-flex items-center justify-center text-gray-300 hover:text-gray-600 cursor-pointer" title={`Your Google account is connected (${status.email}): you host your meetings and your emails go from your Gmail. Click to manage.`}><Link2 size={15} /></button>
+      ) : status.connected ? (
+        <div className="inline-flex items-center gap-2 h-9 pl-3 pr-2 rounded border border-emerald-200 bg-emerald-50 text-xs text-emerald-800" title="Your meetings are created on your Google Calendar with you as the Meet host">
+          <CheckCircle2 size={13} /> Google connected · {status.email}
+          {!status.gmail && <button onClick={() => connect(false)} disabled={busy} className="ml-1 px-2 py-0.5 rounded bg-amber-500 text-white hover:bg-amber-600 cursor-pointer" title="Reconnect and tick the Gmail permission so the emails you send from the CRM go from your own address">Allow Gmail</button>}
+          {status.canConnectOrg && !status.shared && <button onClick={() => share(true)} disabled={busy} className="ml-1 px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer" title="Use this Google account for the meetings of people who have not connected their own">Use as fallback</button>}
+          {status.shared && <span className="ml-1 text-emerald-700">· fallback for everyone</span>}
+          <button onClick={disconnect} disabled={busy} className="ml-1 text-emerald-700 hover:underline cursor-pointer">Disconnect</button>
           {showManage && <button onClick={() => setShowManage(false)} className="ml-1 text-emerald-700/70 hover:text-emerald-900 cursor-pointer" title="Hide">×</button>}
         </div>
-      ) : status.canConnectOrg ? (
-        <div className="inline-flex items-center gap-1">
-          <button onClick={() => connect(true)} disabled={busy} className={`${btn.ghost} !border-amber-300 !text-amber-800 bg-amber-50 hover:!bg-amber-100`} title="One-time: connect the Google account that will create every meeting, with a Meet link, and invite everyone">
-            {busy ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />} Connect Google (one time, for everyone)
-          </button>
-          <button onClick={() => setHelp(true)} className="h-9 w-9 inline-flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer" title="How to set this up"><HelpCircle size={15} /></button>
-        </div>
       ) : (
-        <div className="inline-flex items-center gap-2 h-9 px-3 rounded border border-amber-200 bg-amber-50 text-xs text-amber-800" title="An admin connects Google once; after that every meeting gets a Google Meet link automatically">
-          <AlertCircle size={13} /> Google Meet not connected yet. Ask an admin to connect it once.
+        <div className="inline-flex items-center gap-1">
+          <button onClick={() => connect(false)} disabled={busy} className={`${btn.ghost} !border-amber-300 !text-amber-800 bg-amber-50 hover:!bg-amber-100`} title={`Host your own Google Meet meetings and send CRM emails from your Gmail.${fallback ? ` Until you connect, your meetings are created from ${fallback}.` : ''}`}>
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />} Connect my Google account
+          </button>
+          {status.canConnectOrg && <button onClick={() => setHelp(true)} className="h-9 w-9 inline-flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer" title="How to set this up"><HelpCircle size={15} /></button>}
         </div>
       )}
       {help && <GoogleSetupModal status={status} onClose={() => setHelp(false)} />}
@@ -823,11 +821,13 @@ export default function MeetingsPage() {
   useEffect(() => {
     if (!googleParam) return;
     const msg = params.get('msg');
-    setFlash(googleParam === 'connected'
-      ? { type: 'ok', text: 'Google connected. New online meetings now get a real Google Meet link and calendar invite automatically.' }
-      : { type: 'warn', text: msg || 'Google could not be connected.' });
+    setFlash(googleParam !== 'connected'
+      ? { type: 'warn', text: msg || 'Google could not be connected.' }
+      : params.get('gmail') === '0'
+        ? { type: 'warn', text: 'Google connected for meetings, but the Gmail permission was not ticked, so your emails still go from the shared account. Click "Allow Gmail" to add it.' }
+        : { type: 'ok', text: 'Google connected. You now host the meetings you schedule, and emails you send from the CRM go from your Gmail.' });
     setGoogleKey(k => k + 1);
-    const p = new URLSearchParams(params); p.delete('google'); p.delete('msg'); setParams(p, { replace: true });
+    const p = new URLSearchParams(params); p.delete('google'); p.delete('msg'); p.delete('gmail'); setParams(p, { replace: true });
   }, [googleParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const detail = params.get('open') ? Number(params.get('open')) : null;

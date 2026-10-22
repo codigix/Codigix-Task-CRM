@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const { sendMailAs, canSendMail } = require('../services/userMail');
 const mailError = require('../services/mailError');
 const { computeTotals, round2 } = require('../services/salesPdf');
 
@@ -102,12 +102,6 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     discountPct: Math.min(100, Math.max(0, Number(it.discountPct) || 0)),
     taxPct: Math.min(40, Math.max(0, it.taxPct === undefined ? defaultTax : Number(it.taxPct) || 0)), position: i
   })).filter(it => it.name && it.qty !== 0);
-  const emailReady = () => {
-    const host = process.env.EMAIL_HOST || process.env.SMTP_HOST; const user = process.env.EMAIL_USER || process.env.SMTP_USER; const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
-    if (!host || !user || !pass) return null;
-    const port = Number(process.env.EMAIL_PORT || process.env.SMTP_PORT || 587);
-    return { transporter: nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } }), from: process.env.EMAIL_FROM || user };
-  };
   const route = (method, path, msg, fn) => app[method](`/api/sales-desk${path}`, async (req, res) => {
     try { if (!needUser(req, res)) return; await ready; await fn(req, res); } catch (e) { fail(res, e, msg); }
   });
@@ -588,8 +582,7 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     const valid = (v) => String(v || '').split(/[;,]/).map(s => s.trim()).filter(s => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s));
     const to = valid(req.body?.to); const cc = valid(req.body?.cc);
     if (!to.length) return res.status(400).json({ error: 'Enter the client\'s email address.' });
-    const mail = emailReady();
-    if (!mail) return res.status(503).json({ error: 'Email is not set up on the server. Download the PDF and send it yourself, then use "Mark as sent".' });
+    if (!(await canSendMail(pool, req.user.id))) return res.status(503).json({ error: 'Email is not set up on the server. Download the PDF and send it yourself, then use "Mark as sent".' });
     const out = await app.locals.salesPdf.invoicePdf(inv.id);
     const settings = await getSettings();
     const balance = round2(Math.max(0, Number(inv.total) - Number(inv.amount_paid)));
@@ -597,8 +590,8 @@ module.exports = function setupSalesDeskRoutes(app, pool) {
     const subject = String(req.body?.subject || fill(settings.email.invoiceSubject, vars)).slice(0, 250);
     const text = String(req.body?.message || fill(settings.email.invoiceMessage, vars));
     try {
-    await mail.transporter.sendMail({
-      from: mail.from, to: to.join(', '), cc: cc.length ? cc.join(', ') : undefined, replyTo: req.user.email || undefined, subject, text,
+    await sendMailAs(pool, req.user.id, {
+      to: to.join(', '), cc: cc.length ? cc.join(', ') : undefined, replyTo: req.user.email || undefined, subject, text,
       html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#111827;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
       attachments: [{ filename: `${inv.invoice_number}.pdf`, content: out.buf, contentType: 'application/pdf' }]
     });

@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const { sendMailAs } = require('../services/userMail');
 const { resolveDealForLead, generateProjectTasks } = require('../middleware/helpers');
 
 module.exports = function setupTasksProjectsRoutes(app, pool) {
@@ -62,35 +62,16 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
     return null;
   };
 
-  const sendAssignmentEmail = async (assigneeEmail, assigneeName, ticketKey, ticketTitle, ticketType, ticketDescription, ticketStatus, ticketPriority, projectId = null) => {
-    const SMTP_HOST = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com';
-    const SMTP_PORT = process.env.EMAIL_PORT || process.env.SMTP_PORT || '587';
-    const SMTP_USER = process.env.EMAIL_USER || process.env.SMTP_USER;
-    const SMTP_PASS = process.env.EMAIL_PASS || process.env.SMTP_PASS;
-
-    if (!SMTP_USER || !SMTP_PASS) {
-      console.warn('⚠️ SMTP credentials missing. Cannot send assignment notification email.');
-      return false;
-    }
-
+  // senderId: the logged-in user who made the change. The email goes from their Gmail when they connected it.
+  const sendAssignmentEmail = async (assigneeEmail, assigneeName, ticketKey, ticketTitle, ticketType, ticketDescription, ticketStatus, ticketPriority, projectId = null, senderId = null) => {
     try {
-      const transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: parseInt(SMTP_PORT),
-        secure: SMTP_PORT == 465,
-        auth: {
-          user: SMTP_USER,
-          pass: SMTP_PASS
-        }
-      });
-
       const clientBaseUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3001';
       const link = projectId
         ? `${clientBaseUrl}/it/employee/it/details/${projectId}?taskId=${ticketKey}`
         : `${clientBaseUrl}/it/employee/it/tasks?ticketKey=${ticketKey}`;
 
       const mailOptions = {
-        from: `"CRM Notifications" <${SMTP_USER}>`,
+        from: `"CRM Notifications" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
         to: assigneeEmail,
         subject: `[CRM Notification] New Task Assigned: ${ticketTitle} (${ticketKey})`,
         html: `
@@ -141,8 +122,8 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
         `
       };
 
-      const info = await transporter.sendMail(mailOptions);
-      console.log(`✉️ Assignment notification email sent successfully to ${assigneeEmail}:`, info.messageId);
+      const { info, from } = await sendMailAs(pool, senderId, mailOptions);
+      console.log(`✉️ Assignment notification email sent successfully to ${assigneeEmail} from ${from}:`, info.messageId);
       return true;
     } catch (error) {
       console.error('❌ Failed to send assignment notification email:', error.message);
@@ -178,7 +159,8 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
               description,
               status || 'Open',
               priority || 'Medium',
-              projectId
+              projectId,
+              req.user?.id
             );
           }
         }).catch(err => console.error('Failed to trigger email notify on task creation:', err));
@@ -326,7 +308,8 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
                     description || currentTask.description,
                     status || currentTask.status,
                     priority || currentTask.priority,
-                    currentTask.project_id
+                    currentTask.project_id,
+                    req.user?.id
                   );
                 }
               }).catch(err => console.error('Failed to trigger email notify on project task update:', err));

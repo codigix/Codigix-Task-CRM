@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const { sendMailAs, canSendMail } = require('../services/userMail');
 const { buildPdf, computeTotals, round2 } = require('../services/salesPdf');
 const push = require('../services/push');
 const mailError = require('../services/mailError');
@@ -1271,20 +1271,16 @@ module.exports = function setupSalesFlowRoutes(app, pool) {
       const cc = String(req.body?.cc || '').split(/[;,]/).map(s => s.trim()).filter(s => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s));
       const settings = await getSettings();
       const out = await pdfFor(e.id, settings);
-      const host = process.env.EMAIL_HOST || process.env.SMTP_HOST; const user = process.env.EMAIL_USER || process.env.SMTP_USER; const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
-      if (!host || !user || !pass) return res.status(503).json({ error: 'Email is not set up on the server. Download the PDF and send it yourself, then use "Mark as sent".' });
-      const port = Number(process.env.EMAIL_PORT || process.env.SMTP_PORT || 587);
-      const transporter = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
+      if (!(await canSendMail(pool, req.user.id))) return res.status(503).json({ error: 'Email is not set up on the server. Download the PDF and send it yourself, then use "Mark as sent".' });
       const vars = {
         number: `${out.quote.base}${out.quote.version > 1 ? ` (Rev. ${out.quote.version})` : ''}`, company: settings.company.name, client: out.quote.client.contact || out.quote.client.name,
         total: `Rs. ${out.quote.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, validUntil: out.quote.validUntil ? ymd(out.quote.validUntil) : '', sender: req.user.name
       };
       const subject = String(req.body?.subject || fill(settings.email.subject, vars)).slice(0, 250);
       const text = String(req.body?.message || fill(settings.email.message, vars));
-      const fromAddr = process.env.EMAIL_FROM || user;
       try {
-        await transporter.sendMail({
-          from: fromAddr, to: to.join(', '), cc: cc.length ? cc.join(', ') : undefined, replyTo: req.user.email || undefined, subject, text,
+        await sendMailAs(pool, req.user.id, {
+          to: to.join(', '), cc: cc.length ? cc.join(', ') : undefined, replyTo: req.user.email || undefined, subject, text,
           html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#111827;white-space:pre-wrap">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`,
           attachments: [{ filename: `${out.quote.base}${out.quote.version > 1 ? `-Rev${out.quote.version}` : ''}.pdf`, content: out.buf, contentType: 'application/pdf' }]
         });

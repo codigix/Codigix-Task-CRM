@@ -2853,6 +2853,8 @@ model google_oauth {
   email         String?  @db.VarChar(190)
   refresh_token String   @db.Text
   is_org        Boolean  @default(false)
+  scopes        String?  @db.Text
+  client_id     String?  @db.VarChar(150)
   connected_at  DateTime @default(now()) @db.DateTime(0)
 }
 

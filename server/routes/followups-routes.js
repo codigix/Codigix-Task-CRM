@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { google } = require('googleapis');
 const OpenAI = require('openai');
-const nodemailer = require('nodemailer');
+const { sendMailAs } = require('../services/userMail');
 const { UPLOAD_DIR, uploadFileFilter, UPLOAD_LIMITS } = require('../config/upload');
 
 module.exports = function setupFollowupsRoutes(app, pool) {
@@ -165,7 +165,8 @@ module.exports = function setupFollowupsRoutes(app, pool) {
     }
   };
 
-  const sendProfessionalEmailInvite = async (followupData) => {
+  // senderId: the logged-in user; the invite goes from their Gmail when they connected it.
+  const sendProfessionalEmailInvite = async (followupData, senderId) => {
     const {
       client_email,
       subject,
@@ -180,28 +181,9 @@ module.exports = function setupFollowupsRoutes(app, pool) {
       follow_up_count
     } = followupData;
 
-    // SMTP configuration from environment variables
-    const SMTP_HOST = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com';
-    const SMTP_PORT = process.env.EMAIL_PORT || process.env.SMTP_PORT || 587;
     const SMTP_USER = process.env.EMAIL_USER || process.env.SMTP_USER;
-    const SMTP_PASS = process.env.EMAIL_PASS || process.env.SMTP_PASS;
-
-    if (!SMTP_USER || !SMTP_PASS) {
-      console.warn('⚠️ SMTP credentials missing. Cannot send professional email invite.');
-      return false;
-    }
 
     try {
-      const transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: parseInt(SMTP_PORT),
-        secure: SMTP_PORT == 465,
-        auth: {
-          user: SMTP_USER,
-          pass: SMTP_PASS
-        }
-      });
-
       // Format date safely
       let dateObj;
       try {
@@ -357,7 +339,7 @@ module.exports = function setupFollowupsRoutes(app, pool) {
         subject: mailOptions.subject
       });
 
-      const info = await transporter.sendMail(mailOptions);
+      const { info } = await sendMailAs(pool, senderId, mailOptions);
       console.log(`✓ Professional email invitation sent. Response: ${info.response}, MessageID: ${info.messageId}`);
       return true;
     } catch (error) {
@@ -818,7 +800,7 @@ module.exports = function setupFollowupsRoutes(app, pool) {
       // Always send professional email invite for meeting types to ensure notification
       if (inviteTypes.includes(type) && client_email) {
         console.log(`✉️ Sending professional email invite to ${client_email}...`);
-        const emailSent = await sendProfessionalEmailInvite({ ...insertData, id: newId });
+        const emailSent = await sendProfessionalEmailInvite({ ...insertData, id: newId }, req.user?.id);
         if (emailSent) {
           console.log(`✓ Professional email sent successfully to ${client_email}`);
         } else {
@@ -1180,7 +1162,7 @@ module.exports = function setupFollowupsRoutes(app, pool) {
               }
               // Send professional email on update to confirm changes
               console.log(`✉️ Sending professional email update to ${followup.client_email}...`);
-              const emailSent = await sendProfessionalEmailInvite(followup);
+              const emailSent = await sendProfessionalEmailInvite(followup, req.user?.id);
               if (emailSent) {
                 console.log(`✓ Professional email update sent to ${followup.client_email}`);
               } else {

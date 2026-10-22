@@ -29,6 +29,7 @@ const crypto = require('crypto');
 const { google } = require('googleapis');
 const { resolvePrefix, nextIssueKey } = require('../utils/issueKeys');
 const push = require('../services/push');
+const googleAccount = require('../services/googleAccount');
 
 module.exports = (app, pool) => {
   // ── tiny helpers ───────────────────────────────────────────────────────────
@@ -140,6 +141,8 @@ module.exports = (app, pool) => {
     };
     const addCol = async (table, col, def) => { if (!(await hasCol(table, col))) await q(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`); };
     await addCol('general_tasks', 'meeting_id', 'INT DEFAULT NULL');
+    await addCol('google_oauth', 'scopes', 'TEXT DEFAULT NULL');
+    await addCol('google_oauth', 'client_id', 'VARCHAR(150) DEFAULT NULL');
     for (const [col, def] of [
       ['project_id', 'INT DEFAULT NULL'], ['sprint_id', 'INT DEFAULT NULL'], ['google_event_id', 'VARCHAR(200) DEFAULT NULL'],
       ['sprint_task_id', 'INT DEFAULT NULL'], ['cal_event_id', 'INT DEFAULT NULL'], ['issue_key', 'VARCHAR(50) DEFAULT NULL'],
@@ -185,47 +188,40 @@ module.exports = (app, pool) => {
 
   // ── Google Calendar / Meet ─────────────────────────────────────────────────
   // A Google Meet link can only be created on behalf of a real Google user; a plain service account's own
-  // calendar cannot hold Meet conferences. So Google is used when one of these is available (best first):
-  //   1. the host (or the organisation) connected a Google account via "Connect Google" (OAuth)
-  //   2. the service account impersonates a Workspace user (GOOGLE_IMPERSONATE_EMAIL + domain-wide delegation)
-  // Otherwise no Google call is made and the meeting gets a working Jitsi Meet link instead.
-  const vaultKey = () => crypto.createHash('sha256').update(process.env.VAULT_KEY || `${process.env.JWT_SECRET || 'codigix'}:meetings-google`).digest();
-  const seal = (plain) => {
-    const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv('aes-256-gcm', vaultKey(), iv);
-    const ct = Buffer.concat([cipher.update(String(plain), 'utf8'), cipher.final()]);
-    return `v1:${iv.toString('base64')}:${cipher.getAuthTag().toString('base64')}:${ct.toString('base64')}`;
-  };
-  const unseal = (stored) => {
-    const [v, iv, tag, ct] = String(stored || '').split(':');
-    if (v !== 'v1') throw new Error('Unknown secret format');
-    const d = crypto.createDecipheriv('aes-256-gcm', vaultKey(), Buffer.from(iv, 'base64'));
-    d.setAuthTag(Buffer.from(tag, 'base64'));
-    return Buffer.concat([d.update(Buffer.from(ct, 'base64')), d.final()]).toString('utf8');
-  };
-
-  const oauthCfg = () => ({ id: process.env.GOOGLE_OAUTH_CLIENT_ID || '', secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || '' });
-  const oauthConfigured = () => { const c = oauthCfg(); return !!(c.id && c.secret); };
-  const makeOAuth = (redirect) => new google.auth.OAuth2(oauthCfg().id, oauthCfg().secret, redirect);
+  // calendar cannot hold Meet conferences. These identities are tried in order until one returns a Meet link:
+  //   1. the host's own Google account ("Connect my Google account"), so the host is the Meet organiser
+  //   2. the main account: shared by a manager ("Use as fallback"), else GOOGLE_MAIN_ACCOUNT_EMAIL, else any
+  //      connected account (a few are tried, in that order)
+  //   3. the service account impersonating a Workspace user (GOOGLE_IMPERSONATE_EMAIL + domain-wide delegation)
+  // Online meetings are only ever given Google Meet links; with none of these available, scheduling is refused.
+  const { seal, unseal, oauthConfigured, anyClientConfigured, currentClientId, makeOAuth, clientFor, OAUTH_SCOPES, GMAIL_SEND_SCOPE, hasScope } = googleAccount;
   const saCreds = () => {
     const email = process.env.GOOGLE_CLIENT_EMAIL; const key = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
     return email && key ? { email, key } : null;
   };
   const redirectUriFor = (req) => process.env.GOOGLE_OAUTH_REDIRECT_URI
     || `${(process.env.API_PUBLIC_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '')}/api/meetings/google/callback`;
-  const OAUTH_SCOPES = ['https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/meetings.space.created', 'openid', 'email'];
 
-  /** Which Google identity should create this host's events? Returns an owner key or null. */
-  const pickOwner = async (hostId) => {
-    if (oauthConfigured()) {
+  /** Google identities that may create this host's events, best first (owner keys). Empty when none exists. */
+  const ownerCandidates = async (hostId) => {
+    const list = [];
+    if (anyClientConfigured()) {
       const [own] = await q('SELECT user_id FROM google_oauth WHERE user_id = ?', [hostId]);
-      if (own) return `u:${own.user_id}`;
-      const [org] = await q('SELECT user_id FROM google_oauth WHERE is_org = 1 ORDER BY connected_at DESC LIMIT 1');
-      if (org) return `u:${org.user_id}`;
+      if (own) list.push(`u:${own.user_id}`);
+      // The main account: the one a manager shared ("Use as fallback"), else GOOGLE_MAIN_ACCOUNT_EMAIL, else
+      // any connected account (newest client first), so people who have not connected still get Google Meet.
+      const mainEmail = String(process.env.GOOGLE_MAIN_ACCOUNT_EMAIL || '').trim().toLowerCase();
+      const mains = await q(
+        `SELECT user_id FROM google_oauth
+          ORDER BY is_org DESC, (LOWER(email) = ?) DESC, (client_id = ?) DESC, connected_at DESC LIMIT 3`,
+        [mainEmail, currentClientId()]);
+      for (const r of mains) if (!list.includes(`u:${r.user_id}`)) list.push(`u:${r.user_id}`);
     }
-    if (process.env.GOOGLE_IMPERSONATE_EMAIL && saCreds()) return 'dwd';
-    return null;
+    if (process.env.GOOGLE_IMPERSONATE_EMAIL && saCreds()) list.push('dwd');
+    return list;
   };
+  const pickOwner = async (hostId) => (await ownerCandidates(hostId))[0] || null;
+  const NO_GOOGLE = 'Google Meet is not available yet: connect your Google account on the Meetings page ("Connect my Google account"), or ask a manager to connect the main Google account and click "Use as fallback".';
 
   const clientByOwner = async (owner) => {
     if (!owner) return null;
@@ -236,9 +232,9 @@ module.exports = (app, pool) => {
         return { calendar: google.calendar({ version: 'v3', auth }), calendarId: 'primary', owner };
       }
       const uid = Number(String(owner).split(':')[1]);
-      const [row] = await q('SELECT refresh_token FROM google_oauth WHERE user_id = ?', [uid]);
-      if (!row || !oauthConfigured()) return null;
-      const auth = makeOAuth(); auth.setCredentials({ refresh_token: unseal(row.refresh_token) });
+      const [row] = await q('SELECT refresh_token, client_id FROM google_oauth WHERE user_id = ?', [uid]);
+      const auth = clientFor(row);
+      if (!auth) return null;
       return { calendar: google.calendar({ version: 'v3', auth }), calendarId: 'primary', owner };
     } catch (e) { console.warn('[meetings] could not build Google client:', e.message); return null; }
   };
@@ -250,10 +246,6 @@ module.exports = (app, pool) => {
 
   const meetUri = (data) => data?.hangoutLink || (data?.conferenceData?.entryPoints || []).find((e) => e.entryPointType === 'video')?.uri || null;
   const shortErr = (e) => str(e?.errors?.[0]?.message || e?.response?.data?.error_description || e?.response?.data?.error?.message || e?.message || 'unknown error', 200);
-  const jitsiLink = (title) => {
-    const slug = String(title || 'meeting').normalize('NFKD').replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24).toLowerCase() || 'meeting';
-    return `https://meet.jit.si/Codigix-${slug}-${crypto.randomBytes(6).toString('hex')}`;
-  };
 
   /**
    * Create or update the Google Calendar event as `owner`. Tries the full request first, then drops attendees,
@@ -340,9 +332,9 @@ module.exports = (app, pool) => {
     if (!code) return;
     try {
       const uid = Number(String(owner).split(':')[1]);
-      const [row] = await q('SELECT refresh_token, email FROM google_oauth WHERE user_id = ?', [uid]);
+      const [row] = await q('SELECT refresh_token, email, client_id FROM google_oauth WHERE user_id = ?', [uid]);
       if (!row || String(row.email || '').toLowerCase() === hostEmail) return; // host already owns the event
-      const auth = makeOAuth(); auth.setCredentials({ refresh_token: unseal(row.refresh_token) });
+      const auth = clientFor(row); if (!auth) return;
       const meet = google.meet({ version: 'v2', auth });
       const space = await meet.spaces.get({ name: `spaces/${code}` });
       await meet.spaces.members.create({ parent: space.data.name, requestBody: { email: hostEmail, role: 'COHOST' } });
@@ -497,37 +489,44 @@ module.exports = (app, pool) => {
     const emails = attendees.map((a) => a.email).filter(Boolean);
     let warning = null;
 
-    // Google Calendar + Meet link (Google when a Google identity is available, Jitsi otherwise)
+    // Google Calendar + Meet link. Online meetings without a pasted link always get a Google Meet link; older
+    // meetings that still carry a Jitsi link are upgraded the next time they are saved.
     let meetLink = manualMeetLink !== undefined ? (manualMeetLink || null) : m.meet_link;
     let provider = manualMeetLink ? 'manual' : m.meet_provider;
     let googleEventId = m.google_event_id;
     let googleOwner = m.google_owner;
-    const wantMeet = m.kind === 'online' && !meetLink;
-    const fallbackLink = wantMeet ? jitsiLink(m.title) : (m.kind === 'online' && provider === 'jitsi' ? meetLink : null);
+    const wantMeet = m.kind === 'online' && (!meetLink || provider === 'jitsi');
     if (m.kind === 'call') {
       if (googleEventId) { await deleteGoogle(googleEventId, googleOwner); googleEventId = null; googleOwner = null; }
     } else {
-      let owner = await pickOwner(m.host_id);
-      let g = null; let dropNote = null;
-      for (let i = 0; owner && i < 3; i++) {
-        const hostEmail = String(host.email || '').trim().toLowerCase();
-        const names = new Map(attendees.filter((x) => x.email && x.name).map((x) => [String(x.email).trim().toLowerCase(), x.name]));
-        g = await syncGoogle({ ...m, meet_link: meetLink }, [...emails, hostEmail].filter(Boolean), { wantMeet, owner, fallbackLink, host: { name: host.name || m.host_name, email: hostEmail, names } });
-        if (!g.retry) break;
-        dropNote = g.warning; g = null; owner = await pickOwner(m.host_id);
+      const hostEmail = String(host.email || '').trim().toLowerCase();
+      const names = new Map(attendees.filter((x) => x.email && x.name).map((x) => [String(x.email).trim().toLowerCase(), x.name]));
+      // Host's own account first, then the main account: an account that cannot produce a Meet link (expired
+      // token, Meet not allowed, ...) hands over to the next one instead of the meeting going without a link.
+      let g = null; let dropNote = null; let lastFail = null;
+      for (const owner of await ownerCandidates(m.host_id)) {
+        const r = await syncGoogle({ ...m, meet_link: wantMeet ? null : meetLink }, [...emails, hostEmail].filter(Boolean), { wantMeet, owner, fallbackLink: null, host: { name: host.name || m.host_name, email: hostEmail, names } });
+        if (r.retry) { dropNote = r.warning; continue; }
+        if (wantMeet && !r.meetLink) {
+          lastFail = r.warning || 'Google did not return a Meet link.';
+          if (r.eventId) await deleteGoogle(r.eventId, r.owner); // no half-made event left in that calendar
+          if (m.google_owner === r.owner) { googleEventId = null; googleOwner = null; m = { ...m, google_event_id: null, google_owner: null }; }
+          continue;
+        }
+        g = r; break;
       }
       if (g) {
         if (g.owner) { googleEventId = g.eventId; googleOwner = g.owner; }
         if (wantMeet && g.meetLink) { meetLink = g.meetLink; provider = 'google'; await makeHostCohost(g.owner, g.meetLink, String(host.email || '').trim().toLowerCase()); }
-        warning = g.warning || dropNote;
-        if (wantMeet && !g.meetLink) warning = `${g.warning || 'Google did not return a Meet link.'} A Jitsi Meet link was used instead.`;
+        // Created from the main account or after a dropped connection: that is expected, so it is only logged.
+        if (dropNote) console.warn(`[meetings] meeting ${m.id}: ${dropNote}`);
+        if (g.warning) console.warn(`[meetings] meeting ${m.id}: ${g.warning}`);
       } else if (wantMeet) {
-        warning = dropNote
-          ? `${dropNote} A Jitsi Meet link was used instead.`
-          : 'Google is not connected, so a Jitsi Meet link was created. Use "Connect Google" on the Meetings page to get real Google Meet links and calendar invites.';
+        warning = lastFail
+          ? `The Google Meet link could not be created (${lastFail}). Use "Regenerate Meet link" on the meeting to try again.`
+          : [dropNote, NO_GOOGLE].filter(Boolean).join(' ');
       }
     }
-    if (wantMeet && !meetLink) { meetLink = fallbackLink; provider = 'jitsi'; }
     if (m.kind !== 'online') { if (m.kind === 'offline') meetLink = null; provider = m.kind === 'offline' ? null : provider; }
     await q('UPDATE meetings SET meet_link=?, meet_provider=?, google_event_id=?, google_owner=? WHERE id=?', [meetLink, provider || null, googleEventId, googleOwner, m.id]);
     m = { ...m, meet_link: meetLink, meet_provider: provider, google_event_id: googleEventId, google_owner: googleOwner };
@@ -615,12 +614,12 @@ module.exports = (app, pool) => {
   };
 
   app.get('/api/meetings/google/status', route(async (req, res, user) => {
-    const [own] = await q('SELECT email, is_org FROM google_oauth WHERE user_id = ?', [user.id]);
+    const [own] = await q('SELECT email, is_org, scopes FROM google_oauth WHERE user_id = ?', [user.id]);
     const [org] = await q('SELECT email FROM google_oauth WHERE is_org = 1 ORDER BY connected_at DESC LIMIT 1');
     const owner = await pickOwner(user.id);
     res.json({
       configured: oauthConfigured(), redirectUri: redirectUriFor(req),
-      connected: !!own, shared: !!own?.is_org, email: own?.email || null, orgEmail: org?.email || null,
+      connected: !!own, gmail: hasScope(own, GMAIL_SEND_SCOPE), shared: !!own?.is_org, email: own?.email || null, orgEmail: org?.email || null,
       delegation: owner === 'dwd', active: !!owner, canConnectOrg: isMgr(req)
     });
   }));
@@ -650,10 +649,11 @@ module.exports = (app, pool) => {
       }
       let email = null;
       try { email = JSON.parse(Buffer.from(String(tokens.id_token).split('.')[1], 'base64url').toString()).email || null; } catch { /* email is only for display */ }
-      await q(`INSERT INTO google_oauth (user_id, email, refresh_token, is_org) VALUES (?,?,?,?)
-               ON DUPLICATE KEY UPDATE email = VALUES(email), refresh_token = VALUES(refresh_token), is_org = VALUES(is_org), connected_at = NOW()`,
-        [req.user.id, email, seal(tokens.refresh_token), st.org ? 1 : 0]);
-      return back('google=connected');
+      await q(`INSERT INTO google_oauth (user_id, email, refresh_token, is_org, scopes, client_id) VALUES (?,?,?,?,?,?)
+               ON DUPLICATE KEY UPDATE email = VALUES(email), refresh_token = VALUES(refresh_token), is_org = VALUES(is_org), scopes = VALUES(scopes), client_id = VALUES(client_id), connected_at = NOW()`,
+        [req.user.id, email, seal(tokens.refresh_token), st.org ? 1 : 0, str(tokens.scope, 2000) || null, currentClientId()]);
+      // Gmail is optional on Google's screen: without it, the user's emails keep going from the shared account.
+      return back(String(tokens.scope || '').includes(GMAIL_SEND_SCOPE) ? 'google=connected' : 'google=connected&gmail=0');
     } catch (e) {
       console.error('[meetings] Google callback failed:', shortErr(e));
       return bad(`Could not finish connecting Google (${shortErr(e)}).`);
@@ -671,9 +671,9 @@ module.exports = (app, pool) => {
   }));
 
   app.post('/api/meetings/google/disconnect', route(async (req, res, user) => {
-    const [row] = await q('SELECT refresh_token FROM google_oauth WHERE user_id = ?', [user.id]);
-    if (row && oauthConfigured()) {
-      try { await makeOAuth().revokeToken(unseal(row.refresh_token)); } catch { /* already revoked or unreachable: still disconnect locally */ }
+    const [row] = await q('SELECT refresh_token, client_id FROM google_oauth WHERE user_id = ?', [user.id]);
+    if (row) {
+      try { await clientFor(row)?.revokeToken(unseal(row.refresh_token)); } catch { /* already revoked or unreachable: still disconnect locally */ }
     }
     await q('DELETE FROM google_oauth WHERE user_id = ?', [user.id]);
     res.json({ ok: true });
@@ -766,6 +766,7 @@ module.exports = (app, pool) => {
     const guests = cleanEmails(b.guestEmails);
     const dept = normDept(sprint?.department || b.department || user.department) || null;
     const manualLink = kind === 'online' ? str(b.meet_link, 500) : '';
+    if (kind === 'online' && !manualLink && !(await ownerCandidates(user.id)).length) throw new HttpError(400, NO_GOOGLE);
 
     const [ins] = await pool.query(
       `INSERT INTO meetings (title, kind, scheduled_at, duration_min, location, meet_link, agenda, department, project_id, sprint_id, host_id, host_name, guest_emails)
@@ -874,6 +875,7 @@ module.exports = (app, pool) => {
     if (m.status !== 'Scheduled') throw new HttpError(400, 'Only scheduled meetings can have a link.');
     const manual = str(req.body?.meet_link, 500);
     if (manual && !/^https?:\/\/\S+$/i.test(manual)) throw new HttpError(400, 'Enter a valid link starting with http:// or https://');
+    if (!manual && !(await ownerCandidates(m.host_id)).length) throw new HttpError(400, NO_GOOGLE);
     if (m.kind !== 'online') await q("UPDATE meetings SET kind='online', location=NULL WHERE id=?", [m.id]);
     if (manual) await q('UPDATE meetings SET meet_link=? WHERE id=?', [manual, m.id]);
     else await q('UPDATE meetings SET meet_link=NULL WHERE id=?', [m.id]);
