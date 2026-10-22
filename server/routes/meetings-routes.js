@@ -700,7 +700,8 @@ module.exports = (app, pool) => {
       FROM meetings m LEFT JOIN projects p ON p.id = m.project_id LEFT JOIN sprints s ON s.id = m.sprint_id
       ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
       ORDER BY m.scheduled_at DESC LIMIT 300`, params);
-    res.json({ meetings: rows.map(shape), me: user.id });
+    // canSeeAll: managers and admins may list everyone's meetings; others only theirs.
+    res.json({ meetings: rows.map(shape), me: user.id, canSeeAll: isMgr(req) });
   }));
 
   const joinPayload = async (req, user, m) => (!canManage(req, m) && !(await isAttendee(m.id, user.id)))

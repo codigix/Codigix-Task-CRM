@@ -35,6 +35,7 @@ import ProjectDetailsPage from './components/common/ProjectDetailsPage';
 import ContactsPage from './components/common/ContactsPage';
 import LandingPage from './components/landing/LandingPage';
 import PrivacyPolicyPage from './components/landing/PrivacyPolicyPage';
+import OpenTaskRedirect from './components/common/OpenTaskRedirect';
 import CrmCompaniesPage from './components/common/CrmCompaniesPage';
 import AddCompanyPage from './components/common/AddCompanyPage';
 import CrmDealsPage from './components/sales/CrmDealsPage';
@@ -55,6 +56,8 @@ import ITFileManagerPage from './components/it/ITFileManagerPage';
 import ITCalendarPage from './components/common/TeamCalendar';
 import ITNotesPage from './components/it/ITNotesPage';
 import ITTesterDashboard from './components/it/ITTesterDashboard';
+import ITEmployeeDashboard from './components/it/ITEmployeeDashboard';
+import { isManagerUser, canSeeEffort } from './utils/access';
 import CreateNotePage from './components/common/CreateNotePage';
 import HRAttendance from './components/hr/HRAttendance';
 
@@ -297,11 +300,13 @@ const routeMap = {
 
 // Admins land on the organisation-wide Admin overview; ?view=sales shows the Sales dashboard.
 // The IT dashboard is chosen by the signed-in person's role, not by the words in the URL:
-// a tester always gets the tester dashboard, whatever link they followed.
+// a tester always gets the tester dashboard, whatever link they followed. Managers, admins and
+// HR see the department dashboard; every other employee sees only their own work.
 const ITDashboardForRole = () => {
   const { user } = useAuth();
   const role = String(user?.role || user?.role_name || '');
-  return role === 'Tester' ? <ITTesterDashboard /> : <ITManagerDashboard />;
+  if (role === 'Tester') return <ITTesterDashboard />;
+  return isManagerUser(user) || canSeeEffort(user) ? <ITManagerDashboard /> : <ITEmployeeDashboard />;
 };
 
 const SalesOrAdminDashboard = () => {
@@ -780,6 +785,9 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/landing" element={<LandingPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/open-task/:key" element={<OpenTaskRedirect />} />
+          <Route path="/it/tasks" element={<OpenTaskRedirect />} />
+          <Route path="/marketing/tasks" element={<OpenTaskRedirect />} />
           <Route path="/sso-login" element={<SSOLogin />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />

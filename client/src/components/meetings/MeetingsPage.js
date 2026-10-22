@@ -713,6 +713,30 @@ function MeetingDetail({ meetingId, me, onClose, onRefresh, onFlash }) {
 }
 
 // ── Google connection ─────────────────────────────────────────────────────────
+// The "?" for employees: what connecting Google does and how, without the administrator setup steps.
+function GoogleConnectHelpModal({ status, onClose }) {
+  return (
+    <Modal title="Connect your Google account" onClose={onClose} width="max-w-lg" z="z-[60]" footer={<button onClick={onClose} className={btn.primary}>Got it</button>}>
+      <div className="space-y-3 text-sm text-gray-700">
+        <p>Connecting is optional. Once connected:</p>
+        <ul className="list-disc pl-5 space-y-1.5">
+          <li>Online meetings <strong>you schedule</strong> are created in your own Google Calendar with a Google Meet link, and <strong>you are the host</strong>: you admit people into the call.</li>
+          <li>Emails you send from the CRM (such as task updates) go <strong>from your own Gmail</strong>, so replies come back to you.</li>
+        </ul>
+        <p>Not connected? Your meetings still get a Google Meet link, created from the company's main account, which is then the host.</p>
+        <p className="font-medium text-gray-900">How to connect</p>
+        <ol className="list-decimal pl-5 space-y-1.5">
+          <li>Click <strong>Connect my Google account</strong> and choose your Google account.</li>
+          <li>If Google says the app isn't verified yet, click <strong>Advanced → Go to Codigix CRM</strong>.</li>
+          <li>Tick <strong>every</strong> permission, including Calendar and "Send email on your behalf", then click <strong>Continue</strong>.</li>
+        </ol>
+        <p className="text-xs text-gray-500">You can disconnect at any time from this page, or remove access at myaccount.google.com/permissions.</p>
+        {!status?.configured && <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">Google sign-in isn't set up on the server yet. Ask an administrator.</p>}
+      </div>
+    </Modal>
+  );
+}
+
 function GoogleSetupModal({ status, onClose }) {
   const [copied, setCopied] = useState(false);
   const copy = () => { try { navigator.clipboard.writeText(status?.redirectUri || ''); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { } };
@@ -791,10 +815,12 @@ function GoogleConnect({ onFlash, refreshKey }) {
           <button onClick={() => connect(false)} disabled={busy} className={`${btn.ghost} !border-amber-300 !text-amber-800 bg-amber-50 hover:!bg-amber-100`} title={`Host your own Google Meet meetings and send CRM emails from your Gmail.${fallback ? ` Until you connect, your meetings are created from ${fallback}.` : ''}`}>
             {busy ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />} Connect my Google account
           </button>
-          {status.canConnectOrg && <button onClick={() => setHelp(true)} className="h-9 w-9 inline-flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer" title="How to set this up"><HelpCircle size={15} /></button>}
+          <button onClick={() => setHelp(true)} className="h-9 w-9 inline-flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer" title={status.canConnectOrg ? 'How to set this up' : 'What does connecting Google do?'}><HelpCircle size={15} /></button>
         </div>
       )}
-      {help && <GoogleSetupModal status={status} onClose={() => setHelp(false)} />}
+      {help && (status.canConnectOrg
+        ? <GoogleSetupModal status={status} onClose={() => setHelp(false)} />
+        : <GoogleConnectHelpModal status={status} onClose={() => setHelp(false)} />)}
     </>
   );
 }
@@ -807,7 +833,9 @@ const TABS = [
 export default function MeetingsPage() {
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState(null);
-  const [scope, setScope] = useState('mine');
+  // Managers and admins open on everyone's meetings; for anyone else the server answers with only
+  // the meetings they host or attend, whatever is asked (data.canSeeAll says which applies).
+  const [scope, setScope] = useState('all');
   const [tab, setTab] = useState('upcoming');
   const [projectFilter, setProjectFilter] = useState('');
   const [search, setSearch] = useState('');
@@ -868,11 +896,13 @@ export default function MeetingsPage() {
           <p className="text-[13px] text-gray-500 mt-0.5">Every meeting is a task: it lands in your project and sprint, on every attendee's calendar, and is completed by its MOM.</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex bg-white border border-gray-200 rounded p-0.5">
-            {[['mine', 'My meetings'], ['all', 'All']].map(([v, l]) => (
-              <button key={v} onClick={() => setScope(v)} className={`h-8 px-3 text-xs font-medium rounded cursor-pointer ${scope === v ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>{l}</button>
-            ))}
-          </div>
+          {data?.canSeeAll && (
+            <div className="flex bg-white border border-gray-200 rounded p-0.5">
+              {[['all', 'All meetings'], ['mine', 'My meetings']].map(([v, l]) => (
+                <button key={v} onClick={() => setScope(v)} className={`h-8 px-3 text-xs font-medium rounded cursor-pointer ${scope === v ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>{l}</button>
+              ))}
+            </div>
+          )}
           <GoogleConnect onFlash={setFlash} refreshKey={googleKey} />
           <button onClick={load} className={btn.ghost} title="Refresh"><RefreshCw size={14} /></button>
           <button onClick={() => setScheduling(true)} className={btn.primary}><Plus size={14} /> Schedule meeting</button>

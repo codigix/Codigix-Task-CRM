@@ -222,7 +222,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
     summary: '',
     description: '',
     assignee: null,
-    reporter: getLoggedInUserOption(),
+    reporter: null,
     parent: null,
     dueDate: todayYmd(),
     labels: [],
@@ -252,7 +252,7 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
         summary: initialSummary || '',
         description: '',
         assignee: defaultUser,
-        reporter: defaultUser,
+        reporter: null,
         parent: null,
         dueDate: todayYmd(),
         labels: [],
@@ -341,7 +341,6 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
             };
             setFormData(prev => ({
               ...prev,
-              reporter: prev.reporter || currentReporter,
               assignee: prev.assignee || currentReporter
             }));
           }
@@ -419,13 +418,6 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
 
           if (formatted.length > 0) {
             setTeamMembers(formatted);
-
-            // Keep current reporter if already set; only fallback to logged-in user or first team member if completely missing
-            setFormData(prev => {
-              if (prev.reporter) return prev;
-              const defaultReporter = getLoggedInUserOption();
-              return { ...prev, reporter: defaultReporter || formatted[0] };
-            });
           } else {
             setTeamMembers([]);
           }
@@ -599,12 +591,10 @@ const ITCreateIssueDrawer = ({ isOpen, onClose, onIssueCreated, projectId = null
         const currentUserName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.name) : (username || 'Unassigned');
 
         // Create Kanban issue
-        let reporterVal = formData.reporter
-          ? (formData.reporter.name || `${formData.reporter.first_name || ''} ${formData.reporter.last_name || ''}`.trim() || currentUserName)
-          : currentUserName;
-        if (!reporterVal || reporterVal === 'Unassigned') {
-          reporterVal = currentUserName;
-        }
+        // Reporter starts Unassigned; the server makes the creator the reporter when the work is assigned to someone else.
+        const reporterVal = formData.reporter
+          ? (formData.reporter.name || `${formData.reporter.first_name || ''} ${formData.reporter.last_name || ''}`.trim() || 'Unassigned')
+          : 'Unassigned';
 
         const teamVal = formData.team
           ? (typeof formData.team === 'string' ? formData.team : (formData.team.name || 'None'))

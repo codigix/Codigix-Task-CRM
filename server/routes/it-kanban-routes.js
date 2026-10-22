@@ -175,148 +175,53 @@ module.exports = function setupItKanbanRoutes(app, pool) {
     return null;
   };
 
-  // senderId: the logged-in user who made the change. The email goes from their Gmail when they connected it.
-  const sendAssignmentEmail = async (assigneeEmail, assigneeName, ticketKey, ticketTitle, ticketType, ticketDescription, ticketStatus, ticketPriority, ticketDepartment, senderId) => {
-    try {
-      const clientBaseUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3001';
-      // Point at the assignee's own workspace. This was hardcoded to /it/..., so someone
-      // assigned a Marketing ticket landed on the IT board looking at another department.
-      const workspace = String(ticketDepartment || '')
-        .replace(/\s*department\s*$/i, '').trim().toLowerCase() === 'marketing' ? 'marketing' : 'it';
-      const link = `${clientBaseUrl}/${workspace}/employee/${workspace}/tasks?ticketKey=${ticketKey}`;
-
-      const mailOptions = {
-        from: `"CRM Notifications" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
-        to: assigneeEmail,
-        subject: `[CRM Notification] New Task Assigned: ${ticketTitle} (${ticketKey})`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <div style="background-color: #3b82f6; padding: 15px; text-align: center; border-radius: 6px 6px 0 0;">
-              <h2 style="color: white; margin: 0; font-size: 18px;">New Task Assigned</h2>
-            </div>
-            <div style="padding: 20px; color: #333333; line-height: 1.6;">
-              <p>Hello <strong>${assigneeName}</strong>,</p>
-              <p>You have been assigned a new task/issue in the IT Operations Dashboard:</p>
-              
-              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 30%;">Task Key</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketKey}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Title</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketTitle}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Type</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketType || 'Task'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Priority</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; color: ${ticketPriority === 'High' ? '#ef4444' : '#f97316'}; font-weight: bold;">${ticketPriority || 'Medium'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Status</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;"><span style="background-color: #eff6ff; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bfdbfe;">${ticketStatus || 'TO DO'}</span></td>
-                </tr>
-              </table>
-
-              <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; border-left: 4px solid #3b82f6; margin-bottom: 25px;">
-                <h4 style="margin: 0 0 8px 0; font-size: 12px; color: #4b5563; text-transform: ;">Description</h4>
-                <p style="margin: 0; font-size: 13px; color: #1f2937;">${ticketDescription || 'No description provided.'}</p>
-              </div>
-
-              <div style="text-align: center;">
-                <a href="${link}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; display: inline-block;">View Task in Portal</a>
-              </div>
-            </div>
-            <div style="background-color: #f3f4f6; padding: 10px; text-align: center; font-size: 11px; color: #6b7280; border-radius: 0 0 6px 6px;">
-              This is an automated notification. Please do not reply to this email.
-            </div>
-          </div>
-        `
-      };
-
-      const { info, from } = await sendMailAs(pool, senderId, mailOptions);
-      // Log what the mail server actually said, not just that we tried. "Accepted" with a
-      // 250 means delivery is the receiving server's responsibility from here — which is the
-      // difference between "we failed to send" and "it was delivered but filed as spam".
-      console.log(
-        `✉️ Assignment email for ${ticketKey} → ${assigneeEmail} (from ${from})\n` +
-        `   accepted: ${JSON.stringify(info.accepted)}  rejected: ${JSON.stringify(info.rejected)}\n` +
-        `   server said: ${info.response}\n` +
-        `   messageId: ${info.messageId}`
-      );
-      return true;
-    } catch (error) {
-      console.error('❌ Failed to send assignment notification email:', error.message);
-      return false;
-    }
-  };
-
-  const sendReviewEmail = async ({
+  // Tells the reporter that a task's start/due date was moved, and by whom.
+  const sendDateChangeEmail = async ({
     reporterEmail,
     reporterName,
     actorName,
     ticketKey,
     ticketTitle,
-    ticketType,
-    ticketPriority,
     ticketDepartment,
+    changes, // [{ label: 'Due date', from: '2026-10-22', to: '2026-10-25' }]
     senderId
   }) => {
     try {
       const clientBaseUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3001';
-      const workspace = String(ticketDepartment || '')
-        .replace(/\s*department\s*$/i, '').trim().toLowerCase() === 'marketing' ? 'marketing' : 'it';
-      const link = `${clientBaseUrl}/${workspace}/tasks?ticketKey=${ticketKey}`;
+      // /open-task sends the reader to the ticket on their own board (each person's route differs).
+      const link = `${clientBaseUrl}/open-task/${encodeURIComponent(ticketKey)}`;
+      const show =(d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'not set');
+      const rows = changes.map(c => `
+                <tr>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 30%; color: #6b7280;">${c.label}</td>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee;"><span style="color: #9ca3af; text-decoration: line-through;">${show(c.from)}</span> &rarr; <strong style="color: #111827;">${show(c.to)}</strong></td>
+                </tr>`).join('');
 
       const mailOptions = {
         from: `"Codigix CRM" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
         to: reporterEmail,
-        subject: `[Task Ready for Review] ${ticketKey}: ${ticketTitle}`,
+        subject: `[Task Date Changed] ${ticketKey}: ${ticketTitle}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <div style="background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); padding: 18px; text-align: center; border-radius: 6px 6px 0 0;">
-              <h2 style="color: white; margin: 0; font-size: 18px;">Task Ready for Review</h2>
+            <div style="background-color: #f59e0b; padding: 15px; text-align: center; border-radius: 6px 6px 0 0;">
+              <h2 style="color: white; margin: 0; font-size: 18px;">Task Date Changed</h2>
             </div>
-            <div style="padding: 22px; color: #333333; line-height: 1.6;">
+            <div style="padding: 20px; color: #333333; line-height: 1.6;">
               <p>Hello <strong>${reporterName}</strong>,</p>
-              <p>The work on task <strong>${ticketKey}</strong> is completed and has been moved to <span style="background-color: #f5f3ff; color: #6d28d9; padding: 3px 8px; border-radius: 4px; font-weight: bold; border: 1px solid #ddd6fe;">IN REVIEW</span> by <strong>${actorName}</strong>.</p>
-              <p>Please review the submitted work and approve or request revisions:</p>
+              <p><strong>${actorName}</strong> changed the date of task <strong>${ticketKey}</strong> that you reported.</p>
 
               <table style="width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 13px;">
                 <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 30%; color: #6b7280;">Task Key</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #111827;">${ticketKey}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #6b7280;">Title</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketTitle}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #6b7280;">Type</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketType || 'Task'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #6b7280;">Priority</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: ${ticketPriority === 'High' ? '#ef4444' : '#f59e0b'};">${ticketPriority || 'Medium'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #6b7280;">Department</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketDepartment || 'IT'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #6b7280;">Moved to Review By</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 600; color: #4f46e5;">${actorName}</td>
-                </tr>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 30%; color: #6b7280;">Task</td>
+                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #111827;">${ticketKey}: ${ticketTitle}</td>
+                </tr>${rows}
               </table>
 
               <div style="text-align: center; margin: 25px 0 10px 0;">
-                <a href="${link}" style="background-color: #7c3aed; color: white; padding: 10px 22px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 13px; display: inline-block;">Review Task on Kanban →</a>
+                <a href="${link}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; display: inline-block;">View Task in Portal</a>
               </div>
             </div>
-            <div style="background-color: #f9fafb; padding: 10px; text-align: center; font-size: 11px; color: #9ca3af; border-radius: 0 0 6px 6px; border-top: 1px solid #f3f4f6;">
+            <div style="background-color: #f3f4f6; padding: 10px; text-align: center; font-size: 11px; color: #6b7280; border-radius: 0 0 6px 6px;">
               This is an automated notification from Codigix CRM.
             </div>
           </div>
@@ -324,10 +229,10 @@ module.exports = function setupItKanbanRoutes(app, pool) {
       };
 
       const { from } = await sendMailAs(pool, senderId, mailOptions);
-      console.log(`✉️ Review notification email sent for ${ticketKey} to reporter ${reporterEmail} (from ${from})`);
+      console.log(`✉️ Date change email for ${ticketKey} → reporter ${reporterEmail} (from ${from})`);
       return true;
     } catch (error) {
-      console.error('❌ Failed to send review notification email:', error.message);
+      console.error('❌ Failed to send date change email:', error.message);
       return false;
     }
   };
@@ -351,7 +256,7 @@ module.exports = function setupItKanbanRoutes(app, pool) {
 
     try {
       const clientBaseUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3001';
-      const link = `${clientBaseUrl}/it/kanban?ticketKey=${encodeURIComponent(ticketKey)}`;
+      const link = `${clientBaseUrl}/open-task/${encodeURIComponent(ticketKey)}`;
       const cleanComment = stripHtml(commentText || '');
 
       const mailOptions = {
@@ -401,6 +306,7 @@ module.exports = function setupItKanbanRoutes(app, pool) {
       return false;
     }
   };
+
 
   // ── AI Provider Configuration (supports DeepSeek, OpenAI & Gemini) ──
   const aiProvider = (process.env.AI_PROVIDER || 'deepseek').toLowerCase();
@@ -942,6 +848,17 @@ Acceptance Criteria
   const isActiveStatus = (s) => ['IN PROGRESS', 'IN-PROGRESS', 'IN_PROGRESS'].includes(String(s || '').trim().toUpperCase());
   const parseList = (v) => { if (Array.isArray(v)) return v; try { const p = JSON.parse(v || '[]'); return Array.isArray(p) ? p : []; } catch (e) { return []; } };
 
+  // Whoever first hands work to someone else becomes its reporter (they review it and close it).
+  // The reporter is then kept: reassigning to another person never changes it. Self-assigned or
+  // unassigned work keeps the reporter that was chosen, or none.
+  const samePerson = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+  const isRealPerson = (n) => !!n && !['', 'unassigned', 'none', 'automatic'].includes(String(n).trim().toLowerCase());
+  const actorNameOf = (req) => String(req.headers['x-user-name'] || req.user?.name || '').trim();
+  const assignsToOther = (assignee, actor) => isRealPerson(assignee) && isRealPerson(actor) && !samePerson(assignee, actor);
+  /** A subtask assigned to someone other than the actor gets the actor as reporter, unless it already has one. */
+  const stampSubtaskReporters = (subs, actor) => parseList(subs).map(s =>
+    (s && assignsToOther(s.assignee, actor) && !isRealPerson(s.reporter) ? { ...s, reporter: actor } : s));
+
   /** Ends a running subtask clock: its time goes to the main task's work log, tagged with the subtask. */
   const closeSubtaskSession = async (row, reason) => {
     // Claim the clock first, so a session is never logged twice when two paths close it.
@@ -1455,7 +1372,10 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       const headerUser = req.headers['x-user-name'] || '';
       const sessionUser = req.user ? (`${req.user.first_name || ''} ${req.user.last_name || ''}`.trim() || req.user.username) : '';
       const resolvedCreator = headerUser || sessionUser || '';
-      const finalReporter = (reporter && reporter !== 'Unassigned') ? reporter : (resolvedCreator || 'Unassigned');
+      // Assigning new work to someone else makes the creator its reporter; otherwise keep the chosen one (or none).
+      const finalReporter = assignsToOther(assignee, resolvedCreator)
+        ? resolvedCreator
+        : (isRealPerson(reporter) ? reporter : 'Unassigned');
 
       // A double click or a retried request sends the same ticket twice. The same title in the
       // same project from the same person within two minutes is that ticket: hand it back.
@@ -1501,7 +1421,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         story_points || null,
         flagged ? 1 : 0,
         parent_id || null,
-        JSON.stringify(Array.isArray(subtasks) ? subtasks : []),
+        JSON.stringify(stampSubtaskReporters(subtasks, resolvedCreator)),
         linkedJson,
         JSON.stringify([])
       ]);
@@ -1512,14 +1432,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         await db.query('UPDATE it_kanban_issues SET effort_points = ? WHERE id = ?', [sp.points, result.insertId]);
       } catch (e) { console.error('Could not set effort points on new ticket:', e.message); }
 
-      // Send assignment email notification asynchronously
+      // Task emails go out only for @mentions and date changes; assigning notifies in-app.
       if (assignee && assignee !== 'Unassigned') {
-        getAssigneeEmail(assignee, dept).then(email => {
-          if (email) {
-            sendAssignmentEmail(email, assignee, newKey, title, type, description, status, priority, dept, req.user?.id);
-          }
-        }).catch(err => console.error('Failed to trigger email notify:', err));
-
         // In-app notification for the person it was assigned to.
         notifyAssignment({
           req,
@@ -1549,26 +1463,6 @@ app.get('/api/it-kanban/labels', async (req, res) => {
             isSubtask: true,
             fallbackActor: reporter
           });
-
-          try {
-            const email = await getAssigneeEmail(st.assignee, dept);
-            if (email) {
-              sendAssignmentEmail(
-                email,
-                st.assignee,
-                subtaskKey,
-                subtaskTitle,
-                'Sub-task',
-                st.description || `Subtask of ${newKey}: ${title}`,
-                st.status || 'TO DO',
-                st.priority || 'Medium',
-                dept,
-                req.user?.id
-              );
-            }
-          } catch (err) {
-            console.error('Failed to trigger email notify on subtask creation:', err.message);
-          }
         });
       }
 
@@ -1998,6 +1892,15 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       // backlog filter on, so the details panel has to be able to write it.
       // 'flagged' and 'story_points' are written by the backlog row menu, which mirrors
       // Jira's Add flag and Story point estimate actions.
+      // A task without a reporter gets one the first time someone assigns it to another person;
+      // reassigning a task that already has a reporter keeps that reporter.
+      {
+        const actor = actorNameOf(req);
+        if (updates.assignee !== undefined && !isRealPerson(curRow.reporter) && updates.reporter === undefined
+          && assignsToOther(updates.assignee, actor)) {
+          updates.reporter = actor;
+        }
+      }
       const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'department', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability', 'contribution_review_status', 'contribution_method', 'effort_points', 'timer_start_time', 'is_timer_running', 'timer_owner', 'timer_source', 'estimate_approved', 'requested_estimate', 'estimate_requested_by'];
       // 'labels' belongs here, not in allowedFields: it is stored as JSON, and without it
       // labels could be set at creation but never changed afterwards.
@@ -2012,6 +1915,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       let parentStarted = false;
       if (updates.subtasks !== undefined) {
         subtasksAfter = parseList(updates.subtasks).map((st, i) => (st && st.id != null && st.id !== '' ? st : { ...st, id: `st-${Date.now()}-${i}` }));
+        subtasksAfter = stampSubtaskReporters(subtasksAfter, actorNameOf(req));
         updates.subtasks = subtasksAfter;
         const wasActive = new Map(subtasksBefore.map(s => [String(s.id), isActiveStatus(s.status)]));
         const starting = subtasksAfter.filter(s => isActiveStatus(s.status) && !s.completed && !wasActive.get(String(s.id)));
@@ -2181,23 +2085,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
             const currentIssue = currentIssues[0];
             const newAssignee = updates.assignee;
             if (newAssignee !== currentIssue.assignee && newAssignee !== 'Unassigned') {
-              getAssigneeEmail(newAssignee, currentIssue.department).then(email => {
-                if (email) {
-                  sendAssignmentEmail(
-                    email,
-                    newAssignee,
-                    key,
-                    updates.title || currentIssue.title,
-                    updates.type || currentIssue.type,
-                    updates.description || currentIssue.description,
-                    updates.status || currentIssue.status,
-                    updates.priority || currentIssue.priority,
-                    currentIssue.department,
-                    req.user?.id
-                  );
-                }
-              }).catch(err => console.error('Failed to trigger email notify on update:', err));
-
+              // No email on (re)assignment; the in-app notification remains.
               // In-app notification for the newly assigned person.
               notifyAssignment({
                 req,
@@ -2249,24 +2137,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
                     }).catch(err => console.error('Failed to create in-app review notification:', err.message));
                   }
 
-                  // 2. Email notification to the reporter
-                  getAssigneeEmail(reporterName, currentIssue.department).then(email => {
-                    if (email) {
-                      sendReviewEmail({
-                        reporterEmail: email,
-                        reporterName: reporterName,
-                        actorName: actor,
-                        ticketKey: key,
-                        ticketTitle: updates.title || currentIssue.title,
-                        ticketType: updates.type || currentIssue.type,
-                        ticketPriority: updates.priority || currentIssue.priority,
-                        ticketDepartment: currentIssue.department,
-                        senderId: req.user?.id
-                      });
-                    } else {
-                      console.log(`ℹ️ No email address found for reporter "${reporterName}".`);
-                    }
-                  }).catch(err => console.error('Failed to trigger review email notify on update:', err));
+                  // No email for "ready for review": task emails are only sent for @mentions and date changes.
                 }
               }
             }
@@ -2310,27 +2181,6 @@ app.get('/api/it-kanban/labels', async (req, res) => {
               isSubtask: true,
               fallbackActor: stored?.reporter
             });
-
-            // Email notification just like normal task
-            try {
-              const email = await getAssigneeEmail(newAssignee, stored?.department);
-              if (email) {
-                sendAssignmentEmail(
-                  email,
-                  newAssignee,
-                  subtaskKey,
-                  subtaskTitle,
-                  'Sub-task',
-                  st.description || `Subtask of ${key}: ${stored?.title || ''}`,
-                  st.status || 'TO DO',
-                  st.priority || 'Medium',
-                  stored?.department,
-                  req.user?.id
-                );
-              }
-            } catch (err) {
-              console.error('Failed to trigger email notify on subtask assignment:', err.message);
-            }
           });
         } catch (e) {
           console.error('Failed to check subtask assignment changes:', e.message);
@@ -2534,6 +2384,35 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       // A new planned time changes what's remaining.
       if (updates.original_estimate !== undefined) {
         await recalcIssueTime(key).catch(e => console.error('Recalc after estimate change failed:', e.message));
+      }
+
+      // A moved start/due date is emailed to the task's reporter, unless they moved it themselves.
+      // The saved row is read back so the comparison is on the stored calendar days.
+      if (updates.due_date !== undefined || updates.start_date !== undefined) {
+        try {
+          const day = (v) => (v instanceof Date
+            ? `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`
+            : (v ? String(v).slice(0, 10) : ''));
+          const [[saved]] = await db.query('SELECT title, department, reporter, due_date, start_date FROM it_kanban_issues WHERE issue_key = ?', [key]);
+          const changes = [['start_date', 'Start date'], ['due_date', 'Due date']]
+            .filter(([f]) => saved && day(saved[f]) !== day(curRow[f]))
+            .map(([f, label]) => ({ label, from: day(curRow[f]), to: day(saved[f]) }));
+          const actor = actorNameOf(req);
+          const rep = saved?.reporter;
+          if (changes.length && isRealPerson(rep) && !samePerson(rep, actor)) {
+            getAssigneeEmail(rep, saved.department).then(email => {
+              if (email) {
+                sendDateChangeEmail({
+                  reporterEmail: email, reporterName: rep, actorName: actor || 'A team member',
+                  ticketKey: key, ticketTitle: saved.title || key, ticketDepartment: saved.department,
+                  changes, senderId: req.user?.id
+                });
+              }
+            }).catch(err => console.error('Failed to trigger date change email:', err.message));
+          }
+        } catch (e) {
+          console.error('Failed to check date change for email:', e.message);
+        }
       }
 
       // Log only fields whose value actually changed.

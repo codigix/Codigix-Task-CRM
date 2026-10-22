@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { takeAfterLogin } from '../../utils/workspacePath';
 import { Mail, Lock, LogIn } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -16,7 +17,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate(takeAfterLogin() || '/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
@@ -86,7 +87,7 @@ const LoginPage = () => {
         avatar: userData.avatar,
       });
 
-      navigate('/dashboard');
+      navigate(takeAfterLogin() || '/dashboard');
     } catch (err) {
       setError(err.message || 'Failed to login. Please try again.');
       console.error('Login error:', err);

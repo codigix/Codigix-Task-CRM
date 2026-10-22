@@ -1,4 +1,3 @@
-const { sendMailAs } = require('../services/userMail');
 const { resolveDealForLead, generateProjectTasks } = require('../middleware/helpers');
 
 module.exports = function setupTasksProjectsRoutes(app, pool) {
@@ -48,89 +47,6 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
     }).catch(err => console.error('Failed to send task assignment notification:', err.message));
   };
 
-  const getAssigneeDetails = async (userId) => {
-    if (!userId) return null;
-    try {
-      const [users] = await db.query(
-        "SELECT email, CONCAT(first_name, ' ', last_name) as name FROM users WHERE id = ?",
-        [userId]
-      );
-      if (users.length > 0) return users[0];
-    } catch (e) {
-      console.error('Failed to get assignee details:', e);
-    }
-    return null;
-  };
-
-  // senderId: the logged-in user who made the change. The email goes from their Gmail when they connected it.
-  const sendAssignmentEmail = async (assigneeEmail, assigneeName, ticketKey, ticketTitle, ticketType, ticketDescription, ticketStatus, ticketPriority, projectId = null, senderId = null) => {
-    try {
-      const clientBaseUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3001';
-      const link = projectId
-        ? `${clientBaseUrl}/it/employee/it/details/${projectId}?taskId=${ticketKey}`
-        : `${clientBaseUrl}/it/employee/it/tasks?ticketKey=${ticketKey}`;
-
-      const mailOptions = {
-        from: `"CRM Notifications" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
-        to: assigneeEmail,
-        subject: `[CRM Notification] New Task Assigned: ${ticketTitle} (${ticketKey})`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <div style="background-color: #3b82f6; padding: 15px; text-align: center; border-radius: 6px 6px 0 0;">
-              <h2 style="color: white; margin: 0; font-size: 18px;">New Task Assigned</h2>
-            </div>
-            <div style="padding: 20px; color: #333333; line-height: 1.6;">
-              <p>Hello <strong>${assigneeName}</strong>,</p>
-              <p>You have been assigned a new task/issue in the IT Operations Dashboard:</p>
-              
-              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 30%;">Task Key</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketKey}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Title</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketTitle}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Type</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;">${ticketType || 'Task'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Priority</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; color: ${ticketPriority === 'High' ? '#ef4444' : '#f97316'}; font-weight: bold;">${ticketPriority || 'Medium'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Status</td>
-                  <td style="padding: 8px; border-bottom: 1px solid #eee;"><span style="background-color: #eff6ff; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #bfdbfe;">${ticketStatus || 'TO DO'}</span></td>
-                </tr>
-              </table>
-
-              <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; border-left: 4px solid #3b82f6; margin-bottom: 25px;">
-                <h4 style="margin: 0 0 8px 0; font-size: 12px; color: #4b5563; text-transform: ;">Description</h4>
-                <p style="margin: 0; font-size: 13px; color: #1f2937;">${ticketDescription || 'No description provided.'}</p>
-              </div>
-
-              <div style="text-align: center;">
-                <a href="${link}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; display: inline-block;">View Task in Portal</a>
-              </div>
-            </div>
-            <div style="background-color: #f3f4f6; padding: 10px; text-align: center; font-size: 11px; color: #6b7280; border-radius: 0 0 6px 6px;">
-              This is an automated notification. Please do not reply to this email.
-            </div>
-          </div>
-        `
-      };
-
-      const { info, from } = await sendMailAs(pool, senderId, mailOptions);
-      console.log(`✉️ Assignment notification email sent successfully to ${assigneeEmail} from ${from}:`, info.messageId);
-      return true;
-    } catch (error) {
-      console.error('❌ Failed to send assignment notification email:', error.message);
-      return false;
-    }
-  };
-
   const responseError = (res, statusCode, message, error) => {
     console.error(`Error: ${message}`, error?.message || error);
     return res.status(statusCode).json({ error: message, details: error?.message || error });
@@ -146,25 +62,8 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `, [title, description || null, projectId, status || 'Open', priority || 'Medium', assigned_to || null, due_date || null, created_by || null]);
 
-      // Send assignment email notification asynchronously
+      // No email on assignment; the assignee is notified in-app.
       if (assigned_to) {
-        getAssigneeDetails(assigned_to).then(user => {
-          if (user && user.email) {
-            sendAssignmentEmail(
-              user.email,
-              user.name,
-              `TASK-${result.insertId}`,
-              title,
-              'Task',
-              description,
-              status || 'Open',
-              priority || 'Medium',
-              projectId,
-              req.user?.id
-            );
-          }
-        }).catch(err => console.error('Failed to trigger email notify on task creation:', err));
-
         notifyTaskAssignment({ req, assignedTo: assigned_to, taskId: result.insertId, title, projectId });
       }
 
@@ -297,23 +196,7 @@ module.exports = function setupTasksProjectsRoutes(app, pool) {
           if (currentTasks.length > 0) {
             const currentTask = currentTasks[0];
             if (Number(assigned_to) !== Number(currentTask.assigned_to)) {
-              getAssigneeDetails(assigned_to).then(user => {
-                if (user && user.email) {
-                  sendAssignmentEmail(
-                    user.email,
-                    user.name,
-                    `TASK-${id}`,
-                    title || currentTask.title,
-                    'Task',
-                    description || currentTask.description,
-                    status || currentTask.status,
-                    priority || currentTask.priority,
-                    currentTask.project_id,
-                    req.user?.id
-                  );
-                }
-              }).catch(err => console.error('Failed to trigger email notify on project task update:', err));
-
+              // No email on reassignment; the in-app notification remains.
               notifyTaskAssignment({
                 req,
                 assignedTo: assigned_to,

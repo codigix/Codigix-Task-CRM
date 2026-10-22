@@ -1336,7 +1336,8 @@ const ITKanbanPage = ({ department }) => {
     if (!newIssueTitle.trim()) return;
 
     const currentUserName = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.name) : (username || 'Unassigned');
-    const reporterVal = currentUserName;
+    // The server makes the creator the reporter when the work is assigned to someone else; otherwise none.
+    const reporterVal = 'Unassigned';
 
     let assigneeVal = newIssueAssignee;
     if (!assigneeVal || assigneeVal === 'Automatic') {

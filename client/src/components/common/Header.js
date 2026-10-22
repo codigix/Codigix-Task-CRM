@@ -14,6 +14,7 @@ import {
   sendTestDeviceNotification
 } from '../../services/deviceNotification';
 import useLiveRefresh from '../../hooks/useLiveRefresh';
+import { userWorkspacePath } from '../../utils/workspacePath';
 
 // "5 minutes ago" style stamps for the notification list.
 const relativeTime = (value) => {
@@ -28,27 +29,6 @@ const relativeTime = (value) => {
   return then.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 };
 
-// Builds the signed-in user's own route segment, e.g. "/marketing/graphics-designer/gusingekaran1220".
-// Notifications can't store this server-side because each recipient has a different path.
-const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-
-const userWorkspacePath = (user) => {
-  if (!user) return null;
-  const dept = String(user.department || '').toLowerCase();
-  const role = String(user.role || '').toLowerCase();
-
-  let prefix = '';
-  if (dept.includes('marketing') || role.includes('marketing')) prefix = '/marketing';
-  else if (dept.includes('it') || role.includes('it') || role.includes('developer') || role.includes('tester')) prefix = '/it';
-  else if (dept.includes('seo') || dept.includes('gmb')) prefix = '/seo-gmb';
-  else if (dept.includes('sales') || dept.includes('lead') || dept.includes('deal')) prefix = '/sales';
-  else if (dept.includes('hr') || role.includes('hr') || dept.includes('management')) prefix = '/hr';
-  if (!prefix) return null;
-
-  const designation = slug(user.role) || 'employee';
-  const username = slug(user.username || user.first_name || 'user');
-  return `${prefix}/${designation}/${username}`;
-};
 
 const AVATAR_COLORS = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-amber-500', 'bg-rose-500', 'bg-teal-500'];
 const colorForName = (name) => {

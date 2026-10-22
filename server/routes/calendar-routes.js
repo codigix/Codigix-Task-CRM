@@ -71,10 +71,14 @@ module.exports = function setupCalendarRoutes(app, pool) {
     };
   };
 
+  // Meetings (category "Meeting", written by the Meetings module) are private to their host and
+  // attendees; managers and admins see them all. Other events are shared with the department.
   const canSee = (me, ev) => me.isAdmin
     || Number(ev.created_by) === Number(me.id)
     || (ev.attendee_ids || []).map(Number).includes(Number(me.id))
-    || (ev.department && normDept(ev.department).toLowerCase() === me.department.toLowerCase());
+    || (ev.category === 'Meeting'
+      ? me.isManager
+      : (ev.department && normDept(ev.department).toLowerCase() === me.department.toLowerCase()));
   const canEdit = (me, ev) => me.isAdmin || me.isManager || Number(ev.created_by) === Number(me.id);
 
   const shape = (row) => ({
