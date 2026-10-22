@@ -174,7 +174,7 @@ export const generateQuotationPDF = async (formData) => {
 
         <!-- Address Bar -->
         <div style="margin-left: -40px; margin-right: -40px; margin-bottom: -40px; height: 36px; background: #8E9096; color: #ffffff; display: flex; align-items: center; justify-content: space-between; padding-left: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px;">
-          <span>Add: Office 309, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18</span>
+          <span>Add: Office 514, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18</span>
           <div style="width: 30px; height: 36px; background: #ffffff; clip-path: polygon(100% 0, 0 100%, 100% 100%);"></div>
         </div>
       </div>
@@ -368,7 +368,7 @@ export const generateQuotationPDFBase64 = async (formData) => {
         </div>
 
         <div style="margin-left: -40px; margin-right: -40px; margin-bottom: -40px; height: 36px; background: #8E9096; color: #ffffff; display: flex; align-items: center; justify-content: space-between; padding-left: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px;">
-          <span>Add: Office 309, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18</span>
+          <span>Add: Office 514, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18</span>
           <div style="width: 30px; height: 36px; background: #ffffff; clip-path: polygon(100% 0, 0 100%, 100% 100%);"></div>
         </div>
       </div>

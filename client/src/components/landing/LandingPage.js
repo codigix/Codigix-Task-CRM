@@ -49,6 +49,25 @@ const LandingPage = () => {
         <BookDemoSection />
         <CtaBanner />
       </main>
+
+      {/* Google's OAuth verification reads the homepage: it must say what Google data is used and link the policy. */}
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 grid gap-6 md:grid-cols-[2fr_1fr] text-sm text-slate-600">
+          <div>
+            <p className="font-semibold text-slate-900">Codigix CRM · Google account integration</p>
+            <p className="mt-2 leading-relaxed">
+              Employees can connect their Google account so that meetings they schedule are created in their Google Calendar
+              with a Google Meet link, with them as host, and so that emails they send from the CRM (task assignments,
+              quotations, proposals) go from their own Gmail address. Connecting is optional and can be removed at any time.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 md:items-end">
+            <Link to="/privacy" className="hover:text-red-600">Privacy Policy</Link>
+            <Link to="/login" className="hover:text-red-600">Sign in</Link>
+            <span className="text-slate-400">© {new Date().getFullYear()} Codigix Infotech Pvt. Ltd.</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

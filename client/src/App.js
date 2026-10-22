@@ -34,6 +34,7 @@ import ProjectsDashboard from './components/common/ProjectsDashboard';
 import ProjectDetailsPage from './components/common/ProjectDetailsPage';
 import ContactsPage from './components/common/ContactsPage';
 import LandingPage from './components/landing/LandingPage';
+import PrivacyPolicyPage from './components/landing/PrivacyPolicyPage';
 import CrmCompaniesPage from './components/common/CrmCompaniesPage';
 import AddCompanyPage from './components/common/AddCompanyPage';
 import CrmDealsPage from './components/sales/CrmDealsPage';
@@ -778,6 +779,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/landing" element={<LandingPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/sso-login" element={<SSOLogin />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />

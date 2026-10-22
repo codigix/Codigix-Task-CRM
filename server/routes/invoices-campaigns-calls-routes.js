@@ -1559,7 +1559,7 @@ module.exports = function(app, pool) {
 
           <!-- Footer -->
           <div style="background-color: #f1f5f9; padding: 16px 30px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-            Office 309, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18 | Codigixinfotech@gmail.com
+            Office 514, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18 | Codigixinfotech@gmail.com
           </div>
         </div>
       `;
@@ -1588,7 +1588,7 @@ module.exports = function(app, pool) {
             doc.rect(0, 0, 595, 12).fill('#1F2D5A');
 
             doc.fillColor('#1F2D5A').fontSize(22).font('Helvetica-Bold').text('CODIGIX INFOTECH', 40, 35);
-            doc.fillColor('#64748B').fontSize(9).font('Helvetica').text('Office 309, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18', 40, 62);
+            doc.fillColor('#64748B').fontSize(9).font('Helvetica').text('Office 514, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18', 40, 62);
             doc.text('Phone: +91 7066556768 | Email: Codigixinfotech@gmail.com', 40, 75);
 
             doc.fillColor('#1F2D5A').fontSize(20).font('Helvetica-Bold').text('QUOTATION', 400, 35, { align: 'right' });
@@ -2295,7 +2295,7 @@ module.exports = function(app, pool) {
                 </p>
               </div>
               <div style="background-color: #f1f5f9; padding: 16px 30px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                Office 309, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18 | Codigixinfotech@gmail.com
+                Office 514, Bramha Sky Uzuri, Pimpri Chowk, Pimpri - 18 | Codigixinfotech@gmail.com
               </div>
             </div>
           `;
