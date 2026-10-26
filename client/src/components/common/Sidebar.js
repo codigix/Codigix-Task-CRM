@@ -11,11 +11,12 @@ import {
   Workflow, Zap, ShieldCheck, BarChart, HardDrive, Cpu, Bug, GitBranch,
   Rocket, Gauge, AlertTriangle, FileBarChart, CreditCard, Banknote,
   Scale, History, Eye, SearchCode, Star, Globe, Link, Image, Map, BookOpen,
-  FolderOpen, Phone, PlayCircle, User, UserCheck, ListChecks, Video,
+  FolderOpen, Phone, PlayCircle, User, UserCheck, ListChecks, Video, FlaskConical,
 } from 'lucide-react';
 
 import { useAuth } from '../../hooks/useAuth';
 import { isSidebarItemVisible, isModuleAccessible, getMenuItemAccess } from '../../utils/roleBasedAccess';
+import { TESTING_GROUPS, resolveTestingPath, canUseTesting, isTestingDept } from '../../config/testingPages';
 
 const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
   const { user } = useAuth();
@@ -502,6 +503,28 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
     </>
   );
 
+  // Testing workspace: the dashboard plus every page hidden from the department sidebars,
+  // one collapsible group per area. Admins get it as a section; a Testing department gets
+  // only this.
+  const renderTestingPages = () => (canUseTesting(user) ? (
+    <>
+      <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Testing Department</div>
+      <SubmenuItem label="Testing Dashboard" page="testing" icon={FlaskConical} to="/testing" />
+      {/* Pages only: links with no page behind them stay on the Testing Dashboard. */}
+      {TESTING_GROUPS.map(g => ({ ...g, pages: g.pages.filter(pg => !pg.missing) })).filter(g => g.pages.length).map(g => (
+        <NestedMenu
+          key={g.id}
+          label={`${g.label} (${g.pages.length})`}
+          expanded={Boolean(expandedMenus[`testing-${g.id}`])}
+          onToggle={() => toggleMenu(`testing-${g.id}`)}
+          items={g.pages.map(pg => (
+            <SubmenuItem key={pg.path} label={pg.label} page={`testing:${pg.path}`} to={resolveTestingPath(pg.path, user)} />
+          ))}
+        />
+      ))}
+    </>
+  ) : null);
+
   const renderAdminWorkspace = () => (
     <>
       <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">Admin Overview</div>
@@ -530,12 +553,20 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       <SubmenuItem label="Meetings" page="meetings" icon={Video} to="/meetings" />
       <SubmenuItem label="Notes & Wiki" page="notes" icon={BookOpen} prefix="/it" />
 
+      {renderTestingPages()}
+
       <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">System</div>
       <SubmenuItem label="Settings" page="profile-settings" icon={Settings} />
     </>
   );
 
-  const mainMenuItems = isAdminDept ? renderAdminWorkspace() : (
+  const mainMenuItems = isAdminDept ? renderAdminWorkspace() : (!isSuperAdmin && isTestingDept(user)) ? (
+    <>
+      {renderTestingPages()}
+      <div className="p-2 text-xs text-[#1F2020] tracking-wider bg-gray-50/50 mt-2">System</div>
+      <SubmenuItem label="Settings" page="profile-settings" icon={Settings} />
+    </>
+  ) : (
     <>
       {renderTopCommonPages()}
       {isSuperAdmin && renderAdminPages()}
@@ -544,6 +575,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onNavigate, currentPage }) => {
       {(seesAllSections || userDept === 'Marketing Department') && renderMarketingPages()}
       {(seesAllSections || isSEOUser) && renderSEOGMBPages()}
       {(isAdmin || isHR) && renderHRPages()}
+      {renderTestingPages()}
       {renderBottomCommonPages()}
     </>
   );

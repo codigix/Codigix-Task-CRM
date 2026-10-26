@@ -132,21 +132,25 @@ import RevenueForecastPage from './components/sales/RevenueForecastPage';
 import MarketingDashboard from './components/marketing/MarketingDashboard';
 import SeoGmbProjectsPage from './components/seo-gmb/SeoGmbProjectsPage';
 import SeoGmbProjectSetupPage from './components/seo-gmb/SeoGmbProjectSetupPage';
-import SeoGmbWebsiteAuditPage from './components/seo-gmb/SeoGmbWebsiteAuditPage';
-import SeoGmbKeywordManagementPage from './components/seo-gmb/SeoGmbKeywordManagementPage';
-import SeoGmbOnPageSeoPage from './components/seo-gmb/SeoGmbOnPageSeoPage';
-import SeoGmbContentMarketingPage from './components/seo-gmb/SeoGmbContentMarketingPage';
-import SeoGmbOffPageSeoPage from './components/seo-gmb/SeoGmbOffPageSeoPage';
-import SeoGmbGmbProfilePage from './components/seo-gmb/SeoGmbGmbProfilePage';
-import SeoGmbGoogleIntegrationsPage from './components/seo-gmb/SeoGmbGoogleIntegrationsPage';
-import SeoGmbRankTrackingPage from './components/seo-gmb/SeoGmbRankTrackingPage';
-import SeoGmbReportsPage from './components/seo-gmb/SeoGmbReportsPage';
 import SeoGmbDocumentsPage from './components/seo-gmb/SeoGmbDocumentsPage';
-import SeoGmbAutomationPage from './components/seo-gmb/SeoGmbAutomationPage';
-import SeoGmbGeoOptimizationPage from './components/seo-gmb/SeoGmbGeoOptimizationPage';
-import SeoGmbAiContentGenerationPage from './components/seo-gmb/SeoGmbAiContentGenerationPage';
 import SeoGmbPredictiveAnalysisPage from './components/seo-gmb/SeoGmbPredictiveAnalysisPage';
 import SeoGmbLocationIntelligencePage from './components/seo-gmb/SeoGmbLocationIntelligencePage';
+// SEO platform (frontend demo of the GREXA-style blueprint: sample data, simulated actions)
+import SeoOverviewPage from './components/seo-gmb/platform/SeoOverviewPage';
+import GbpManagerPage from './components/seo-gmb/platform/GbpManagerPage';
+import ReviewManagerPage from './components/seo-gmb/platform/ReviewManagerPage';
+import LocalRankTrackerPage from './components/seo-gmb/platform/LocalRankTrackerPage';
+import KeywordResearchPage from './components/seo-gmb/platform/KeywordResearchPage';
+import ContentStudioPage from './components/seo-gmb/platform/ContentStudioPage';
+import SiteAuditPage from './components/seo-gmb/platform/SiteAuditPage';
+import BacklinksCitationsPage from './components/seo-gmb/platform/BacklinksCitationsPage';
+import GeoTrackerPage from './components/seo-gmb/platform/GeoTrackerPage';
+import ReportsLeadsPage from './components/seo-gmb/platform/ReportsLeadsPage';
+import AiAgentPage from './components/seo-gmb/platform/AiAgentPage';
+import WebsiteBuilderPage from './components/seo-gmb/platform/WebsiteBuilderPage';
+import ConnectionsPage from './components/seo-gmb/platform/ConnectionsPage';
+import AutomationPipelinePage from './components/seo-gmb/platform/AutomationPipelinePage';
+import ConnectResultPage from './components/seo-gmb/platform/ConnectResultPage';
 
 import ITTeamsPage from './components/it/ITTeamsPage';
 import ITManagerDashboard from './components/it/ITManagerDashboard';
@@ -161,6 +165,7 @@ import HRPerformance from './components/hr/HRPerformance';
 import HRPayroll from './components/hr/HRPayroll';
 import EmployeeMonthlyReport from './components/common/EmployeeMonthlyReport';
 import RegistrationRequestsPage from './components/hr/RegistrationRequestsPage';
+import TestingDashboard from './components/testing/TestingDashboard';
 
 // Shared modules across departments
 const SHARED_MODULES = [
@@ -296,6 +301,7 @@ const routeMap = {
   '/super-admin/purchase-transaction': 'super-admin-purchase-transaction',
   '/super-admin/registration-requests': 'super-admin-registration-requests',
   '/registration-requests': 'registration-requests',
+  '/testing': 'testing',
 };
 
 // Admins land on the organisation-wide Admin overview; ?view=sales shows the Sales dashboard.
@@ -341,6 +347,8 @@ const DashboardRouter = () => {
 
     if (role === 'Super Admin') {
       navigate('/super-admin');
+    } else if (dept.toLowerCase().includes('testing')) {
+      navigate('/testing');
     } else if (dept.includes('Marketing')) {
       navigate(`/marketing/${designation}/${username}/dashboard`);
     } else if (dept.includes('SEO') || dept.includes('GMB')) {
@@ -571,31 +579,35 @@ function AppContent() {
         <Route path="/marketing/:designation/:username/teams" element={<ITTeamsPage department="Marketing" />} />
 
         {/* SEO & GMB Department Routes */}
-        <Route path="/seo-gmb/:designation/:username/dashboard" element={<SeoGmbPage mode="seo" tab="dashboard" />} />
+        <Route path="/seo-gmb/:designation/:username/dashboard" element={<SeoOverviewPage />} />
         <Route path="/seo-gmb/:designation/:username/projects" element={<SeoGmbProjectsPage />} />
         <Route path="/seo-gmb/:designation/:username/project-setup" element={<SeoGmbProjectSetupPage />} />
-        <Route path="/seo-gmb/:designation/:username/website-audit" element={<SeoGmbWebsiteAuditPage />} />
-        <Route path="/seo-gmb/:designation/:username/keyword-management" element={<SeoGmbKeywordManagementPage />} />
-        <Route path="/seo-gmb/:designation/:username/on-page-seo" element={<SeoGmbOnPageSeoPage />} />
-        <Route path="/seo-gmb/:designation/:username/content-marketing" element={<SeoGmbContentMarketingPage />} />
-        <Route path="/seo-gmb/:designation/:username/off-page-seo" element={<SeoGmbOffPageSeoPage />} />
-        <Route path="/seo-gmb/:designation/:username/gmb-profile" element={<SeoGmbGmbProfilePage />} />
-        <Route path="/seo-gmb/:designation/:username/google-posts" element={<SeoGmbPage mode="gmb" tab="google-posts" />} />
-        <Route path="/seo-gmb/:designation/:username/customer-engagement" element={<SeoGmbPage mode="gmb" tab="customer-engagement" />} />
-        <Route path="/seo-gmb/:designation/:username/media-management" element={<SeoGmbPage mode="gmb" tab="media-management" />} />
-        <Route path="/seo-gmb/:designation/:username/local-seo" element={<SeoGmbPage mode="gmb" tab="local-seo" />} />
-        <Route path="/seo-gmb/:designation/:username/google-integrations" element={<SeoGmbGoogleIntegrationsPage />} />
-        <Route path="/seo-gmb/:designation/:username/rank-tracking" element={<SeoGmbRankTrackingPage />} />
+        <Route path="/seo-gmb/:designation/:username/website-audit" element={<SiteAuditPage />} />
+        <Route path="/seo-gmb/:designation/:username/keyword-management" element={<KeywordResearchPage />} />
+        <Route path="/seo-gmb/:designation/:username/on-page-seo" element={<SiteAuditPage initialTab="pages" />} />
+        <Route path="/seo-gmb/:designation/:username/content-marketing" element={<ContentStudioPage />} />
+        <Route path="/seo-gmb/:designation/:username/off-page-seo" element={<BacklinksCitationsPage />} />
+        <Route path="/seo-gmb/:designation/:username/gmb-profile" element={<GbpManagerPage />} />
+        <Route path="/seo-gmb/:designation/:username/google-posts" element={<GbpManagerPage initialTab="posts" />} />
+        <Route path="/seo-gmb/:designation/:username/customer-engagement" element={<ReviewManagerPage />} />
+        <Route path="/seo-gmb/:designation/:username/media-management" element={<GbpManagerPage initialTab="photos" />} />
+        <Route path="/seo-gmb/:designation/:username/local-seo" element={<LocalRankTrackerPage />} />
+        <Route path="/seo-gmb/:designation/:username/google-integrations" element={<ConnectionsPage />} />
+        <Route path="/seo-gmb/:designation/:username/rank-tracking" element={<LocalRankTrackerPage />} />
         <Route path="/seo-gmb/:designation/:username/tasks" element={<TasksPage department="SEO" />} />
         <Route path="/seo-gmb/:designation/:username/calendar" element={<CalendarPage department="SEO" />} />
-        <Route path="/seo-gmb/:designation/:username/reports" element={<SeoGmbReportsPage />} />
+        <Route path="/seo-gmb/:designation/:username/reports" element={<ReportsLeadsPage />} />
         <Route path="/seo-gmb/:designation/:username/documents" element={<SeoGmbDocumentsPage />} />
-        <Route path="/seo-gmb/:designation/:username/automation" element={<SeoGmbAutomationPage />} />
+        <Route path="/seo-gmb/:designation/:username/automation" element={<AiAgentPage />} />
         <Route path="/seo-gmb/:designation/:username/profile-settings" element={<ProfileSettingsPage />} />
-        <Route path="/seo-gmb/:designation/:username/geo-optimization" element={<SeoGmbGeoOptimizationPage />} />
-        <Route path="/seo-gmb/:designation/:username/ai-content-generation" element={<SeoGmbAiContentGenerationPage />} />
+        <Route path="/seo-gmb/:designation/:username/geo-optimization" element={<GeoTrackerPage />} />
+        <Route path="/seo-gmb/:designation/:username/ai-content-generation" element={<ContentStudioPage />} />
         <Route path="/seo-gmb/:designation/:username/predictive-analysis" element={<SeoGmbPredictiveAnalysisPage />} />
         <Route path="/seo-gmb/:designation/:username/location-intelligence" element={<SeoGmbLocationIntelligencePage />} />
+        <Route path="/seo-gmb/:designation/:username/reviews" element={<ReviewManagerPage />} />
+        <Route path="/seo-gmb/:designation/:username/website-builder" element={<WebsiteBuilderPage />} />
+        <Route path="/seo-gmb/:designation/:username/automation-pipeline" element={<AutomationPipelinePage />} />
+        <Route path="/seo-gmb/connect-result" element={<ConnectResultPage />} />
         
         {/* IT Routes */}
         <Route path="/it/:designation/:username/dashboard" element={<ITDashboardForRole />} />
@@ -771,6 +783,9 @@ function AppContent() {
         <Route path="/super-admin/purchase-transaction" element={<ProtectedRoute requiredRoles="Super Admin"><PurchaseTransaction /></ProtectedRoute>} />
         <Route path="/super-admin/registration-requests" element={<ProtectedRoute requiredRoles={['Super Admin', 'Admin']}><RegistrationRequestsPage /></ProtectedRoute>} />
         <Route path="/registration-requests" element={<RegistrationRequestsPage />} />
+
+        {/* Testing workspace: every page hidden from the sidebars, with a checklist */}
+        <Route path="/testing" element={<TestingDashboard />} />
       </Routes>
     </Layout>
     </>
