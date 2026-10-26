@@ -56,8 +56,8 @@ const LandingPage = () => {
           <div>
             <p className="font-semibold text-slate-900">Codigix CRM · Google account integration</p>
             <p className="mt-2 leading-relaxed">
-              Employees can connect their Google account so that meetings they schedule are created in their Google Calendar
-              with a Google Meet link, with them as host, and so that emails they send from the CRM (task assignments,
+              Any Codigix CRM user can connect their Google account so that meetings they schedule are created in their Google
+              Calendar with a Google Meet link, with them as host, and so that emails they send from the CRM (task updates,
               quotations, proposals) go from their own Gmail address. Connecting is optional and can be removed at any time.
             </p>
           </div>

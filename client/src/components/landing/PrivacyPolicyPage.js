@@ -27,13 +27,13 @@ const PrivacyPolicyPage = () => (
       <p className="mt-2 text-sm text-slate-500">Codigix CRM · Effective {EFFECTIVE}</p>
       <p className="mt-6 text-slate-700 leading-relaxed">
         This policy explains how Codigix Infotech Pvt. Ltd. ("Codigix", "we") collects, uses, stores and protects
-        information in Codigix CRM (allinonecrm.codigixinfotech.com), the business platform our organisation and its
-        employees use for tasks, projects, sales and meetings.
+        information in Codigix CRM (allinonecrm.codigixinfotech.com), a business platform for tasks, projects, sales
+        and meetings that Codigix offers to businesses and their teams. It applies to every person who uses Codigix CRM.
       </p>
 
       <Section title="Information we collect">
         <p><strong>Account information:</strong> name, work email, department, role and the password you sign in with (stored only as a secure hash).</p>
-        <p><strong>Work records:</strong> the tasks, projects, meetings, notes, leads, quotations and other business records you and your colleagues create in the platform.</p>
+        <p><strong>Work records:</strong> the tasks, projects, meetings, notes, leads, quotations and other business records you and your team create in the platform.</p>
         <p><strong>Google account data</strong>, only if you choose "Connect my Google account", as described below.</p>
       </Section>
 
@@ -56,11 +56,11 @@ const PrivacyPolicyPage = () => (
       </Section>
 
       <Section title="How we share information">
-        <p>Records you create are visible to the colleagues and managers in your organisation who work with them. We do not sell personal data. We share data only with the service providers needed to run the platform (hosting, email delivery, and Google for the features you connect), or when the law requires it.</p>
+        <p>Records you create are visible to the members and managers of your own team's workspace who work with them, never to other customers. We do not sell personal data. We share data only with the service providers needed to run the platform (hosting, email delivery, and Google for the features you connect), or when the law requires it.</p>
       </Section>
 
       <Section title="Storage, security and retention">
-        <p>Data is stored on secured servers. Access is limited to authorised staff, connections use HTTPS, and Google tokens are encrypted at rest. We keep work records for as long as your organisation uses the platform. A Google connection is kept until you disconnect it.</p>
+        <p>Data is stored on secured servers. Access is limited to authorised staff, connections use HTTPS, and Google tokens are encrypted at rest. We keep work records for as long as your team uses the platform. A Google connection is kept until you disconnect it.</p>
       </Section>
 
       <Section title="Your choices and removing Google access">
