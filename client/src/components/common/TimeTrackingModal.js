@@ -20,7 +20,9 @@ const parseDuration = (text) => {
   return matched && !leftover ? Math.round(total) : 0;
 };
 
-const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
+// lockEstimate: the work has already started (e.g. resuming from Hold), so an existing plan
+// is shown but only a manager may change it. A ticket with no plan yet can still get one.
+const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails, lockEstimate = false }) => {
   const [estimatedTime, setEstimatedTime] = useState('');
   const [startTime, setStartTime] = useState('');
   const [error, setError] = useState('');
@@ -57,6 +59,8 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
       start_time: new Date(startTime).toISOString()
     });
   };
+
+  const planLocked = lockEstimate && Boolean(parseDuration(taskDetails?.original_estimate || taskDetails?.estimated_time));
 
   if (!isOpen) return null;
 
@@ -120,15 +124,18 @@ const TimeTrackingModal = ({ isOpen, onClose, onConfirm, taskDetails }) => {
                 <input
                   type="text"
                   required
-                  autoFocus
+                  autoFocus={!planLocked}
+                  readOnly={planLocked}
                   placeholder="e.g. 2h, 45m or 1h 30m"
                   value={estimatedTime}
                   onChange={(e) => { setEstimatedTime(e.target.value); setError(''); }}
                   aria-invalid={Boolean(error)}
-                  className={`block w-full rounded shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border transition-colors ${error ? 'border-red-400' : 'border-gray-300'}`}
+                  className={`block w-full rounded shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border transition-colors ${planLocked ? 'bg-gray-50 text-gray-600' : ''} ${error ? 'border-red-400' : 'border-gray-300'}`}
                 />
                 {error
                   ? <p className="mt-1 text-xs text-red-600">{error}</p>
+                  : planLocked
+                  ? <p className="mt-1 text-xs text-gray-500">Planned when the work started. Only a manager can change it now.</p>
                   : <p className="mt-1 text-xs text-gray-500">
                     Required. 1d = 9h.
                     {standard && <> Standard for {standard.workType}: <button type="button" onClick={() => setEstimatedTime(`${standard.hours}h`)} className="text-blue-600 hover:underline cursor-pointer">{standard.hours} h</button>{standard.limitHours ? ` (up to ${Math.round(standard.limitHours * 100) / 100} h without approval)` : ''}.</>}

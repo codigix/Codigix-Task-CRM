@@ -34,13 +34,21 @@ router.get('/dashboard/:username', async (req, res) => {
     const testRuns = allRuns.filter(r => inRange(r.executed_on));
     const bugs = allBugs.filter(b => inRange(b.created_at));
 
-    // The tester's own work on the task board (the board's tasks, and Bug-type tickets).
+    // The tester's own work on the task board (the board's tasks, and Bug-type tickets), plus the
+    // tickets in Testing they were picked to test. Those show as the tester's board shows them:
+    // To Do while waiting (or paused), In Progress while their testing clock runs.
     const [boardOpen] = meName ? await pool.query(
-      `SELECT i.issue_key, i.title, i.status, i.priority, i.type, DATE_FORMAT(i.due_date, '%Y-%m-%d') AS due_date, p.name AS project
+      `SELECT i.issue_key, i.title,
+              CASE WHEN UPPER(COALESCE(i.status, '')) LIKE '%TESTING%' AND TRIM(COALESCE(i.tester, '')) = ?
+                   THEN IF(i.test_timer_start IS NULL, 'To Do', 'In Progress') ELSE i.status END AS status,
+              i.priority, i.type, DATE_FORMAT(i.due_date, '%Y-%m-%d') AS due_date, p.name AS project
          FROM it_kanban_issues i LEFT JOIN projects p ON p.id = i.project_id
-        WHERE TRIM(i.assignee) = ? AND UPPER(COALESCE(i.status, '')) NOT IN (?)
+        WHERE UPPER(COALESCE(i.status, '')) NOT IN (?)
+          AND (TRIM(i.assignee) = ?
+               OR (TRIM(COALESCE(i.tester, '')) = ? AND UPPER(COALESCE(i.status, '')) LIKE '%TESTING%'
+                   AND COALESCE(i.testing_state, '') NOT IN ('PASSED', 'FAILED')))
         ORDER BY i.due_date IS NULL, i.due_date, i.id DESC LIMIT 50`,
-      [meName, DONE_TASK]
+      [meName, DONE_TASK, meName, meName]
     ) : [[]];
     const [boardBugs] = await pool.query(
       `SELECT i.issue_key, i.title, i.status, i.priority, i.assignee, DATE_FORMAT(i.due_date, '%Y-%m-%d') AS due_date, p.name AS project

@@ -494,9 +494,13 @@ const ITIssueActivityTabs = ({
         const sourceBadge = {
           automatic: 'bg-blue-50 text-blue-700 border-blue-200',
           timer: 'bg-violet-50 text-violet-700 border-violet-200',
-          manual: 'bg-gray-50 text-gray-600 border-gray-200'
+          manual: 'bg-gray-50 text-gray-600 border-gray-200',
+          testing: 'bg-teal-50 text-teal-700 border-teal-200'
         };
-        const sourceLabel = { automatic: 'Automatic', timer: 'Timer', manual: 'Manual' };
+        const sourceLabel = { automatic: 'Automatic', timer: 'Timer', manual: 'Manual', testing: 'Testing' };
+        // Testing time is the tester's, kept out of the plan figures above.
+        const testing = !isSub && worklogData.testing;
+        const testingLive = testing?.timer?.running && testing.timer.startedAt ? Math.max(0, (Date.now() - new Date(testing.timer.startedAt)) / 1000) : 0;
         return (
           <div className="space-y-3">
             {/* Planned vs actual */}
@@ -581,6 +585,16 @@ const ITIssueActivityTabs = ({
               </div>
             )}
 
+            {testing && (testing.count > 0 || testing.timer?.running) && (
+              <div className="rounded border border-teal-200 bg-teal-50/60 p-2.5 text-[11px] text-teal-900 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="font-semibold">Testing time: {hm(testing.seconds + testingLive)}</span>
+                <span>{testing.count} work log{testing.count === 1 ? '' : 's'}</span>
+                {(testing.byPerson || []).map(p => <span key={p.author} className="bg-white/70 rounded px-1.5 py-0.5">{p.author}: <strong>{p.time}</strong></span>)}
+                {testing.timer?.running && <span className="text-teal-700">· clock running ({testing.timer.owner})</span>}
+                <span className="w-full text-teal-800/80">Logged by the tester in the Testing queue; not part of the planned time above.</span>
+              </div>
+            )}
+
             <div className="flex justify-between items-center pt-1">
               <span className="text-xs text-gray-700 font-medium">
                 Work log ({worklogData.worklogs.length})
@@ -633,7 +647,7 @@ const ITIssueActivityTabs = ({
                 worklogData.worklogs.map(log => {
                   const start = log.started_at ? new Date(log.started_at) : null;
                   const when = start ? start.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-                  const note = String(log.description || '').replace(/^(Auto-logged|Timer(?: \(In Progress\))?):?\s*/i, '');
+                  const note = String(log.description || '').replace(/^(Auto-logged|Timer(?: \(In Progress\))?|Testing):?\s*/i, '');
                   return (
                     <div key={log.id} className="flex justify-between items-start p-2 bg-gray-50 rounded border border-gray-100 text-xs group">
                       <div className="space-y-1 min-w-0">

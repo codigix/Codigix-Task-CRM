@@ -3,8 +3,9 @@ import {
   ChevronDown, ChevronRight, Check, Zap, Sparkles, Settings,
   FileEdit, FileText, AlignLeft, Network, CopyCheck,
   Clock, Github, LinkIcon, CheckSquare, GitBranch, GitPullRequest,
-  RefreshCw, CheckCircle, ExternalLink, X, Copy, Terminal, User, Search, Lock
+  RefreshCw, CheckCircle, ExternalLink, X, Copy, Terminal, User, Search, Lock, FlaskConical
 } from 'lucide-react';
+import TesterPickerModal from '../../common/TesterPickerModal';
 import { normalizeLabel } from '../../../utils/labels';
 import { hasWorkStarted, isUserTaskReporter, canSeeEffort } from '../../../utils/access';
 import Swal from 'sweetalert2';
@@ -272,6 +273,7 @@ const ITIssueDetailsSidebar = ({
   const [copiedBranch, setCopiedBranch] = useState(false);
   const [repoUrl, setRepoUrl] = useState('https://github.com/codigix/crm-all-in-one');
   const [assigneeSearch, setAssigneeSearch] = useState('');
+  const [testerPick, setTesterPick] = useState(null);
   const [reporterSearch, setReporterSearch] = useState('');
 
   const filteredAssignees = (usersList || []).filter(u => {
@@ -591,6 +593,24 @@ const ITIssueDetailsSidebar = ({
                 )}
               </div>
             </div>
+
+            {/* Tester: who owns the ticket while it is in Testing (the assignee stays the developer) */}
+            {!currentSubtask && /TESTING/i.test(String(currentStatus || '')) && (
+              <div className="flex items-center min-h-[32px] gap-2">
+                <span className="w-24 shrink-0 text-gray-500 font-medium text-xs">Tester</span>
+                <div
+                  onClick={() => setTesterPick({ issueKey: issue?.issue_key || issue?.key, title: issue?.title, assignee: assignee?.name || issue?.assignee, tester: issue?.tester, moving: false })}
+                  className="flex items-center gap-1.5 px-1.5 py-1 -ml-1 rounded cursor-pointer transition text-gray-800 hover:bg-gray-100/80 min-w-0"
+                  title="Click to change the tester"
+                >
+                  <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${issue?.tester ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-500'}`}>
+                    <FlaskConical size={11} />
+                  </div>
+                  <span className={`text-xs truncate ${issue?.tester ? '' : 'text-gray-400'}`}>{issue?.tester || 'Pick a tester'}</span>
+                </div>
+              </div>
+            )}
+            <TesterPickerModal info={testerPick} users={usersList || []} onDone={(name) => { setTesterPick(null); if (name) handleUpdate({ tester: name }); }} />
 
             {/* Parent Ticket Field (Jira Style) */}
             <div className="flex items-center min-h-[32px] gap-2">

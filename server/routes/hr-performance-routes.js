@@ -85,6 +85,7 @@ module.exports = (pool) => {
           `SELECT issue_key, SUM(seconds) AS seconds, MAX(COALESCE(started_at, created_at)) AS last_at
              FROM it_kanban_worklogs
             WHERE COALESCE(approval, 'approved') = 'approved'
+              AND COALESCE(kind, 'work') <> 'testing'
               AND COALESCE(started_at, created_at) >= NOW() - INTERVAL 90 DAY
             GROUP BY issue_key`
         );

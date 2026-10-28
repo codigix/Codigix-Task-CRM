@@ -644,7 +644,14 @@ Acceptance Criteria
       // Who the running timer's time will be credited to, and whether it was started by
       // moving the ticket to In Progress ('auto', working hours only) or with Start ('manual').
       { name: 'timer_owner', definition: 'VARCHAR(120) NULL' },
-      { name: 'timer_source', definition: 'VARCHAR(10) NULL' }
+      { name: 'timer_source', definition: 'VARCHAR(10) NULL' },
+      // Testing: who tests the ticket, where it is in the testers' queue ('TO TEST' | 'TESTING' |
+      // 'PASSED' | 'FAILED'), the tester's own running clock and their total testing time.
+      { name: 'tester', definition: 'VARCHAR(120) NULL' },
+      { name: 'testing_state', definition: 'VARCHAR(20) NULL' },
+      { name: 'test_timer_start', definition: 'DATETIME NULL' },
+      { name: 'tested_at', definition: 'DATETIME NULL' },
+      { name: 'testing_time_spent', definition: 'VARCHAR(20) NULL' }
     ];
     try {
       const [cols] = await pool.query('DESCRIBE it_kanban_issues');
@@ -728,6 +735,17 @@ Acceptance Criteria
     } catch (e) {
       console.error('Error setting up subtask time tracking:', e.message);
     }
+    // Testing time is logged as kind = 'testing': it is the tester's work, so it counts in their
+    // hours but never comes off the developer's planned time.
+    try {
+      const [cols] = await pool.query("SHOW COLUMNS FROM it_kanban_worklogs LIKE 'kind'");
+      if (!cols.length) {
+        await pool.query("ALTER TABLE it_kanban_worklogs ADD COLUMN kind VARCHAR(10) NOT NULL DEFAULT 'work'");
+        console.log("Added 'kind' to it_kanban_worklogs.");
+      }
+    } catch (e) {
+      console.error('Error adding worklog kind column:', e.message);
+    }
   })();
 
   // ── Work-log time helpers ──────────────────────────────────────────────
@@ -773,6 +791,28 @@ Acceptance Criteria
   //  • can't move a due/start date that is already set (ask a manager to reschedule)
   const isManagerReq = (req) => Boolean(req.user?.isManager || req.user?.isAdmin);
   const NOT_STARTED = ['', 'TO DO', 'TODO', 'BACKLOG', 'OPEN', 'NEW'];
+  // "Under discussion / Hold": work paused by decision. Any column naming hold or discussion.
+  const isHoldStatus = (s) => /HOLD|DISCUSS/.test(String(s || '').toUpperCase());
+  /** Whether a stored person name (assignee, reporter) is the signed-in user. */
+  const isSameUserReq = (req, name) => {
+    const target = String(name || '').trim().toLowerCase();
+    if (!target) return false;
+    const ids = new Set();
+    if (req.user) {
+      if (req.user.username) ids.add(String(req.user.username).trim().toLowerCase());
+      if (req.user.email) ids.add(String(req.user.email).trim().toLowerCase());
+      const fullName = `${req.user.first_name || ''} ${req.user.last_name || ''}`.trim().toLowerCase();
+      if (fullName) ids.add(fullName);
+      if (req.user.name) ids.add(String(req.user.name).trim().toLowerCase());
+      if (req.user.first_name) ids.add(String(req.user.first_name).trim().toLowerCase());
+    }
+    const headerUser = req.headers['x-user-name'];
+    if (headerUser) ids.add(String(headerUser).trim().toLowerCase());
+    for (const id of ids) {
+      if (id && (id === target || target.includes(id) || id.includes(target))) return true;
+    }
+    return false;
+  };
 
   // Planned time an employee may set without approval: up to this × the work type's standard size.
   const PLAN_LIMIT_FACTOR = 1.5;
@@ -839,9 +879,10 @@ Acceptance Criteria
         [row.issue_key]
       );
     }
-    // The same person's subtask clocks count too: one running clock per person.
+    // The same person's subtask and testing clocks count too: one running clock per person.
     const pausedSubtasks = await pauseSubtaskTimersOf(owner, null, `Auto-paused: started work on ${exceptKey}`);
-    return [...rows.map(r => r.issue_key), ...pausedSubtasks];
+    const pausedTesting = await pauseTestingClocksOf(owner, exceptKey, `paused: started work on ${exceptKey || 'a subtask'}`);
+    return [...rows.map(r => r.issue_key), ...pausedSubtasks, ...pausedTesting];
   };
 
   // ── Subtask clocks ─────────────────────────────────────────────────
@@ -903,7 +944,8 @@ Acceptance Criteria
     if (String(iss.assignee || '').trim().toLowerCase() !== String(owner).trim().toLowerCase()) return false;
     const [[busy]] = await db.query(
       `SELECT (SELECT COUNT(*) FROM it_kanban_issues WHERE is_timer_running = 1 AND (timer_owner = ? OR (timer_owner IS NULL AND assignee = ?)))
-            + (SELECT COUNT(*) FROM it_kanban_subtask_timers WHERE owner = ?) AS n`, [owner, owner, owner]);
+            + (SELECT COUNT(*) FROM it_kanban_subtask_timers WHERE owner = ?)
+            + (SELECT COUNT(*) FROM it_kanban_issues WHERE test_timer_start IS NOT NULL AND tester = ?) AS n`, [owner, owner, owner, owner]);
     if (Number(busy.n)) return false;
     await db.query("UPDATE it_kanban_issues SET is_timer_running = 1, timer_start_time = ?, timer_owner = ?, timer_source = 'auto' WHERE issue_key = ?", [new Date(), owner, issueKey]);
     return true;
@@ -920,10 +962,13 @@ Acceptance Criteria
     return paused;
   };
 
-  // Recomputes time_spent / remaining_estimate from the issue's logged time.
+  // Recomputes time_spent / remaining_estimate from the issue's logged time. Testing time is
+  // kept apart (testing_time_spent): it is not part of the developer's plan.
   const recalcIssueTime = async (key) => {
     const [[totals]] = await db.query(
-      "SELECT COALESCE(SUM(seconds),0) AS total FROM it_kanban_worklogs WHERE issue_key = ? AND COALESCE(approval, 'approved') = 'approved'",
+      `SELECT COALESCE(SUM(CASE WHEN kind = 'testing' THEN 0 ELSE seconds END), 0) AS total,
+              COALESCE(SUM(CASE WHEN kind = 'testing' THEN seconds ELSE 0 END), 0) AS testing
+         FROM it_kanban_worklogs WHERE issue_key = ? AND COALESCE(approval, 'approved') = 'approved'`,
       [key]
     );
     const [[issue]] = await db.query(
@@ -931,14 +976,75 @@ Acceptance Criteria
       [key]
     );
     const spent = Number(totals.total) || 0;
+    const testing = Number(totals.testing) || 0;
     const original = parseDurationToSeconds(issue?.original_estimate);
     const remaining = original > 0 ? (original - spent) : 0;
     await db.query(
-      'UPDATE it_kanban_issues SET time_spent = ?, remaining_estimate = ? WHERE issue_key = ?',
-      [formatSecondsToDuration(spent), formatSecondsToDuration(remaining), key]
+      'UPDATE it_kanban_issues SET time_spent = ?, remaining_estimate = ?, testing_time_spent = ? WHERE issue_key = ?',
+      [formatSecondsToDuration(spent), formatSecondsToDuration(remaining), testing ? formatSecondsToDuration(testing) : null, key]
     );
-    return { spentSeconds: spent, remainingSeconds: remaining };
+    return { spentSeconds: spent, remainingSeconds: remaining, testingSeconds: testing };
   };
+
+  // ── Testing ─────────────────────────────────────────────────────────
+  // A ticket moved to Testing joins the testers' queue as 'TO TEST'. A tester starts it (their
+  // own clock runs, real time like the Start button), may pause, and finishes it PASSED or
+  // FAILED; the card stays where it is, so the reporter still closes it and a failed ticket goes
+  // back to its developer. Testing time is logged as kind = 'testing' for the tester.
+  const isTestingStatus = (s) => /TESTING/.test(String(s || '').toUpperCase());
+  const TEST_STATE = { TODO: 'TO TEST', ACTIVE: 'TESTING', PASSED: 'PASSED', FAILED: 'FAILED' };
+  const isTesterReq = (req) => String(req.user?.role || '').trim().toLowerCase() === 'tester';
+
+  /** Ends a running testing clock and logs the session to the tester. Returns the seconds logged. */
+  async function closeTestingSession(row, reason) {
+    if (!row?.test_timer_start) return 0;
+    // Claim the clock first, so a session is never logged twice when two paths close it.
+    const [claimed] = await db.query(
+      'UPDATE it_kanban_issues SET test_timer_start = NULL WHERE issue_key = ? AND test_timer_start = ?',
+      [row.issue_key, row.test_timer_start]
+    );
+    if (!claimed.affectedRows) return 0;
+    const start = new Date(row.test_timer_start);
+    const seconds = isNaN(start) ? 0 : Math.min(Math.max(0, Math.round((Date.now() - start) / 1000)), MAX_MANUAL_SESSION);
+    if (seconds > 0) {
+      await db.query(
+        "INSERT INTO it_kanban_worklogs (issue_key, author, seconds, description, started_at, kind) VALUES (?, ?, ?, ?, ?, 'testing')",
+        [row.issue_key, isPersonName(row.tester) ? row.tester : 'Unassigned', seconds, `Testing: ${reason}`.slice(0, 1000), start]
+      );
+      await recalcIssueTime(row.issue_key);
+    }
+    return seconds;
+  }
+
+  /** Stops every testing clock this person has running (except on one ticket); returns what was paused. */
+  async function pauseTestingClocksOf(owner, exceptKey, reason) {
+    if (!isPersonName(owner)) return [];
+    const [rows] = await db.query(
+      'SELECT issue_key, tester, test_timer_start FROM it_kanban_issues WHERE test_timer_start IS NOT NULL AND tester = ? AND issue_key <> ?',
+      [owner, exceptKey || '']
+    );
+    for (const row of rows) await closeTestingSession(row, reason);
+    return rows.map(r => `${r.issue_key} (testing)`);
+  }
+
+  /** Keeps the testers' queue in step with the ticket's column, whichever screen moved it. */
+  async function syncTestingWithStatus(key, from, to) {
+    if (to === undefined || to === null) return;
+    const entering = isTestingStatus(to) && !isTestingStatus(from);
+    const leaving = isTestingStatus(from) && !isTestingStatus(to);
+    if (entering) {
+      // A new round of testing; whoever tested it last is kept, so a retest goes back to them.
+      await db.query('UPDATE it_kanban_issues SET testing_state = ?, test_timer_start = NULL, tested_at = NULL WHERE issue_key = ?', [TEST_STATE.TODO, key]);
+    } else if (leaving) {
+      const [[row]] = await db.query('SELECT issue_key, tester, testing_state, test_timer_start FROM it_kanban_issues WHERE issue_key = ?', [key]);
+      if (!row) return;
+      if (row.test_timer_start) await closeTestingSession(row, `Testing → ${String(to).trim()}`);
+      // An unfinished round ends with the move; a result (Passed / Failed) stays on the ticket.
+      if ([TEST_STATE.TODO, TEST_STATE.ACTIVE].includes(row.testing_state)) {
+        await db.query('UPDATE it_kanban_issues SET testing_state = NULL WHERE issue_key = ?', [key]);
+      }
+    }
+  }
 
   // GET all kanban issues (supports optional department query parameter)
   /**
@@ -973,7 +1079,7 @@ Acceptance Criteria
     original_estimate: 'planned time', requested_estimate: 'requested planned time', estimate_approved: 'plan approval',
     effort_points: 'effort points', story_points: 'story points', title: 'title', description: 'description',
     priority: 'priority', labels: 'labels', type: 'work type', sprint_id: 'sprint', sprint: 'sprint',
-    project_id: 'project', department: 'department', remaining_estimate: 'remaining time'
+    project_id: 'project', department: 'department', remaining_estimate: 'remaining time', tester: 'tester'
   };
   const activitySecs = (secs) => {
     const m = Math.round(Number(secs || 0) / 60);
@@ -1657,7 +1763,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       // ── Fair-play rules (see isManagerReq above) ──
       const isMgr = isManagerReq(req);
       const [[curRow]] = await db.query(
-        'SELECT status, assignee, reporter, due_date, start_date, original_estimate, requested_estimate, priority, type, labels, sprint_id, subtasks FROM it_kanban_issues WHERE issue_key = ?',
+        'SELECT status, assignee, reporter, tester, title, department, due_date, start_date, original_estimate, requested_estimate, priority, type, labels, sprint_id, subtasks FROM it_kanban_issues WHERE issue_key = ?',
         [key]
       );
       if (!curRow) return res.status(404).json({ error: 'Issue not found' });
@@ -1701,8 +1807,11 @@ app.get('/api/it-kanban/labels', async (req, res) => {
           return res.status(403).json({ error: 'Only a manager can change who a finished task belongs to.', code: 'LOCKED' });
         }
         if (hasStarted(curRow.status)) {
+          // Adding the first plan is not a change: a ticket put on hold before it had one must
+          // still be resumable, and starting work requires a plan.
+          const hadPlan = Boolean(parseDurationToSeconds(curRow.original_estimate));
           const changed = {
-            'planned time': updates.original_estimate !== undefined && parseDurationToSeconds(updates.original_estimate) !== parseDurationToSeconds(curRow.original_estimate),
+            'planned time': hadPlan && updates.original_estimate !== undefined && parseDurationToSeconds(updates.original_estimate) !== parseDurationToSeconds(curRow.original_estimate),
             'work type': updates.type !== undefined && String(updates.type) !== String(curRow.type || ''),
             labels: updates.labels !== undefined && labelSet(updates.labels) !== labelSet(curRow.labels)
           };
@@ -1716,6 +1825,26 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         }
         // Dates and priority are open to everyone so people can plan their own day; each
         // date move is written to History and shows up as a reschedule in performance.
+
+        // Taking work off hold (to any other column) is for its assignee or a manager. An
+        // unassigned ticket can be picked up by anyone. Subtasks follow their own assignee.
+        const offHoldBlocked = (from, to, owner) => to !== undefined && isHoldStatus(from) && !isHoldStatus(to)
+          && isPersonName(owner) && !isSameUserReq(req, owner);
+        if (offHoldBlocked(curRow.status, updates.status, curRow.assignee)) {
+          return res.status(403).json({ error: `Only ${curRow.assignee} (the assignee) or a manager can take this off hold.`, code: 'HOLD_LOCKED' });
+        }
+        if (updates.subtasks !== undefined) {
+          const parse = (v) => { if (Array.isArray(v)) return v; try { const p = JSON.parse(v || '[]'); return Array.isArray(p) ? p : []; } catch (e) { return []; } };
+          const before = new Map(parse(curRow.subtasks).map(st => [String(st?.id), st]));
+          const blocked = parse(updates.subtasks).find(st => {
+            const prev = st && before.get(String(st.id));
+            return prev && offHoldBlocked(prev.status, st.status, prev.assignee || curRow.assignee);
+          });
+          if (blocked) {
+            const owner = before.get(String(blocked.id)).assignee || curRow.assignee;
+            return res.status(403).json({ error: `Only ${owner} (the assignee) or a manager can take the subtask "${blocked.title || blocked.id}" off hold.`, code: 'HOLD_LOCKED' });
+          }
+        }
       }
 
       // Nothing an assignee can change may raise what their own task is worth.
@@ -1744,28 +1873,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       if (updates.status && isDoneStatus(updates.status)) {
         const repVal = String(curRow.reporter || '').trim();
         if (repVal && repVal.toLowerCase() !== 'unassigned') {
-          const userIdentities = new Set();
-          if (req.user) {
-            if (req.user.username) userIdentities.add(String(req.user.username).trim().toLowerCase());
-            if (req.user.email) userIdentities.add(String(req.user.email).trim().toLowerCase());
-            const fullName = `${req.user.first_name || ''} ${req.user.last_name || ''}`.trim().toLowerCase();
-            if (fullName) userIdentities.add(fullName);
-            if (req.user.name) userIdentities.add(String(req.user.name).trim().toLowerCase());
-            if (req.user.first_name) userIdentities.add(String(req.user.first_name).trim().toLowerCase());
-          }
-          const headerUser = req.headers['x-user-name'];
-          if (headerUser) userIdentities.add(String(headerUser).trim().toLowerCase());
-
-          const targetRep = repVal.toLowerCase();
-          let isMatch = false;
-          for (const uid of userIdentities) {
-            if (uid && (uid === targetRep || targetRep === uid || targetRep.includes(uid) || uid.includes(targetRep))) {
-              isMatch = true;
-              break;
-            }
-          }
-
-          if (!isMatch) {
+          if (!isSameUserReq(req, repVal)) {
             return res.status(403).json({
               error: `Only the reporter of this task (${repVal}) can move it to Done.`,
               code: 'REPORTER_ONLY'
@@ -1901,7 +2009,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
           updates.reporter = actor;
         }
       }
-      const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'department', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability', 'contribution_review_status', 'contribution_method', 'effort_points', 'timer_start_time', 'is_timer_running', 'timer_owner', 'timer_source', 'estimate_approved', 'requested_estimate', 'estimate_requested_by'];
+      const allowedFields = ['title', 'description', 'type', 'priority', 'status', 'assignee', 'reporter', 'team', 'team_id', 'project_id', 'department', 'sprint', 'sprint_id', 'parent_id', 'due_date', 'start_date', 'flagged', 'story_points', 'progress', 'original_estimate', 'remaining_estimate', 'time_spent', 'components', 'environment', 'vulnerability', 'contribution_review_status', 'contribution_method', 'effort_points', 'timer_start_time', 'is_timer_running', 'timer_owner', 'timer_source', 'estimate_approved', 'requested_estimate', 'estimate_requested_by', 'tester'];
       // 'labels' belongs here, not in allowedFields: it is stored as JSON, and without it
       // labels could be set at creation but never changed afterwards.
       const jsonFields = ['subtasks', 'linked_issues', 'comments', 'labels'];
@@ -2056,6 +2164,12 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         } else if (updates.sprint === null) {
           updates.sprint = null;
         }
+      }
+
+      // Who tests the ticket while it is in Testing (picked when it moves there). The assignee
+      // stays the developer, who keeps the credit and gets it back if testing fails.
+      if (updates.tester !== undefined) {
+        updates.tester = isPersonName(updates.tester) ? String(updates.tester).trim().slice(0, 120) : null;
       }
 
       for (const [field, value] of Object.entries(updates)) {
@@ -2335,6 +2449,29 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         return res.status(404).json({ error: 'Issue not found' });
       }
 
+      // Into Testing: the ticket joins the testers' queue. Out of it: a running testing clock is logged.
+      if (updates.status !== undefined) {
+        await syncTestingWithStatus(key, curRow.status, updates.status).catch(e => console.error('Failed to update the testing queue:', e.message));
+      }
+      // Tell the tester when a ticket in Testing is handed to them.
+      {
+        const nowTesting = isTestingStatus(updates.status !== undefined ? updates.status : curRow.status);
+        const newTester = updates.tester !== undefined ? updates.tester : curRow.tester;
+        const handedOver = updates.tester !== undefined && !samePerson(newTester, curRow.tester);
+        const entered = updates.status !== undefined && !isTestingStatus(curRow.status);
+        const notify = req.app.locals.createNotification;
+        if (nowTesting && isPersonName(newTester) && (handedOver || entered) && typeof notify === 'function') {
+          const actor = await resolveActorName(req, curRow.reporter);
+          notify({
+            userName: newTester, type: 'assignment', title: `${key} is ready for you to test`,
+            message: `${actor} moved "${curRow.title || key}" to Testing and picked you to test it`,
+            actorName: actor, entityType: 'issue', entityKey: key,
+            link: `/${String(curRow.department || 'IT').toLowerCase() === 'marketing' ? 'marketing' : 'it'}`,
+            excludeUserId: req.headers['x-user-id']
+          }).catch(err => console.error('Failed to send tester notification:', err.message));
+        }
+      }
+
       // Subtask clocks follow each subtask's status and assignee: In Progress starts it,
       // leaving In Progress (or being removed) logs it, a new assignee takes it over.
       let subtaskTimers = null;
@@ -2490,11 +2627,11 @@ app.get('/api/it-kanban/labels', async (req, res) => {
     try {
       const { key } = req.params;
       const [rows] = await db.query(
-        "SELECT id, author, seconds, description, started_at, created_at, COALESCE(approval, 'approved') AS approval, reviewed_by, subtask_id FROM it_kanban_worklogs WHERE issue_key = ? ORDER BY COALESCE(started_at, created_at) DESC, id DESC",
+        "SELECT id, author, seconds, description, started_at, created_at, COALESCE(approval, 'approved') AS approval, reviewed_by, subtask_id, COALESCE(kind, 'work') AS kind FROM it_kanban_worklogs WHERE issue_key = ? ORDER BY COALESCE(started_at, created_at) DESC, id DESC",
         [key]
       );
       const [[issue]] = await db.query(
-        'SELECT original_estimate, remaining_estimate, time_spent, status, is_timer_running, timer_start_time, timer_owner, timer_source FROM it_kanban_issues WHERE issue_key = ?',
+        'SELECT original_estimate, remaining_estimate, time_spent, status, is_timer_running, timer_start_time, timer_owner, timer_source, tester, testing_state, test_timer_start FROM it_kanban_issues WHERE issue_key = ?',
         [key]
       );
       if (!issue) return res.status(404).json({ error: 'Issue not found' });
@@ -2507,7 +2644,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         const [[clock]] = await db.query('SELECT owner, started_at, source FROM it_kanban_subtask_timers WHERE issue_key = ? AND subtask_id = ?', [key, sid]);
         const me = actorOf(req).toLowerCase();
         const subtaskSeconds = mine.filter(r => r.approval === 'approved').reduce((s, r) => s + (Number(r.seconds) || 0), 0);
-        const allSeconds = rows.filter(r => r.approval === 'approved').reduce((s, r) => s + (Number(r.seconds) || 0), 0);
+        const allSeconds = rows.filter(r => r.approval === 'approved' && r.kind !== 'testing').reduce((s, r) => s + (Number(r.seconds) || 0), 0);
         const planned = parseDurationToSeconds(issue.original_estimate);
         const byPerson = new Map();
         mine.forEach(r => byPerson.set(r.author, (byPerson.get(r.author) || 0) + (Number(r.seconds) || 0)));
@@ -2529,18 +2666,25 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         });
       }
       const me = actorOf(req).toLowerCase();
-      const totalSeconds = rows.filter(r => r.approval === 'approved').reduce((sum, r) => sum + (Number(r.seconds) || 0), 0);
+      // Testing time is the tester's, reported on its own: planned vs actual is the developer's work only.
+      const workRows = rows.filter(r => r.kind !== 'testing');
+      const testRows = rows.filter(r => r.kind === 'testing');
+      const sumApproved = (list) => list.filter(r => r.approval === 'approved').reduce((sum, r) => sum + (Number(r.seconds) || 0), 0);
+      const totalSeconds = sumApproved(workRows);
+      const testingSeconds = sumApproved(testRows);
       const plannedSeconds = parseDurationToSeconds(issue.original_estimate);
 
       // Who spent the time.
       const byPerson = new Map();
-      rows.forEach(r => byPerson.set(r.author, (byPerson.get(r.author) || 0) + (Number(r.seconds) || 0)));
+      workRows.forEach(r => byPerson.set(r.author, (byPerson.get(r.author) || 0) + (Number(r.seconds) || 0)));
+      const testersTime = new Map();
+      testRows.forEach(r => testersTime.set(r.author, (testersTime.get(r.author) || 0) + (Number(r.seconds) || 0)));
 
       res.json({
         worklogs: rows.map(r => ({
           ...r,
           timeSpent: formatSecondsToDuration(r.seconds),
-          source: sourceOf(r.description),
+          source: r.kind === 'testing' ? 'testing' : sourceOf(r.description),
           canDelete: isManagerReq(req) || String(r.author || '').toLowerCase() === me
         })),
         pendingCount: rows.filter(r => r.approval === 'pending').length,
@@ -2553,6 +2697,15 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         ...efficiencyOf(plannedSeconds, totalSeconds),
         byPerson: [...byPerson.entries()].map(([author, seconds]) => ({ author, seconds, time: formatSecondsToDuration(seconds) }))
           .sort((a, b) => b.seconds - a.seconds),
+        testing: {
+          state: issue.testing_state || (isTestingStatus(issue.status) ? TEST_STATE.TODO : null),
+          tester: issue.tester || null,
+          seconds: testingSeconds,
+          time: formatSecondsToDuration(testingSeconds),
+          count: testRows.length,
+          byPerson: [...testersTime.entries()].map(([author, seconds]) => ({ author, seconds, time: formatSecondsToDuration(seconds) })).sort((a, b) => b.seconds - a.seconds),
+          timer: issue.test_timer_start ? { running: true, startedAt: issue.test_timer_start, owner: issue.tester } : { running: false }
+        },
         timer: issue.is_timer_running && issue.timer_start_time ? {
           running: true,
           startedAt: issue.timer_start_time,
@@ -2562,6 +2715,179 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       });
     } catch (error) {
       responseError(res, 500, 'Failed to fetch work logs', error);
+    }
+  });
+
+  // ── Testers' queue ─────────────────────────────────────────────────
+  /**
+   * What testers work from: tickets in the Testing column waiting to be tested ("To test"), the
+   * ones being tested, and results of the last 14 days, plus the tester's own testing time and
+   * work-log count. Testers see every ticket waiting and their own in progress / tested; managers
+   * see everyone's. ?department=IT|Marketing narrows to one board.
+   */
+  app.get('/api/it-kanban/testing/queue', async (req, res) => {
+    try {
+      const me = actorOf(req);
+      const seesAll = isManagerReq(req);
+      const dept = String(req.query.department || '').trim();
+      const params = [];
+      let deptSql = '';
+      if (dept && dept.toLowerCase() !== 'all') { deptSql = " AND COALESCE(i.department, 'IT') = ?"; params.push(dept); }
+      const [rows] = await db.query(
+        `SELECT i.issue_key, i.title, i.type, i.priority, i.status, i.assignee, i.reporter, i.tester, i.testing_state,
+                i.test_timer_start, i.tested_at, i.time_spent, i.original_estimate, i.due_date, i.department,
+                p.name AS project_name
+           FROM it_kanban_issues i LEFT JOIN projects p ON p.id = COALESCE(i.parent_id, i.project_id)
+          WHERE (UPPER(COALESCE(i.status, '')) LIKE '%TESTING%'
+                 OR (i.testing_state IN ('PASSED', 'FAILED') AND i.tested_at >= NOW() - INTERVAL 14 DAY))${deptSql}
+          ORDER BY i.tested_at DESC, i.id DESC`,
+        params
+      );
+      const keys = rows.map(r => r.issue_key);
+      const timeByKey = new Map();
+      const roundsByKey = new Map();
+      if (keys.length) {
+        const [logs] = await db.query(
+          `SELECT issue_key, author, SUM(seconds) AS s, COUNT(*) AS n FROM it_kanban_worklogs
+            WHERE kind = 'testing' AND COALESCE(approval, 'approved') = 'approved' AND issue_key IN (?)
+            GROUP BY issue_key, author`, [keys]);
+        logs.forEach(l => {
+          const t = timeByKey.get(l.issue_key) || { seconds: 0, mine: 0, count: 0 };
+          t.seconds += Number(l.s) || 0; t.count += Number(l.n) || 0;
+          if (samePerson(l.author, me)) t.mine += Number(l.s) || 0;
+          timeByKey.set(l.issue_key, t);
+        });
+        const [rounds] = await db.query(
+          `SELECT issue_key, COUNT(*) AS n, MAX(created_at) AS last_at FROM it_kanban_history
+            WHERE field = 'status' AND UPPER(new_value) LIKE '%TESTING%' AND issue_key IN (?) GROUP BY issue_key`, [keys]);
+        rounds.forEach(r => roundsByKey.set(r.issue_key, { rounds: Number(r.n) || 0, since: r.last_at }));
+      }
+
+      const item = (r) => {
+        const t = timeByKey.get(r.issue_key) || { seconds: 0, mine: 0, count: 0 };
+        const rd = roundsByKey.get(r.issue_key) || { rounds: 0, since: null };
+        return {
+          key: r.issue_key, title: r.title, type: r.type, priority: r.priority, status: r.status, project: r.project_name || null,
+          developer: isPersonName(r.assignee) ? r.assignee : null, reporter: isPersonName(r.reporter) ? r.reporter : null,
+          tester: isPersonName(r.tester) ? r.tester : null,
+          state: r.testing_state || TEST_STATE.TODO,
+          timerStartedAt: r.test_timer_start || null, testedAt: r.tested_at || null, dueDate: r.due_date || null,
+          devTime: r.time_spent || '0h', plannedTime: r.original_estimate || null,
+          testingSeconds: t.seconds, mySeconds: t.mine, worklogCount: t.count,
+          round: Math.max(rd.rounds, 1), inTestingSince: rd.since
+        };
+      };
+      const mine = (r) => seesAll || samePerson(r.tester, me);
+      const inTesting = rows.filter(r => isTestingStatus(r.status));
+      const toTest = inTesting.filter(r => !r.testing_state || r.testing_state === TEST_STATE.TODO).map(item);
+      const testing = inTesting.filter(r => r.testing_state === TEST_STATE.ACTIVE && mine(r)).map(item);
+      const othersTesting = seesAll ? 0 : inTesting.filter(r => r.testing_state === TEST_STATE.ACTIVE && !mine(r)).length;
+      const tested = rows.filter(r => [TEST_STATE.PASSED, TEST_STATE.FAILED].includes(r.testing_state) && mine(r)).map(item);
+
+      // The tester's own testing time and work logs.
+      const now = new Date();
+      const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekStart = new Date(dayStart); weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7)); // Monday
+      const [[stats]] = await db.query(
+        `SELECT COALESCE(SUM(CASE WHEN started_at >= ? THEN seconds ELSE 0 END), 0) AS today,
+                COALESCE(SUM(CASE WHEN started_at >= ? THEN seconds ELSE 0 END), 0) AS week,
+                COALESCE(SUM(seconds), 0) AS total,
+                COALESCE(SUM(CASE WHEN started_at >= ? THEN 1 ELSE 0 END), 0) AS week_logs,
+                COUNT(*) AS logs
+           FROM it_kanban_worklogs WHERE kind = 'testing' AND author = ? AND COALESCE(approval, 'approved') = 'approved'`,
+        [dayStart, weekStart, weekStart, me]
+      );
+      const [[results]] = await db.query(
+        `SELECT SUM(new_value LIKE 'PASSED%') AS passed, SUM(new_value LIKE 'FAILED%') AS failed FROM it_kanban_history
+          WHERE field = 'testing' AND changed_by = ? AND created_at >= NOW() - INTERVAL 30 DAY`, [me]);
+      // A running clock, so the page can add its live time to today's and this week's totals.
+      const [running] = await db.query('SELECT test_timer_start FROM it_kanban_issues WHERE test_timer_start IS NOT NULL AND tester = ?', [me]);
+
+      res.json({
+        me,
+        isTester: isTesterReq(req),
+        canTest: isTesterReq(req) || seesAll,
+        seesAll,
+        toTest, testing, tested, othersTesting,
+        stats: {
+          todaySeconds: Number(stats.today) || 0,
+          weekSeconds: Number(stats.week) || 0,
+          totalSeconds: Number(stats.total) || 0,
+          weekWorklogs: Number(stats.week_logs) || 0,
+          worklogs: Number(stats.logs) || 0,
+          passed30: Number(results?.passed) || 0,
+          failed30: Number(results?.failed) || 0,
+          runningSince: running[0]?.test_timer_start || null
+        },
+        now
+      });
+    } catch (error) {
+      responseError(res, 500, 'Failed to load the testing queue', error);
+    }
+  });
+
+  /**
+   * A tester's actions on a ticket in Testing:
+   *   start  take it from "To test" (or resume): the tester's clock starts, their other clocks pause
+   *   pause  stop the clock and log the session; the ticket stays theirs, in Testing
+   *   pass   finish: logs the clock, marks it Passed (the reporter then closes it)
+   *   fail   finish: logs the clock, marks it Failed with what failed (body.note, required)
+   */
+  app.post('/api/it-kanban/issues/:key/testing/:action', async (req, res) => {
+    try {
+      const { key, action } = req.params;
+      if (!['start', 'pause', 'pass', 'fail'].includes(action)) return res.status(404).json({ error: 'Unknown testing action' });
+      if (!isTesterReq(req) && !isManagerReq(req)) {
+        return res.status(403).json({ error: 'Only testers (or a manager) can record testing.', code: 'TESTER_ONLY' });
+      }
+      const actor = actorOf(req);
+      const [[row]] = await db.query('SELECT issue_key, status, tester, testing_state, test_timer_start FROM it_kanban_issues WHERE issue_key = ?', [key]);
+      if (!row) return res.status(404).json({ error: 'Issue not found' });
+      if (!isTestingStatus(row.status)) {
+        return res.status(409).json({ error: 'This ticket is not in Testing. Move it to the Testing column first.', code: 'NOT_IN_TESTING' });
+      }
+      const someoneElse = isPersonName(row.tester) && !samePerson(row.tester, actor);
+      const note = String(req.body?.note || '').trim().slice(0, 1000);
+      const record = (to) => db.query(
+        'INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
+        [key, 'testing', row.testing_state || TEST_STATE.TODO, String(to).slice(0, 2000), actor]
+      ).catch(e => console.error('Failed to record testing history:', e.message));
+
+      if (action === 'start') {
+        if (row.test_timer_start) {
+          return res.status(409).json({ error: someoneElse ? `${row.tester} is testing this right now.` : 'Your testing clock is already running.' });
+        }
+        // A ticket being tested belongs to its tester until they finish; a retest ("To test"
+        // again) can be picked up by any tester.
+        if (someoneElse && row.testing_state === TEST_STATE.ACTIVE && !isManagerReq(req)) {
+          return res.status(403).json({ error: `${row.tester} is testing this. Ask them or a manager to hand it over.`, code: 'TESTER_LOCKED' });
+        }
+        const pausedTimers = await pauseOtherTimers(actor, key);
+        await db.query('UPDATE it_kanban_issues SET tester = ?, testing_state = ?, test_timer_start = ? WHERE issue_key = ?',
+          [actor, TEST_STATE.ACTIVE, new Date(), key]);
+        if (row.testing_state !== TEST_STATE.ACTIVE) await record(TEST_STATE.ACTIVE);
+        return res.json({ success: true, state: TEST_STATE.ACTIVE, tester: actor, pausedTimers });
+      }
+
+      if (someoneElse && !isManagerReq(req)) {
+        return res.status(403).json({ error: `Only ${row.tester} (the tester) or a manager can do this.`, code: 'TESTER_LOCKED' });
+      }
+      if (action === 'pause') {
+        if (!row.test_timer_start) return res.status(409).json({ error: 'The testing clock is not running.' });
+        const seconds = await closeTestingSession(row, note ? `paused (${note})` : 'paused');
+        return res.json({ success: true, state: row.testing_state, seconds, logged: formatSecondsToDuration(seconds) });
+      }
+      if (action === 'fail' && !note) {
+        return res.status(400).json({ error: 'Say what failed, so the developer knows what to fix.', code: 'NOTE_REQUIRED' });
+      }
+      const result = action === 'pass' ? TEST_STATE.PASSED : TEST_STATE.FAILED;
+      const seconds = await closeTestingSession(row, result === TEST_STATE.PASSED ? `passed${note ? ` (${note})` : ''}` : `failed: ${note}`);
+      await db.query('UPDATE it_kanban_issues SET testing_state = ?, tested_at = ?, tester = ? WHERE issue_key = ?',
+        [result, new Date(), isPersonName(row.tester) ? row.tester : actor, key]);
+      await record(note ? `${result}: ${note}` : result);
+      res.json({ success: true, state: result, seconds, logged: formatSecondsToDuration(seconds) });
+    } catch (error) {
+      responseError(res, 500, 'Failed to record testing', error);
     }
   });
 
@@ -2589,6 +2915,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       if (moveToProgress) {
         await db.query('INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
           [key, 'status', cur.status || '', 'IN PROGRESS', actor]).catch(() => { });
+        await syncTestingWithStatus(key, cur.status, 'IN PROGRESS').catch(e => console.error('Failed to update the testing queue:', e.message));
       }
       res.json({ success: true, movedToInProgress: moveToProgress, pausedTimers });
     } catch (error) {
@@ -2606,7 +2933,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         "SELECT subtask_id, SUM(seconds) AS seconds FROM it_kanban_worklogs WHERE issue_key = ? AND subtask_id IS NOT NULL AND COALESCE(approval, 'approved') = 'approved' GROUP BY subtask_id",
         [key]
       );
-      const [[all]] = await db.query("SELECT COALESCE(SUM(seconds), 0) AS s FROM it_kanban_worklogs WHERE issue_key = ? AND COALESCE(approval, 'approved') = 'approved'", [key]);
+      const [[all]] = await db.query("SELECT COALESCE(SUM(seconds), 0) AS s FROM it_kanban_worklogs WHERE issue_key = ? AND COALESCE(approval, 'approved') = 'approved' AND COALESCE(kind, 'work') <> 'testing'", [key]);
       const [running] = await db.query('SELECT subtask_id, owner, started_at, source FROM it_kanban_subtask_timers WHERE issue_key = ?', [key]);
       const subtasks = {};
       logged.forEach(r => { subtasks[r.subtask_id] = { seconds: Number(r.seconds) || 0, running: null }; });
@@ -2630,7 +2957,7 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       const { key, sid, action } = req.params;
       if (!['start', 'stop'].includes(action)) return res.status(404).json({ error: 'Unknown timer action' });
       const actor = actorOf(req);
-      const [[issue]] = await db.query('SELECT status, original_estimate, requested_estimate, subtasks FROM it_kanban_issues WHERE issue_key = ?', [key]);
+      const [[issue]] = await db.query('SELECT status, assignee, original_estimate, requested_estimate, subtasks FROM it_kanban_issues WHERE issue_key = ?', [key]);
       if (!issue) return res.status(404).json({ error: 'Issue not found' });
       const list = parseList(issue.subtasks);
       const st = list.find(s => String(s.id) === String(sid));
@@ -2644,6 +2971,10 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       }
       if (row) return res.status(409).json({ error: `The clock is already running for ${row.owner}` });
       if (isSubtaskDone(st)) return res.status(409).json({ error: 'This subtask is done' });
+      const stOwner = st.assignee || issue.assignee;
+      if (isHoldStatus(st.status) && !isManagerReq(req) && isPersonName(stOwner) && !isSameUserReq(req, stOwner)) {
+        return res.status(403).json({ error: `Only ${stOwner} (the assignee) or a manager can take this subtask off hold.`, code: 'HOLD_LOCKED' });
+      }
       if (!parseDurationToSeconds(issue.original_estimate) && !parseDurationToSeconds(issue.requested_estimate)) {
         return res.status(400).json({ error: 'Set the main task\'s planned time before starting a subtask.', code: 'PLAN_REQUIRED' });
       }

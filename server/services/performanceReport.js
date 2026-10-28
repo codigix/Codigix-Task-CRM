@@ -153,7 +153,7 @@ const loadDataset = async (pool) => {
       .then(r => r[0])
       .catch(e => (e.code === 'ER_BAD_FIELD_ERROR' ? q(`SELECT id, issue_key, title, type, priority, status, assignee, due_date, start_date, created_at, updated_at, effort_points, story_points, original_estimate, subtasks, comments, project_id, department, labels FROM it_kanban_issues`) : Promise.reject(e))),
     q(`SELECT issue_key, field, old_value, new_value, changed_by, created_at FROM it_kanban_history ORDER BY created_at ASC`),
-    pool.query(`SELECT issue_key, author, seconds, description, started_at, created_at FROM it_kanban_worklogs
+    pool.query(`SELECT issue_key, author, seconds, description, started_at, created_at, kind FROM it_kanban_worklogs
                 WHERE COALESCE(approval, 'approved') = 'approved'`)
       .then(r => r[0])
       .catch(e => (e.code === 'ER_BAD_FIELD_ERROR' ? q(`SELECT issue_key, author, seconds, description, started_at, created_at FROM it_kanban_worklogs`) : Promise.reject(e))),
@@ -391,7 +391,7 @@ const buildFacts = (data) => {
   data.worklogs.forEach(w => {
     const uid = idForName(w.author);
     if (!uid) return;
-    time.push({ userId: uid, hours: (Number(w.seconds) || 0) / 3600, at: toDate(w.started_at) || toDate(w.created_at), taskKey: w.issue_key, source: /^auto-logged/i.test(w.description || '') ? 'Automatic (In Progress)' : 'Work log', note: w.description || null });
+    time.push({ userId: uid, hours: (Number(w.seconds) || 0) / 3600, at: toDate(w.started_at) || toDate(w.created_at), taskKey: w.issue_key, source: w.kind === 'testing' ? 'Testing' : /^auto-logged/i.test(w.description || '') ? 'Automatic (In Progress)' : 'Work log', note: w.description || null });
   });
   data.timeLogs.forEach(t => {
     if (!t.user_id) return;

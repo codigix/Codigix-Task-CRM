@@ -6,7 +6,7 @@ import {
   Search, Bell, HelpCircle, Settings, ChevronDown, ChevronRight,
   Share2, Download, MoreHorizontal, LayoutList, Plus, AlertCircle, ArrowUp, ArrowDown, CheckSquare,
   Trash2, User, Check, Megaphone, Palette, Video, FileText, Globe, Users, IterationCw, Calendar,
-  Folder, Maximize2, X, ChevronsUp, Zap, Tag, PauseCircle
+  Folder, Maximize2, X, ChevronsUp, Zap, Tag, PauseCircle, FlaskConical
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ITCreateIssueDrawer from './ITCreateIssueDrawer';
@@ -18,6 +18,8 @@ import BoardTabs from '../common/BoardTabs';
 import CompleteSprintModal from '../common/CompleteSprintModal';
 import SearchableSelect from '../common/SearchableSelect';
 import TimeTrackingModal from '../common/TimeTrackingModal';
+import TesterPickerModal from '../common/TesterPickerModal';
+import TestingQueue from './TestingQueue';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser, isUserTaskReporter } from '../../utils/access';
@@ -264,6 +266,9 @@ const DEPARTMENT_KANBAN_COLUMNS = {
 // "Under discussion / on hold": work is paused, so the card shows no progress and the
 // timer stops. Any column whose name mentions hold or discussion counts.
 const isHoldStatus = (s) => /HOLD|DISCUSS/.test(String(s || '').toUpperCase());
+// Same list as the server: anything else means work has started.
+const hasStartedStatus = (s) => !['', 'TO DO', 'TODO', 'BACKLOG', 'OPEN', 'NEW'].includes(String(s || '').trim().toUpperCase());
+const hasOwner = (n) => Boolean(n) && !['unassigned', 'none', 'system', 'automatic'].includes(String(typeof n === 'object' ? n.name || '' : n).trim().toLowerCase());
 const HOLD_COLUMN = 'ON HOLD';
 const withHoldColumn = (cols) => {
   if (cols.some(isHoldStatus)) return cols;
@@ -271,6 +276,31 @@ const withHoldColumn = (cols) => {
   const at = next.indexOf('IN PROGRESS');
   next.splice(at === -1 ? Math.max(next.length - 1, 0) : at + 1, 0, HOLD_COLUMN);
   return next;
+};
+// The testers' queue state of a ticket in Testing (set by the server): To test → Testing → Passed / Failed.
+const isTestingStatus = (s) => /TESTING/.test(String(s || '').toUpperCase());
+// A tester's own board shows the tickets they test as their work, while the ticket itself
+// stays in Testing: waiting (or paused) → To Do, clock running → In Progress, Passed / Failed → Done.
+const testerColumnOf = (issue) => {
+  const state = String(issue.testing_state || '').toUpperCase();
+  if (state === 'PASSED' || state === 'FAILED') return 'DONE';
+  return issue.test_timer_start ? 'IN PROGRESS' : 'TO DO';
+};
+const colId = (c) => String(c || '').toUpperCase().replace(/[^A-Z]/g, '');
+// While a ticket is in Testing its tester owns it (the assignee stays the developer).
+const testerOf = (card) => (card && !card.isSubtask && isTestingStatus(card.status) && hasOwner(card.tester) ? card.tester : null);
+const TESTING_BADGE = {
+  'TO TEST': { text: 'To test', cls: 'bg-slate-100 text-slate-700 ring-slate-300' },
+  TESTING: { text: 'Testing', cls: 'bg-blue-50 text-blue-700 ring-blue-200' },
+  PASSED: { text: 'Passed testing', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
+  FAILED: { text: 'Failed testing', cls: 'bg-red-50 text-red-700 ring-red-200' }
+};
+/** The testing badge a card shows: any state while in Testing, and a failure after it went back. */
+const testingBadgeOf = (card) => {
+  if (card.isSubtask) return null;
+  const state = card.testing_state || (isTestingStatus(card.status) ? 'TO TEST' : null);
+  if (!state || (!isTestingStatus(card.status) && state !== 'FAILED')) return null;
+  return TESTING_BADGE[state] || null;
 };
 const columnTitle = (col) => (isHoldStatus(col) && col === HOLD_COLUMN ? 'UNDER DISCUSSION / HOLD' : col);
 
@@ -373,6 +403,15 @@ const ITKanbanPage = ({ department }) => {
   };
   const [selectedAssignees, setSelectedAssignees] = useState([]);
   const [onlyMyIssues, setOnlyMyIssues] = useState(true);
+  // Testers work from the board itself (their tickets in Testing show as To Do / In Progress /
+  // Done); the Testing queue is the managers' overview of everything in Testing.
+  const isTester = String(user?.role || user?.role_name || '') === 'Tester';
+  const canSeeTestingQueue = isManager && !isTester;
+  const [boardView, setBoardView] = useState(() => {
+    try { return localStorage.getItem(`${currentDept}_boardView`) || 'board'; } catch (e) { return 'board'; }
+  });
+  const showTestingQueue = canSeeTestingQueue && boardView === 'testing';
+  const switchBoardView = (v) => { setBoardView(v); try { localStorage.setItem(`${currentDept}_boardView`, v); } catch (e) { } };
   const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL' | 'TODAY' | 'TOMORROW' | 'THIS_WEEK' | 'THIS_MONTH' | 'OVERDUE' | 'EXACT' | 'RANGE' | 'NO_DATE'
   const [exactDate, setExactDate] = useState('');
   const [rangeStart, setRangeStart] = useState('');
@@ -935,20 +974,22 @@ const ITKanbanPage = ({ department }) => {
         return true;
       });
     }
+    // Whether a stored person name is one of the people picked in the Assignee filter.
+    const isPicked = (name) => {
+      const n = normalizePerson(name);
+      if (!hasOwner(n)) return false;
+      return selectedAssignees.some(a => {
+        if (a === 'UNASSIGNED') return false;
+        const aLower = normalizePerson(a);
+        return n === aLower || (aLower.includes(' ') && n.includes(aLower));
+      });
+    };
     if (selectedAssignees.length > 0) {
       filtered = filtered.filter(issue => {
         const isUnassigned = !issue.assignee || issue.assignee === 'Unassigned' || issue.assignee === 'Automatic';
         if (selectedAssignees.includes('UNASSIGNED') && isUnassigned) return true;
-
-        return selectedAssignees.some(a => {
-          if (a === 'UNASSIGNED') return false;
-          const aLower = normalizePerson(a);
-          const assLower = normalizePerson(issue.assignee);
-          const repLower = normalizePerson(issue.reporter);
-          const matchAssignee = assLower === aLower || (aLower.includes(' ') && assLower.includes(aLower));
-          const matchReporter = repLower === aLower || (aLower.includes(' ') && repLower.includes(aLower));
-          return matchAssignee || matchReporter;
-        });
+        // In Testing the ticket is on both boards: the developer's (in Testing) and the tester's.
+        return isPicked(issue.assignee) || isPicked(issue.reporter) || isPicked(testerOf(issue));
       });
     }
 
@@ -972,7 +1013,13 @@ const ITKanbanPage = ({ department }) => {
     };
 
     const isAssignedToMe = (issue) => {
-      return isPersonMatch(issue.assignee) || isPersonMatch(issue.reporter);
+      // A ticket is the tester's only while it is in Testing (and once closed, as tested work);
+      // a failed ticket back in progress is the developer's again. Testers also see tickets
+      // in Testing that nobody has been picked to test yet.
+      const testing = isTestingStatus(issue.status);
+      return isPersonMatch(issue.assignee) || isPersonMatch(issue.reporter)
+        || (isPersonMatch(issue.tester) && (testing || isDoneStatus(issue.status)))
+        || (isTester && testing && !hasOwner(issue.tester));
     };
 
     // Everyone sees all tasks, unassigned included, so anyone can pick up work or hand it
@@ -992,10 +1039,25 @@ const ITKanbanPage = ({ department }) => {
     }
 
     filtered.forEach(issue => {
-      const col = (issue.status || 'TO DO').toUpperCase();
+      // A ticket in Testing is the tester's work on the tester's board (To Do / In Progress /
+      // Done there) and stays in Testing on the developer's. The board is someone's when the
+      // Assignee filter picks them, or it is your own with "Only My Tasks" (testers always).
+      const inTesting = isTestingStatus(issue.status);
+      let testView = false;
+      if (inTesting && selectedAssignees.length > 0) {
+        testView = isPicked(testerOf(issue)) && !isPicked(issue.assignee);
+      } else if (inTesting && isTester) {
+        if (hasOwner(issue.tester) && !isPersonMatch(issue.tester)) return; // another tester's
+        testView = true;
+      } else if (inTesting && shouldFilterOnlyMy) {
+        testView = isPersonMatch(testerOf(issue)) && !isPersonMatch(issue.assignee);
+      }
+      const want = testView ? testerColumnOf(issue) : (issue.status || 'TO DO').toUpperCase();
+      const col = testView ? (Object.keys(newBoard).find(c => colId(c) === colId(want)) || want) : want;
       const targetCol = newBoard[col] ? col : 'TO DO';
       newBoard[targetCol].push({
         ...issue,
+        testView,
         key: issue.issue_key,
         title: issue.title,
         type: issue.type,
@@ -1178,7 +1240,7 @@ const ITKanbanPage = ({ department }) => {
     });
 
     setBoardData(newBoard);
-  }, [allRawIssues, activeSprints, columnOrder, selectedProjectId, selectedType, selectedStatus, selectedPriority, selectedLabels, selectedAssignees, onlyMyIssues, isManager, userSearchTerms, myIdentities, searchQuery, username, dateFilter, exactDate, rangeStart, rangeEnd]);
+  }, [allRawIssues, activeSprints, columnOrder, selectedProjectId, selectedType, selectedStatus, selectedPriority, selectedLabels, selectedAssignees, onlyMyIssues, isManager, isTester, userSearchTerms, myIdentities, searchQuery, username, dateFilter, exactDate, rangeStart, rangeEnd]);
 
   // Opens a ticket straight from a URL like ...&/kanban?ticketKey=MKT-104, which is how
   // notifications deep-link. Depends on location.search so clicking a notification while
@@ -1228,6 +1290,14 @@ const ITKanbanPage = ({ department }) => {
   // Time Tracking Modal State
   const [isTimeTrackingModalOpen, setIsTimeTrackingModalOpen] = useState(false);
   const [timeTrackingTask, setTimeTrackingTask] = useState(null);
+  // "Who will test this?": { issueKey, title, assignee, tester, moving, status }
+  const [testerPick, setTesterPick] = useState(null);
+  const handleTesterPicked = (name) => {
+    const pick = testerPick;
+    setTesterPick(null);
+    if (!pick || !name) return;
+    updateIssue(pick.issueKey, pick.moving ? { status: pick.status, tester: name } : { tester: name });
+  };
   const [pendingDragResult, setPendingDragResult] = useState(null);
   const [createDrawerInitialStatus, setCreateDrawerInitialStatus] = useState(null);
   const [createDrawerInitialSummary, setCreateDrawerInitialSummary] = useState('');
@@ -1577,6 +1647,8 @@ const ITKanbanPage = ({ department }) => {
                      </ul>
                    </div>`
           });
+        } else if (data.code === 'HOLD_LOCKED') {
+          Swal.fire({ icon: 'warning', title: 'On hold', text: data.error });
         } else if (data.code === 'REPORTER_ONLY') {
           Swal.fire({
             icon: 'warning',
@@ -1691,20 +1763,90 @@ const ITKanbanPage = ({ department }) => {
     }
   };
 
+  const visibleColumns = isTester ? columnOrder.filter(c => !isTestingStatus(c)) : columnOrder;
+
+  // A tester moving one of their testing cards runs the testing step; the ticket stays in
+  // Testing. To Do → In Progress starts testing (their clock), back to To Do pauses it, and
+  // → Done records Passed or Failed.
+  const moveTestCard = async (card, from, to) => {
+    const key = card.key || card.issue_key;
+    const [f, t] = [colId(from), colId(to)];
+    // Only the tester runs their own testing (anyone else would become the tester).
+    const mine = hasOwner(card.tester) ? isUserTaskReporter(card.tester, user, myIdentities) : isTester;
+    if (!mine) {
+      Swal.fire({ icon: 'info', title: `${card.tester}'s testing`, text: `${card.tester} moves this on their own board. To give it to someone else, click the tester avatar on the card.` });
+      return;
+    }
+    if (f === 'DONE') {
+      Swal.fire({ icon: 'info', title: 'Already tested', text: 'This ticket has a test result. Its reporter closes it, or moves it back to Testing for a retest.' });
+      return;
+    }
+    let action = null;
+    let note = '';
+    if (t === 'INPROGRESS') action = 'start';
+    else if (t === 'TODO') action = card.test_timer_start ? 'pause' : null;
+    else if (t === 'DONE') {
+      const r = await Swal.fire({
+        title: `Test result for ${key}`, text: card.title || '', icon: 'question',
+        input: 'textarea', inputPlaceholder: 'What did you check? If it failed, what failed?',
+        showDenyButton: true, showCancelButton: true, returnInputValueOnDeny: true,
+        confirmButtonText: 'Passed', denyButtonText: 'Failed', confirmButtonColor: '#059669', denyButtonColor: '#dc2626',
+        preDeny: (v) => {
+          if (!String(v || '').trim()) { Swal.showValidationMessage('Say what failed, so the developer knows what to fix.'); return false; }
+          return v;
+        }
+      });
+      if (!r.isConfirmed && !r.isDenied) return;
+      action = r.isConfirmed ? 'pass' : 'fail';
+      note = String(r.value || '').trim();
+    } else {
+      Swal.fire({ icon: 'info', title: 'Testing', text: 'Move tickets you test between To Do, In Progress and Done.' });
+      return;
+    }
+    if (!action) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${encodeURIComponent(key)}/testing/${action}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        Swal.fire('Could not save the change', data.error || 'Update rejected by the server', 'error');
+      } else {
+        const logged = data.seconds ? ` · ${data.logged} logged` : '';
+        showSuccessToast({ start: `Testing ${key}`, pause: `Paused${logged}`, pass: `Passed${logged}`, fail: `Failed${logged}` }[action]);
+      }
+    } catch (e) {
+      Swal.fire('Could not save the change', 'The server could not be reached.', 'error');
+    }
+    fetchKanbanData();
+  };
+
   const onDragEnd = (result) => {
     if (!result.destination) return;
     const { source, destination, type } = result;
 
     if (type === 'column') {
+      // Indexes are positions among the shown columns (testers don't see Testing).
+      const from = columnOrder.indexOf(visibleColumns[source.index]);
+      const to = columnOrder.indexOf(visibleColumns[destination.index]);
+      if (from === -1 || to === -1) return;
       const newColumnOrder = Array.from(columnOrder);
-      const [removed] = newColumnOrder.splice(source.index, 1);
-      newColumnOrder.splice(destination.index, 0, removed);
+      const [removed] = newColumnOrder.splice(from, 1);
+      newColumnOrder.splice(to, 0, removed);
       setColumnOrder(newColumnOrder);
       return;
     }
 
     if (source.droppableId !== destination.droppableId) {
       const newStatus = destination.droppableId;
+      const dragged = (boardData[source.droppableId] || [])[source.index];
+      if (dragged?.testView) {
+        moveTestCard(dragged, source.droppableId, newStatus);
+        return;
+      }
       const isMovingToDone = String(newStatus || '').toUpperCase() === 'DONE';
 
       // Check reporter-only rule when moving to DONE
@@ -1725,6 +1867,25 @@ const ITKanbanPage = ({ department }) => {
             return;
           }
         }
+      }
+
+      // Taking work off hold is for its assignee or a manager (the server enforces the same);
+      // an unassigned card can be picked up by anyone.
+      const moving = (boardData[source.droppableId] || [])[source.index];
+      if (moving && !isManager && isHoldStatus(moving.status) && !isHoldStatus(newStatus)
+        && hasOwner(moving.assignee) && !isUserTaskReporter(moving.assignee, user, myIdentities)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'On hold',
+          text: `Only ${typeof moving.assignee === 'object' ? moving.assignee.name : moving.assignee} (the assignee) or a manager can take this off hold.`
+        });
+        return;
+      }
+
+      // Into Testing: ask who tests it; the card moves once a tester is picked.
+      if (moving && !moving.isSubtask && isTestingStatus(newStatus) && !isTestingStatus(moving.status)) {
+        setTesterPick({ issueKey: moving.key || moving.issue_key, title: moving.title, assignee: moving.assignee, tester: moving.tester, moving: true, status: newStatus });
+        return;
       }
 
       const sourceCol = [...(boardData[source.droppableId] || [])];
@@ -1899,7 +2060,9 @@ const ITKanbanPage = ({ department }) => {
         onClose={handleTimeTrackingCancel}
         onConfirm={handleTimeTrackingConfirm}
         taskDetails={timeTrackingTask}
+        lockEstimate={!isManager && hasStartedStatus(timeTrackingTask?.status)}
       />
+      <TesterPickerModal info={testerPick} users={usersList} onDone={handleTesterPicked} />
       <div className="flex w-full h-full max-h-full bg-white overflow-hidden font-sans">
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           {/* HEADER */}
@@ -1932,7 +2095,23 @@ const ITKanbanPage = ({ department }) => {
 
           <BoardTabs department={currentDept} />
 
+          {canSeeTestingQueue && (
+            <div className="px-4 pt-3 bg-white flex items-center gap-1" role="tablist" aria-label="Board or testing queue">
+              {[['board', 'Board'], ['testing', 'Testing queue']].map(([v, label]) => (
+                <button key={v} type="button" role="tab" aria-selected={boardView === v} onClick={() => switchBoardView(v)}
+                  className={`h-8 px-3 rounded text-xs font-medium cursor-pointer ${boardView === v ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex-1 overflow-hidden flex relative">
+            {showTestingQueue ? (
+              <div className="flex-1 min-w-0 overflow-y-auto p-4 bg-white">
+                <TestingQueue department={currentDept} onOpenTicket={(k) => { setSelectedIssue(k); setSelectedSubtaskKey(null); }} />
+              </div>
+            ) : (
             <div className="flex-1 flex flex-col p-4 pb-0 min-w-0 bg-white">
 
               <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
@@ -2432,7 +2611,7 @@ const ITKanbanPage = ({ department }) => {
                           ref={provided.innerRef}
                           className="flex gap-4 overflow-x-auto overflow-y-hidden h-full items-stretch no-scrollbar"
                         >
-                          {columnOrder.map((col, index) => (
+                          {visibleColumns.map((col, index) => (
                             <Draggable key={col} draggableId={col} index={index}>
                               {(provided) => {
                                 const colBg = COLUMN_COLORS[col] || 'bg-gray-50';
@@ -2542,8 +2721,15 @@ const ITKanbanPage = ({ department }) => {
                                                     return (
                                                       <>
                                                         {/* WORK-TYPE LABELS */}
-                                                        {(labels.length > 0 || card.isSubtask || isHoldStatus(card.status)) && (
+                                                        {(labels.length > 0 || card.isSubtask || isHoldStatus(card.status) || testingBadgeOf(card)) && (
                                                           <div className="flex items-center gap-1 mb-1.5 flex-wrap pr-6">
+                                                            {testingBadgeOf(card) && (
+                                                              <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ring-1 ring-inset flex items-center gap-1 ${testingBadgeOf(card).cls}`}
+                                                                title={`${testingBadgeOf(card).text}${card.tester ? ` · tester: ${card.tester}` : ''}${card.testing_time_spent ? ` · testing time ${card.testing_time_spent}` : ''}`}>
+                                                                {card.test_timer_start && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />}
+                                                                {testingBadgeOf(card).text}{card.tester && card.testing_state === 'TESTING' ? ` · ${String(card.tester).split(' ')[0]}` : ''}
+                                                              </span>
+                                                            )}
                                                             {isHoldStatus(card.status) && (
                                                               <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-300 flex items-center gap-1" title="Paused: no work or timer until it leaves this column">
                                                                 <PauseCircle size={10} /> On hold
@@ -2735,6 +2921,14 @@ const ITKanbanPage = ({ department }) => {
 
                                                       {col === 'DONE' ? (
                                                         <CheckCircleIcon className="text-green-500" size={16} />
+                                                      ) : (!card.isSubtask && isTestingStatus(card.status)) ? (
+                                                        <button
+                                                          onClick={(e) => { e.stopPropagation(); setTesterPick({ issueKey: card.key || card.issue_key, title: card.title, assignee: card.assignee, tester: card.tester, moving: false }); }}
+                                                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] border border-white shrink-0 cursor-pointer transition-transform hover:scale-110 ${testerOf(card) ? 'bg-purple-600 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                                          title={testerOf(card) ? `Tester: ${card.tester} · developer: ${card.assignee || 'Unassigned'} (Click to change the tester)` : 'No tester yet (Click to pick one)'}
+                                                        >
+                                                          {testerOf(card) ? getInitials(card.tester) : <FlaskConical size={12} className="text-gray-500" />}
+                                                        </button>
                                                       ) : (
                                                         <div className="relative card-assignee-dropdown">
                                                           <button
@@ -3550,6 +3744,7 @@ const ITKanbanPage = ({ department }) => {
               )}
 
             </div>
+            )}
 
             {/* RIGHT SIDE PANEL (ISSUE DETAILS) */}
             <ITIssueDetailsPanel

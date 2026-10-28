@@ -401,8 +401,9 @@ module.exports = function setupPerformanceEngineRoutes(app, pool) {
             });
           }
         } else if (contributionMethod === 'TIME_BASED') {
+          // Testing time is the tester's own work, not a share of building the task.
           const [logs] = await db.query(
-            'SELECT author, SUM(seconds) AS total_seconds FROM it_kanban_worklogs WHERE issue_key = ? GROUP BY author',
+            "SELECT author, SUM(seconds) AS total_seconds FROM it_kanban_worklogs WHERE issue_key = ? AND COALESCE(kind, 'work') <> 'testing' GROUP BY author",
             [task.issue_key]
           );
           const total = logs.reduce((sum, l) => sum + Number(l.total_seconds || 0), 0);
