@@ -730,7 +730,7 @@ function GoogleConnectHelpModal({ status, onClose }) {
           <li>If Google says the app isn't verified yet, click <strong>Advanced → Go to Codigix CRM</strong>.</li>
           <li>Tick <strong>every</strong> permission, including Calendar and "Send email on your behalf", then click <strong>Continue</strong>.</li>
         </ol>
-        <p className="text-xs text-gray-500">You can disconnect at any time from this page, or remove access at myaccount.google.com/permissions.</p>
+        <p className="text-xs text-gray-500">You can disconnect at any time from this page, or remove access at myaccount.google.com/permissions. How we use your Google data: <a href="/privacy.html" target="_blank" rel="noreferrer" className="text-indigo-600 underline">Privacy Policy</a>.</p>
         {!status?.configured && <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">Google sign-in isn't set up on the server yet. Ask an administrator.</p>}
       </div>
     </Modal>

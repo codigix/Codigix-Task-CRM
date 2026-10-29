@@ -16,7 +16,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta
       name="description"
-      content="Codigix - Enterprise Business Management Platform"
+      content="Codigix CRM - business platform for tasks, projects, sales and meetings, with optional Google Calendar, Meet and Gmail integration."
     />
     <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png?v=2" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json?v=2" />
@@ -24,7 +24,27 @@
     <title>Codigix - Business Platform</title>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <!--
+      Readable without JavaScript: Google's OAuth verification fetches the homepage without running scripts,
+      and saw only an empty page. Browsers with JavaScript never show this block.
+    -->
+    <noscript>
+      <main style="max-width:760px;margin:0 auto;padding:32px 16px;font:16px/1.6 system-ui,Arial,sans-serif;color:#0f172a">
+        <img src="%PUBLIC_URL%/codigix-logo.png" alt="Codigix" style="height:36px" />
+        <h1 style="font-size:28px;margin:20px 0 8px">Codigix CRM</h1>
+        <p>Codigix CRM is a business platform for tasks, projects, sales and meetings that Codigix Infotech Pvt. Ltd.
+          offers to businesses and their teams.</p>
+        <h2 style="font-size:20px;margin-top:28px">Google account integration</h2>
+        <p>Any Codigix CRM user can connect their Google account so that meetings they schedule are created in their
+          Google Calendar with a Google Meet link, with them as host, and so that emails they send from the CRM (task
+          updates, quotations, proposals) go from their own Gmail address. Connecting is optional and can be removed at
+          any time. Codigix CRM's use of information received from Google APIs adheres to the Google API Services User
+          Data Policy, including the Limited Use requirements.</p>
+        <p><a href="%PUBLIC_URL%/privacy.html">Privacy Policy</a> · <a href="%PUBLIC_URL%/login">Sign in</a></p>
+        <p style="color:#64748b;font-size:14px">© Codigix Infotech Pvt. Ltd. · Office 514, Bramha Sky Uzuri, Pimpri, Pune · info@codigixinfotech.com</p>
+        <p style="color:#64748b;font-size:14px">Please enable JavaScript to use the app.</p>
+      </main>
+    </noscript>
     <div id="root"></div>
   </body>
 </html>

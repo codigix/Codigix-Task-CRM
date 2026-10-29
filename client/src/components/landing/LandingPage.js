@@ -62,7 +62,8 @@ const LandingPage = () => {
             </p>
           </div>
           <div className="flex flex-col gap-2 md:items-end">
-            <Link to="/privacy" className="hover:text-red-600">Privacy Policy</Link>
+            {/* Must match the privacy policy URL on the Google consent screen (a static page, no JavaScript needed). */}
+            <a href="/privacy.html" className="hover:text-red-600">Privacy Policy</a>
             <Link to="/login" className="hover:text-red-600">Sign in</Link>
             <span className="text-slate-400">© {new Date().getFullYear()} Codigix Infotech Pvt. Ltd.</span>
           </div>
