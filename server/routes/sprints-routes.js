@@ -502,6 +502,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
 
   /**
    * Puts carried-over tickets in the LAST MONTH PENDING column (timers logged, testing ended).
+   * Only TO DO and ON HOLD (under discussion) tickets go there; IN REVIEW etc. keep their status.
    * Only last period's work goes there: a ticket due (or starting) on or after the next sprint's
    * start belongs to the new period and keeps its status. Undated leftovers count as pending.
    */
@@ -513,7 +514,8 @@ module.exports = function setupSprintsRoutes(app, pool) {
     const cutoff = t?.start_day || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const [rows] = await db.query(
       `SELECT issue_key FROM it_kanban_issues WHERE issue_key IN (${keys.map(() => '?').join(',')})
-         AND (COALESCE(due_date, start_date) IS NULL OR COALESCE(due_date, start_date) < ?)`,
+         AND (COALESCE(due_date, start_date) IS NULL OR COALESCE(due_date, start_date) < ?)
+         AND UPPER(TRIM(status)) IN ('TO DO', 'ON HOLD')`,
       [...keys, cutoff]
     );
     const pending = rows.map(r => r.issue_key);
