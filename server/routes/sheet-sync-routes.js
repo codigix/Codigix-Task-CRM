@@ -209,9 +209,11 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
       const sheetId = sheetIdFrom(url);
       if (!sheetId) return res.status(400).json({ error: 'Paste the link of a Google Sheet (it contains /spreadsheets/d/…).' });
       const dept = deptOf(req.body.department);
-      // Linking the same sheet twice would sync every cell twice.
-      const [[already]] = await pool.query('SELECT * FROM sheet_sync_sources WHERE sheet_id = ? LIMIT 1', [sheetId]);
-      if (already) return res.status(409).json({ error: `This sheet is already linked${already.department !== dept ? ` on the ${already.department} board` : ''} as "${already.name}". Sync that one instead.`, source: publicSource(already) });
+      // Linking the same sheet twice on one board is harmless: just show the existing link.
+      // Another board may link it too; its first sync matches tickets that already exist by
+      // title and date, so nothing is created twice.
+      const [[already]] = await pool.query('SELECT * FROM sheet_sync_sources WHERE sheet_id = ? AND department = ? LIMIT 1', [sheetId, dept]);
+      if (already) return res.json({ source: publicSource(already), tabs: [], alreadyLinked: true });
       // Opening it now tells the manager straight away if sharing is wrong.
       const wb = await download(sheetId);
       const tabs = wb.worksheets.filter(s => !NON_CALENDAR_TAB.test(s.name) && readCalendarTab(s)).map(s => s.name);
@@ -242,18 +244,22 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
 
   // ── Sync: read the sheet and add what is new ──────────────────────────
   // dryRun=true reports what would happen without writing anything.
-  app.post('/api/sheet-sync/sources/:id/run', async (req, res) => {
-    const sourceId = Number(req.params.id);
-    const dryRun = req.body?.dryRun === true || req.query.dryRun === 'true';
-    if (!req.user) return res.status(401).json({ error: 'Please sign in again.' });
-    if (running.has(sourceId)) return res.status(409).json({ error: 'This sheet is already syncing. Wait a moment and refresh.' });
-    running.add(sourceId);
+  // Shared by the Sync button and the automatic background sync. Returns { status, body }.
+  async function runSync(sourceId, { dryRun = false, actor = 'Sheet sync' } = {}) {
+    // A preview only reads, so it never needs the lock. A real run waits (up to 2 minutes) for
+    // a sync already in progress, e.g. the automatic one, instead of failing.
+    if (!dryRun) {
+      for (let waited = 0; running.has(sourceId); waited += 500) {
+        if (waited >= 120000) return { status: 409, body: { error: 'This sheet is still syncing. Wait a moment and try again.' } };
+        await new Promise(r => setTimeout(r, 500));
+      }
+      running.add(sourceId);
+    }
     let conn = null;
     try {
       await ensureTables;
       const [[source]] = await pool.query('SELECT * FROM sheet_sync_sources WHERE id = ?', [sourceId]);
-      if (!source) return res.status(404).json({ error: 'That sheet is no longer linked.' });
-      const actor = req.user.name || 'Sheet sync';
+      if (!source) return { status: 404, body: { error: 'That sheet is no longer linked.' } };
       const wb = await download(source.sheet_id);
 
       const [projects] = await pool.query('SELECT id, name, title FROM projects');
@@ -322,7 +328,14 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
           if (!cell.date) { summary.noDate += 1; continue; }
           const { cellKey } = cell;
           const title = `${sheet.name.trim()} - ${cell.title}`.slice(0, 480);
-          const link = linked.get(cellKey);
+          let link = linked.get(cellKey);
+          // A cell linked to a finished ticket from another month is a wrong link left by an
+          // older sync (the calendar reuses titles every month). Ignore it: the cell is new work,
+          // and the link is re-pointed when its ticket is found or created.
+          if (link) {
+            const old = byKey.get(link.issue_key);
+            if (old && /^(DONE|CLOSED|COMPLETED|RESOLVED)$/i.test(String(old.status || '').trim()) && old.due && old.due.slice(0, 7) !== cell.date.slice(0, 7)) link = null;
+          }
           if (link) {
             const issue = byKey.get(link.issue_key);
             if (!issue) { summary.deletedInSystem += 1; continue; }
@@ -346,7 +359,10 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
           // The same task moved to another day in the sheet: its old cell is gone (or it was
           // never linked, e.g. imported by hand before the sheet was linked). Move that ticket
           // instead of creating a second one. The nearest date wins when there are several.
+          // A finished ticket is never moved: the calendar repeats titles every month ("Reel 1"),
+          // so a new month's row is new work, not the old finished ticket on another date.
           const candidates = (byTitle.get(title.toLowerCase()) || []).filter(e => !claimed.has(e.issue_key)
+            && !/^(DONE|CLOSED|COMPLETED|RESOLVED)$/i.test(String(e.status || '').trim())
             && (!linkedIssueKeys.has(e.issue_key) || orphanCellOf.has(e.issue_key)));
           if (candidates.length) {
             const dist = (e) => Math.abs(new Date(`${e.due || e.start || cell.date}T00:00:00Z`) - new Date(`${cell.date}T00:00:00Z`));
@@ -371,7 +387,7 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
         kind: p.kind, title: p.title, date: p.date || null, service: p.service || null, issueKey: p.issueKey || null,
         sprint: p.sprint ? p.sprint.name : (p.kind === 'create' ? null : undefined), from: p.kind === 'move' ? p.oldDue : p.oldTitle
       }));
-      if (dryRun) return res.json({ dryRun: true, ...summary, preview });
+      if (dryRun) return { status: 200, body: { dryRun: true, ...summary, preview } };
 
       conn = await pool.getConnection();
       await conn.beginTransaction();
@@ -379,7 +395,7 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
       const created = [];
       for (const p of plan) {
         if (p.kind === 'link') {
-          await conn.query('INSERT IGNORE INTO sheet_sync_items (source_id, cell_key, issue_key, title) VALUES (?, ?, ?, ?)', [sourceId, p.cellKey, p.issueKey, p.title]);
+          await conn.query('INSERT INTO sheet_sync_items (source_id, cell_key, issue_key, title) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE issue_key = VALUES(issue_key), title = VALUES(title)', [sourceId, p.cellKey, p.issueKey, p.title]);
         } else if (p.kind === 'move') {
           // Re-point the ticket's link at its new cell, and follow the sheet's date unless it is done.
           if (p.oldCellKey) await conn.query('UPDATE sheet_sync_items SET cell_key = ?, title = ? WHERE source_id = ? AND cell_key = ?', [p.cellKey, p.title, sourceId, p.oldCellKey]);
@@ -418,7 +434,7 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
               p.sprint ? p.sprint.name : null, p.sprint ? p.sprint.id : null,
               JSON.stringify(['content-calendar', p.service]), p.service]
           );
-          await conn.query('INSERT INTO sheet_sync_items (source_id, cell_key, issue_key, title) VALUES (?, ?, ?, ?)', [sourceId, p.cellKey, key, p.title]);
+          await conn.query('INSERT INTO sheet_sync_items (source_id, cell_key, issue_key, title) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE issue_key = VALUES(issue_key), title = VALUES(title)', [sourceId, p.cellKey, key, p.title]);
           await conn.query('INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
             [key, 'created', '', 'From Google Sheet', `${actor} (Google Sheet sync)`]).catch(() => {});
           created.push(key);
@@ -428,14 +444,46 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
       await conn.query('UPDATE sheet_sync_sources SET last_synced_at = NOW(), last_synced_by = ?, last_result = ? WHERE id = ?',
         [actor, JSON.stringify(result), sourceId]);
       await conn.commit();
-      res.json({ ...result, createdKeys: created.slice(0, 50) });
+      return { status: 200, body: { ...result, createdKeys: created.slice(0, 50) } };
     } catch (e) {
       if (conn) { try { await conn.rollback(); } catch (_) { /* nothing to undo */ } }
       console.error('sheet sync:', e.message);
-      res.status(e.status || 500).json({ error: e.status ? e.message : 'The sync failed; nothing was changed. Try again.' });
+      return { status: e.status || 500, body: { error: e.status ? e.message : 'The sync failed; nothing was changed. Try again.' } };
     } finally {
       if (conn) conn.release();
-      running.delete(sourceId);
+      if (!dryRun) running.delete(sourceId);
     }
+  }
+
+  app.post('/api/sheet-sync/sources/:id/run', async (req, res) => {
+    if (!req.user) return res.status(401).json({ error: 'Please sign in again.' });
+    const dryRun = req.body?.dryRun === true || req.query.dryRun === 'true';
+    const out = await runSync(Number(req.params.id), { dryRun, actor: req.user.name || 'Sheet sync' });
+    res.status(out.status).json(out.body);
   });
+
+  // ── Automatic sync ────────────────────────────────────────────────────
+  // Edits made in the Google Sheet reach the board without anyone pressing Sync. Every linked
+  // sheet is re-read on a timer (SHEET_AUTO_SYNC_MINUTES, default 10; 0 turns it off).
+  const autoMinutes = Number(process.env.SHEET_AUTO_SYNC_MINUTES ?? 10);
+  if (autoMinutes > 0) {
+    const autoSync = async () => {
+      try {
+        await ensureTables;
+        const [sources] = await pool.query('SELECT id FROM sheet_sync_sources ORDER BY id');
+        for (const { id } of sources) {
+          const out = await runSync(id, { actor: 'Auto sync' });
+          if (out.status >= 400 && out.status !== 409) console.error(`Auto sync of sheet source ${id} failed: ${out.body.error}`);
+        }
+      } catch (e) {
+        console.error('Auto sync:', e.message);
+      }
+    };
+    setTimeout(autoSync, 60 * 1000).unref?.();
+    setInterval(autoSync, autoMinutes * 60 * 1000).unref?.();
+  }
 };
+
+module.exports.readCalendarTab = readCalendarTab;
+module.exports.NON_CALENDAR_TAB = NON_CALENDAR_TAB;
+module.exports.norm = norm;

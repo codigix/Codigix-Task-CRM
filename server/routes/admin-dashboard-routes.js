@@ -23,6 +23,17 @@ const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0
 const normDept = (d) => String(d || '').replace(/\s*department\s*$/i, '').trim() || 'Unassigned';
 const round1 = (n) => Math.round((Number(n) || 0) * 10) / 10;
 
+/** ?period=all | YYYY-MM | YYYY  ->  { from, to, kind } (to is exclusive) or null for "all time". */
+const parsePeriod = (param) => {
+  const v = String(param || 'all');
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(v)) { const [y, m] = v.split('-').map(Number); return { from: new Date(y, m - 1, 1), to: new Date(y, m, 1), kind: 'month', value: v }; }
+  if (/^\d{4}$/.test(v)) return { from: new Date(+v, 0, 1), to: new Date(+v + 1, 0, 1), kind: 'year', value: v };
+  return null;
+};
+const inRange = (range, v) => { if (!range || !v) return false; const d = new Date(v); return d >= range.from && d < range.to; };
+// A ticket belongs to a period by its due date, or by its created date when it has none.
+const inScope = (range, i) => !range || (i.due_date ? inRange(range, i.due_date) : inRange(range, i.created_at));
+
 module.exports = function setupAdminDashboardRoutes(app, pool) {
   const q = async (sql, params = []) => (await pool.query(sql, params))[0];
   const safe = async (fn) => { try { return await fn(); } catch (e) { console.error('Admin overview block failed:', e.message); return null; } };
@@ -34,6 +45,7 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
       const days30 = new Date(now); days30.setDate(days30.getDate() - 29); days30.setHours(0, 0, 0, 0);
       const days7 = new Date(now); days7.setDate(days7.getDate() - 6); days7.setHours(0, 0, 0, 0);
       const next7 = new Date(now); next7.setDate(next7.getDate() + 7);
+      const range = parsePeriod(req.query.period);
 
       // ── People ──
       const people = await safe(async () => {
@@ -47,7 +59,7 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
         return {
           active: active.length,
           inactive: users.length - active.length,
-          newThisMonth: active.filter(u => u.created_at && new Date(u.created_at) >= new Date(now.getFullYear(), now.getMonth(), 1)).length,
+          newThisMonth: active.filter(u => u.created_at && (range ? inRange(range, u.created_at) : new Date(u.created_at) >= new Date(now.getFullYear(), now.getMonth(), 1))).length,
           byDepartment: Object.entries(byDept).map(([department, count]) => ({ department, count })).sort((a, b) => b.count - a.count),
           pendingRegistrations: Number(pending?.n || 0),
           _users: active
@@ -56,7 +68,8 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
 
       // ── Work (board tickets) ──
       const work = await safe(async () => {
-        const issues = await q('SELECT issue_key, title, status, assignee, department, due_date, created_at, updated_at, project_id, sprint_id FROM it_kanban_issues');
+        const allIssues = await q('SELECT issue_key, title, status, assignee, department, due_date, created_at, updated_at, project_id, sprint_id FROM it_kanban_issues');
+        const issues = allIssues.filter(i => inScope(range, i));
         const doneHist = await q(`SELECT issue_key, MAX(created_at) AS at FROM it_kanban_history
                                    WHERE field = 'status' AND UPPER(TRIM(new_value)) IN (?) GROUP BY issue_key`, [DONE]);
         const doneAt = new Map(doneHist.map(r => [r.issue_key, new Date(r.at)]));
@@ -65,7 +78,13 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
         let overdue = 0; let dueToday = 0; let unassignedOpen = 0; let dueNext7 = 0;
         const completedByDay = {};
         const createdByDay = {};
-        for (let d = new Date(days30); d <= now; d.setDate(d.getDate() + 1)) { completedByDay[ymd(d)] = 0; createdByDay[ymd(d)] = 0; }
+        // Trend buckets: the last 30 days, or every day of a month, or every month of a year.
+        const bucketKey = (d) => (range && range.kind === 'year' ? `${ymd(d).slice(0, 7)}-01` : ymd(d));
+        const windowStart = range ? range.from : days30;
+        const windowEnd = range ? new Date(Math.min(range.to - 1, range.to)) : now;
+        if (range && range.kind === 'year') { for (let m = 0; m < 12; m++) { const k = `${range.value}-${String(m + 1).padStart(2, '0')}-01`; completedByDay[k] = 0; createdByDay[k] = 0; } }
+        else for (let d = new Date(windowStart); d < windowEnd; d.setDate(d.getDate() + 1)) { completedByDay[ymd(d)] = 0; createdByDay[ymd(d)] = 0; }
+        const inWindow = (d) => d >= windowStart && d < (range ? range.to : new Date(now.getTime() + 1));
         issues.forEach(i => {
           const b = bucketOf(i.status);
           totals[b] += 1;
@@ -78,12 +97,16 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
             if (due === today) dueToday += 1;
             if (due && due > today && new Date(i.due_date) <= next7) dueNext7 += 1;
             if (!i.assignee || ['unassigned', 'none', ''].includes(String(i.assignee).trim().toLowerCase())) unassignedOpen += 1;
-          } else {
-            const at = doneAt.get(i.issue_key) || (i.updated_at ? new Date(i.updated_at) : null);
-            if (at && at >= days30) completedByDay[ymd(at)] = (completedByDay[ymd(at)] || 0) + 1;
           }
-          if (i.created_at && new Date(i.created_at) >= days30) {
-            const k = ymd(new Date(i.created_at)); createdByDay[k] = (createdByDay[k] || 0) + 1;
+        });
+        // Completed / created use every ticket (not only those due in the period): what happened in the window.
+        allIssues.forEach(i => {
+          if (bucketOf(i.status) === 'done') {
+            const at = doneAt.get(i.issue_key) || (i.updated_at ? new Date(i.updated_at) : null);
+            if (at && inWindow(at)) { const k = bucketKey(at); completedByDay[k] = (completedByDay[k] || 0) + 1; }
+          }
+          if (i.created_at && inWindow(new Date(i.created_at))) {
+            const k = bucketKey(new Date(i.created_at)); createdByDay[k] = (createdByDay[k] || 0) + 1;
           }
         });
         const completed30 = Object.values(completedByDay).reduce((a, b) => a + b, 0);
@@ -93,18 +116,18 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
           open: totals.todo + totals.inProgress + totals.review,
           totals,
           overdue, dueToday, dueNext7, unassignedOpen,
-          completed30, completed7,
+          completed30, completed7, granularity: range && range.kind === 'year' ? 'month' : 'day',
           completedByDay: Object.entries(completedByDay).map(([date, count]) => ({ date, count, created: createdByDay[date] || 0 })),
           byDepartment: Object.values(deptMap).sort((a, b) => (b.todo + b.inProgress + b.review + b.done) - (a.todo + a.inProgress + a.review + a.done)),
-          _issues: issues, _doneAt: doneAt
+          _issues: issues, _allIssues: allIssues, _doneAt: doneAt
         };
       });
 
       // ── Time ──
       const time = await safe(async () => {
         const rows = await q(`SELECT author, seconds, COALESCE(started_at, created_at) AS at, COALESCE(approval, 'approved') AS approval
-                                FROM it_kanban_worklogs WHERE COALESCE(started_at, created_at) >= ?`, [days30])
-          .catch(() => q('SELECT author, seconds, COALESCE(started_at, created_at) AS at, \'approved\' AS approval FROM it_kanban_worklogs WHERE COALESCE(started_at, created_at) >= ?', [days30]));
+                                FROM it_kanban_worklogs WHERE COALESCE(started_at, created_at) >= ? AND COALESCE(started_at, created_at) < ?`, [range ? range.from : days30, range ? range.to : new Date(now.getTime() + 86400000)])
+          .catch(() => q('SELECT author, seconds, COALESCE(started_at, created_at) AS at, \'approved\' AS approval FROM it_kanban_worklogs WHERE COALESCE(started_at, created_at) >= ? AND COALESCE(started_at, created_at) < ?', [range ? range.from : days30, range ? range.to : new Date(now.getTime() + 86400000)]));
         const approved = rows.filter(r => r.approval === 'approved');
         const sumH = (list) => round1(list.reduce((s, r) => s + Number(r.seconds || 0), 0) / 3600);
         const [running] = await q('SELECT COUNT(*) AS n FROM it_kanban_issues WHERE is_timer_running = 1').catch(() => [{ n: 0 }]);
@@ -169,8 +192,9 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
 
       // ── Sales ──
       const sales = await safe(async () => {
-        const leads = await q('SELECT lead_status, value, created_at FROM leads');
-        const deals = await q('SELECT deal_name, deal_value, deal_stage, status, created_at FROM deals');
+        let leads = await q('SELECT lead_status, value, created_at FROM leads');
+        let deals = await q('SELECT deal_name, deal_value, deal_stage, status, created_at FROM deals');
+        if (range) { leads = leads.filter(l => inRange(range, l.created_at)); deals = deals.filter(d => inRange(range, d.created_at)); }
         const open = deals.filter(d => !['Won', 'Lost', 'Closed Won', 'Closed Lost'].includes(String(d.status || '')));
         const won = deals.filter(d => /won/i.test(String(d.status || '')) || /won/i.test(String(d.deal_stage || '')));
         const stages = {};
@@ -181,7 +205,7 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
         });
         return {
           leads: leads.length,
-          newLeads30: leads.filter(l => l.created_at && new Date(l.created_at) >= days30).length,
+          newLeads30: range ? leads.length : leads.filter(l => l.created_at && new Date(l.created_at) >= days30).length,
           converted: leads.filter(l => /convert|qualified/i.test(String(l.lead_status || ''))).length,
           openDeals: open.length,
           pipelineValue: round1(open.reduce((s, d) => s + Number(d.deal_value || 0), 0)),
@@ -193,7 +217,8 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
 
       // ── Finance ──
       const finance = await safe(async () => {
-        const inv = await q('SELECT amount, amount_paid, status, open_till, created_at FROM invoices');
+        let inv = await q('SELECT amount, amount_paid, status, open_till, created_at FROM invoices');
+        if (range) inv = inv.filter(i => inRange(range, i.created_at));
         const billed = inv.reduce((s, i) => s + Number(i.amount || 0), 0);
         const paid = inv.reduce((s, i) => s + Number(i.amount_paid || 0), 0);
         return {
@@ -202,7 +227,7 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
           collected: round1(paid),
           outstanding: round1(billed - paid),
           overdueInvoices: inv.filter(i => !/paid/i.test(String(i.status || '')) && i.open_till && ymd(new Date(i.open_till)) < today).length,
-          billed30: round1(inv.filter(i => i.created_at && new Date(i.created_at) >= days30).reduce((s, i) => s + Number(i.amount || 0), 0))
+          billed30: round1(inv.filter(i => range || (i.created_at && new Date(i.created_at) >= days30)).reduce((s, i) => s + Number(i.amount || 0), 0))
         };
       });
 
@@ -217,7 +242,8 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
           const name = nameOf(u).toLowerCase();
           const mine = issues.filter(i => String(i.assignee || '').trim().toLowerCase() === name);
           const open = mine.filter(i => bucketOf(i.status) !== 'done');
-          const done30 = mine.filter(i => bucketOf(i.status) === 'done' && (doneAt.get(i.issue_key) || new Date(i.updated_at)) >= days30);
+          const winFrom = range ? range.from : days30; const winTo = range ? range.to : new Date(now.getTime() + 86400000);
+          const done30 = (work?._allIssues || issues).filter(i => String(i.assignee || '').trim().toLowerCase() === name && bucketOf(i.status) === 'done').filter(i => { const at = doneAt.get(i.issue_key) || new Date(i.updated_at); return at >= winFrom && at < winTo; });
           return {
             id: u.id, name: nameOf(u), role: u.role || '—', department: normDept(u.department),
             open: open.length,
@@ -233,8 +259,8 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
       const activity = await safe(async () => {
         const rows = await q(`SELECT h.issue_key, h.field, h.old_value, h.new_value, h.changed_by, h.created_at, i.title
                                 FROM it_kanban_history h LEFT JOIN it_kanban_issues i ON i.issue_key = h.issue_key
-                               WHERE h.field IN ('status', 'assignee', 'due_date', 'priority')
-                               ORDER BY h.created_at DESC LIMIT 12`);
+                               WHERE h.field IN ('status', 'assignee', 'due_date', 'priority')${range ? ' AND h.created_at >= ? AND h.created_at < ?' : ''}
+                               ORDER BY h.created_at DESC LIMIT 12`, range ? [range.from, range.to] : []);
         return rows.map(r => ({
           key: r.issue_key, title: r.title, field: r.field, from: r.old_value, to: r.new_value, by: r.changed_by, at: r.created_at
         }));
@@ -256,7 +282,7 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
       res.json({
         generatedAt: now,
         people: strip(people), work: strip(work), time: strip(time), attention, projects, sales, finance,
-        team, activity, upcoming
+        team, activity, upcoming, period: range ? { kind: range.kind, value: range.value } : { kind: 'all' }
       });
     } catch (err) {
       console.error('Admin overview failed:', err);
@@ -283,18 +309,19 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
       const today = ymd(now);
       const days30 = new Date(now); days30.setDate(days30.getDate() - 29); days30.setHours(0, 0, 0, 0);
       const days7 = new Date(now); days7.setDate(days7.getDate() - 6); days7.setHours(0, 0, 0, 0);
+      const range = parsePeriod(req.query.period);
       const send = (rows, columns, extra = {}) => res.json({ total: rows.length, rows: rows.slice(0, LIMIT), truncated: rows.length > LIMIT, columns, ...extra });
 
       if (type === 'tasks') {
         const issues = await q(`SELECT i.issue_key, i.title, i.status, i.assignee, i.department, i.due_date, i.updated_at, i.priority,
-                                       i.labels, i.project_id, p.name AS project_name
+                                       i.labels, i.project_id, i.created_at, p.name AS project_name
                                   FROM it_kanban_issues i LEFT JOIN projects p ON p.id = i.project_id`);
         const doneHist = await q(`SELECT issue_key, MAX(created_at) AS at FROM it_kanban_history
                                    WHERE field = 'status' AND UPPER(TRIM(new_value)) IN (?) GROUP BY issue_key`, [DONE]);
         const doneAt = new Map(doneHist.map(r => [r.issue_key, new Date(r.at)]));
         const { filter = 'open', date, department, person, projectId, status } = req.query;
         const isUnassigned = (a) => !a || ['unassigned', 'none', ''].includes(String(a).trim().toLowerCase());
-        let rows = issues.map(i => {
+        let rows = issues.filter(i => filter === 'completed30' || filter === 'completedOn' || inScope(range, i)).map(i => {
           const b = bucketOf(i.status);
           const due = i.due_date ? ymd(new Date(i.due_date)) : null;
           const finished = b === 'done' ? (doneAt.get(i.issue_key) || (i.updated_at ? new Date(i.updated_at) : null)) : null;
@@ -310,8 +337,8 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
         if (filter === 'overdue') rows = rows.filter(r => r.overdue);
         if (filter === 'unassigned') rows = rows.filter(r => r.bucket !== 'done' && r.assignee === 'Unassigned');
         if (filter === 'dueToday') rows = rows.filter(r => r.bucket !== 'done' && r.due === today);
-        if (filter === 'completed30') rows = rows.filter(r => r.finished && r.finished >= ymd(days30));
-        if (filter === 'completedOn') rows = rows.filter(r => r.finished === date);
+        if (filter === 'completed30') rows = rows.filter(r => r.finished && (range ? (r.finished >= ymd(range.from) && r.finished < ymd(range.to)) : r.finished >= ymd(days30)));
+        if (filter === 'completedOn') rows = rows.filter(r => r.finished && String(r.finished).startsWith(String(date)));
         if (filter === 'dueOn') rows = rows.filter(r => r.bucket !== 'done' && r.due === date);
         if (department) rows = rows.filter(r => r.department.toLowerCase() === normDept(department).toLowerCase());
         if (person) rows = rows.filter(r => r.assignee.toLowerCase() === String(person).trim().toLowerCase());
@@ -345,14 +372,15 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
       }
 
       if (type === 'hours') {
-        const since = req.query.days === '30' ? days30 : days7;
+        const since = range ? range.from : (req.query.days === '30' ? days30 : days7);
+        const until = range ? range.to : new Date(now.getTime() + 86400000);
         const rows = await q(`SELECT w.issue_key, w.author, w.seconds, w.description, COALESCE(w.started_at, w.created_at) AS at, i.title
                                 FROM it_kanban_worklogs w LEFT JOIN it_kanban_issues i ON i.issue_key = w.issue_key
-                               WHERE COALESCE(w.started_at, w.created_at) >= ? AND COALESCE(w.approval, 'approved') = 'approved'
-                               ORDER BY at DESC`, [since])
+                               WHERE COALESCE(w.started_at, w.created_at) >= ? AND COALESCE(w.started_at, w.created_at) < ? AND COALESCE(w.approval, 'approved') = 'approved'
+                               ORDER BY at DESC`, [since, until])
           .catch(() => q(`SELECT w.issue_key, w.author, w.seconds, w.description, COALESCE(w.started_at, w.created_at) AS at, i.title
                             FROM it_kanban_worklogs w LEFT JOIN it_kanban_issues i ON i.issue_key = w.issue_key
-                           WHERE COALESCE(w.started_at, w.created_at) >= ? ORDER BY at DESC`, [since]));
+                           WHERE COALESCE(w.started_at, w.created_at) >= ? AND COALESCE(w.started_at, w.created_at) < ? ORDER BY at DESC`, [since, until]));
         const byPerson = {};
         rows.forEach(r => { byPerson[r.author] = (byPerson[r.author] || 0) + Number(r.seconds || 0) / 3600; });
         const people = Object.entries(byPerson).map(([name, hours]) => ({ name, hours: round1(hours) })).sort((a, b) => b.hours - a.hours);
@@ -364,7 +392,7 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
 
       if (type === 'projects') {
         const rows = await q('SELECT id, name, title, status, due_date, end_date FROM projects');
-        const issues = await q('SELECT project_id, status, due_date FROM it_kanban_issues WHERE project_id IS NOT NULL');
+        const issues = (await q('SELECT project_id, status, due_date, created_at FROM it_kanban_issues WHERE project_id IS NOT NULL')).filter(i => inScope(range, i));
         let list = rows.map(p => {
           const mine = issues.filter(i => i.project_id === p.id);
           const done = mine.filter(i => bucketOf(i.status) === 'done').length;
@@ -418,12 +446,12 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
       }
 
       if (type === 'leads') {
-        const rows = await q('SELECT lead_name, company, lead_status, lead_source, value, created_at FROM leads ORDER BY created_at DESC');
+        const rows = (await q('SELECT lead_name, company, lead_status, lead_source, value, created_at FROM leads ORDER BY created_at DESC')).filter(r => !range || inRange(range, r.created_at));
         return send(rows.map(r => ({ name: r.lead_name, company: r.company || '—', status: r.lead_status || '—', source: r.lead_source || '—', value: Number(r.value || 0), created: r.created_at ? ymd(new Date(r.created_at)) : null })),
           ['name', 'company', 'status', 'source', 'value', 'created']);
       }
       if (type === 'deals') {
-        const rows = await q('SELECT deal_name, deal_stage, status, deal_value, expected_close_date, created_at FROM deals ORDER BY created_at DESC');
+        const rows = (await q('SELECT deal_name, deal_stage, status, deal_value, expected_close_date, created_at FROM deals ORDER BY created_at DESC')).filter(r => !range || inRange(range, r.created_at));
         let list = rows.map(r => ({ name: r.deal_name, stage: r.deal_stage || '—', status: r.status || '—', value: Number(r.deal_value || 0), expectedClose: r.expected_close_date ? ymd(new Date(r.expected_close_date)) : null }));
         if (req.query.stage) list = list.filter(d => d.stage === req.query.stage);
         if (req.query.filter === 'won') list = list.filter(d => /won/i.test(d.status) || /won/i.test(d.stage));
@@ -431,7 +459,7 @@ module.exports = function setupAdminDashboardRoutes(app, pool) {
         return send(list, ['name', 'stage', 'status', 'value', 'expectedClose']);
       }
       if (type === 'invoices') {
-        const rows = await q('SELECT invoice_number, bill_to, amount, amount_paid, status, open_till, created_at FROM invoices ORDER BY created_at DESC');
+        const rows = (await q('SELECT invoice_number, bill_to, amount, amount_paid, status, open_till, created_at FROM invoices ORDER BY created_at DESC')).filter(r => !range || inRange(range, r.created_at));
         let list = rows.map(r => ({ number: r.invoice_number, client: r.bill_to || '—', amount: Number(r.amount || 0), paid: Number(r.amount_paid || 0), outstanding: Number(r.amount || 0) - Number(r.amount_paid || 0), status: r.status || '—', dueBy: r.open_till ? ymd(new Date(r.open_till)) : null }));
         if (req.query.filter === 'outstanding') list = list.filter(i => i.outstanding > 0);
         if (req.query.filter === 'overdue') list = list.filter(i => i.outstanding > 0 && i.dueBy && i.dueBy < today);

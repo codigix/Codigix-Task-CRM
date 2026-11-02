@@ -1875,6 +1875,24 @@ app.get('/api/it-kanban/labels', async (req, res) => {
         }
       }
 
+      // Last month's pending work sits in the sprint that ended. Once it is moved out of
+      // LAST MONTH PENDING (to To Do, In Progress, ...) it joins the running sprint of its project.
+      if (updates.status !== undefined && updates.sprint_id === undefined
+        && String(curRow.status || '').trim().toUpperCase() === 'LAST MONTH PENDING'
+        && String(updates.status || '').trim().toUpperCase() !== 'LAST MONTH PENDING') {
+        const [[cur]] = await db.query('SELECT project_id, department FROM it_kanban_issues WHERE issue_key = ?', [key]);
+        const [[run]] = await db.query(
+          `SELECT id, name FROM sprints WHERE status = 'Active'
+             AND (project_id = ? OR (project_id IS NULL AND department = ?))
+           ORDER BY (project_id = ?) DESC, id DESC LIMIT 1`,
+          [cur?.project_id ?? null, cur?.department ?? '', cur?.project_id ?? null]
+        ).catch(() => [[null]]);
+        if (run && Number(run.id) !== Number(curRow.sprint_id)) {
+          updates.sprint_id = run.id;
+          if (updates.sprint === undefined) updates.sprint = run.name;
+        }
+      }
+
       // Nothing an assignee can change may raise what their own task is worth.
       if (!isMgr) {
         if (updates.priority !== undefined && effort.rankOf(updates.priority) > effort.rankOf(curRow.priority)) {

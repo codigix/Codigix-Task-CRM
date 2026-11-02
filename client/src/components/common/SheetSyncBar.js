@@ -64,7 +64,7 @@ export default function SheetSyncBar({ department, onSynced }) {
       allowOutsideClick: () => !Swal.isLoading()
     });
     if (url && url.source) {
-      showSuccessToast(`Sheet linked: ${url.tabs.length} client tab${url.tabs.length === 1 ? '' : 's'} found`);
+      showSuccessToast(url.alreadyLinked ? 'This sheet is already linked here' : `Sheet linked: ${url.tabs.length} client tab${url.tabs.length === 1 ? '' : 's'} found`);
       load();
     }
   };

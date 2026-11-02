@@ -280,6 +280,10 @@ const withHoldColumn = (cols) => {
 // Unfinished work carried out of a completed sprint (set by the server when a sprint ends).
 // It comes first, so last month's leftovers are picked up before new work.
 const PENDING_COLUMN = 'LAST MONTH PENDING';
+// Last month's pending work stays in the sprint that ended, but still shows on the board.
+const isPendingInEndedSprint = (issue) => Boolean(issue.sprint_id)
+  && issue.sprint_status === 'Completed'
+  && String(issue.status || '').trim().toUpperCase() === PENDING_COLUMN;
 const withStandardColumns = (cols) => {
   const next = withHoldColumn(cols);
   return next.includes(PENDING_COLUMN) ? next : [PENDING_COLUMN, ...next];
@@ -903,10 +907,10 @@ const ITKanbanPage = ({ department }) => {
     if (deptActiveSprints.length > 0) {
       const runningIds = new Set(deptActiveSprints.map(s => Number(s.id)));
       filtered = filtered.filter(issue =>
-        Boolean(issue.sprint_id) && (
+        (Boolean(issue.sprint_id) && (
           runningIds.has(Number(issue.sprint_id)) ||
           issue.sprint_status === 'Active'
-        )
+        )) || isPendingInEndedSprint(issue)
       );
     }
 
@@ -1091,10 +1095,10 @@ const ITKanbanPage = ({ department }) => {
       // Check sprint membership if active sprints exist - only subtasks belonging to active sprint tasks
       if (deptActiveSprints.length > 0) {
         const runningIds = new Set(deptActiveSprints.map(s => Number(s.id)));
-        const inActiveSprint = Boolean(issue.sprint_id) && (
+        const inActiveSprint = (Boolean(issue.sprint_id) && (
           runningIds.has(Number(issue.sprint_id)) ||
           issue.sprint_status === 'Active'
-        );
+        )) || isPendingInEndedSprint(issue);
         if (!inActiveSprint) return;
       }
       if (selectedProjectId !== 'ALL' && Number(issue.project_id) !== Number(selectedProjectId)) {

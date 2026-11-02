@@ -93,12 +93,23 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   // Every figure opens its rows here, on the same page.
   const [detail, setDetail] = useState(null);
-  const open = (title, params, subtitle) => () => setDetail({ title, params, subtitle });
+  // Period filter for the headline figures: all time (live), one month, or one year.
+  const [mode, setMode] = useState('all');
+  const [monthVal, setMonthVal] = useState(() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [yearVal, setYearVal] = useState(() => String(new Date().getFullYear()));
+  const period = mode === 'month' ? monthVal : mode === 'year' ? yearVal : 'all';
+
+  // Opened rows follow the picked month / year too.
+  const showDetail = (d) => setDetail(period !== 'all' ? { ...d, params: { ...d.params, period } } : d);
+  const open = (title, params, subtitle) => () => showDetail({ title, params, subtitle });
 
   const load = useCallback(async (silent) => {
     if (silent !== true) setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/overview`);
+      const res = await fetch(`${API_BASE_URL}/admin/overview?period=${encodeURIComponent(period)}`);
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || 'Could not load the dashboard');
       setData(json); setError('');
@@ -107,7 +118,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [period]);
   useEffect(() => { load(); }, [load]);
   // Anything saved anywhere refreshes the overview quietly (at most every few seconds).
   useLiveRefresh(['*'], () => load(true), { wait: 1500, maxWait: 10000 });
@@ -118,6 +129,12 @@ export default function AdminDashboard() {
 
   const w = data?.work; const p = data?.people; const t = data?.time; const a = data?.attention;
   const pr = data?.projects; const s = data?.sales; const f = data?.finance;
+  const picked = period !== 'all';
+  const periodLabel = !picked ? '' : mode === 'year' ? period
+    : new Date(`${period}-01T00:00:00`).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  const monthly = w?.granularity === 'month';
+  const bucketLabel = (d) => (monthly ? new Date(`${d}T00:00:00`).toLocaleDateString('en-GB', { month: 'short' }) : dayLabel(d));
+  const years = Array.from({ length: 6 }, (_, i) => String(new Date().getFullYear() - i));
 
   const attentionItems = useMemo(() => {
     if (!data) return [];
@@ -144,7 +161,7 @@ export default function AdminDashboard() {
 
   const name = user?.first_name || user?.username || 'Admin';
   const totals = w?.totals || {};
-  const completedSeries = (w?.completedByDay || []).map(d => ({ ...d, label: dayLabel(d.date) }));
+  const completedSeries = (w?.completedByDay || []).map(d => ({ ...d, label: bucketLabel(d.date) }));
   const dueSeries = (data.upcoming?.dueByDay || []).map(d => ({ ...d, label: weekday(d.date) }));
   const maxDeptTotal = Math.max(1, ...(w?.byDepartment || []).map(d => d.todo + d.inProgress + d.review + d.done));
   const toneDot = { critical: C.critical, serious: '#ec835a', warning: C.warning };
@@ -160,7 +177,22 @@ export default function AdminDashboard() {
             {' '}{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5" title="Show the headline figures for a month or a year">
+            <select value={mode} onChange={(e) => setMode(e.target.value)} className="h-8 px-2 text-xs rounded border border-gray-300 bg-white cursor-pointer" aria-label="Period">
+              <option value="all">All time (live)</option>
+              <option value="month">Month</option>
+              <option value="year">Year</option>
+            </select>
+            {mode === 'month' && (
+              <input type="month" value={monthVal} onChange={(e) => e.target.value && setMonthVal(e.target.value)} className="h-8 px-2 text-xs rounded border border-gray-300 bg-white" aria-label="Month" />
+            )}
+            {mode === 'year' && (
+              <select value={yearVal} onChange={(e) => setYearVal(e.target.value)} className="h-8 px-2 text-xs rounded border border-gray-300 bg-white cursor-pointer" aria-label="Year">
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            )}
+          </div>
           <span className="text-xs text-gray-500">Updated {timeAgo(data.generatedAt)}</span>
           <button onClick={load} disabled={loading} className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 cursor-pointer">
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Refresh
@@ -174,14 +206,14 @@ export default function AdminDashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
-        <Kpi icon={Users} label="Active people" value={num(p?.active)} hint={p?.newThisMonth ? `${p.newThisMonth} joined this month` : `${p?.byDepartment?.length || 0} departments`} onOpen={open('People', { type: 'people' })} />
-        <Kpi icon={ListChecks} label="Open tasks" value={num(w?.open)} hint={`${num(w?.total)} in total`} onOpen={open('Open tasks', { type: 'tasks', filter: 'open' })} />
-        <Kpi icon={CheckCircle2} label="Completed · 30 days" value={num(w?.completed30)} hint={`${num(w?.completed7)} in the last 7 days`} onOpen={open('Tasks completed in the last 30 days', { type: 'tasks', filter: 'completed30' })} />
-        <Kpi icon={AlertTriangle} label="Overdue" value={num(w?.overdue)} hint={`${num(w?.dueToday)} due today`} tone={w?.overdue ? 'critical' : undefined} onOpen={open('Overdue tasks', { type: 'tasks', filter: 'overdue' })} />
-        <Kpi icon={Clock} label="Hours tracked · 7 days" value={`${num(t?.hours7)} h`} hint={`${num(t?.hoursToday)} h today · ${num(t?.trackers30)} people tracking`} onOpen={open('Time tracked', { type: 'hours' }, 'Last 7 days')} />
+        <Kpi icon={Users} label="Active people" value={num(p?.active)} hint={picked ? `${num(p?.newThisMonth)} joined in ${periodLabel}` : p?.newThisMonth ? `${p.newThisMonth} joined this month` : `${p?.byDepartment?.length || 0} departments`} onOpen={open('People', { type: 'people' })} />
+        <Kpi icon={ListChecks} label={picked ? `Open tasks · ${periodLabel}` : 'Open tasks'} value={num(w?.open)} hint={`${num(w?.total)} ${picked ? `due in ${periodLabel}` : 'in total'}`} onOpen={open('Open tasks', { type: 'tasks', filter: 'open' })} />
+        <Kpi icon={CheckCircle2} label={picked ? `Completed · ${periodLabel}` : 'Completed · 30 days'} value={num(w?.completed30)} hint={picked ? 'finished in the period' : `${num(w?.completed7)} in the last 7 days`} onOpen={open(picked ? `Tasks completed in ${periodLabel}` : 'Tasks completed in the last 30 days', { type: 'tasks', filter: 'completed30' })} />
+        <Kpi icon={AlertTriangle} label={picked ? `Overdue · ${periodLabel}` : 'Overdue'} value={num(w?.overdue)} hint={picked ? 'due in the period, still open' : `${num(w?.dueToday)} due today`} tone={w?.overdue ? 'critical' : undefined} onOpen={open('Overdue tasks', { type: 'tasks', filter: 'overdue' })} />
+        <Kpi icon={Clock} label={picked ? `Hours tracked · ${periodLabel}` : 'Hours tracked · 7 days'} value={`${num(picked ? t?.hours30 : t?.hours7)} h`} hint={picked ? `${num(t?.trackers30)} people tracking` : `${num(t?.hoursToday)} h today · ${num(t?.trackers30)} people tracking`} onOpen={open('Time tracked', { type: 'hours' }, picked ? periodLabel : 'Last 7 days')} />
         <Kpi icon={FolderKanban} label="Active projects" value={num(pr?.active)} hint={`${num(pr?.total)} in total · ${num(a?.activeSprints)} running sprints`} onOpen={open('Projects', { type: 'projects' })} />
-        <Kpi icon={TrendingUp} label="Sales pipeline" value={money(s?.pipelineValue)} hint={`${num(s?.openDeals)} open deals · ${num(s?.leads)} leads`} onOpen={open('Open deals', { type: 'deals', filter: 'open' })} />
-        <Kpi icon={IndianRupee} label="Outstanding" value={money(f?.outstanding)} hint={`${num(f?.invoices)} invoices · ${money(f?.collected)} collected`} onOpen={open('Outstanding invoices', { type: 'invoices', filter: 'outstanding' })} />
+        <Kpi icon={TrendingUp} label={picked ? `Sales pipeline · ${periodLabel}` : 'Sales pipeline'} value={money(s?.pipelineValue)} hint={`${num(s?.openDeals)} open deals · ${num(s?.leads)} leads`} onOpen={open('Open deals', { type: 'deals', filter: 'open' })} />
+        <Kpi icon={IndianRupee} label={picked ? `Outstanding · ${periodLabel}` : 'Outstanding'} value={money(f?.outstanding)} hint={`${num(f?.invoices)} invoices · ${money(f?.collected)} collected`} onOpen={open('Outstanding invoices', { type: 'invoices', filter: 'outstanding' })} />
       </div>
 
       {/* Attention + completed trend */}
@@ -211,26 +243,26 @@ export default function AdminDashboard() {
           )}
         </Card>
 
-        <Card title="Tasks completed per day" subtitle="Last 30 days, all departments · click a bar for that day's tasks" className="xl:col-span-2">
+        <Card title={monthly ? 'Tasks completed per month' : 'Tasks completed per day'} subtitle={`${picked ? periodLabel : 'Last 30 days'}, all departments · click a bar to see its tasks`} className="xl:col-span-2">
           {completedSeries.some(d => d.count > 0) ? (
-            <div style={{ height: 230 }} role="img" aria-label="Tasks completed per day over the last 30 days">
+            <div style={{ height: 230 }} role="img" aria-label="Tasks completed over time">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={completedSeries} margin={{ top: 8, right: 4, left: -18, bottom: 0 }} barCategoryGap={2}>
                   <CartesianGrid vertical={false} stroke={C.grid} />
-                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: C.axis }} tickLine={false} axisLine={{ stroke: C.grid }} interval={4} />
+                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: C.axis }} tickLine={false} axisLine={{ stroke: C.grid }} interval={monthly ? 0 : completedSeries.length > 31 ? 6 : 4} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: C.axis }} tickLine={false} axisLine={false} />
                   <Tooltip cursor={{ fill: 'rgba(42,120,214,0.06)' }}
                     content={<ChartTip render={(d) => (<>
-                      <div className="font-semibold text-gray-900">{dayLabel(d.date)}</div>
+                      <div className="font-semibold text-gray-900">{bucketLabel(d.date)}</div>
                       <div className="tabular-nums">{d.count} completed</div>
                       <div className="tabular-nums text-gray-500">{d.created} created</div>
                     </>)} />} />
                   <Bar dataKey="count" fill={C.s1} radius={[4, 4, 0, 0]} maxBarSize={18} cursor="pointer"
-                    onClick={(d) => d && d.count > 0 && setDetail({ title: `Completed on ${dayLabel(d.date)}`, params: { type: 'tasks', filter: 'completedOn', date: d.date } })} />
+                    onClick={(d) => d && d.count > 0 && showDetail({ title: `Completed ${monthly ? 'in' : 'on'} ${bucketLabel(d.date)}`, params: { type: 'tasks', filter: 'completedOn', date: monthly ? d.date.slice(0, 7) : d.date } })} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          ) : <Empty>No task was completed in the last 30 days.</Empty>}
+          ) : <Empty>{picked ? `No task was completed in ${periodLabel}.` : 'No task was completed in the last 30 days.'}</Empty>}
         </Card>
       </div>
 
@@ -278,8 +310,8 @@ export default function AdminDashboard() {
           </div>
         </Card>
 
-        <Card title="Team workload" subtitle="Open work, overdue, completed and hours tracked (30 days) · click a person for their tasks" className="xl:col-span-2"
-          right={<button type="button" onClick={open('Time tracked', { type: 'hours', days: '30' }, 'Last 30 days')} className="text-xs font-medium text-blue-700 hover:underline whitespace-nowrap cursor-pointer">Time by person →</button>}>
+        <Card title="Team workload" subtitle={`Open work, overdue, completed and hours tracked (${picked ? periodLabel : '30 days'}) · click a person for their tasks`} className="xl:col-span-2"
+          right={<button type="button" onClick={open('Time tracked', { type: 'hours', days: '30' }, picked ? periodLabel : 'Last 30 days')} className="text-xs font-medium text-blue-700 hover:underline whitespace-nowrap cursor-pointer">Time by person →</button>}>
           {(data.team || []).length === 0 ? <Empty>No team members.</Empty> : (
             <div className="overflow-x-auto -mx-4">
               <table className="w-full text-sm min-w-[620px]">
@@ -289,8 +321,8 @@ export default function AdminDashboard() {
                     <th className="py-2 px-3 font-medium text-right">Open</th>
                     <th className="py-2 px-3 font-medium text-right">In progress</th>
                     <th className="py-2 px-3 font-medium text-right">Overdue</th>
-                    <th className="py-2 px-3 font-medium text-right">Done · 30d</th>
-                    <th className="py-2 px-4 font-medium text-right">Hours · 30d</th>
+                    <th className="py-2 px-3 font-medium text-right">Done · {picked ? periodLabel : '30d'}</th>
+                    <th className="py-2 px-4 font-medium text-right">Hours · {picked ? periodLabel : '30d'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -373,7 +405,7 @@ export default function AdminDashboard() {
                   <Tooltip cursor={{ fill: 'rgba(42,120,214,0.06)' }}
                     content={<ChartTip render={(d) => (<><div className="font-semibold text-gray-900">{weekday(d.date)}</div><div className="tabular-nums">{d.count} due</div></>)} />} />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={26} cursor="pointer"
-                    onClick={(d) => d && d.count > 0 && setDetail({ title: `Due ${weekday(d.date)}`, params: { type: 'tasks', filter: 'dueOn', date: d.date } })}>
+                    onClick={(d) => d && d.count > 0 && showDetail({ title: `Due ${weekday(d.date)}`, params: { type: 'tasks', filter: 'dueOn', date: d.date } })}>
                     {dueSeries.map((d, i) => <Cell key={d.date} fill={i === 0 ? C.s2 : C.s1} />)}
                   </Bar>
                 </BarChart>
@@ -400,11 +432,11 @@ export default function AdminDashboard() {
         <Card title="Sales & finance" subtitle="Leads, deals and invoices">
           <div className="grid grid-cols-2 gap-3">
             {[
-              ['Leads', num(s?.leads), `${num(s?.newLeads30)} new in 30 days`, { type: 'leads' }],
+              ['Leads', num(s?.leads), picked ? `in ${periodLabel}` : `${num(s?.newLeads30)} new in 30 days`, { type: 'leads' }],
               ['Converted / qualified', num(s?.converted), 'leads', { type: 'leads' }],
               ['Open deals', num(s?.openDeals), money(s?.pipelineValue), { type: 'deals', filter: 'open' }],
               ['Deals won', num(s?.wonDeals), money(s?.wonValue), { type: 'deals', filter: 'won' }],
-              ['Billed', money(f?.billed), `${money(f?.billed30)} in 30 days`, { type: 'invoices' }],
+              ['Billed', money(f?.billed), picked ? `in ${periodLabel}` : `${money(f?.billed30)} in 30 days`, { type: 'invoices' }],
               ['Collected', money(f?.collected), `${num(f?.overdueInvoices)} invoices overdue`, { type: 'invoices', filter: 'overdue' }]
             ].map(([l, v, h, params]) => (
               <button type="button" key={l} onClick={open(l, params)} className="text-left border border-gray-200 rounded p-2.5 hover:border-blue-300 cursor-pointer">

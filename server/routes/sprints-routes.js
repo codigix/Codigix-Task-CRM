@@ -233,7 +233,9 @@ module.exports = function setupSprintsRoutes(app, pool) {
         const [items] = await db.query(itemsQuery, [s.id]);
         // A completed sprint is last period's record of finished work: Done items only. Anything
         // reopened since shows in the Backlog instead (see below).
-        s.issues = s.status === 'Completed' ? items.filter(i => isDone(i.status)) : items;
+        // Last month's pending work stays listed in the sprint it was left behind in.
+        const isPending = (st) => String(st || '').toUpperCase().trim() === PENDING_STATUS;
+        s.issues = s.status === 'Completed' ? items.filter(i => isDone(i.status) || isPending(i.status)) : items;
         s.counts = s.issues.reduce((acc, i) => {
           const st = String(i.status || '').toUpperCase();
           if (isDone(st)) acc.done++;
@@ -270,6 +272,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
         )
         WHERE (i.sprint_id IS NULL OR i.sprint_id IN (SELECT id FROM sprints WHERE status = 'Completed'))
           AND UPPER(TRIM(COALESCE(i.status, ''))) NOT IN ('DONE', 'COMPLETED', 'CLOSED')
+          AND NOT (i.sprint_id IS NOT NULL AND UPPER(TRIM(COALESCE(i.status, ''))) = 'LAST MONTH PENDING')
         ORDER BY i.rank_order IS NOT NULL, i.rank_order ASC, i.id DESC
       `);
 
@@ -506,8 +509,8 @@ module.exports = function setupSprintsRoutes(app, pool) {
    * Only last period's work goes there: a ticket due (or starting) on or after the next sprint's
    * start belongs to the new period and keeps its status. Undated leftovers count as pending.
    */
-  async function carryToPending(keys, actor, sprintName, targetSprintId) {
-    if (!keys.length) return 0;
+  async function pendingKeysOf(keys, targetSprintId) {
+    if (!keys.length) return [];
     const [[t]] = await db.query("SELECT DATE_FORMAT(start_date, '%Y-%m-%d') AS start_day FROM sprints WHERE id = ?", [targetSprintId])
       .catch(() => [[null]]);
     const now = new Date();
@@ -518,12 +521,34 @@ module.exports = function setupSprintsRoutes(app, pool) {
          AND UPPER(TRIM(status)) IN ('TO DO', 'ON HOLD')`,
       [...keys, cutoff]
     );
-    const pending = rows.map(r => r.issue_key);
+    return rows.map(r => r.issue_key);
+  }
+
+  /** Marks those tickets LAST MONTH PENDING. They stay in the sprint that ended. */
+  async function markPending(pending, actor, sprintName) {
     if (!pending.length) return 0;
     const mover = app.locals.itKanban?.moveIssuesBySystem;
     if (mover) return mover(pending, PENDING_STATUS, actor, `Auto-logged: sprint "${sprintName}" ended`);
     const [r] = await db.query(`UPDATE it_kanban_issues SET status = ? WHERE issue_key IN (${pending.map(() => '?').join(',')})`, [PENDING_STATUS, ...pending]);
     return r.affectedRows;
+  }
+
+  /**
+   * Carries unfinished work towards another sprint. Last month's TO DO / ON HOLD work becomes
+   * LAST MONTH PENDING and stays in the sprint that ended; it joins the active sprint only once
+   * it is moved on (see it-kanban status changes). Everything else moves to the new sprint now.
+   */
+  async function carryOver(unfinished, targetSprintId, sprintName, actor) {
+    const pendingKeys = new Set(await pendingKeysOf(unfinished.map(i => i.issue_key), targetSprintId));
+    const moving = unfinished.filter(i => !pendingKeys.has(i.issue_key));
+    if (moving.length > 0) {
+      await db.query(
+        `UPDATE it_kanban_issues SET sprint_id = ? WHERE id IN (${moving.map(() => '?').join(',')})`,
+        [targetSprintId, ...moving.map(i => i.id)]
+      );
+      await inheritSprintProject(db, targetSprintId, moving.map(i => i.issue_key));
+    }
+    await markPending([...pendingKeys], actor, sprintName);
   }
 
   /**
@@ -554,15 +579,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
       const [[fresh]] = await db.query('SELECT id, name FROM sprints WHERE id = ?', [created.insertId]);
       target = fresh;
 
-      if (unfinished.length > 0) {
-        await db.query(
-          `UPDATE it_kanban_issues SET sprint_id = ? WHERE id IN (${unfinished.map(() => '?').join(',')})`,
-          [target.id, ...unfinished.map(i => i.id)]
-        );
-        const keys = unfinished.map(i => i.issue_key);
-        await inheritSprintProject(db, target.id, keys);
-        await carryToPending(keys, actor, sprint.name, target.id);
-      }
+      if (unfinished.length > 0) await carryOver(unfinished, target.id, sprint.name, actor);
     } else if (moveTo === 'backlog') {
       if (unfinished.length > 0) {
         await db.query(
@@ -578,15 +595,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
       if (dest.status === 'Completed') throw new SprintError('Cannot move work into a completed sprint');
       target = dest;
 
-      if (unfinished.length > 0) {
-        await db.query(
-          `UPDATE it_kanban_issues SET sprint_id = ? WHERE id IN (${unfinished.map(() => '?').join(',')})`,
-          [target.id, ...unfinished.map(i => i.id)]
-        );
-        const keys = unfinished.map(i => i.issue_key);
-        await inheritSprintProject(db, target.id, keys);
-        await carryToPending(keys, actor, sprint.name, target.id);
-      }
+      if (unfinished.length > 0) await carryOver(unfinished, target.id, sprint.name, actor);
     }
 
     await db.query(

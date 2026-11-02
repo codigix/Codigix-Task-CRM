@@ -255,7 +255,8 @@ const StatusPicker = ({ status, onChange }) => {
         {titleCase(current)} <ChevronDown size={11} />
       </button>
       <AnchoredMenu open={open} anchorRect={anchorRect} width={170} onClose={() => setOpen(false)}>
-        {STATUS_OPTIONS.map(s => (
+        {/* Last month pending is set only by a completed sprint, never picked by hand; it is listed just while a task is in it. */}
+        {STATUS_OPTIONS.filter(s => s !== 'LAST MONTH PENDING' || current === 'LAST MONTH PENDING').map(s => (
           <div
             key={s}
             onClick={() => { setOpen(false); if (s !== current) onChange(s); }}
@@ -812,6 +813,8 @@ const BacklogPage = ({ department }) => {
 
   // Writes through the same endpoint the board uses, so history is attributed identically.
   const updateItem = async (issueKey, updates) => {
+    const wasPending = updates.status !== undefined && [...sprints.flatMap(sp => sp.issues || []), ...backlog]
+      .some(i => i.issue_key === issueKey && String(i.status || '').toUpperCase() === 'LAST MONTH PENDING');
     const patch = (list) => list.map(i => (i.issue_key === issueKey ? { ...i, ...updates } : i));
     setSprints(prev => prev.map(s => {
       const issues = patch(s.issues || []);
@@ -835,6 +838,8 @@ const BacklogPage = ({ department }) => {
         err.code = data.code;
         throw err;
       }
+      // Taking a task out of Last month pending moves it into its client's current sprint: reload to show it there.
+      if (wasPending && String(updates.status).toUpperCase() !== 'LAST MONTH PENDING') load();
       if (updates.assignee !== undefined) {
         showSuccessToast(updates.assignee === 'Unassigned' || !updates.assignee ? 'Task unassigned successfully' : `Assigned to ${updates.assignee}`);
       }
