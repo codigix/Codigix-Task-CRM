@@ -500,12 +500,27 @@ module.exports = function setupSprintsRoutes(app, pool) {
   // (the default) or goes to the backlog, a chosen sprint, or a brand new one.
   class SprintError extends Error {}
 
-  /** Puts carried-over tickets in the LAST MONTH PENDING column (timers logged, testing ended). */
-  async function carryToPending(keys, actor, sprintName) {
+  /**
+   * Puts carried-over tickets in the LAST MONTH PENDING column (timers logged, testing ended).
+   * Only last period's work goes there: a ticket due (or starting) on or after the next sprint's
+   * start belongs to the new period and keeps its status. Undated leftovers count as pending.
+   */
+  async function carryToPending(keys, actor, sprintName, targetSprintId) {
     if (!keys.length) return 0;
+    const [[t]] = await db.query("SELECT DATE_FORMAT(start_date, '%Y-%m-%d') AS start_day FROM sprints WHERE id = ?", [targetSprintId])
+      .catch(() => [[null]]);
+    const now = new Date();
+    const cutoff = t?.start_day || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const [rows] = await db.query(
+      `SELECT issue_key FROM it_kanban_issues WHERE issue_key IN (${keys.map(() => '?').join(',')})
+         AND (COALESCE(due_date, start_date) IS NULL OR COALESCE(due_date, start_date) < ?)`,
+      [...keys, cutoff]
+    );
+    const pending = rows.map(r => r.issue_key);
+    if (!pending.length) return 0;
     const mover = app.locals.itKanban?.moveIssuesBySystem;
-    if (mover) return mover(keys, PENDING_STATUS, actor, `Auto-logged: sprint "${sprintName}" ended`);
-    const [r] = await db.query(`UPDATE it_kanban_issues SET status = ? WHERE issue_key IN (${keys.map(() => '?').join(',')})`, [PENDING_STATUS, ...keys]);
+    if (mover) return mover(pending, PENDING_STATUS, actor, `Auto-logged: sprint "${sprintName}" ended`);
+    const [r] = await db.query(`UPDATE it_kanban_issues SET status = ? WHERE issue_key IN (${pending.map(() => '?').join(',')})`, [PENDING_STATUS, ...pending]);
     return r.affectedRows;
   }
 
@@ -544,7 +559,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
         );
         const keys = unfinished.map(i => i.issue_key);
         await inheritSprintProject(db, target.id, keys);
-        await carryToPending(keys, actor, sprint.name);
+        await carryToPending(keys, actor, sprint.name, target.id);
       }
     } else if (moveTo === 'backlog') {
       if (unfinished.length > 0) {
@@ -568,7 +583,7 @@ module.exports = function setupSprintsRoutes(app, pool) {
         );
         const keys = unfinished.map(i => i.issue_key);
         await inheritSprintProject(db, target.id, keys);
-        await carryToPending(keys, actor, sprint.name);
+        await carryToPending(keys, actor, sprint.name, target.id);
       }
     }
 

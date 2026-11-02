@@ -14,7 +14,11 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { UPLOAD_DIR } = require('../config/upload');
+
+// The server's uploads folder, unless a caller (e.g. scripts/purge-completed-screenshots.js run
+// on the server) names it.
+let defaultUploadDir = null;
+const uploadDirOf = (override) => override || defaultUploadDir || (defaultUploadDir = require('../config/upload').UPLOAD_DIR);
 
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|heic|heif|avif|tiff?)$/i;
 // "/api/uploads/<name>" or "/uploads/<name>" for an image, inside text or JSON.
@@ -50,9 +54,9 @@ const scrub = (text, names) => {
   return out;
 };
 
-/** The file on disk for a stored name, only if it really is inside UPLOAD_DIR. */
-const diskPath = (name) => {
-  const root = path.resolve(UPLOAD_DIR);
+/** The file on disk for a stored name, only if it really is inside the uploads folder. */
+const diskPath = (name, uploadDir) => {
+  const root = path.resolve(uploadDirOf(uploadDir));
   const full = path.resolve(root, path.basename(name));
   return full.startsWith(root + path.sep) ? full : null;
 };
@@ -64,7 +68,7 @@ const diskPath = (name) => {
  * server's uploads folder (ticket untouched); failed: could not be deleted (ticket untouched);
  * kept: still used by another ticket. dryRun: only report (deleted = would be deleted).
  */
-async function purgeScreenshots(db, issueKeys, { actor = 'System', dryRun = false } = {}) {
+async function purgeScreenshots(db, issueKeys, { actor = 'System', dryRun = false, uploadDir = null } = {}) {
   const keys = [...new Set((issueKeys || []).filter(Boolean))];
   if (!keys.length) return { deleted: [], notFound: [], failed: [], kept: [] };
   const inList = keys.map(() => '?').join(',');
@@ -120,7 +124,7 @@ async function purgeScreenshots(db, issueKeys, { actor = 'System', dryRun = fals
   // Only a file that is really in this server's uploads folder counts.
   const onDisk = new Map();
   for (const name of new Set(candidates.map(c => c.name))) {
-    const file = diskPath(name);
+    const file = diskPath(name, uploadDir);
     onDisk.set(name, Boolean(file) && await fs.promises.stat(file).then(st => st.isFile()).catch(() => false));
   }
   const notFound = [...onDisk].filter(([, ok]) => !ok).map(([name]) => name);
@@ -132,7 +136,7 @@ async function purgeScreenshots(db, issueKeys, { actor = 'System', dryRun = fals
   for (const [name, ok] of onDisk) {
     if (!ok) continue;
     try {
-      await fs.promises.unlink(diskPath(name));
+      await fs.promises.unlink(diskPath(name, uploadDir));
       gone.add(name);
     } catch (e) {
       if (e.code === 'ENOENT') gone.add(name); // removed in the meantime: it is gone either way
