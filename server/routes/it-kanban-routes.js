@@ -1046,6 +1046,34 @@ Acceptance Criteria
     }
   }
 
+  /**
+   * Moves tickets to a status on the system's behalf (sprint carry-over), with the same side
+   * effects as a move on the board: a running clock is logged to its owner, a testing round
+   * ends, and History records who did it.
+   */
+  async function moveIssuesBySystem(keys, status, actor, reason) {
+    let moved = 0;
+    for (const key of keys) {
+      const [[cur]] = await db.query(
+        'SELECT status, assignee, timer_start_time, is_timer_running, timer_owner, timer_source FROM it_kanban_issues WHERE issue_key = ?',
+        [key]
+      );
+      if (!cur || String(cur.status || '').trim().toUpperCase() === status) continue;
+      if (cur.is_timer_running && cur.timer_start_time) await closeTimerSession(key, cur, actor, reason);
+      await db.query(
+        'UPDATE it_kanban_issues SET status = ?, is_timer_running = 0, timer_start_time = NULL, timer_owner = NULL, timer_source = NULL WHERE issue_key = ?',
+        [status, key]
+      );
+      await syncTestingWithStatus(key, cur.status, status).catch(e => console.error('Failed to update the testing queue:', e.message));
+      await db.query('INSERT INTO it_kanban_history (issue_key, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)',
+        [key, 'status', cur.status || '', status, actor]).catch(() => { });
+      moved += 1;
+    }
+    return moved;
+  }
+  // The sprint routes use it to carry unfinished work into the next sprint.
+  app.locals.itKanban = { ...(app.locals.itKanban || {}), moveIssuesBySystem };
+
   // GET all kanban issues (supports optional department query parameter)
   /**
    * The labels already in use on a board, most-used first.
@@ -1910,9 +1938,10 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       }
 
       // Proof of work. Moving into In Review means "I have finished": it needs evidence (a
-      // note, links or screenshots). Moving to Done is the reporting manager's sign-off: it
-      // needs their comment. Both are saved as comments on the ticket. Without them the move
-      // is refused with 428 PROOF_REQUIRED; the app asks for the proof and sends it again.
+      // note, links or screenshots), saved as a comment on the ticket. Without it the move is
+      // refused with 428 PROOF_REQUIRED; the app asks for the proof and sends it again.
+      // Moving to Done is the reporter's check (only the reporter may do it, see above), so it
+      // goes straight through; a comment sent with it is kept as their sign-off.
       {
         const isReviewSt = (s) => ['IN REVIEW', 'REVIEW'].includes(String(s || '').toUpperCase().trim());
         const proof = updates.transition_proof;
@@ -1928,7 +1957,8 @@ app.get('/api/it-kanban/labels', async (req, res) => {
             .filter(f => f && /^(\/api\/uploads\/|\/uploads\/|https?:\/\/)/i.test(String(f.url || '')))
             .map(f => ({ name: String(f.name || 'file').slice(0, 200), url: String(f.url).slice(0, 500), isImage: Boolean(f.isImage) }))
             .slice(0, 10);
-          const enough = toReview ? Boolean(note || links.length || files.length) : note.length >= 3;
+          const given = Boolean(note || links.length || files.length);
+          const enough = toReview ? given : true;
 
           const [[full]] = await db.query('SELECT id, title, comments FROM it_kanban_issues WHERE issue_key = ?', [key]);
           let existing = updates.comments !== undefined ? updates.comments : full?.comments;
@@ -1949,11 +1979,13 @@ app.get('/api/it-kanban/labels', async (req, res) => {
           }
 
           const actor = req.user?.name || req.headers['x-user-name'] || 'User';
-          existing.push({
-            author: actor, text: note || (toReview ? 'Submitted for review.' : ''), time: new Date().toISOString(),
-            kind, links, files, status_from: curRow.status || '', status_to: updates.status
-          });
-          updates.comments = existing;
+          if (toReview || given) {
+            existing.push({
+              author: actor, text: note || (toReview ? 'Submitted for review.' : ''), time: new Date().toISOString(),
+              kind, links, files, status_from: curRow.status || '', status_to: updates.status
+            });
+            updates.comments = existing;
+          }
           // Screenshots and files also appear in the ticket's Attachments.
           for (const f of files) {
             await db.query(

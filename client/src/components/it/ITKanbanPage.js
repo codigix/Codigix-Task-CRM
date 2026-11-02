@@ -15,11 +15,10 @@ import ITIssueDetailsPanel from './ITIssueDetailsPanel';
 import MarketingCreateIssueDrawer from '../marketing/MarketingCreateIssueDrawer';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
 import BoardTabs from '../common/BoardTabs';
-import CompleteSprintModal from '../common/CompleteSprintModal';
+import CompleteSprintModal, { ALL_SPRINTS, completeAllSummary, isSprintEnded } from '../common/CompleteSprintModal';
 import SearchableSelect from '../common/SearchableSelect';
 import TimeTrackingModal from '../common/TimeTrackingModal';
 import TesterPickerModal from '../common/TesterPickerModal';
-import TestingQueue from './TestingQueue';
 import Swal from 'sweetalert2';
 import { showSuccessToast, showErrorToast } from '../../utils/toast';
 import { canDeleteTickets, ticketDeleteHeaders, TICKET_DELETE_DENIED_MESSAGE, isManagerUser, isUserTaskReporter } from '../../utils/access';
@@ -116,6 +115,7 @@ const TYPE_ICONS_SM = {
 };
 
 const COLUMN_COLORS = {
+  'LAST MONTH PENDING': 'bg-amber-50',
   'TO DO': 'bg-gray-100',
   'IN PROGRESS': 'bg-blue-50',
   'IN REVIEW': 'bg-purple-50',
@@ -259,8 +259,8 @@ const AlertTriangleIcon = ({ size = 16, className = "" }) => (
 );
 
 const DEPARTMENT_KANBAN_COLUMNS = {
-  'IT': ['TO DO', 'IN PROGRESS', 'ON HOLD', 'IN REVIEW', 'TESTING', 'DONE'],
-  'Marketing': ['TO DO', 'IN PROGRESS', 'ON HOLD', 'IN REVIEW', 'TESTING', 'DONE']
+  'IT': ['LAST MONTH PENDING', 'TO DO', 'IN PROGRESS', 'ON HOLD', 'IN REVIEW', 'TESTING', 'DONE'],
+  'Marketing': ['LAST MONTH PENDING', 'TO DO', 'IN PROGRESS', 'ON HOLD', 'IN REVIEW', 'TESTING', 'DONE']
 };
 
 // "Under discussion / on hold": work is paused, so the card shows no progress and the
@@ -276,6 +276,13 @@ const withHoldColumn = (cols) => {
   const at = next.indexOf('IN PROGRESS');
   next.splice(at === -1 ? Math.max(next.length - 1, 0) : at + 1, 0, HOLD_COLUMN);
   return next;
+};
+// Unfinished work carried out of a completed sprint (set by the server when a sprint ends).
+// It comes first, so last month's leftovers are picked up before new work.
+const PENDING_COLUMN = 'LAST MONTH PENDING';
+const withStandardColumns = (cols) => {
+  const next = withHoldColumn(cols);
+  return next.includes(PENDING_COLUMN) ? next : [PENDING_COLUMN, ...next];
 };
 // The testers' queue state of a ticket in Testing (set by the server): To test → Testing → Passed / Failed.
 const isTestingStatus = (s) => /TESTING/.test(String(s || '').toUpperCase());
@@ -323,6 +330,7 @@ const ITKanbanPage = ({ department }) => {
   const [activeSprints, setActiveSprints] = useState([]);
   const [allSprints, setAllSprints] = useState([]);
   const [isCompletingSprint, setIsCompletingSprint] = useState(false);
+  const [completeAll, setCompleteAll] = useState(false); // the dialog opened from "Complete all"
   const [showSprintDetails, setShowSprintDetails] = useState(false);
   const workspaceBase = `/${currentDept.toLowerCase() === 'marketing' ? 'marketing' : 'it'}/${designation}/${username}`;
 
@@ -404,14 +412,8 @@ const ITKanbanPage = ({ department }) => {
   const [selectedAssignees, setSelectedAssignees] = useState([]);
   const [onlyMyIssues, setOnlyMyIssues] = useState(true);
   // Testers work from the board itself (their tickets in Testing show as To Do / In Progress /
-  // Done); the Testing queue is the managers' overview of everything in Testing.
+  // Done). The Testing queue lives on the tester dashboard only.
   const isTester = String(user?.role || user?.role_name || '') === 'Tester';
-  const canSeeTestingQueue = isManager && !isTester;
-  const [boardView, setBoardView] = useState(() => {
-    try { return localStorage.getItem(`${currentDept}_boardView`) || 'board'; } catch (e) { return 'board'; }
-  });
-  const showTestingQueue = canSeeTestingQueue && boardView === 'testing';
-  const switchBoardView = (v) => { setBoardView(v); try { localStorage.setItem(`${currentDept}_boardView`, v); } catch (e) { } };
   const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL' | 'TODAY' | 'TOMORROW' | 'THIS_WEEK' | 'THIS_MONTH' | 'OVERDUE' | 'EXACT' | 'RANGE' | 'NO_DATE'
   const [exactDate, setExactDate] = useState('');
   const [rangeStart, setRangeStart] = useState('');
@@ -496,7 +498,7 @@ const ITKanbanPage = ({ department }) => {
               parsed.push('TESTING');
             }
           }
-          return withHoldColumn(parsed);
+          return withStandardColumns(parsed);
         }
       } catch (e) { }
     }
@@ -518,7 +520,7 @@ const ITKanbanPage = ({ department }) => {
               parsed.push('TESTING');
             }
           }
-          cols = withHoldColumn(parsed);
+          cols = withStandardColumns(parsed);
         }
       } catch (e) { }
     }
@@ -1736,6 +1738,25 @@ const ITKanbanPage = ({ department }) => {
     return data;
   };
 
+  // Running sprints whose end date has passed, in every department (the board loads them all).
+  const endedSprintCount = activeSprints.filter(s => isSprintEnded(s)).length;
+
+  // The sprints ticked in the dialog, any department, at once (month end).
+  const handleCompleteAllSprints = async (list, moveTo, dates = {}) => {
+    const res = await fetch(`${API_BASE_URL}/sprints/complete-all`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: list.map(s => s.id), moveTo, ...dates })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to complete the sprints');
+
+    setIsCompletingSprint(false);
+    fetchKanbanData();
+    showSuccessToast(completeAllSummary(data));
+    return data;
+  };
+
   const deleteIssue = async (key) => {
     if (!canDelete) {
       showErrorToast(TICKET_DELETE_DENIED_MESSAGE);
@@ -2095,23 +2116,8 @@ const ITKanbanPage = ({ department }) => {
 
           <BoardTabs department={currentDept} />
 
-          {canSeeTestingQueue && (
-            <div className="px-4 pt-3 bg-white flex items-center gap-1" role="tablist" aria-label="Board or testing queue">
-              {[['board', 'Board'], ['testing', 'Testing queue']].map(([v, label]) => (
-                <button key={v} type="button" role="tab" aria-selected={boardView === v} onClick={() => switchBoardView(v)}
-                  className={`h-8 px-3 rounded text-xs font-medium cursor-pointer ${boardView === v ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-
           <div className="flex-1 overflow-hidden flex relative">
-            {showTestingQueue ? (
-              <div className="flex-1 min-w-0 overflow-y-auto p-4 bg-white">
-                <TestingQueue department={currentDept} onOpenTicket={(k) => { setSelectedIssue(k); setSelectedSubtaskKey(null); }} />
-              </div>
-            ) : (
+            {(
             <div className="flex-1 flex flex-col p-4 pb-0 min-w-0 bg-white">
 
               <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
@@ -2514,10 +2520,17 @@ const ITKanbanPage = ({ department }) => {
                   {isManager && activeSprints.length > 0 && (
                     <>
                       <button
-                        onClick={() => setIsCompletingSprint(true)}
+                        onClick={() => { setCompleteAll(false); setIsCompletingSprint(true); }}
                         className="h-8 px-3 text-xs font-semibold rounded bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap cursor-pointer"
                       >
                         Complete sprint
+                      </button>
+                      <button
+                        onClick={() => { setCompleteAll(true); setIsCompletingSprint(true); }}
+                        title="Pick running sprints from every department (ended ones are ticked) and complete them together"
+                        className="h-8 px-3 text-xs font-semibold rounded border border-red-600 text-red-700 bg-white hover:bg-red-50 transition-colors whitespace-nowrap cursor-pointer"
+                      >
+                        Complete sprints{endedSprintCount > 0 ? ` (${endedSprintCount} ended)` : ''}
                       </button>
 
                       {/* Jira's sprint details popover: what is running, and how long is left. */}
@@ -3766,9 +3779,10 @@ const ITKanbanPage = ({ department }) => {
             <CompleteSprintModal
               isOpen={isCompletingSprint}
               sprints={allSprints}
-              initialSprintId={activeSprints[0]?.id}
+              initialSprintId={completeAll ? ALL_SPRINTS : activeSprints[0]?.id}
               onCancel={() => setIsCompletingSprint(false)}
               onComplete={handleCompleteSprint}
+              onCompleteAll={handleCompleteAllSprints}
             />
 
           </div>

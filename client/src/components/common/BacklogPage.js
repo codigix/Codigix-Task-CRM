@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   ChevronDown, ChevronRight, Plus, MoreHorizontal, Calendar,
-  CheckSquare, ArrowUp, ArrowDown, Inbox, Search, Check, Trash2, RefreshCw, X
+  CheckSquare, ArrowUp, ArrowDown, Inbox, Search, Check, Trash2, RefreshCw, X, ChevronLeft, History
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { DEPARTMENT_KANBAN_CONFIG } from '../../config/departmentKanbanConfig';
@@ -12,7 +12,7 @@ import { API_BASE_URL } from '../../config/environment';
 import BoardTabs from './BoardTabs';
 import StartSprintModal from './StartSprintModal';
 import CreateSprintModal from './CreateSprintModal';
-import CompleteSprintModal from './CompleteSprintModal';
+import CompleteSprintModal, { ALL_SPRINTS, completeAllSummary, isSprintEnded } from './CompleteSprintModal';
 import RenewSprintModal from './RenewSprintModal';
 import ImportCalendarModal from './ImportCalendarModal';
 import SheetSyncBar from './SheetSyncBar';
@@ -29,9 +29,10 @@ const PRIORITY_ICONS = {
 };
 
 // The board's columns, so a status set here lands the item in the right column there.
-const STATUS_OPTIONS = ['TO DO', 'IN PROGRESS', 'ON HOLD', 'IN REVIEW', 'TESTING', 'DONE'];
+const STATUS_OPTIONS = ['LAST MONTH PENDING', 'TO DO', 'IN PROGRESS', 'ON HOLD', 'IN REVIEW', 'TESTING', 'DONE'];
 
 const STATUS_STYLES = {
+  'LAST MONTH PENDING': 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100',
   'TO DO': 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200',
   'IN PROGRESS': 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
   'IN REVIEW': 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100',
@@ -72,6 +73,119 @@ const formatDate = (v) => {
   const d = new Date(v);
   if (isNaN(d.getTime())) return null;
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+};
+
+// Sprint dates carry the year: sprints run month to month, so "Nov" alone is ambiguous.
+const formatSprintDay = (v) => {
+  if (!v) return null;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+// "Oct 2026", or "Oct – Nov 2026" when a sprint spans two months: tells a completed sprint
+// apart from this period's sprint of the same name.
+const sprintMonthLabel = (sprint) => {
+  const s = sprint.start_date ? new Date(sprint.start_date) : null;
+  const e = sprint.end_date ? new Date(sprint.end_date) : null;
+  const ok = (d) => d && !isNaN(d.getTime());
+  const a = ok(s) ? s : (ok(e) ? e : null);
+  const b = ok(e) ? e : a;
+  if (!a) return null;
+  const m = (d) => d.toLocaleDateString('en-GB', { month: 'short' });
+  if (a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()) return `${m(a)} ${a.getFullYear()}`;
+  return a.getFullYear() === b.getFullYear() ? `${m(a)} – ${m(b)} ${b.getFullYear()}` : `${m(a)} ${a.getFullYear()} – ${m(b)} ${b.getFullYear()}`;
+};
+
+// The month a completed sprint belongs to ("2026-10"): its end date, else when it was completed.
+const sprintMonthKey = (sprint) => {
+  for (const v of [sprint.end_date, sprint.completed_at, sprint.start_date]) {
+    const d = v ? new Date(v) : null;
+    if (d && !isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+  return null;
+};
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthKeyLabel = (key) => { const [y, m] = String(key).split('-'); return `${MONTHS[Number(m) - 1]} ${y}`; };
+
+/**
+ * "Past sprints": a month calendar. Months that have completed sprints show how many; picking
+ * one shows that month's completed sprints (done work only) instead of the current ones.
+ */
+const PastSprintsPicker = ({ counts, value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const latest = Object.keys(counts).sort().pop();
+  const [year, setYear] = useState(() => Number((value || latest || `${new Date().getFullYear()}`).slice(0, 4)));
+  const ref = React.useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+  const total = Object.values(counts).reduce((a, n) => a + n, 0);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className={`h-9 px-3 flex items-center gap-2 text-sm rounded border transition cursor-pointer ${value ? 'bg-purple-50 border-purple-300 text-purple-800' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+        title="Pick a month to see its completed sprints"
+      >
+        <History size={15} />
+        {value ? `Past sprints: ${monthKeyLabel(value)}` : `Past sprints${total ? ` (${total})` : ''}`}
+        <ChevronDown size={14} />
+      </button>
+      {open && (
+        <div className="absolute z-30 mt-1 w-72 bg-white border border-gray-200 rounded shadow-xl p-3">
+          <div className="flex items-center justify-between mb-2">
+            <button type="button" onClick={() => setYear(y => y - 1)} className="p-1 rounded hover:bg-gray-100 cursor-pointer" aria-label="Previous year"><ChevronLeft size={16} /></button>
+            <span className="text-sm font-medium text-gray-900">{year}</span>
+            <button type="button" onClick={() => setYear(y => y + 1)} className="p-1 rounded hover:bg-gray-100 cursor-pointer" aria-label="Next year"><ChevronRight size={16} /></button>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {MONTHS.map((m, i) => {
+              const key = `${year}-${String(i + 1).padStart(2, '0')}`;
+              const n = counts[key] || 0;
+              const selected = key === value;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={!n}
+                  onClick={() => { onChange(key); setOpen(false); }}
+                  className={`h-12 rounded border text-xs flex flex-col items-center justify-center transition ${selected
+                    ? 'bg-purple-600 border-purple-600 text-white'
+                    : n ? 'bg-white border-gray-200 text-gray-800 hover:border-purple-400 hover:bg-purple-50 cursor-pointer'
+                      : 'bg-gray-50 border-gray-100 text-gray-300 cursor-default'}`}
+                >
+                  <span className="font-medium">{m}</span>
+                  {n > 0 && <span className={`text-[10px] ${selected ? 'text-purple-100' : 'text-gray-500'}`}>{n} sprint{n === 1 ? '' : 's'}</span>}
+                </button>
+              );
+            })}
+          </div>
+          {!total && <p className="text-[11px] text-gray-500 mt-2">No sprint has been completed yet.</p>}
+          {value && (
+            <button type="button" onClick={() => { onChange(null); setOpen(false); }} className="mt-2 w-full h-8 text-xs rounded border border-gray-200 text-gray-700 hover:bg-gray-50 cursor-pointer">
+              Back to current sprints
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Whole days from today to a sprint's end date (negative once it has passed); null if no end date.
+const sprintDaysLeft = (v) => {
+  if (!v) return null;
+  const end = new Date(v);
+  if (isNaN(end.getTime())) return null;
+  const today = new Date();
+  const a = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+  const b = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.round((a - b) / 86400000);
 };
 
 // Compared as calendar days in local time: a DATE column comes back as e.g.
@@ -528,6 +642,9 @@ const BacklogPage = ({ department }) => {
   const [sprintToEdit, setSprintToEdit] = useState(null);
   const [sprintToComplete, setSprintToComplete] = useState(null);
   const [sprintToRenew, setSprintToRenew] = useState(null);
+  // Running sprints (every department a manager sees) and those whose end date has passed.
+  const runningSprints = sprints.filter(s => s.status === 'Active');
+  const endedSprintCount = runningSprints.filter(s => isSprintEnded(s)).length;
   const [isCreatingSprint, setIsCreatingSprint] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   // Which sprint the import lands in; null means the Backlog.
@@ -548,6 +665,8 @@ const BacklogPage = ({ department }) => {
     return () => window.removeEventListener('crm-proof-needed', onNeeded);
   }, []);
   const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState('ALL');
+  // A month ("2026-10") whose completed sprints are shown instead of the current ones.
+  const [pastMonth, setPastMonth] = useState(null);
   // Search across sprints (name, project, goal, status) and work items (key, title, assignee, status, priority).
   const [searchText, setSearchText] = useState('');
 
@@ -635,15 +754,30 @@ const BacklogPage = ({ department }) => {
 
   // A sprint whose name / project / goal matches shows all its work; otherwise only the matching
   // work items are shown, and a sprint with none is hidden.
+  const deptSprints = React.useMemo(() => (!isManager || selectedDepartmentFilter === 'ALL'
+    ? sprints
+    : sprints.filter(s => (s.department || 'IT').toLowerCase() === selectedDepartmentFilter.toLowerCase())),
+  [sprints, isManager, selectedDepartmentFilter]);
+  // Completed sprints per month, for the Past sprints calendar.
+  const completedByMonth = React.useMemo(() => deptSprints.reduce((acc, s) => {
+    const key = s.status === 'Completed' ? sprintMonthKey(s) : null;
+    if (key) acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {}), [deptSprints]);
+
+  // What the department tabs count: the sprints in view (current, or the picked month's).
+  const shownSprints = sprints.filter(s => (pastMonth ? s.status === 'Completed' && sprintMonthKey(s) === pastMonth : s.status !== 'Completed'));
+
   const displayedSprints = React.useMemo(() => {
-    const byDept = !isManager || selectedDepartmentFilter === 'ALL'
-      ? sprints
-      : sprints.filter(s => (s.department || 'IT').toLowerCase() === selectedDepartmentFilter.toLowerCase());
+    // Current sprints by default; completed ones only when their month is picked.
+    const byDept = deptSprints.filter(s => (pastMonth
+      ? s.status === 'Completed' && sprintMonthKey(s) === pastMonth
+      : s.status !== 'Completed'));
     if (!searchQ) return byDept;
     return byDept
       .map(sp => (sprintMatches(sp) ? { ...sp, searchHit: 'sprint' } : { ...sp, issues: (sp.issues || []).filter(itemMatches), searchHit: 'items' }))
       .filter(sp => sp.searchHit === 'sprint' || sp.issues.length > 0);
-  }, [sprints, isManager, selectedDepartmentFilter, searchQ, sprintMatches, itemMatches]);
+  }, [deptSprints, pastMonth, searchQ, sprintMatches, itemMatches]);
 
   const displayedBacklog = React.useMemo(() => {
     const byDept = !isManager || selectedDepartmentFilter === 'ALL'
@@ -842,6 +976,69 @@ const BacklogPage = ({ department }) => {
     setSprintToStart(null);
     load();
     showSuccessToast(`Sprint started · ${data.itemCount} work item(s) are now on the board.`);
+  };
+
+  // Screenshots of a month's completed sprints (for sprints completed before the automatic
+  // clean-up): preview what is on the server, confirm, delete. Files go first; a ticket only
+  // changes for images that were really deleted.
+  const deleteMonthScreenshots = async (month) => {
+    const label = monthKeyLabel(month);
+    let preview;
+    try {
+      const res = await fetch(`${API_BASE_URL}/sprints/screenshots/preview?month=${encodeURIComponent(month)}`);
+      preview = await res.json();
+      if (!res.ok) throw new Error(preview.error || 'Could not check the screenshots');
+    } catch (e) {
+      Swal.fire('Could not check the screenshots', e.message, 'error');
+      return;
+    }
+    if (!preview.screenshots) {
+      Swal.fire({
+        icon: 'info', title: 'Nothing to delete',
+        text: `No screenshots of ${label}'s finished work are in this server's uploads folder.`
+          + (preview.notFound ? ` ${preview.notFound} referenced image${preview.notFound === 1 ? ' is' : 's are'} not on this server, so they were left alone.` : '')
+      });
+      return;
+    }
+    const ok = await Swal.fire({
+      icon: 'warning',
+      title: `Delete ${preview.screenshots} screenshot${preview.screenshots === 1 ? '' : 's'}?`,
+      html: `<div style="text-align:left;font-size:13px">
+        From ${preview.tickets} done work item${preview.tickets === 1 ? '' : 's'} in ${label}'s ${preview.sprints} completed sprint${preview.sprints === 1 ? '' : 's'}.
+        The image files are <strong>permanently deleted from the uploads folder</strong> and removed from the tickets. PDFs and other documents are kept.
+        ${preview.keptShared ? `<br/><br/>${preview.keptShared} image${preview.keptShared === 1 ? ' is' : 's are'} also used by other tickets and will be kept.` : ''}
+        ${preview.notFound ? `<br/>${preview.notFound} image${preview.notFound === 1 ? ' is' : 's are'} not on this server and will be left alone.` : ''}
+      </div>`,
+      showCancelButton: true, confirmButtonText: 'Delete permanently', confirmButtonColor: '#dc2626'
+    });
+    if (!ok.isConfirmed) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/sprints/screenshots/cleanup`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-name': currentUserName }, body: JSON.stringify({ month })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not delete the screenshots');
+      load();
+      showSuccessToast(`${data.screenshots} screenshot${data.screenshots === 1 ? '' : 's'} deleted from ${label}'s sprints`
+        + (data.failed ? ` · ${data.failed} could not be deleted` : ''));
+    } catch (e) {
+      Swal.fire('Could not delete the screenshots', e.message, 'error');
+    }
+  };
+
+  // Every running sprint of this department at once (month end).
+  const handleCompleteAllSprints = async (list, moveTo, dates = {}) => {
+    const res = await fetch(`${API_BASE_URL}/sprints/complete-all`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: list.map(s => s.id), moveTo, ...dates })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to complete the sprints');
+
+    setSprintToComplete(null);
+    load();
+    showSuccessToast(completeAllSummary(data));
   };
 
   // Errors surface inside the dialog, so a rejected completion keeps the user's choices.
@@ -1112,6 +1309,7 @@ const BacklogPage = ({ department }) => {
         initialSprintId={sprintToComplete?.id}
         onCancel={() => setSprintToComplete(null)}
         onComplete={handleCompleteSprint}
+        onCompleteAll={handleCompleteAllSprints}
       />
 
       <RenewSprintModal
@@ -1144,6 +1342,7 @@ const BacklogPage = ({ department }) => {
                 </button>
               )}
             </div>
+            <PastSprintsPicker counts={completedByMonth} value={pastMonth} onChange={setPastMonth} />
             {searchQ && (
               <span className="text-xs text-gray-500">
                 {displayedSprints.length} sprint{displayedSprints.length === 1 ? '' : 's'} · {matchedItemCount} work item{matchedItemCount === 1 ? '' : 's'} match “{searchText.trim()}”
@@ -1158,9 +1357,9 @@ const BacklogPage = ({ department }) => {
               <div className="flex items-center gap-2">
                 <span className="text-xs  text-gray-500 uppercase tracking-wider mr-1">Department:</span>
                 {[
-                  { key: 'ALL', label: 'All Sprints', count: sprints.length },
-                  { key: 'IT', label: 'IT', count: sprints.filter(s => (s.department || 'IT').toLowerCase() === 'it').length },
-                  { key: 'Marketing', label: 'Marketing', count: sprints.filter(s => (s.department || '').toLowerCase() === 'marketing').length }
+                  { key: 'ALL', label: 'All Sprints', count: shownSprints.length },
+                  { key: 'IT', label: 'IT', count: shownSprints.filter(s => (s.department || 'IT').toLowerCase() === 'it').length },
+                  { key: 'Marketing', label: 'Marketing', count: shownSprints.filter(s => (s.department || '').toLowerCase() === 'marketing').length }
                 ].map(tab => (
                   <button
                     key={tab.key}
@@ -1184,7 +1383,28 @@ const BacklogPage = ({ department }) => {
             </div>
           )}
 
-          {/* Backlog section */}
+          {pastMonth && (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded border border-purple-200 bg-purple-50">
+              <div className="text-sm text-purple-900">
+                <strong>{monthKeyLabel(pastMonth)}</strong> · {displayedSprints.length} completed sprint{displayedSprints.length === 1 ? '' : 's'} · done work only
+                <span className="block text-xs text-purple-800/80">Unfinished work moved on to the next sprint's Last month pending column.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {canPlanSprints && (
+                  <button type="button" onClick={() => deleteMonthScreenshots(pastMonth)} className="h-8 px-3 text-xs font-medium rounded bg-white border border-red-300 text-red-700 hover:bg-red-50 cursor-pointer flex items-center gap-1.5"
+                    title="Permanently delete the screenshots of this month's finished work from the server">
+                    <Trash2 size={13} /> Delete screenshots
+                  </button>
+                )}
+                <button type="button" onClick={() => setPastMonth(null)} className="h-8 px-3 text-xs font-medium rounded bg-white border border-purple-300 text-purple-800 hover:bg-purple-100 cursor-pointer">
+                  Back to current sprints
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Backlog section (current work; hidden while looking at a past month) */}
+          {!pastMonth && (
           <div className="mb-4 border border-gray-200 rounded bg-white overflow-hidden">
             <div className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 border-b border-gray-200">
               <button onClick={() => toggle('backlog')} className="text-gray-500 hover:text-gray-800">
@@ -1196,12 +1416,23 @@ const BacklogPage = ({ department }) => {
                 ({displayedBacklog.length} work item{displayedBacklog.length === 1 ? '' : 's'})
               </span>
               {canPlanSprints && (
-                <button
-                  onClick={() => setIsCreatingSprint(true)}
-                  className="ml-auto flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
-                >
-                  <Plus size={13} /> Create sprint
-                </button>
+                <div className="ml-auto flex items-center gap-2">
+                  {runningSprints.length > 0 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSprintToComplete({ id: ALL_SPRINTS }); }}
+                      className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition"
+                      title="Pick running sprints from every department (ended ones are ticked) and complete them together"
+                    >
+                      Complete sprints{endedSprintCount > 0 ? ` (${endedSprintCount} ended)` : ''}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsCreatingSprint(true)}
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
+                  >
+                    <Plus size={13} /> Create sprint
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1230,14 +1461,29 @@ const BacklogPage = ({ department }) => {
               </Droppable>
             )}
           </div>
+          )}
 
           {/* Sprint sections */}
           {displayedSprints.map((sprint, idx) => {
             const isCollapsed = searchQ && sprint.searchHit === 'items' && collapsed[`s${sprint.id}`] !== true
               ? false
               : (collapsed[`s${sprint.id}`] === undefined ? true : Boolean(collapsed[`s${sprint.id}`]));
-            const dates = formatDate(sprint.start_date) && formatDate(sprint.end_date)
-              ? `${formatDate(sprint.start_date)} – ${formatDate(sprint.end_date)}` : null;
+            // Start and end are shown on their own, so a sprint with only one of them still shows it.
+            const startText = formatSprintDay(sprint.start_date);
+            const endText = formatSprintDay(sprint.end_date);
+            const dates = startText || endText ? (
+              <>
+                <span>Start <strong className="font-medium text-gray-700">{startText || 'not set'}</strong></span>
+                <span className="text-gray-300">·</span>
+                <span>End <strong className="font-medium text-gray-700">{endText || 'not set'}</strong></span>
+                {sprint.status === 'Active' && sprintDaysLeft(sprint.end_date) !== null && (
+                  <span className={sprintDaysLeft(sprint.end_date) < 0 ? 'text-red-600' : 'text-gray-500'}>
+                    ({sprintDaysLeft(sprint.end_date) < 0 ? `ended ${-sprintDaysLeft(sprint.end_date)}d ago`
+                      : sprintDaysLeft(sprint.end_date) === 0 ? 'ends today' : `${sprintDaysLeft(sprint.end_date)}d left`})
+                  </span>
+                )}
+              </>
+            ) : null;
 
             return (
               <div key={sprint.id} className="mb-4 border border-gray-200 rounded bg-white overflow-hidden shadow-sm">
@@ -1253,6 +1499,9 @@ const BacklogPage = ({ department }) => {
                     {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                   </button>
                   <span className=" text-sm text-gray-900">{sprint.name}</span>
+                  {sprint.status === 'Completed' && sprintMonthLabel(sprint) && (
+                    <span className="text-xs text-gray-500">· {sprintMonthLabel(sprint)}</span>
+                  )}
 
                   {sprint.department && (
                     <span className={`text-[10px]  px-2 py-0.5 rounded tracking-wide ${sprint.department.toLowerCase() === 'marketing'
@@ -1270,11 +1519,11 @@ const BacklogPage = ({ department }) => {
                     <span className="text-[10px] px-2 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200">COMPLETED</span>
                   )}
                   {!canPlanSprints ? (
-                    dates && <span className="flex items-center gap-1 text-xs text-gray-500"><Calendar size={11} /> {dates}</span>
+                    dates && <span className="flex items-center gap-1.5 text-xs text-gray-500"><Calendar size={11} /> {dates}</span>
                   ) : dates ? (
                     <button
                       onClick={(e) => { e.stopPropagation(); setSprintToEdit(sprint); }}
-                      className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 hover:underline"
+                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-600"
                       title="Edit sprint dates"
                     >
                       <Calendar size={11} /> {dates}
@@ -1334,7 +1583,7 @@ const BacklogPage = ({ department }) => {
                         {...provided.droppableProps}
                         className={snapshot.isDraggingOver ? 'bg-blue-50/60' : ''}
                       >
-                        {canPlanSprints && <InlineCreateRow sprintId={sprint.id} onCreate={createWorkItem} />}
+                        {canPlanSprints && sprint.status !== 'Completed' && <InlineCreateRow sprintId={sprint.id} onCreate={createWorkItem} />}
                         {sprint.issues.map((item, i) => (
                           <WorkItemRow key={item.issue_key} item={item} index={i} sprints={sprints} dragDisabled={Boolean(searchQ)}
                             currentSprintId={sprint.id} users={assignableUsers}
@@ -1345,7 +1594,7 @@ const BacklogPage = ({ department }) => {
                         {sprint.issues.length === 0 && (
                           <div className="px-4 py-6 text-center text-xs text-gray-400">
                             {sprint.status === 'Completed'
-                              ? 'All work items in this sprint were completed! Click "Renew sprint" to start a new iteration with new dates.'
+                              ? 'No work was finished in this sprint.'
                               : 'Plan this sprint by dragging work items in from the backlog below, or create them here.'}
                           </div>
                         )}
@@ -1357,6 +1606,11 @@ const BacklogPage = ({ department }) => {
               </div>
             );
           })}
+          {pastMonth && displayedSprints.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-gray-500 border border-dashed border-gray-300 rounded bg-white">
+              No completed sprints in {monthKeyLabel(pastMonth)}{searchQ ? ' match your search' : ''}.
+            </div>
+          )}
 
         </div>
       </DragDropContext>

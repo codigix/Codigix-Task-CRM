@@ -9,6 +9,7 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 import NewTestCaseModal from './NewTestCaseModal';
+import TestingQueue from './TestingQueue';
 import { useAuth } from '../../hooks/useAuth';
 import { API_BASE_URL } from '../../config/environment';
 
@@ -148,6 +149,11 @@ export default function ITTesterDashboard() {
       </div>
 
       <NewTestCaseModal isOpen={isTestCaseModalOpen} onClose={() => setIsTestCaseModalOpen(false)} onSuccess={() => { setIsTestCaseModalOpen(false); load(); }} />
+
+      {/* The testing to-do list: tickets moved to Testing on the board (shown here only) */}
+      <div className="bg-white rounded border border-gray-100 p-4 mb-5">
+        <TestingQueue department="IT" onOpenTicket={openTicket} />
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">

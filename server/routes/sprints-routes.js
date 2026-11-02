@@ -12,6 +12,7 @@
 // Sprint planning (create, edit, start, complete, delete, move or rank work) is for managers;
 // everyone can still read sprints and the backlog.
 const { requireManager } = require('../middleware/session');
+const { purgeScreenshots } = require('../services/screenshotCleanup');
 
 module.exports = function setupSprintsRoutes(app, pool) {
   const db = { query: (sql, params) => pool.query(sql, params) };
@@ -24,6 +25,8 @@ module.exports = function setupSprintsRoutes(app, pool) {
   // Statuses that count as finished. Anything else rolls over on sprint completion.
   const DONE_STATUSES = ['DONE', 'COMPLETED', 'CLOSED'];
   const isDone = (status) => DONE_STATUSES.includes(String(status || '').toUpperCase().trim());
+  // Unfinished work carried out of a completed sprint lands in this board column.
+  const PENDING_STATUS = 'LAST MONTH PENDING';
 
   // ── Schema ────────────────────────────────────────────────────────────
   (async () => {
@@ -228,8 +231,10 @@ module.exports = function setupSprintsRoutes(app, pool) {
           ORDER BY i.rank_order IS NOT NULL, i.rank_order ASC, i.id DESC
         `;
         const [items] = await db.query(itemsQuery, [s.id]);
-        s.issues = items;
-        s.counts = items.reduce((acc, i) => {
+        // A completed sprint is last period's record of finished work: Done items only. Anything
+        // reopened since shows in the Backlog instead (see below).
+        s.issues = s.status === 'Completed' ? items.filter(i => isDone(i.status)) : items;
+        s.counts = s.issues.reduce((acc, i) => {
           const st = String(i.status || '').toUpperCase();
           if (isDone(st)) acc.done++;
           else if (st === 'IN PROGRESS') acc.inProgress++;
@@ -263,7 +268,8 @@ module.exports = function setupSprintsRoutes(app, pool) {
             LIMIT 1
           )
         )
-        WHERE i.sprint_id IS NULL AND UPPER(TRIM(COALESCE(i.status, ''))) NOT IN ('DONE', 'COMPLETED', 'CLOSED')
+        WHERE (i.sprint_id IS NULL OR i.sprint_id IN (SELECT id FROM sprints WHERE status = 'Completed'))
+          AND UPPER(TRIM(COALESCE(i.status, ''))) NOT IN ('DONE', 'COMPLETED', 'CLOSED')
         ORDER BY i.rank_order IS NOT NULL, i.rank_order ASC, i.id DESC
       `);
 
@@ -492,6 +498,95 @@ module.exports = function setupSprintsRoutes(app, pool) {
   // ── Complete a sprint ─────────────────────────────────────────────────
   // Finished work is completed/archived; unfinished work either stays in this sprint for renewal
   // (the default) or goes to the backlog, a chosen sprint, or a brand new one.
+  class SprintError extends Error {}
+
+  /** Puts carried-over tickets in the LAST MONTH PENDING column (timers logged, testing ended). */
+  async function carryToPending(keys, actor, sprintName) {
+    if (!keys.length) return 0;
+    const mover = app.locals.itKanban?.moveIssuesBySystem;
+    if (mover) return mover(keys, PENDING_STATUS, actor, `Auto-logged: sprint "${sprintName}" ended`);
+    const [r] = await db.query(`UPDATE it_kanban_issues SET status = ? WHERE issue_key IN (${keys.map(() => '?').join(',')})`, [PENDING_STATUS, ...keys]);
+    return r.affectedRows;
+  }
+
+  /**
+   * Completes one sprint and moves its unfinished work as `moveTo` says. Work that moves on to
+   * another sprint (new or existing) is carried over: it lands in the LAST MONTH PENDING column.
+   */
+  async function completeSprint(sprint, moveTo, actor = 'System') {
+    const [items] = await db.query('SELECT id, issue_key, status FROM it_kanban_issues WHERE sprint_id = ?', [sprint.id]);
+    const completed = items.filter(i => isDone(i.status));
+    const unfinished = items.filter(i => !isDone(i.status));
+
+    let target = null;
+    if (moveTo === 'stay' || !moveTo) {
+      // Keep unfinished work in this sprint so it can be renewed.
+      // Detach completed items so they don't linger in the active card when renewed.
+      if (completed.length > 0) {
+        await db.query(
+          `UPDATE it_kanban_issues SET sprint_id = NULL WHERE id IN (${completed.map(() => '?').join(',')})`,
+          completed.map(i => i.id)
+        );
+      }
+    } else if (moveTo === 'new') {
+      const [[row]] = await db.query('SELECT COUNT(*) AS n FROM sprints WHERE department = ?', [sprint.department]);
+      const [created] = await db.query(
+        `INSERT INTO sprints (name, department, status, sort_order) VALUES (?, ?, 'Planned', ?)`,
+        [`${sprint.department} Sprint ${Number(row.n) + 1}`, sprint.department, Date.now() % 100000]
+      );
+      const [[fresh]] = await db.query('SELECT id, name FROM sprints WHERE id = ?', [created.insertId]);
+      target = fresh;
+
+      if (unfinished.length > 0) {
+        await db.query(
+          `UPDATE it_kanban_issues SET sprint_id = ? WHERE id IN (${unfinished.map(() => '?').join(',')})`,
+          [target.id, ...unfinished.map(i => i.id)]
+        );
+        const keys = unfinished.map(i => i.issue_key);
+        await inheritSprintProject(db, target.id, keys);
+        await carryToPending(keys, actor, sprint.name);
+      }
+    } else if (moveTo === 'backlog') {
+      if (unfinished.length > 0) {
+        await db.query(
+          `UPDATE it_kanban_issues SET sprint_id = NULL WHERE id IN (${unfinished.map(() => '?').join(',')})`,
+          unfinished.map(i => i.id)
+        );
+        const keys = unfinished.map(i => i.issue_key);
+        await clearProjectForBacklog(db, keys);
+      }
+    } else {
+      const [[dest]] = await db.query('SELECT id, name, status FROM sprints WHERE id = ?', [moveTo]);
+      if (!dest) throw new SprintError('Destination sprint not found');
+      if (dest.status === 'Completed') throw new SprintError('Cannot move work into a completed sprint');
+      target = dest;
+
+      if (unfinished.length > 0) {
+        await db.query(
+          `UPDATE it_kanban_issues SET sprint_id = ? WHERE id IN (${unfinished.map(() => '?').join(',')})`,
+          [target.id, ...unfinished.map(i => i.id)]
+        );
+        const keys = unfinished.map(i => i.issue_key);
+        await inheritSprintProject(db, target.id, keys);
+        await carryToPending(keys, actor, sprint.name);
+      }
+    }
+
+    await db.query(
+      "UPDATE sprints SET status = 'Completed', completed_at = NOW(), end_date = COALESCE(end_date, CURDATE()) WHERE id = ?",
+      [sprint.id]
+    );
+    // The finished work's screenshots are deleted for good once its sprint is completed.
+    let screenshotsDeleted = 0;
+    try {
+      const out = await purgeScreenshots(db, completed.map(i => i.issue_key), { actor });
+      screenshotsDeleted = out.deleted.length;
+    } catch (err) {
+      console.error(`Screenshot clean-up failed for sprint "${sprint.name}":`, err.message);
+    }
+    return { completedCount: completed.length, movedCount: unfinished.length, target, screenshotsDeleted };
+  }
+
   app.post('/api/sprints/:id/complete', requireManager, async (req, res) => {
     try {
       const { id } = req.params;
@@ -501,75 +596,228 @@ module.exports = function setupSprintsRoutes(app, pool) {
       if (!sprint) return res.status(404).json({ error: 'Sprint not found' });
       if (sprint.status === 'Completed') return res.status(400).json({ error: 'Sprint is already completed' });
 
-      const [items] = await db.query('SELECT id, issue_key, status FROM it_kanban_issues WHERE sprint_id = ?', [id]);
-      const completed = items.filter(i => isDone(i.status));
-      const unfinished = items.filter(i => !isDone(i.status));
-
-      let target = null;
-      if (moveTo === 'stay' || !moveTo) {
-        // Keep unfinished work in this sprint so it can be renewed.
-        // Detach completed items so they don't linger in the active card when renewed.
-        if (completed.length > 0) {
-          await db.query(
-            `UPDATE it_kanban_issues SET sprint_id = NULL WHERE id IN (${completed.map(() => '?').join(',')})`,
-            completed.map(i => i.id)
-          );
-        }
-      } else if (moveTo === 'new') {
-        const [[row]] = await db.query('SELECT COUNT(*) AS n FROM sprints WHERE department = ?', [sprint.department]);
-        const [created] = await db.query(
-          `INSERT INTO sprints (name, department, status, sort_order) VALUES (?, ?, 'Planned', ?)`,
-          [`${sprint.department} Sprint ${Number(row.n) + 1}`, sprint.department, Date.now() % 100000]
-        );
-        const [[fresh]] = await db.query('SELECT id, name FROM sprints WHERE id = ?', [created.insertId]);
-        target = fresh;
-
-        if (unfinished.length > 0) {
-          await db.query(
-            `UPDATE it_kanban_issues SET sprint_id = ? WHERE id IN (${unfinished.map(() => '?').join(',')})`,
-            [target.id, ...unfinished.map(i => i.id)]
-          );
-          const keys = unfinished.map(i => i.issue_key);
-          await inheritSprintProject(db, target.id, keys);
-        }
-      } else if (moveTo === 'backlog') {
-        if (unfinished.length > 0) {
-          await db.query(
-            `UPDATE it_kanban_issues SET sprint_id = NULL WHERE id IN (${unfinished.map(() => '?').join(',')})`,
-            unfinished.map(i => i.id)
-          );
-          const keys = unfinished.map(i => i.issue_key);
-          await clearProjectForBacklog(db, keys);
-        }
-      } else {
-        const [[dest]] = await db.query('SELECT id, name, status FROM sprints WHERE id = ?', [moveTo]);
-        if (!dest) return res.status(400).json({ error: 'Destination sprint not found' });
-        if (dest.status === 'Completed') return res.status(400).json({ error: 'Cannot move work into a completed sprint' });
-        target = dest;
-
-        if (unfinished.length > 0) {
-          await db.query(
-            `UPDATE it_kanban_issues SET sprint_id = ? WHERE id IN (${unfinished.map(() => '?').join(',')})`,
-            [target.id, ...unfinished.map(i => i.id)]
-          );
-          const keys = unfinished.map(i => i.issue_key);
-          await inheritSprintProject(db, target.id, keys);
-        }
-      }
-
-      await db.query(
-        "UPDATE sprints SET status = 'Completed', completed_at = NOW(), end_date = COALESCE(end_date, CURDATE()) WHERE id = ?",
-        [id]
-      );
-
+      const actor = req.headers['x-user-name'] || req.user?.name || 'Manager';
+      const { completedCount, movedCount, target, screenshotsDeleted } = await completeSprint(sprint, moveTo, actor);
       res.json({
         success: true,
-        completedCount: completed.length,
-        movedCount: unfinished.length,
+        completedCount,
+        movedCount,
+        screenshotsDeleted,
         movedTo: (moveTo === 'stay' || !moveTo) ? sprint.name : (target ? target.name : 'Backlog')
       });
     } catch (error) {
+      if (error instanceof SprintError) return res.status(400).json({ error: error.message });
       responseError(res, 500, 'Failed to complete sprint', error);
+    }
+  });
+
+  // ── Complete every running sprint at once (month end) ──────────────────
+  // Sprints here are one per project, so each keeps its own line: every given active sprint of
+  // the department is completed (its Done work stays recorded in it) and, with "new", its open
+  // work moves to a new sprint of the same name and project. With start_date / end_date those
+  // new sprints start straight away; a project with nothing left open gets no new sprint.
+  app.post('/api/sprints/complete-all', requireManager, async (req, res) => {
+    try {
+      const { moveTo = 'new', department } = req.body;
+      const ids = (Array.isArray(req.body.ids) ? req.body.ids : []).map(Number).filter(Boolean);
+      if (!ids.length) return res.status(400).json({ error: 'Choose the sprints to complete.' });
+      const day = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '').slice(0, 10)) ? String(v).slice(0, 10) : null);
+      const startDate = day(req.body.start_date);
+      const endDate = day(req.body.end_date);
+      if (moveTo === 'new' && startDate && endDate && endDate < startDate) {
+        return res.status(400).json({ error: 'The end date is before the start date.' });
+      }
+
+      const [rows] = await db.query(
+        `SELECT * FROM sprints WHERE id IN (${ids.map(() => '?').join(',')}) AND status = 'Active' ORDER BY id`, ids
+      );
+      // Never reach into another department's sprints.
+      const sprints = department
+        ? rows.filter(sp => String(sp.department || '').toLowerCase() === String(department).toLowerCase())
+        : rows;
+      if (!sprints.length) return res.status(400).json({ error: 'None of these sprints is running.' });
+      if (!['stay', 'backlog', 'new'].includes(moveTo) && sprints.some(sp => String(sp.id) === String(moveTo))) {
+        return res.status(400).json({ error: 'The open work cannot go into a sprint that is being completed.' });
+      }
+
+      const actor = req.headers['x-user-name'] || req.user?.name || 'Manager';
+      let completedCount = 0;
+      let movedCount = 0;
+      let screenshotsDeleted = 0;
+      const created = [];
+      for (const sprint of sprints) {
+        let dest = moveTo;
+        if (moveTo === 'new') {
+          const [[open]] = await db.query(
+            `SELECT COUNT(*) AS n FROM it_kanban_issues WHERE sprint_id = ? AND UPPER(TRIM(COALESCE(status, ''))) NOT IN (?)`,
+            [sprint.id, DONE_STATUSES]
+          );
+          if (Number(open.n) > 0) {
+            const [made] = await db.query(
+              `INSERT INTO sprints (name, department, project_id, goal, status, start_date, end_date, sort_order)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              [sprint.name, sprint.department, sprint.project_id ?? null, sprint.goal ?? null,
+                startDate ? 'Active' : 'Planned', startDate, endDate, sprint.sort_order ?? 0]
+            );
+            dest = made.insertId;
+            created.push(sprint.name);
+          } else {
+            dest = 'backlog'; // nothing open: the sprint just closes
+          }
+        }
+        const out = await completeSprint(sprint, dest, actor);
+        completedCount += out.completedCount;
+        movedCount += out.movedCount;
+        screenshotsDeleted += out.screenshotsDeleted || 0;
+      }
+
+      res.json({
+        success: true, sprints: sprints.map(sp => sp.name), completedCount, movedCount, screenshotsDeleted,
+        created, started: Boolean(moveTo === 'new' && startDate && created.length),
+        movedTo: moveTo === 'backlog' ? 'Backlog' : null
+      });
+    } catch (error) {
+      if (error instanceof SprintError) return res.status(400).json({ error: error.message });
+      responseError(res, 500, 'Failed to complete the sprints', error);
+    }
+  });
+
+  // ── Automatic roll-over when a sprint's end date has passed ───────────
+  // Each running sprint whose end date is over is completed; if it still has open work, a new
+  // sprint of the same name and project starts for the next period and the open work is
+  // carried into it (LAST MONTH PENDING column). A whole calendar month rolls to the next
+  // month; any other sprint keeps its length. Runs shortly after start-up, then hourly.
+  const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const parseDay = (v) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+
+  /** The period after [start, end], moved forward until it reaches today. */
+  const nextPeriod = (start, end, today) => {
+    const s = parseDay(start);
+    const e = parseDay(end);
+    const wholeMonth = !s || (s.getDate() === 1 && addDays(e, 1).getDate() === 1 && s.getMonth() === e.getMonth());
+    let from = addDays(e, 1);
+    if (wholeMonth) {
+      if (from < new Date(today.getFullYear(), today.getMonth(), 1)) from = new Date(today.getFullYear(), today.getMonth(), 1);
+      return { start: ymd(from), end: ymd(new Date(from.getFullYear(), from.getMonth() + 1, 0)) };
+    }
+    const length = Math.max(1, Math.round((e - s) / 86400000) + 1);
+    let to = addDays(from, length - 1);
+    while (to < today) { from = addDays(to, 1); to = addDays(from, length - 1); }
+    return { start: ymd(from), end: ymd(to) };
+  };
+
+  let rollingOver = false;
+  /** dryRun: only say what would happen. department: limit to one department. */
+  async function rollOverEndedSprints({ now = new Date(), dryRun = false, department = null } = {}) {
+    if (rollingOver && !dryRun) return [];
+    if (!dryRun) rollingOver = true;
+    const done = [];
+    try {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const [ended] = await db.query(
+        `SELECT *, DATE_FORMAT(start_date, '%Y-%m-%d') AS start_day, DATE_FORMAT(end_date, '%Y-%m-%d') AS end_day
+           FROM sprints WHERE status = 'Active' AND end_date IS NOT NULL AND end_date < ? ORDER BY id`,
+        [ymd(today)]
+      );
+      const scope = department
+        ? ended.filter(sp => String(sp.department || '').toLowerCase() === String(department).toLowerCase())
+        : ended;
+      for (const sprint of scope) {
+        try {
+          const [[open]] = await db.query(
+            `SELECT COUNT(*) AS n FROM it_kanban_issues WHERE sprint_id = ? AND UPPER(TRIM(COALESCE(status, ''))) NOT IN (?)`,
+            [sprint.id, DONE_STATUSES]
+          );
+          let dest = 'backlog'; // nothing open: the sprint just closes
+          const next = Number(open.n) > 0 ? nextPeriod(sprint.start_day, sprint.end_day, today) : null;
+          if (dryRun) {
+            done.push({ id: sprint.id, name: sprint.name, department: sprint.department, ended: sprint.end_day, carried: Number(open.n), next });
+            continue;
+          }
+          if (next) {
+            const [made] = await db.query(
+              `INSERT INTO sprints (name, department, project_id, goal, status, start_date, end_date, sort_order)
+               VALUES (?, ?, ?, ?, 'Active', ?, ?, ?)`,
+              [sprint.name, sprint.department, sprint.project_id ?? null, sprint.goal ?? null, next.start, next.end, sprint.sort_order ?? 0]
+            );
+            dest = made.insertId;
+          }
+          const out = await completeSprint(sprint, dest, 'System (sprint ended)');
+          done.push({ id: sprint.id, name: sprint.name, department: sprint.department, ended: sprint.end_day, carried: out.movedCount, next });
+          console.log(`Sprint "${sprint.name}" (${sprint.department}) ended ${sprint.end_day}: completed, ${out.movedCount} open item(s) carried${next ? ` into ${next.start} – ${next.end}` : ''}.`);
+        } catch (err) {
+          console.error(`Sprint roll-over failed for "${sprint.name}":`, err.message);
+        }
+      }
+    } finally {
+      if (!dryRun) rollingOver = false;
+    }
+    return done;
+  }
+
+  // Managers can see what a roll-over would do, and run it now for their department.
+  app.get('/api/sprints/roll-over/preview', requireManager, async (req, res) => {
+    try {
+      res.json({ auto: process.env.SPRINT_AUTO_ROLLOVER === 'true', sprints: await rollOverEndedSprints({ dryRun: true, department: req.query.department || null }) });
+    } catch (error) {
+      responseError(res, 500, 'Failed to preview the sprint roll-over', error);
+    }
+  });
+  app.post('/api/sprints/roll-over', requireManager, async (req, res) => {
+    try {
+      const done = await rollOverEndedSprints({ department: req.body?.department || null });
+      res.json({ success: true, sprints: done });
+    } catch (error) {
+      responseError(res, 500, 'Failed to roll over the sprints', error);
+    }
+  });
+  app.locals.sprints = { ...(app.locals.sprints || {}), rollOverEndedSprints };
+  // Switched on with SPRINT_AUTO_ROLLOVER=true in server/.env (off by default, so it never runs by surprise).
+  if (process.env.SPRINT_AUTO_ROLLOVER === 'true') {
+    const run = () => rollOverEndedSprints().catch(err => console.error('Sprint roll-over failed:', err.message));
+    const first = setTimeout(run, 90 * 1000);
+    const hourly = setInterval(run, 60 * 60 * 1000);
+    if (first.unref) first.unref();
+    if (hourly.unref) hourly.unref();
+  }
+
+  // ── Screenshots of sprints completed earlier ──────────────────────────
+  // Sprints completed before the automatic clean-up existed still hold their screenshots.
+  // A manager can preview and delete them for one month's completed sprints (by end date).
+  const doneKeysOfCompleted = async (month) => {
+    const valid = /^\d{4}-\d{2}$/.test(String(month || ''));
+    const [sps] = await db.query(
+      `SELECT id FROM sprints WHERE status = 'Completed'${valid ? " AND DATE_FORMAT(COALESCE(end_date, completed_at), '%Y-%m') = ?" : ''}`,
+      valid ? [month] : []
+    );
+    if (!sps.length) return { sprintCount: 0, keys: [] };
+    const ids = sps.map(x => x.id);
+    const [rows] = await db.query(
+      `SELECT issue_key FROM it_kanban_issues WHERE sprint_id IN (${ids.map(() => '?').join(',')}) AND UPPER(TRIM(COALESCE(status, ''))) IN (?)`,
+      [...ids, DONE_STATUSES]
+    );
+    return { sprintCount: ids.length, keys: rows.map(r => r.issue_key) };
+  };
+  const cleanupSummary = (sprintCount, keys, out) => ({
+    sprints: sprintCount, tickets: keys.length,
+    screenshots: out.deleted.length, notFound: out.notFound.length, failed: out.failed.length, keptShared: out.kept.length
+  });
+  app.get('/api/sprints/screenshots/preview', requireManager, async (req, res) => {
+    try {
+      const { sprintCount, keys } = await doneKeysOfCompleted(req.query.month);
+      res.json(cleanupSummary(sprintCount, keys, await purgeScreenshots(db, keys, { dryRun: true })));
+    } catch (error) {
+      responseError(res, 500, 'Failed to preview the screenshots', error);
+    }
+  });
+  app.post('/api/sprints/screenshots/cleanup', requireManager, async (req, res) => {
+    try {
+      const { sprintCount, keys } = await doneKeysOfCompleted(req.body?.month);
+      const actor = req.headers['x-user-name'] || req.user?.name || 'Manager';
+      res.json({ success: true, ...cleanupSummary(sprintCount, keys, await purgeScreenshots(db, keys, { actor })) });
+    } catch (error) {
+      responseError(res, 500, 'Failed to delete the screenshots', error);
     }
   });
 

@@ -99,6 +99,7 @@ const DEFAULT_USERS = [
 ];
 
 const STATUS_COLORS = {
+  'LAST MONTH PENDING': 'bg-amber-100 text-amber-800 hover:bg-amber-200 ',
   'TO DO': 'bg-gray-100 text-gray-700 hover:bg-gray-200',
   'IN PROGRESS': 'bg-blue-100 text-blue-800 hover:bg-blue-200 ',
   'IN REVIEW': 'bg-purple-100 text-purple-800 hover:bg-purple-200 ',
