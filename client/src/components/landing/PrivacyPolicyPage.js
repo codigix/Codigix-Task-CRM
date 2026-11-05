@@ -55,6 +55,15 @@ const PrivacyPolicyPage = () => (
         </p>
       </Section>
 
+      <Section title="AI and machine learning">
+        <p><strong>We do not use Google Workspace API data (including Google Calendar, Google Meet and Gmail data) to develop,
+          improve, or train generalized AI and/or ML models.</strong> We do not retain Google user data for that purpose, and we
+          do not transfer it to any third-party AI or machine-learning provider.</p>
+        <p>Some Codigix CRM features use AI (for example, suggesting a task description from text you type, or summarising a
+          call recording you upload yourself). These features only process content you enter or upload in Codigix CRM; they
+          never receive data obtained through Google APIs.</p>
+      </Section>
+
       <Section title="How we share information">
         <p>Records you create are visible to the members and managers of your own team's workspace who work with them, never to other customers. We do not sell personal data. We share data only with the service providers needed to run the platform (hosting, email delivery, and Google for the features you connect), or when the law requires it.</p>
       </Section>
