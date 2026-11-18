@@ -906,11 +906,16 @@ const ITKanbanPage = ({ department }) => {
 
     if (deptActiveSprints.length > 0) {
       const runningIds = new Set(deptActiveSprints.map(s => Number(s.id)));
+      // Meetings show on the board even when they aren't in a running sprint (no project/sprint
+      // chosen, or a planned one). Once done, they stay for 14 days so DONE doesn't fill up forever.
+      const recentDone = Date.now() - 14 * 86400000;
+      const isBoardMeeting = (issue) => String(issue.type || '').toLowerCase() === 'meeting'
+        && (!isDoneStatus(issue.status) || new Date(issue.updated_at || issue.created_at || 0).getTime() >= recentDone);
       filtered = filtered.filter(issue =>
         (Boolean(issue.sprint_id) && (
           runningIds.has(Number(issue.sprint_id)) ||
           issue.sprint_status === 'Active'
-        )) || isPendingInEndedSprint(issue)
+        )) || isPendingInEndedSprint(issue) || isBoardMeeting(issue)
       );
     }
 

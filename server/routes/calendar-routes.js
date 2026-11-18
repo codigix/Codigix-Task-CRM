@@ -185,8 +185,10 @@ module.exports = function setupCalendarRoutes(app, pool) {
         // Your own tickets; managers also get their department's (shown as a separate layer).
         // Only running sprints are shown below: planned ones would flood the month.
         const [tickets] = await db.query(
+          // A meeting's work item is left out: the meeting itself is already on the calendar as an event.
           `SELECT issue_key, title, status, assignee, department, due_date FROM it_kanban_issues
-            WHERE due_date IS NOT NULL AND due_date >= ? AND due_date < ?`,
+            WHERE due_date IS NOT NULL AND due_date >= ? AND due_date < ?
+              AND LOWER(COALESCE(type, '')) <> 'meeting'`,
           [from, to]
         );
         const myName = me.name.toLowerCase();

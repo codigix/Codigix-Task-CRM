@@ -4,9 +4,28 @@ import { API_BASE_URL } from '../../config/environment';
 import {
   Plus, Search, Loader2, Calendar, Video, MapPin, Phone, Clock, Users, CheckCircle2, XCircle,
   FileText, AlertCircle, FolderKanban, Layers, ChevronDown, RefreshCw, Mail, Pencil, CalendarClock,
-  Trash2, ExternalLink, ListChecks, History, Link2, Check, X, HelpCircle
+  Trash2, ExternalLink, ListChecks, History, Link2, Check, X, HelpCircle, Paperclip
 } from 'lucide-react';
 import useLiveRefresh from '../../hooks/useLiveRefresh';
+import { uploadDescriptionFile, formatFileSize, toAbsoluteFileUrl } from '../../utils/descriptionFiles';
+
+// A meeting's files live on its work item, so they show in the task's Attachments on the board.
+// Same two steps the board uses: upload the file, then record it on the task. Returns names that failed.
+const attachFilesToTask = async (issueKey, files, meta) => {
+  const failed = [];
+  for (const f of files) {
+    try {
+      const saved = await uploadDescriptionFile(f, meta);
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${encodeURIComponent(issueKey)}/attachments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_name: saved.name, file_path: saved.filePath || saved.url, file_size: formatFileSize(saved.sizeBytes), file_type: saved.mimeType })
+      });
+      if (!res.ok) throw new Error('save failed');
+    } catch { failed.push(f.name); }
+  }
+  return failed;
+};
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const mApi = async (path, opts = {}) => {
@@ -107,8 +126,15 @@ function ScheduleModal({ onClose, onSaved, me, edit }) {
   const [teamAdded, setTeamAdded] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [files, setFiles] = useState([]); // added to the meeting's task once it is saved
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  // Copy the FileList right away: it is live, and clearing the input (to allow picking the same file
+  // again) empties it before React runs the state update.
+  const addFiles = (list) => {
+    const picked = Array.from(list || []);
+    if (picked.length) setFiles(prev => [...prev, ...picked.filter(f => !prev.some(p => p.name === f.name && p.size === f.size))]);
+  };
 
   useEffect(() => {
     mApi('/users').then(d => setUsers(d.users || [])).catch(() => { });
@@ -163,7 +189,15 @@ function ScheduleModal({ onClose, onSaved, me, edit }) {
         guestEmails: [...new Set([...guestEmails, ...pendingGuest])]
       };
       const r = editing ? await mApi(`/${m.id}`, { method: 'PUT', body }) : await mApi('', { method: 'POST', body });
-      onSaved(editing ? m.id : r.id, r.warning);
+      let warning = r.warning;
+      const issueKey = editing ? m.issue_key : r.issueKey;
+      if (files.length) {
+        const failed = issueKey
+          ? await attachFilesToTask(issueKey, files, { project_id: body.project_id || undefined, userId: me || undefined })
+          : files.map(f => f.name);
+        if (failed.length) warning = [warning, `These files could not be attached: ${failed.join(', ')}. Add them from the task on the board.`].filter(Boolean).join(' ');
+      }
+      onSaved(editing ? m.id : r.id, warning);
     } catch (e) { setError(e.message); setSaving(false); }
   };
 
@@ -222,6 +256,28 @@ function ScheduleModal({ onClose, onSaved, me, edit }) {
         <div>
           <label className={labelCls}>Agenda</label>
           <textarea value={form.agenda} onChange={e => set('agenda', e.target.value)} rows={3} className={`${inputCls} h-auto py-2`} placeholder="Points to discuss in this meeting…" />
+        </div>
+
+        <div>
+          <label className={labelCls}>Attachments (optional)</label>
+          <label className="flex items-center justify-center gap-2 h-10 rounded border border-dashed border-gray-300 bg-gray-50 text-xs text-gray-600 hover:bg-gray-100 cursor-pointer"
+            onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); addFiles(e.dataTransfer.files); }}>
+            <Paperclip size={13} /> Attach files (agenda, slides, documents) or drop them here
+            <input type="file" multiple className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ''; }} />
+          </label>
+          {files.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {files.map((f, i) => (
+                <div key={`${f.name}-${i}`} className="flex items-center gap-2 text-xs bg-white border border-gray-200 rounded px-2.5 py-1.5">
+                  <Paperclip size={11} className="text-gray-400 shrink-0" />
+                  <span className="truncate flex-1 text-gray-800">{f.name}</span>
+                  <span className="text-gray-400">{formatFileSize(f.size)}</span>
+                  <button type="button" onClick={() => setFiles(fs => fs.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-600 cursor-pointer" title="Remove"><X size={12} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-[11px] text-gray-500 mt-1">Files are added to the meeting's task on the board{editing ? ' (alongside the ones already there)' : ''}.</p>
         </div>
 
         <SectionLabel icon={FolderKanban} label="Project & sprint" />
@@ -503,6 +559,18 @@ function MeetingDetail({ meetingId, me, onClose, onRefresh, onFlash }) {
   useEffect(() => { load(); }, [load]);
   useLiveRefresh(['meetings'], () => load());
 
+  // The meeting's files are the attachments on its work item (added when scheduling, or later on the board).
+  const [meetingFiles, setMeetingFiles] = useState([]);
+  const issueKey = data?.meeting?.issue_key;
+  const loadFiles = useCallback(() => {
+    if (!issueKey) { setMeetingFiles([]); return; }
+    fetch(`${API_BASE_URL}/it-kanban/issues/${encodeURIComponent(issueKey)}/attachments`)
+      .then(r => (r.ok ? r.json() : []))
+      .then(d => setMeetingFiles(Array.isArray(d) ? d : []))
+      .catch(() => setMeetingFiles([]));
+  }, [issueKey]);
+  useEffect(() => { loadFiles(); }, [loadFiles, data]);
+
   if (!data) return (
     <Modal title="Meeting" onClose={onClose}>
       <div className="flex justify-center py-10 items-center gap-2">
@@ -655,6 +723,23 @@ function MeetingDetail({ meetingId, me, onClose, onRefresh, onFlash }) {
                 </div>
               )}
               {task && <div className="flex items-center gap-2 text-sm"><span className="text-xs text-gray-500 w-14">To-do</span><span className={`text-[11px] rounded px-2 py-0.5 font-medium ${task.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : task.status === 'Cancelled' ? 'bg-gray-200 text-gray-600' : 'bg-amber-50 text-amber-700'}`}>{task.status}</span></div>}
+            </div>
+          )}
+
+          {meetingFiles.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1"><Paperclip size={11} /> Files ({meetingFiles.length})</p>
+              <div className="space-y-1">
+                {meetingFiles.map(f => (
+                  <a key={f.id} href={toAbsoluteFileUrl(f.file_path)} target="_blank" rel="noreferrer"
+                    className="flex items-center gap-2 text-xs bg-gray-50 border border-gray-100 rounded px-2.5 py-1.5 hover:bg-gray-100">
+                    <Paperclip size={11} className="text-gray-400 shrink-0" />
+                    <span className="truncate flex-1 text-blue-600">{f.file_name}</span>
+                    {f.file_size && <span className="text-gray-400">{f.file_size}</span>}
+                    <ExternalLink size={11} className="text-gray-400 shrink-0" />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
 
@@ -845,6 +930,13 @@ export default function MeetingsPage() {
   const [googleKey, setGoogleKey] = useState(0);
 
   // Coming back from Google's consent screen: ?google=connected | ?google=error&msg=...
+  // Opened from the Calendar's "Schedule meeting" button: start with the schedule form open.
+  useEffect(() => {
+    if (params.get('schedule') !== '1') return;
+    setScheduling(true);
+    const p = new URLSearchParams(params); p.delete('schedule'); setParams(p, { replace: true });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const googleParam = params.get('google');
   useEffect(() => {
     if (!googleParam) return;

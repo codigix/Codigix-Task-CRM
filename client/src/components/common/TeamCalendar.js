@@ -62,7 +62,8 @@ const rangeFor = (view, cursor) => {
 const onDay = (item, day) => {
   const s = startOfDay(item.startDate); const e = item.endDate;
   const d0 = startOfDay(day); const d1 = addDays(d0, 1);
-  if (item.allDay) return s <= d0 && startOfDay(e) >= d0;
+  // All-day items end at the start of the day after their last day (exclusive), so the end day itself is out.
+  if (item.allDay) return s <= d0 && e > d0;
   return item.startDate < d1 && e > d0;
 };
 
@@ -86,12 +87,6 @@ const workspaceBase = () => {
 
 /* ───────────────────────── event form ───────────────────────── */
 
-const blankForm = (date, startHour = 10) => ({
-  title: '', category: 'Meeting', date: ymd(date), endDate: ymd(date),
-  startTime: `${pad(startHour)}:00`, endTime: `${pad(Math.min(startHour + 1, 23))}:00`,
-  allDay: false, mode: 'offline', meetingLink: '', location: '', description: '',
-  attendeeIds: [], guestEmails: [], status: 'Scheduled'
-});
 
 const formFromEvent = (ev) => ({
   title: ev.title, category: ev.category, date: ymd(ev.startDate), endDate: ymd(ev.allDay ? addDays(ev.endDate, -1) : ev.endDate),
@@ -413,7 +408,7 @@ const Chip = ({ item, onOpen, showTime = true }) => {
   );
 };
 
-function MonthView({ cursor, items, today, onOpen, onCreate }) {
+function MonthView({ cursor, items, today, onOpen }) {
   const [start, end] = rangeFor('Month', cursor);
   const count = Math.round((end - start) / 86400000);
   const days = Array.from({ length: count }, (_, i) => addDays(start, i));
@@ -429,8 +424,8 @@ function MonthView({ cursor, items, today, onOpen, onCreate }) {
           const isToday = sameDay(day, today);
           const list = items.filter(it => onDay(it, day)).sort((a, b) => (b.allDay - a.allDay) || (a.startDate - b.startDate));
           return (
-            <div key={ymd(day)} onClick={() => onCreate(day)}
-              className={`border-b border-r border-gray-100 p-1.5 min-w-0 cursor-pointer hover:bg-blue-50/30 ${inMonth ? 'bg-white' : 'bg-gray-50/70'}`}>
+            <div key={ymd(day)}
+              className={`border-b border-r border-gray-100 p-1.5 min-w-0 ${inMonth ? 'bg-white' : 'bg-gray-50/70'}`}>
               <div className={`w-6 h-6 flex items-center justify-center rounded text-xs mb-1 ${isToday ? 'bg-red-600 text-white ' : inMonth ? 'text-gray-800' : 'text-gray-400'}`}>{day.getDate()}</div>
               <div className="space-y-0.5">
                 {list.slice(0, 3).map(it => <Chip key={it.id} item={it} onOpen={onOpen} />)}
@@ -444,7 +439,7 @@ function MonthView({ cursor, items, today, onOpen, onCreate }) {
   );
 }
 
-function TimeGridView({ days, items, today, onOpen, onCreate }) {
+function TimeGridView({ days, items, today, onOpen }) {
   return (
     <div className="bg-white border border-gray-200 rounded overflow-hidden">
       <div className="grid border-b border-gray-200 bg-gray-50" style={{ gridTemplateColumns: `56px repeat(${days.length}, minmax(0, 1fr))` }}>
@@ -470,8 +465,7 @@ function TimeGridView({ days, items, today, onOpen, onCreate }) {
           return (
             <div key={ymd(d)} className="relative border-l border-gray-100">
               {HOURS.map(h => (
-                <div key={h} style={{ height: HOUR_PX }} className="border-b border-gray-100 hover:bg-blue-50/30 cursor-pointer"
-                  onClick={() => onCreate(d, h)} aria-label={`New event ${fmtDay(d)} ${pad(h)}:00`} />
+                <div key={h} style={{ height: HOUR_PX }} className="border-b border-gray-100" />
               ))}
               {sameDay(d, today) && (() => {
                 const mins = (today - base) / 60000;
@@ -545,6 +539,7 @@ function ListView({ items, onOpen, from }) {
 
 export default function TeamCalendar({ department }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const path = window.location.pathname.toLowerCase();
   const dept = department || (path.includes('/marketing') || path.includes('/seo-gmb') ? 'Marketing' : path.startsWith('/it/') ? 'IT' : (user?.department || '').replace(/\s*department\s*$/i, '') || 'Team');
 
@@ -603,10 +598,6 @@ export default function TeamCalendar({ department }) {
     : view === 'Week' ? `${fmtDay(from)} – ${fmtDay(addDays(to, -1))} ${addDays(to, -1).getFullYear()}`
       : cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 
-  const openCreate = (day = now, hour) => {
-    const h = hour ?? (sameDay(day, now) ? Math.min(Math.max(now.getHours() + 1, 7), 20) : 10);
-    setModal({ initial: blankForm(day, h), editing: null });
-  };
 
   const upcoming = allItems.filter(it => it.endDate > now && it.startDate < addDays(now, 8) && it.status !== 'Cancelled' && !it.done)
     .sort((a, b) => a.startDate - b.startDate).slice(0, 8);
@@ -625,8 +616,9 @@ export default function TeamCalendar({ department }) {
     <div className="bg-gray-50 min-h-screen flex flex-col lg:flex-row">
       {/* Sidebar */}
       <aside className="w-full lg:w-64 shrink-0 bg-white border-b lg:border-b-0 lg:border-r border-gray-200 p-4 space-y-6">
-        <button onClick={() => openCreate()} className="w-full inline-flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded cursor-pointer">
-          <Plus size={16} /> New event
+        {/* Meetings are created on the Meetings page, which also makes their task, Meet link and invites. */}
+        <button onClick={() => navigate('/meetings?schedule=1')} className="w-full inline-flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded cursor-pointer">
+          <Plus size={16} /> Schedule meeting
         </button>
         <div>
           <h3 className="text-xs  text-gray-700 mb-2">Next 7 days</h3>
@@ -695,8 +687,8 @@ export default function TeamCalendar({ department }) {
 
         <div className="overflow-x-auto">
           <div className={view === 'Week' ? 'min-w-[760px]' : view === 'Month' ? 'min-w-[680px]' : ''}>
-            {view === 'Month' && <MonthView cursor={cursor} items={visible} today={now} onOpen={setOpenItem} onCreate={(d) => openCreate(d)} />}
-            {(view === 'Week' || view === 'Day') && <TimeGridView days={days} items={visible} today={now} onOpen={setOpenItem} onCreate={openCreate} />}
+            {view === 'Month' && <MonthView cursor={cursor} items={visible} today={now} onOpen={setOpenItem} />}
+            {(view === 'Week' || view === 'Day') && <TimeGridView days={days} items={visible} today={now} onOpen={setOpenItem} />}
             {view === 'List' && (() => {
               const mStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
               const mEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
