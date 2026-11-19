@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Users, CheckCircle2, Clock, Timer, AlertTriangle, Trophy, Award, Zap, Target,
   Download, Printer, Calendar, ArrowLeft, Search, ChevronUp, ChevronDown, Info, Star, TrendingUp, X,
-  ListChecks, MessageSquare, Video, FileText, Flame, CircleSlash
+  ListChecks, MessageSquare, Video, FileText, Flame, CircleSlash, Mail, Loader2
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Legend } from 'recharts';
 import Swal from 'sweetalert2';
@@ -487,7 +487,32 @@ const ChampionsView = ({ data, onOpenEmployee }) => {
 
 /* ───────────────────────── period & filter bar ───────────────────────── */
 
-const PeriodBar = ({ params, setParams, departments, onExport, onPrint, showDepartment = true }) => (
+const PdfButton = ({ onPdf, label }) => {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button onClick={async () => { setBusy(true); await onPdf(); setBusy(false); }} disabled={busy}
+      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 disabled:opacity-60 cursor-pointer">
+      {busy ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />} {busy ? 'Preparing PDF…' : label}
+    </button>
+  );
+};
+
+// Downloads the server-built PDF (the same file that is attached to report emails).
+const downloadReportPdf = async (params, employeeId) => {
+  const q = buildQuery(params) + (employeeId ? `&employeeId=${encodeURIComponent(employeeId)}` : '');
+  try {
+    const res = await fetch(`${API_BASE_URL}/hr/performance/report/pdf?${q}`);
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Could not build the PDF'); }
+    const name = (res.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'Performance-report.pdf';
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) {
+    Swal.fire({ icon: 'error', title: 'PDF failed', text: e.message });
+  }
+};
+
+const PeriodBar = ({ params, setParams, departments, onExport, onPrint, onEmail, emailLabel = 'Email reports', onPdf, pdfLabel = 'Download PDF', showDepartment = true }) => (
   <div className="flex flex-wrap items-end gap-2 no-print">
     <div className="inline-flex rounded border border-gray-300 overflow-hidden" role="tablist" aria-label="Report period">
       {[['month', 'Monthly'], ['quarter', 'Quarterly'], ['year', 'Yearly'], ['custom', 'Custom']].map(([p, label]) => (
@@ -548,11 +573,17 @@ const PeriodBar = ({ params, setParams, departments, onExport, onPrint, showDepa
     )}
 
     <div className="flex-1" />
+    {onEmail && (
+      <button onClick={onEmail} className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-red-600 rounded bg-red-600 text-white hover:bg-red-700 cursor-pointer">
+        <Mail size={13} /> {emailLabel}
+      </button>
+    )}
     {onExport && (
       <button onClick={onExport} className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 cursor-pointer">
         <Download size={13} /> Export CSV
       </button>
     )}
+    {onPdf && <PdfButton onPdf={onPdf} label={pdfLabel} />}
     {onPrint && (
       <button onClick={onPrint} className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 cursor-pointer">
         <Printer size={13} /> Print / PDF
@@ -675,7 +706,7 @@ const COLUMNS = [
   { key: 'overdue', label: 'Overdue', get: r => r.metrics.overdueOpen }
 ];
 
-const EmployeesTable = ({ data, onOpenEmployee }) => {
+const EmployeesTable = ({ data, onOpenEmployee, onEmailEmployee, onPdfEmployee }) => {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState({ key: 'rank', dir: 'desc' });
   const maxDone = Math.max(1, ...data.employees.map(e => e.metrics.tasksCompleted));
@@ -727,10 +758,25 @@ const EmployeesTable = ({ data, onOpenEmployee }) => {
                 <td className="py-2.5 px-3 pl-4">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded bg-gray-100 text-gray-700 flex items-center justify-center text-[11px]  shrink-0">{initials(r.name)}</div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="font-medium text-gray-900 truncate">{r.name}</div>
                       <div className="text-[11px] text-gray-500 truncate">{r.role} · {r.department}</div>
                     </div>
+                    {onPdfEmployee && (
+                      <button onClick={e => { e.stopPropagation(); onPdfEmployee(r.id); }}
+                        title={`Download ${r.name}'s report as PDF`} aria-label={`Download ${r.name}'s report as PDF`}
+                        className="no-print shrink-0 h-7 w-7 inline-flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 cursor-pointer">
+                        <Download size={13} />
+                      </button>
+                    )}
+                    {onEmailEmployee && (
+                      <button onClick={e => { e.stopPropagation(); onEmailEmployee(r.id); }} disabled={!r.email}
+                        title={r.email ? `Email ${r.name} their report (${r.email})` : 'No email address on file'}
+                        aria-label={`Email ${r.name} their report`}
+                        className="no-print shrink-0 h-7 w-7 inline-flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                        <Mail size={13} />
+                      </button>
+                    )}
                   </div>
                 </td>
                 <td className="py-2.5 px-3 text-right"><GradeBadge grade={r.grade} score={r.score} /></td>
@@ -1150,6 +1196,7 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
   const [tab, setTab] = useState('completed');
   const [reviewOpen, setReviewOpen] = useState(false);
   const [meetingReportOpen, setMeetingReportOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   if (loading && !data) return <div className="py-20 text-center text-sm text-gray-500">Loading report…</div>;
   if (error) return <div className="py-20 text-center text-sm text-red-700">{error}</div>;
@@ -1179,7 +1226,10 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
             className="no-print inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 cursor-pointer">
             <FileText size={13} /> Review meeting report (PDF)
           </button>
-          <PeriodBar params={params} setParams={setParams} showDepartment={false} onExport={exportCsv} onPrint={() => window.print()} />
+          <PeriodBar params={params} setParams={setParams} showDepartment={false} onExport={exportCsv} onPrint={() => window.print()}
+            onEmail={isSelf ? undefined : () => setEmailOpen(true)} emailLabel="Email this report"
+            onPdf={isSelf ? undefined : () => downloadReportPdf(params, employeeId)} />
+          {emailOpen && <EmailReportsModal params={params} employeeId={employeeId} onClose={() => setEmailOpen(false)} />}
         </div>
       </div>
 
@@ -1436,6 +1486,114 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
 
 /* ───────────────────────── page ───────────────────────── */
 
+/* ───────────────────────── email each employee their report ───────────────────────── */
+
+const reportBody = (params, extra) => {
+  const body = { period: params.period, includeAdmins: Boolean(params.includeAdmins), ...extra };
+  if (params.period === 'custom') { body.from = params.from; body.to = params.to; } else body.value = params.value;
+  if (params.department && params.department !== 'All') body.department = params.department;
+  return body;
+};
+
+const postEmail = async (body) => {
+  const res = await fetch(`${API_BASE_URL}/hr/performance/report/email`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+};
+
+const STATUS_STYLE = { ready: 'bg-blue-50 text-blue-700', sent: 'bg-emerald-50 text-emerald-700', skipped: 'bg-gray-100 text-gray-600', failed: 'bg-red-50 text-red-700' };
+
+/**
+ * Previews who gets a report for the chosen period, lets HR untick people, then emails each
+ * person their own report. `employeeId` limits it to one person (from their report page).
+ */
+const EmailReportsModal = ({ params, employeeId, onClose }) => {
+  const [rows, setRows] = useState(null);
+  const [rangeLabel, setRangeLabel] = useState('');
+  const [picked, setPicked] = useState(new Set());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(null);
+  const extra = employeeId ? { employeeIds: [Number(employeeId)] } : {};
+
+  useEffect(() => {
+    postEmail(reportBody(params, { ...extra, preview: true }))
+      .then(d => {
+        setRows(d.results); setRangeLabel(d.range?.label || '');
+        setPicked(new Set(d.results.filter(r => r.status === 'ready').map(r => r.id)));
+      })
+      .catch(e => setError(e.message));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const send = async () => {
+    setBusy(true); setError('');
+    try {
+      const d = await postEmail(reportBody(params, { employeeIds: [...picked] }));
+      setDone(d); setRows(d.results);
+    } catch (e) { setError(e.message); }
+    setBusy(false);
+  };
+  const toggle = (id) => setPicked(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const ready = (rows || []).filter(r => r.status === 'ready');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 no-print" onClick={e => e.target === e.currentTarget && !busy && onClose()}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+          <h2 className="text-base font-semibold text-gray-900">Email performance report{employeeId ? '' : 's'}{rangeLabel ? ` · ${rangeLabel}` : ''}</h2>
+          <button onClick={onClose} disabled={busy} className="text-gray-400 hover:text-gray-700 cursor-pointer"><X size={18} /></button>
+        </div>
+        <div className="overflow-y-auto px-5 py-4 flex-1 space-y-3">
+          {!rows && !error && <div className="py-10 text-center text-sm text-gray-500 inline-flex w-full justify-center items-center gap-2"><Loader2 size={16} className="animate-spin" /> Preparing reports…</div>}
+          {error && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>}
+          {rows && !done && (
+            <p className="text-xs text-gray-600">
+              Each person gets a separate email with <strong>only their own report</strong> for {rangeLabel || 'this period'}: score and grade, tasks finished on time, overdue tasks,
+              hours, meetings, and what went well / to work on, with the full report <strong>attached as a PDF</strong>. Effort figures stay HR-only. It is sent from your Gmail if you connected Google, otherwise from the shared account.
+            </p>
+          )}
+          {done && (
+            <div className="text-sm bg-emerald-50 border border-emerald-200 text-emerald-800 rounded px-3 py-2">
+              Sent {done.sent} report{done.sent === 1 ? '' : 's'}{done.failed ? `, ${done.failed} failed` : ''}{done.skipped ? `, ${done.skipped} skipped (no email)` : ''}.
+            </div>
+          )}
+          {rows && rows.length === 0 && <div className="text-sm text-gray-500 py-6 text-center">Nobody has recorded activity in this period, so there is nothing to send.</div>}
+          {rows && rows.length > 0 && (
+            <div className="border border-gray-200 rounded divide-y divide-gray-100">
+              {!done && ready.length > 1 && (
+                <label className="flex items-center gap-2 px-3 py-2 text-xs text-gray-600 bg-gray-50 cursor-pointer">
+                  <input type="checkbox" checked={picked.size === ready.length} onChange={e => setPicked(e.target.checked ? new Set(ready.map(r => r.id)) : new Set())} />
+                  Select all ({ready.length})
+                </label>
+              )}
+              {rows.map(r => (
+                <label key={r.id} className={`flex items-center gap-2 px-3 py-2 text-sm ${!done && r.status === 'ready' ? 'cursor-pointer hover:bg-gray-50' : ''}`}>
+                  {!done && <input type="checkbox" disabled={r.status !== 'ready'} checked={picked.has(r.id)} onChange={() => toggle(r.id)} />}
+                  <span className="flex-1 min-w-0">
+                    <span className="text-gray-900">{r.name}</span>
+                    <span className="block text-[11px] text-gray-500 truncate">{r.email || 'No email address'}{r.reason && r.status !== 'skipped' ? ` · ${r.reason}` : ''}</span>
+                  </span>
+                  <span className="text-[11px] text-gray-500 whitespace-nowrap">{r.score != null ? `${r.score} · ${r.grade}` : r.grade}</span>
+                  <span className={`text-[11px] px-2 py-0.5 rounded capitalize ${STATUS_STYLE[r.status] || ''}`}>{r.status === 'ready' ? 'will send' : r.status}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+          <button onClick={onClose} disabled={busy} className="text-xs font-medium px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 cursor-pointer">{done ? 'Close' : 'Cancel'}</button>
+          {!done && (
+            <button onClick={send} disabled={busy || !picked.size} className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 cursor-pointer">
+              {busy ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />} {busy ? 'Sending…' : `Send ${picked.size} report${picked.size === 1 ? '' : 's'}`}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const HRPerformance = () => {
   const { user } = useAuth();
   const [params, setParams] = useState(() => {
@@ -1445,6 +1603,8 @@ const HRPerformance = () => {
   });
   const [tab, setTab] = useState('overview');
   const [openEmployee, setOpenEmployee] = useState(null);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailEmployee, setEmailEmployee] = useState(null); // one person, from the ✉ button on their row
 
   const isHR = user?.role?.toLowerCase().includes('hr') || user?.department?.toLowerCase().includes('hr');
   const isAdmin = user?.role === 'Super Admin' || user?.role?.toLowerCase().includes('admin') || user?.department?.toLowerCase().includes('admin') || user?.department === 'Management';
@@ -1545,14 +1705,18 @@ const HRPerformance = () => {
         </div>
       </div>
 
-      <PeriodBar params={params} setParams={setParams} departments={data?.departments} onExport={exportTeamCsv} onPrint={() => window.print()} />
+      <PeriodBar params={params} setParams={setParams} departments={data?.departments} onExport={exportTeamCsv} onPrint={() => window.print()}
+        onEmail={data ? () => setEmailOpen(true) : undefined}
+        onPdf={data ? () => downloadReportPdf(params) : undefined} pdfLabel="Download PDF (all)" />
+      {emailOpen && <EmailReportsModal params={params} onClose={() => setEmailOpen(false)} />}
+      {emailEmployee != null && <EmailReportsModal params={params} employeeId={emailEmployee} onClose={() => setEmailEmployee(null)} />}
 
       {loading && !data && <div className="py-20 text-center text-sm text-gray-500">Loading report…</div>}
       {error && !selfOnly && <div className="py-10 text-center text-sm text-red-700">{error}</div>}
       {data && (
         <div className={loading ? 'opacity-60 transition-opacity' : ''}>
           {tab === 'overview' && <TeamOverview data={data} onOpenEmployee={setOpenEmployee} />}
-          {tab === 'employees' && <EmployeesTable data={data} onOpenEmployee={setOpenEmployee} />}
+          {tab === 'employees' && <EmployeesTable data={data} onOpenEmployee={setOpenEmployee} onEmailEmployee={setEmailEmployee} onPdfEmployee={(id) => downloadReportPdf(params, id)} />}
           {tab === 'champions' && <ChampionsView data={data} onOpenEmployee={setOpenEmployee} />}
           {tab === 'worktypes' && (
             <div className="space-y-4">

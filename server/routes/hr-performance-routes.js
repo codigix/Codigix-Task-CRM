@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { buildTeamReport, buildEmployeeReport } = require('../services/performanceReport');
+const { buildEmployeeEmail, hasActivity } = require('../services/performanceEmail');
+const { buildEmployeePdf, buildTeamPdf, pdfFileName } = require('../services/performancePdf');
+const { sendMailAs } = require('../services/userMail');
 
 // Only HR and admins see the team report; anyone else only their own report.
 const canSeeTeam = (user) => {
@@ -201,6 +204,74 @@ module.exports = (pool) => {
     }
   });
 
+  // ── Download as PDF ────────────────────────────────────────────────────────
+  // GET /api/hr/performance/report/pdf?period=..&value=..[&department=][&employeeId=]
+  // With employeeId: that person's report (the file that is emailed to them). Without: the whole team.
+  router.get('/report/pdf', async (req, res) => {
+    if (!canSeeTeam(req.user)) return res.status(403).json({ error: 'Only HR and admins can download performance reports.' });
+    try {
+      const report = await buildTeamReport(pool, req.query);
+      let buf; let name;
+      if (req.query.employeeId) {
+        const row = report.employees.find(r => Number(r.id) === Number(req.query.employeeId));
+        if (!row) return res.status(404).json({ error: 'Employee not found in this report.' });
+        buf = await buildEmployeePdf(row, report.range);
+        name = pdfFileName(report.range?.label, row.name);
+      } else {
+        buf = await buildTeamPdf(report, { department: req.query.department });
+        name = pdfFileName(report.range?.label, req.query.department ? `Team-${req.query.department}` : 'Team');
+      }
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+      res.setHeader('Cache-Control', 'no-store');
+      res.send(buf);
+    } catch (err) {
+      console.error('Performance PDF error:', err);
+      res.status(500).json({ error: 'Failed to build the PDF' });
+    }
+  });
+
+  // ── Email each employee their own report ───────────────────────────────────
+  // POST /api/hr/performance/report/email
+  //   body: { period, value, from, to, department, includeAdmins, employeeIds?: number[], preview?: boolean }
+  // employeeIds limits it to those people; otherwise everyone with recorded activity in the period.
+  // preview: true only lists who would get an email. Each email holds that person's report only and
+  // goes from the sender's Gmail when connected, else the shared account.
+  router.post('/report/email', async (req, res) => {
+    if (!canSeeTeam(req.user)) return res.status(403).json({ error: 'Only HR and admins can email performance reports.' });
+    try {
+      const body = req.body || {};
+      const report = await buildTeamReport(pool, body);
+      const wanted = Array.isArray(body.employeeIds) && body.employeeIds.length ? new Set(body.employeeIds.map(Number)) : null;
+      const rows = report.employees.filter(r => (wanted ? wanted.has(Number(r.id)) : hasActivity(r)));
+      const appUrl = (process.env.CLIENT_URL || process.env.CORS_ORIGIN || '').replace(/\/+$/, '') || null;
+
+      const results = [];
+      for (const r of rows) {
+        const base = { id: r.id, name: r.name, email: r.email || null, score: r.score, grade: r.grade };
+        if (!r.email) { results.push({ ...base, status: 'skipped', reason: 'No email address' }); continue; }
+        if (body.preview) { results.push({ ...base, status: 'ready' }); continue; }
+        try {
+          // The same PDF HR can download is attached, so the employee has the full report as a file.
+          const pdf = await buildEmployeePdf(r, report.range);
+          const mail = buildEmployeeEmail(r, report.range, { appUrl, senderName: req.user?.name, hasPdf: true });
+          const { from } = await sendMailAs(pool, req.user?.id, {
+            to: r.email, ...mail,
+            attachments: [{ filename: pdfFileName(report.range?.label, r.name), content: pdf, contentType: 'application/pdf' }]
+          });
+          results.push({ ...base, status: 'sent', from });
+        } catch (e) {
+          console.error(`Performance report email to ${r.email} failed:`, e.message);
+          results.push({ ...base, status: 'failed', reason: e.message });
+        }
+      }
+      const count = (s) => results.filter(x => x.status === s).length;
+      res.json({ range: report.range, preview: Boolean(body.preview), sent: count('sent'), ready: count('ready'), skipped: count('skipped'), failed: count('failed'), results });
+    } catch (err) {
+      console.error('Performance report email error:', err);
+      res.status(500).json({ error: 'Failed to email the performance reports' });
+    }
+  });
 
   return router;
 };
