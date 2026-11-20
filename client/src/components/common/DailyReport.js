@@ -29,7 +29,7 @@ const BUCKETS = {
   pending: { label: 'Pending', chip: 'bg-amber-50 text-amber-800 ring-amber-200', tone: 'text-amber-700 font-semibold', title: 'Started but not finished, or scheduled earlier and still open' },
   hold: { label: 'Under discussion / Postponed', short: 'Discussion / Postponed', chip: 'bg-slate-100 text-slate-700 ring-slate-300', tone: 'text-slate-700 font-medium', title: 'Under discussion / on hold / postponed (scheduled that day, moved there that day, or worked on)' },
   review: { label: 'In review', chip: 'bg-purple-50 text-purple-800 ring-purple-200', tone: 'text-purple-700 font-medium', title: 'Their own tickets finished and waiting for the reporting manager to check' },
-  done: { label: 'Done', chip: 'bg-emerald-50 text-emerald-800 ring-emerald-200', tone: 'text-emerald-700 font-medium', title: 'Scheduled for the day and done, or finished on the day' }
+  done: { label: 'Done', chip: 'bg-emerald-50 text-emerald-800 ring-emerald-200', tone: 'text-emerald-700 font-medium', title: 'Scheduled for the day and done. Counted on the assigned date, not the day the reporter approved it' }
 };
 const COLS = Object.keys(BUCKETS);
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronUp, Loader2, Search, User, X } from 'lucide-react';
+import { ChevronUp, Loader2, MoveRight, Search, User, X } from 'lucide-react';
 
 const nameOf = (u) => u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim();
 
@@ -7,8 +7,17 @@ const nameOf = (u) => u.name || `${u.first_name || ''} ${u.last_name || ''}`.tri
  * Bar shown at the bottom of the board while tickets are being picked: assign all the picked
  * tickets to one person (or unassign them) in one go.
  */
-export default function BulkAssignBar({ count, usersList, busy, onAssign, onClear, onExit }) {
+export default function BulkAssignBar({ count, usersList, busy, onAssign, statuses = [], onMove, onClear, onExit }) {
   const [open, setOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const moveRef = useRef(null);
+
+  useEffect(() => {
+    if (!moveOpen) return undefined;
+    const onDown = (e) => { if (moveRef.current && !moveRef.current.contains(e.target)) setMoveOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [moveOpen]);
   const [q, setQ] = useState('');
   const ref = useRef(null);
 
@@ -68,6 +77,27 @@ export default function BulkAssignBar({ count, usersList, busy, onAssign, onClea
           </div>
         )}
       </div>
+      {onMove && statuses.length > 0 && (
+        <div className="relative" ref={moveRef}>
+          <button
+            type="button"
+            disabled={!count || busy}
+            onClick={() => { setMoveOpen(o => !o); setOpen(false); }}
+            className="h-8 px-3 flex items-center gap-1.5 rounded bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 font-medium cursor-pointer"
+          >
+            <MoveRight size={14} /> Move to <ChevronUp size={13} />
+          </button>
+          {moveOpen && (
+            <div className="absolute bottom-full mb-2 left-0 w-52 bg-white text-gray-800 border border-gray-200 rounded shadow-xl overflow-hidden py-1">
+              <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-gray-400">Move {count} to column</div>
+              {statuses.map(st => (
+                <button key={st} type="button" onClick={() => { setMoveOpen(false); onMove(st); }}
+                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-emerald-50 cursor-pointer">{String(st).toLowerCase().replace(/\b\w/g, ch => ch.toUpperCase())}</button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <button type="button" onClick={onClear} disabled={!count || busy} className="h-8 px-2.5 rounded hover:bg-white/10 disabled:opacity-40 cursor-pointer">Clear</button>
       <button type="button" onClick={onExit} disabled={busy} className="h-8 px-2.5 flex items-center gap-1 rounded hover:bg-white/10 cursor-pointer" title="Stop selecting (Esc)">
         <X size={14} /> Done

@@ -440,6 +440,10 @@ module.exports = function setupSheetSyncRoutes(app, pool) {
           created.push(key);
         }
       }
+      // New tickets get their effort points from the server right away (standard size x priority).
+      if (created.length) {
+        try { await require('../services/effortPoints').fillPoints(conn, created); } catch (e) { console.error('Sheet sync points:', e.message); }
+      }
       const result = { ...summary, at: new Date().toISOString(), by: actor };
       await conn.query('UPDATE sheet_sync_sources SET last_synced_at = NOW(), last_synced_by = ?, last_result = ? WHERE id = ?',
         [actor, JSON.stringify(result), sourceId]);

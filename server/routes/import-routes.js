@@ -635,6 +635,7 @@ module.exports = function setupImportRoutes(app, pool) {
         created.push({ issue_key: key, title, date: row.date });
       }
       await conn.commit();
+      try { await require('../services/effortPoints').fillPoints(pool, created.map(c => c.issue_key)); } catch (e) { console.error('Import points:', e.message); }
 
       res.json({ success: true, created: created.length, skipped, items: created });
     } catch (error) {

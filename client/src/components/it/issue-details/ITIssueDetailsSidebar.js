@@ -132,55 +132,45 @@ const ITIssueDetailsSidebar = ({
   const [isEditingLabels, setIsEditingLabels] = useState(false);
   const [labelDraft, setLabelDraft] = useState('');
 
-  const handleAutoCalculatePoints = async () => {
+  // Effort points are worked out on the server (standard size of this kind of work x priority) and
+  // stored there. The browser only asks for a recalculation and shows the result; it never sends a number.
+  const [pointsInfo, setPointsInfo] = useState(null);
+  const pointsKey = issue?.issue_key || issue?.key;
+  const loadPointsInfo = React.useCallback(async () => {
+    if (!pointsKey) return;
     try {
-      setLoadingPoints(true);
       const res = await fetch(`${API_BASE_URL}/it-kanban/calculate-points`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Points come from the standard size of this kind of work and the priority, never from the plan.
-        body: JSON.stringify({ issueKey: issue.issue_key || issue.key, type: issue.type, priority: issue.priority, labels: issue.labels })
+        body: JSON.stringify({ issueKey: pointsKey })
       });
-      const data = await res.json();
-      if (res.ok && data.points !== undefined && data.points !== Number(effortPoints)) {
-        if (setEffortPoints) setEffortPoints(data.points);
-        handleUpdate({ effort_points: data.points });
-      }
+      const data = await res.json().catch(() => null);
+      if (res.ok && data) setPointsInfo(data);
+    } catch (e) { /* the caption is optional */ }
+  }, [pointsKey]);
+  React.useEffect(() => { setPointsInfo(null); loadPointsInfo(); }, [loadPointsInfo, issue?.type, issue?.priority, issue?.labels]);
+
+  const handleAutoCalculatePoints = async () => {
+    if (!pointsKey) return;
+    try {
+      setLoadingPoints(true);
+      const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${pointsKey}/recalculate-points`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not recalculate the points');
+      if (setEffortPoints) setEffortPoints(data.points);
+      setPointsInfo(data);
+      if (onRefresh) onRefresh();
     } catch (e) {
-      console.error('Failed to auto-calculate points:', e);
+      console.error('Failed to recalculate points:', e);
+      window.alert(e.message);
     } finally {
       setLoadingPoints(false);
     }
   };
 
-  const subtaskCount = (() => {
-    let list = issue?.subtasks;
-    if (typeof list === 'string') {
-      try { list = JSON.parse(list); } catch (e) { list = []; }
-    }
-    return Array.isArray(list) ? list.length : 0;
-  })();
-
-  // Recalculate points when the type, priority or number of subtasks changes while the
-  // ticket is open — but not merely because it was opened, which used to overwrite any
-  // value someone had set by hand every time the panel was viewed.
-  const pointsBasisRef = React.useRef(null);
-  React.useEffect(() => {
-    if (!issue || !issue.id || !issue.type) return;
-    const basis = `${issue.id}|${issue.type}|${issue.priority}|${subtaskCount}|${issue.original_estimate || ''}`;
-    const prev = pointsBasisRef.current;
-    pointsBasisRef.current = basis;
-    if (prev === null || !prev.startsWith(`${issue.id}|`) || prev === basis) return;
-    if (!canManage) return; // points are manager-only; the server ignores them from others
-    handleAutoCalculatePoints();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [issue?.id, issue?.type, issue?.priority, subtaskCount, issue?.original_estimate]);
-
   // Typed fields save once, on blur or Enter, rather than on every keystroke.
   const [estimateDraft, setEstimateDraft] = useState(issue?.original_estimate || '');
-  const [pointsDraft, setPointsDraft] = useState(String(effortPoints || 0));
   React.useEffect(() => { setEstimateDraft(issue?.original_estimate || ''); }, [issue?.id, issue?.original_estimate]);
-  React.useEffect(() => { setPointsDraft(String(effortPoints || 0)); }, [issue?.id, effortPoints]);
 
   // Standard size for this kind of work: the norm plans are compared with. An employee's
   // plan above the limit (1.5× standard) goes to a manager for approval.
@@ -240,13 +230,6 @@ const ITIssueDetailsSidebar = ({
     } catch (e) {
       window.alert(e.message);
     }
-  };
-  const commitPoints = () => {
-    const n = Math.max(0, Math.round(Number(pointsDraft) || 0));
-    setPointsDraft(String(n));
-    if (n === Number(effortPoints || 0)) return;
-    if (setEffortPoints) setEffortPoints(n);
-    handleUpdate({ effort_points: n });
   };
   const commitOnEnter = (commit) => (e) => {
     if (e.key === 'Enter') { e.preventDefault(); commit(); e.currentTarget.blur(); }
@@ -901,25 +884,20 @@ const ITIssueDetailsSidebar = ({
                 <button
                   onClick={handleAutoCalculatePoints}
                   disabled={loadingPoints || !canManage}
-                  title="Auto-calculate points based on Task Type, Priority, and Subtasks"
+                  title="Recalculate on the server from the kind of work and the priority"
                   className="p-1 text-emerald-500 hover:bg-emerald-50 rounded transition disabled:opacity-50"
                 >
                   <Sparkles size={14} className={loadingPoints ? "animate-spin" : ""} />
                 </button>
               </span>
               <div className="flex-1 min-w-0 flex items-center gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  value={pointsDraft}
-                  disabled={!canManage}
-                  title={!canManage ? 'Set by your manager' : undefined}
-                  onChange={(e) => setPointsDraft(e.target.value)}
-                  onBlur={commitPoints}
-                  onKeyDown={commitOnEnter(commitPoints)}
-                  className={`text-xs border border-gray-300 rounded px-2 py-1 outline-none text-gray-700 bg-white w-full max-w-[80px] ${lockedCls}`}
-                />
+                <span className="text-sm font-semibold text-gray-900 tabular-nums" title="Calculated by the system from the kind of work and the priority">{Number(effortPoints || 0)}</span>
                 <span className="text-xs text-gray-400">pts</span>
+                <span className="text-[10px] text-gray-400 truncate" title={pointsInfo ? `Standard size of ${pointsInfo.workType}: ${pointsInfo.sizeHours} h x priority weight ${pointsInfo.weight}` : 'Calculated by the system'}>
+                  {pointsInfo
+                    ? (String(issue?.type || '').toLowerCase() === 'meeting' ? 'meetings earn no points' : `${pointsInfo.workType} ${pointsInfo.sizeHours} h × ${pointsInfo.weight}${pointsInfo.sizeKnown ? '' : ' (no standard size set)'}`)
+                    : 'calculated automatically'}
+                </span>
               </div>
             </div>
 

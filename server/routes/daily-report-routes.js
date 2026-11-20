@@ -10,7 +10,8 @@
  *   Hold              Under discussion / postponed (the board's ON HOLD column, blocked)
  *   In review         the person finished it and it waits for the reporting manager's check
  *                     (these two: scheduled for the day, moved there that day, or worked on that day)
- *   Done              scheduled for the day and done, or finished on the day
+ *   Done              scheduled (assigned) for the day and done. Done is the reporter's decision, so it is
+ *                     credited to the assigned date, not the day it was approved (undated work: the finish day)
  *   Meetings          meetings that day the person hosted or attended
  *   Hours             time logged that day + clocks still running today + meeting time
  *
@@ -105,6 +106,13 @@ module.exports = function setupDailyReportRoutes(app, pool) {
         const start = new Date(`${d}T00:00:00`);
         const end = new Date(`${d}T23:59:59.999`);
         const scheduled = i.due || i.start;
+        // Done is the reporter's decision, not the assignee's, and one approval session can close
+        // many tickets at once. So finished work is credited to the day it was scheduled for (its
+        // assigned date), never to the day it happened to be approved. It is not shown on other
+        // days, so it isn't counted twice. Done work with no date at all keeps the old rule below.
+        if (isDone(i.status) && scheduled) {
+          return scheduled === d ? { bucket: 'done', st: i.status, scheduled, fin: finishedAt(i, now) } : null;
+        }
         const st = statusAt(i, end);
         const onOrBefore = Boolean(scheduled && scheduled <= d);
         if (isDone(st)) {

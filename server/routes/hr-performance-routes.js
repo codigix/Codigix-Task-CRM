@@ -155,6 +155,15 @@ module.exports = (pool) => {
   // gaps with invented values (a fixed manager name, hours guessed from points). All
   // performance figures now come from services/performanceReport.js via /report.
 
+  // Structured manager feedback (strengths / focus next month / actions) lives beside the free-text feedback.
+  const reviewColumnsReady = (async () => {
+    for (const col of ['strengths', 'focus_next_month', 'actions']) {
+      const [[has]] = await pool.query(
+        "SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'performance_reviews' AND COLUMN_NAME = ?", [col]);
+      if (!Number(has.n)) await pool.query(`ALTER TABLE performance_reviews ADD COLUMN ${col} TEXT NULL`);
+    }
+  })().catch(e => console.error('performance_reviews columns:', e.message));
+
   // 4. Submit a new review
   router.post('/employees/:id/review', async (req, res) => {
     if (!canSeeTeam(req.user)) {
@@ -165,7 +174,8 @@ module.exports = (pool) => {
     }
     try {
       const empId = req.params.id;
-      const { taskCompletion, quality, onTime, efficiency, feedback } = req.body || {};
+      const { taskCompletion, quality, onTime, efficiency, feedback, strengths, focusNextMonth, actions } = req.body || {};
+      await reviewColumnsReady;
       // Older clients also sent these two; they are optional now.
       const reviewGatePoints = req.body?.reviewGatePoints ?? null;
       const pointsDistribution = req.body?.pointsDistribution ?? null;
@@ -178,8 +188,8 @@ module.exports = (pool) => {
 
       await pool.query(`
         INSERT INTO performance_reviews 
-        (employee_id, reviewer_id, score, task_completion, quality_of_work, on_time_delivery, efficiency, review_gate_points, points_distribution, feedback)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (employee_id, reviewer_id, score, task_completion, quality_of_work, on_time_delivery, efficiency, review_gate_points, points_distribution, feedback, strengths, focus_next_month, actions)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         empId,
         req.user.id,
@@ -191,7 +201,10 @@ module.exports = (pool) => {
         // Both columns are NOT NULL; the current review form doesn't send them.
         Number(reviewGatePoints) || 0,
         Number(pointsDistribution) || 0,
-        String(feedback || '').slice(0, 5000)
+        String(feedback || '').slice(0, 5000),
+        String(strengths || '').slice(0, 3000),
+        String(focusNextMonth || '').slice(0, 3000),
+        String(actions || '').slice(0, 3000)
       ]);
 
       return res.status(200).json({ success: true, message: 'Review submitted successfully.' });

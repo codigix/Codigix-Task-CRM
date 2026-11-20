@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -395,6 +395,8 @@ const ITKanbanPage = ({ department }) => {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkKeys, setBulkKeys] = useState([]);
   const [bulkBusy, setBulkBusy] = useState(false);
+  // While a bulk move runs, proof requests use the one-at-a-time dialog, not the ticket panel.
+  const bulkMovingRef = useRef(false);
   const [allRawIssues, setAllRawIssues] = useState([]);
   const [projectsList, setProjectsList] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState('ALL');
@@ -1286,7 +1288,7 @@ const ITKanbanPage = ({ department }) => {
   useEffect(() => {
     const onNeeded = (e) => {
       const d = e.detail || {};
-      if (!d.issueKey) return;
+      if (!d.issueKey || bulkMovingRef.current) return;
       d.handled = true;
       setSelectedSubtaskKey(null);
       setSelectedIssue(d.issueKey);
@@ -1731,6 +1733,60 @@ const ITKanbanPage = ({ department }) => {
     }
   };
 
+  // Moves every picked ticket to one column with the same save as dragging a card there (so
+  // the same rules apply: reporter for Done, subtasks, planned time, proof of work). Tickets
+  // that need proof ask for it one at a time; whatever can't move is listed afterwards.
+  const bulkMove = async (status) => {
+    const keys = [...bulkKeys];
+    if (!keys.length) return;
+    const label = String(status).toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    const ok = await Swal.fire({
+      icon: 'question',
+      title: `Move ${keys.length} ticket${keys.length === 1 ? '' : 's'} to ${label}?`,
+      text: /DONE|REVIEW/i.test(status) ? 'Tickets that need proof of work will ask for it one by one.' : undefined,
+      showCancelButton: true,
+      confirmButtonText: 'Move',
+      confirmButtonColor: '#059669'
+    });
+    if (!ok.isConfirmed) return;
+    setBulkBusy(true);
+    bulkMovingRef.current = true;
+    const actor = user ? (`${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username) : (username || 'System');
+    const needsProof = /DONE|REVIEW|TESTING/i.test(status);
+    const failed = [];
+    const moveOne = async (key) => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/it-kanban/issues/${key}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'x-user-name': actor },
+          body: JSON.stringify({ status })
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          failed.push({ key, why: d.error || `error ${res.status}` });
+        }
+      } catch (e) { failed.push({ key, why: e.message }); }
+    };
+    try {
+      if (needsProof) { for (const key of keys) await moveOne(key); }
+      else {
+        for (let i = 0; i < keys.length; i += 5) await Promise.all(keys.slice(i, i + 5).map(moveOne));
+      }
+    } finally {
+      bulkMovingRef.current = false;
+      setBulkBusy(false);
+    }
+    fetchKanbanData();
+    const done = keys.length - failed.length;
+    if (failed.length) {
+      Swal.fire({ icon: 'warning', title: `${done} of ${keys.length} moved to ${label}`, html: `<div style="text-align:left;font-size:13px">Not moved:<ul style="margin:6px 0 0;padding-left:18px">${failed.map(f => `<li>${f.key}: ${f.why}</li>`).join('')}</ul></div>` });
+      setBulkKeys(failed.map(f => f.key));
+    } else {
+      showSuccessToast(`${done} ticket${done === 1 ? '' : 's'} moved to ${label}`);
+      exitBulk();
+    }
+  };
+
   // Completing from the board reloads the issues too: the finished sprint's work leaves the
   // board and anything rolled into a still-running sprint stays visible.
   const handleCompleteSprint = async (sprint, moveTo) => {
@@ -2053,6 +2109,8 @@ const ITKanbanPage = ({ department }) => {
           usersList={usersList}
           busy={bulkBusy}
           onAssign={bulkAssign}
+          statuses={columnOrder.filter(c => c !== PENDING_COLUMN && !(isTester && isTestingStatus(c)))}
+          onMove={bulkMove}
           onClear={() => setBulkKeys([])}
           onExit={exitBulk}
         />

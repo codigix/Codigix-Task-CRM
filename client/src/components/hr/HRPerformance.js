@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Users, CheckCircle2, Clock, Timer, AlertTriangle, Trophy, Award, Zap, Target,
-  Download, Printer, Calendar, ArrowLeft, Search, ChevronUp, ChevronDown, Info, Star, TrendingUp, X,
+  Download, Calendar, ArrowLeft, Search, ChevronUp, ChevronDown, Info, Star, TrendingUp, X,
   ListChecks, MessageSquare, Video, FileText, Flame, CircleSlash
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, Legend } from 'recharts';
@@ -9,6 +9,8 @@ import Swal from 'sweetalert2';
 import { API_BASE_URL } from '../../config/environment';
 import { useAuth } from '../../hooks/useAuth';
 import PerformanceReviewReport from './PerformanceReviewReport';
+import { weeklyRows, qualityScoreOf, improvementAreasOf, splitLines, planReviewOf } from './performanceShared';
+import { downloadTeamPdf, downloadEmployeePdf } from './performancePdf';
 import useLiveRefresh from '../../hooks/useLiveRefresh';
 
 /* ───────────────────────── constants & helpers ───────────────────────── */
@@ -45,6 +47,15 @@ const monthLabel = (key) => {
 };
 const initials = (name) => String(name || '?').trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
 
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+// ISO week of today as "2026-W47" (what <input type="week"> uses).
+const currentWeek = () => {
+  const d = new Date(); d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  const n = 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return `${d.getFullYear()}-W${String(n).padStart(2, '0')}`;
+};
 const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
 const currentQuarter = () => { const d = new Date(); return `${d.getFullYear()}-Q${Math.floor(d.getMonth() / 3) + 1}`; };
 const recentQuarters = () => {
@@ -490,7 +501,7 @@ const ChampionsView = ({ data, onOpenEmployee }) => {
 const PeriodBar = ({ params, setParams, departments, onExport, onPrint, showDepartment = true }) => (
   <div className="flex flex-wrap items-end gap-2 no-print">
     <div className="inline-flex rounded border border-gray-300 overflow-hidden" role="tablist" aria-label="Report period">
-      {[['month', 'Monthly'], ['quarter', 'Quarterly'], ['year', 'Yearly'], ['custom', 'Custom']].map(([p, label]) => (
+      {[['day', 'Daily'], ['week', 'Weekly'], ['month', 'Monthly'], ['quarter', 'Quarterly'], ['year', 'Yearly'], ['custom', 'Custom']].map(([p, label]) => (
         <button
           key={p}
           role="tab"
@@ -498,7 +509,7 @@ const PeriodBar = ({ params, setParams, departments, onExport, onPrint, showDepa
           onClick={() => setParams(prev => ({
             ...prev,
             period: p,
-            value: p === 'month' ? currentMonth() : p === 'quarter' ? currentQuarter() : p === 'year' ? String(new Date().getFullYear()) : prev.value
+            value: p === 'day' ? todayStr() : p === 'week' ? currentWeek() : p === 'month' ? currentMonth() : p === 'quarter' ? currentQuarter() : p === 'year' ? String(new Date().getFullYear()) : prev.value
           }))}
           className={`px-3 py-1.5 text-xs font-medium border-r border-gray-300 last:border-r-0 cursor-pointer ${params.period === p ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
         >
@@ -507,6 +518,14 @@ const PeriodBar = ({ params, setParams, departments, onExport, onPrint, showDepa
       ))}
     </div>
 
+    {params.period === 'day' && (
+      <input type="date" value={params.value} max={todayStr()} onChange={e => e.target.value && setParams(p => ({ ...p, value: e.target.value }))}
+        className="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white" aria-label="Day" />
+    )}
+    {params.period === 'week' && (
+      <input type="week" value={params.value} max={currentWeek()} onChange={e => e.target.value && setParams(p => ({ ...p, value: e.target.value }))}
+        className="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white" aria-label="Week" />
+    )}
     {params.period === 'month' && (
       <input type="month" value={params.value} max={currentMonth()} onChange={e => setParams(p => ({ ...p, value: e.target.value }))}
         className="text-xs border border-gray-300 rounded px-2 py-1.5 bg-white" aria-label="Month" />
@@ -555,7 +574,7 @@ const PeriodBar = ({ params, setParams, departments, onExport, onPrint, showDepa
     )}
     {onPrint && (
       <button onClick={onPrint} className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 border border-gray-300 rounded bg-white hover:bg-gray-50 cursor-pointer">
-        <Printer size={13} /> Print / PDF
+        <Download size={13} /> Download PDF
       </button>
     )}
   </div>
@@ -910,6 +929,66 @@ const WorkSizesEditor = () => {
   );
 };
 
+/* ───────────────────────── effort points evaluation ───────────────────────── */
+
+const EffortEvaluation = ({ metrics: m }) => {
+  const rows = m.effortBreakdown || [];
+  const scored = rows.filter(r => r.score != null);
+  return (
+    <Section title="Effort points evaluation"
+      subtitle="Each finished task earns its base points (standard size × priority) × its score on these nine parameters. All are estimated from recorded work; nothing the employee types in can raise them.">
+      {!m.pointsPossible ? <Empty>No finished task in this period, so there is nothing to evaluate.</Empty> : (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <StatTile icon={Award} label="Points earned" value={m.pointsEarned} hint={`of ${m.pointsPossible} possible`} />
+            <StatTile icon={Star} label="Effort quality" value={fmtNum(m.effortQuality, '%')} hint="earned ÷ possible" />
+            <StatTile icon={CheckCircle2} label="Tasks evaluated" value={m.tasksCompleted} />
+            <StatTile icon={Info} label="Base points" value={m.pointsPossible} hint="size × priority" />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
+              <thead>
+                <tr className="text-left text-xs text-gray-500 border-b border-gray-200">
+                  <th className="py-2 pr-3 font-medium">Parameter</th>
+                  <th className="py-2 px-3 font-medium">How it is judged</th>
+                  <th className="py-2 px-3 font-medium text-right">Weight</th>
+                  <th className="py-2 px-3 font-medium w-[22%]">Score</th>
+                  <th className="py-2 pl-3 font-medium text-right">Weighted</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => (
+                  <tr key={r.key} className="border-b border-gray-100 last:border-0">
+                    <td className="py-2 pr-3 font-medium text-gray-900">{r.label}</td>
+                    <td className="py-2 px-3 text-xs text-gray-600">{r.how}</td>
+                    <td className="py-2 px-3 text-right tabular-nums text-gray-600">{r.weight}%</td>
+                    <td className="py-2 px-3">
+                      {r.score == null ? <span className="text-xs text-gray-400">No data</span> : (
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex-1 h-2 bg-gray-100 rounded overflow-hidden" aria-hidden="true"><div className={`h-full rounded ${r.score >= 85 ? 'bg-green-500' : r.score >= 50 ? 'bg-blue-500' : 'bg-red-500'}`} style={{ width: `${r.score}%` }} /></div>
+                          <span className="tabular-nums text-gray-900 w-7 text-right">{r.score}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-2 pl-3 text-right tabular-nums text-gray-900">{r.weighted != null ? r.weighted.toFixed(1) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-green-50">
+                  <td className="py-2 pr-3 font-semibold text-gray-900" colSpan={4}>Effort quality (average task score, weighted by points)</td>
+                  <td className="py-2 pl-3 text-right font-semibold tabular-nums text-green-800">{scored.length ? `${m.effortScore} / 100` : '—'}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="text-[11px] text-gray-500 mt-2">A parameter with no data for a task (for example no recorded time, or older work with no proof record) is left out for that task and the rest re-weighted. Timely delivery is judged on when the work was handed in for review, not when the reporter approved it. Time efficiency compares recorded time with a manager-approved plan or the standard size, never the employee's own estimate.</p>
+        </>
+      )}
+    </Section>
+  );
+};
+
 /* ───────────────────────── planned vs actual ───────────────────────── */
 
 const VERDICT_STYLE = {
@@ -990,6 +1069,101 @@ const PlannedVsActual = ({ metrics: m, tasks }) => {
   );
 };
 
+/* ───────────────────────── weekly view, improvement areas, action plan ───────────────────────── */
+
+const WeeklySection = ({ tasks, range }) => {
+  const rows = weeklyRows(tasks, range);
+  if (!rows) return null;
+  const totalEst = rows.reduce((a, r) => a + r.Estimated, 0);
+  const totalAct = rows.reduce((a, r) => a + r.Actual, 0);
+  const diff = totalEst > 0 ? Math.round(((totalAct - totalEst) / totalEst) * 100) : null;
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <Section title="Weekly productivity" subtitle={`Tasks completed per week · ${range.label}`}>
+        <div style={{ height: 210 }} role="img" aria-label="Tasks completed per week">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={rows} margin={{ top: 16, right: 8, left: -18, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={GRID} />
+              <XAxis dataKey="week" tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={{ stroke: GRID }} interval={0} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={false} />
+              <Tooltip labelFormatter={(_, p) => p?.[0]?.payload?.label} formatter={(v) => [`${v} tasks`, 'Completed']} />
+              <Bar dataKey="Tasks" fill={SERIES} radius={[4, 4, 0, 0]} maxBarSize={44}><LabelList dataKey="Tasks" position="top" style={{ fontSize: 11, fill: AXIS }} /></Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="text-[11px] text-gray-500 mt-1">{rows.map(r => `${r.week}: ${r.label}`).join(' · ')}</p>
+      </Section>
+      <Section title="Estimated vs actual hours" subtitle="Per week, on finished tasks that had a plan and recorded time (information only, not scored)">
+        {totalEst + totalAct === 0 ? <Empty>No finished task this period had both a plan and recorded time.</Empty> : (
+          <>
+            <div style={{ height: 210 }} role="img" aria-label="Estimated and actual hours per week">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={rows} margin={{ top: 16, right: 8, left: -18, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke={GRID} />
+                  <XAxis dataKey="week" tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={{ stroke: GRID }} interval={0} />
+                  <YAxis tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={false} />
+                  <Tooltip labelFormatter={(_, p) => p?.[0]?.payload?.label} formatter={(v, n) => [`${v} h`, n]} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="Estimated" fill="#a9d1f7" radius={[3, 3, 0, 0]} maxBarSize={26}><LabelList dataKey="Estimated" position="top" style={{ fontSize: 10, fill: AXIS }} /></Bar>
+                  <Bar dataKey="Actual" fill={SERIES} radius={[3, 3, 0, 0]} maxBarSize={26}><LabelList dataKey="Actual" position="top" style={{ fontSize: 10, fill: AXIS }} /></Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            {diff != null && <p className="text-xs text-gray-600 mt-1">Actual time is <strong className={diff > 10 ? 'text-red-700' : 'text-gray-900'}>{diff > 0 ? '+' : ''}{diff}%</strong> vs estimated ({Math.round(totalAct * 10) / 10} h vs {Math.round(totalEst * 10) / 10} h).</p>}
+          </>
+        )}
+      </Section>
+    </div>
+  );
+};
+
+const AREA_STYLE = { amber: 'border-amber-400 bg-amber-50/50', red: 'border-red-400 bg-red-50/50', purple: 'border-purple-400 bg-purple-50/50' };
+
+const ImprovementAreas = ({ metrics }) => {
+  const areas = improvementAreasOf(metrics);
+  return (
+    <Section title="Improvement areas" subtitle="Worked out from the recorded numbers">
+      {areas.length === 0 ? <Empty>Nothing to improve stands out in this period.</Empty> : (
+        <ul className="space-y-2">
+          {areas.map(a => (
+            <li key={a.title} className={`border-l-4 rounded p-3 ${AREA_STYLE[a.tone]}`}>
+              <div className="text-sm font-semibold text-gray-900">{a.title}</div>
+              <div className="text-xs text-gray-700 mt-0.5">{a.text}</div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+};
+
+const ManagerPlan = ({ reviews, range, insights, canReview, isSelf, onAdd }) => {
+  const r = planReviewOf(reviews, range);
+  const strengths = r ? splitLines(r.strengths) : [];
+  const auto = insights?.strengths || [];
+  const cols = [
+    ['Strengths', strengths.length ? strengths : auto, 'border-green-200 bg-green-50/50', strengths.length || !auto.length ? null : 'From the recorded numbers (no manager note yet)'],
+    ['Focus next month', r ? splitLines(r.focusNextMonth) : [], 'border-blue-200 bg-blue-50/50'],
+    ['Actions', r ? splitLines(r.actions) : [], 'border-purple-200 bg-purple-50/50']
+  ];
+  return (
+    <Section title="Manager feedback & action plan"
+      subtitle={r ? `From the review of ${fmtDate(r.at)}${r.reviewer ? ` by ${r.reviewer}` : ''}` : 'Written by the reviewer'}
+      right={canReview && !isSelf ? <button onClick={onAdd} className="no-print text-xs font-medium px-3 py-1.5 bg-red-600 text-white rounded hover:bg-gray-800 cursor-pointer">Add review</button> : null}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {cols.map(([title, items, cls, note]) => (
+          <div key={title} className={`rounded border p-3 ${cls}`}>
+            <h4 className="text-sm font-semibold text-gray-900 mb-1.5">{title}</h4>
+            {items.length ? <ul className="list-disc pl-4 space-y-1 text-sm text-gray-800">{items.map((t, i) => <li key={i}>{t}</li>)}</ul>
+              : <p className="text-xs text-gray-500">{r ? 'Not filled in on this review.' : 'No review with an action plan yet.'}</p>}
+            {note && <p className="text-[10px] text-gray-500 mt-1.5">{note}</p>}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+};
+
 /* ───────────────────────── review modal ───────────────────────── */
 
 const ReviewModal = ({ employee, metrics, onClose, onSaved }) => {
@@ -999,7 +1173,10 @@ const ReviewModal = ({ employee, metrics, onClose, onSaved }) => {
     quality: 0,
     onTime: metrics?.onTimeRate ?? 0,
     efficiency: 0,
-    feedback: ''
+    feedback: '',
+    strengths: '',
+    focusNextMonth: '',
+    actions: ''
   });
   const [saving, setSaving] = useState(false);
   const fields = [
@@ -1050,9 +1227,16 @@ const ReviewModal = ({ employee, metrics, onClose, onSaved }) => {
           <div>
             <label htmlFor="rv-feedback" className="text-sm font-medium text-gray-800">Feedback</label>
             <textarea id="rv-feedback" rows={4} value={form.feedback} onChange={e => setForm(f => ({ ...f, feedback: e.target.value }))}
-              placeholder="Strengths, areas to improve, agreed goals for next period"
+              placeholder="Anything else to record (free text)"
               className="mt-1 w-full text-sm border border-gray-300 rounded p-2 outline-none focus:border-blue-500" />
           </div>
+          {[['strengths', 'Strengths', 'One point per line'], ['focusNextMonth', 'Focus next month', 'One point per line'], ['actions', 'Actions', 'One action per line']].map(([k, label, hint]) => (
+            <div key={k}>
+              <label htmlFor={`rv-${k}`} className="text-sm font-medium text-gray-800">{label}</label>
+              <textarea id={`rv-${k}`} rows={3} value={form[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}
+                placeholder={hint} className="mt-1 w-full text-sm border border-gray-300 rounded p-2 outline-none focus:border-blue-500" />
+            </div>
+          ))}
         </div>
         <div className="px-5 py-3 border-t border-gray-200 flex items-center justify-between">
           <span className="text-sm text-gray-600">Overall: <strong className="tabular-nums text-gray-900">{overall}</strong>/100</span>
@@ -1068,6 +1252,119 @@ const ReviewModal = ({ employee, metrics, onClose, onSaved }) => {
   );
 };
 
+/* ───────────────────────── daily report (one person, one day) ───────────────────────── */
+
+const dPad = (n) => String(n).padStart(2, '0');
+const dYmd = (d) => `${d.getFullYear()}-${dPad(d.getMonth() + 1)}-${dPad(d.getDate())}`;
+const dShift = (day, n) => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() + n); return dYmd(d); };
+const dLong = (day) => new Date(`${day}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const dHm = (h) => {
+  const mins = Math.round((Number(h) || 0) * 60);
+  if (!mins) return '0h';
+  const H = Math.floor(mins / 60); const M = mins % 60;
+  return H && M ? `${H}h ${M}m` : H ? `${H}h` : `${M}m`;
+};
+const DAILY_BUCKETS = {
+  pending: ['Pending', 'bg-amber-50 text-amber-800 ring-amber-200'],
+  todo: ['To do', 'bg-blue-50 text-blue-800 ring-blue-200'],
+  hold: ['Under discussion / Postponed', 'bg-slate-100 text-slate-700 ring-slate-300'],
+  review: ['In review', 'bg-purple-50 text-purple-800 ring-purple-200'],
+  done: ['Done', 'bg-emerald-50 text-emerald-800 ring-emerald-200']
+};
+const sameName = (a, b) => String(a || '').toLowerCase().replace(/\s+/g, ' ').trim() === String(b || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+const EmployeeDailyReport = ({ employee, range }) => {
+  const today = dYmd(new Date());
+  const first = dYmd(new Date(range.from));
+  const last = dYmd(new Date(Math.min(new Date(range.to).getTime(), Date.now())));
+  const [day, setDay] = useState(last < first ? first : last);
+  const [state, setState] = useState({ loading: true, error: '', row: null, trend: [] });
+  // A new period starts on its latest day.
+  useEffect(() => { setDay(last < first ? first : last); }, [first, last]);
+
+  useEffect(() => {
+    let live = true;
+    setState(st => ({ ...st, loading: true, error: '' }));
+    fetch(`${API_BASE_URL}/it-kanban/reports/daily?date=${day}&department=All`)
+      .then(async r => { const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Could not load the daily report'); return d; })
+      .then(d => { if (live) setState({ loading: false, error: '', row: (d.rows || []).find(r => sameName(r.person, employee.name)) || null }); })
+      .catch(e => { if (live) setState({ loading: false, error: e.message, row: null }); });
+    return () => { live = false; };
+  }, [day, employee.name]);
+
+  const r = state.row;
+  const canPrev = day > first;
+  const canNext = day < last;
+  const plan = r && r.planned ? Math.round((r.completed / r.planned) * 100) : null;
+  const meetingState = (m) => (m.attended === 0 ? 'Did not attend' : !m.over ? 'Not over yet' : m.host ? 'Host' : 'Attended');
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-2 mb-3 no-print">
+        <button onClick={() => canPrev && setDay(dShift(day, -1))} disabled={!canPrev} className="h-8 w-8 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 cursor-pointer" aria-label="Previous day">‹</button>
+        <input type="date" value={day} min={first} max={last} onChange={e => e.target.value && setDay(e.target.value)} className="h-8 border border-gray-300 rounded px-2 text-[13px] bg-white outline-none focus:border-blue-500" />
+        <button onClick={() => canNext && setDay(dShift(day, 1))} disabled={!canNext} className="h-8 w-8 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 cursor-pointer" aria-label="Next day">›</button>
+        {day !== last && <button onClick={() => setDay(last)} className="h-8 px-3 text-[13px] rounded border border-gray-300 bg-white hover:bg-gray-50 cursor-pointer">{last === today ? 'Today' : 'Latest day'}</button>}
+        <span className="text-[13px] text-gray-600 ml-1">{dLong(day)}{day === today ? ' · so far today' : ' · at end of day'}</span>
+      </div>
+
+      {state.error && <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">{state.error}</div>}
+      {state.loading && !r && <div className="py-10 text-center text-sm text-gray-500">Loading the daily report…</div>}
+
+      {!state.loading && !state.error && !r && <Empty>No tickets, meetings or hours recorded for {employee.name} on this day.</Empty>}
+
+      {r && (
+        <div className={state.loading ? 'opacity-60 transition-opacity' : ''}>
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2 mb-3">
+            {Object.entries(DAILY_BUCKETS).map(([k, [label, cls]]) => (
+              <div key={k} className={`rounded ring-1 ring-inset px-3 py-2 ${cls}`}>
+                <div className="text-[11px] font-medium">{label}</div>
+                <div className="text-xl font-semibold tabular-nums">{r[k]}</div>
+              </div>
+            ))}
+            <div className="rounded ring-1 ring-inset px-3 py-2 bg-indigo-50 text-indigo-800 ring-indigo-200">
+              <div className="text-[11px] font-medium">Meetings</div>
+              <div className="text-xl font-semibold tabular-nums">{r.meetings}</div>
+            </div>
+            <div className="rounded ring-1 ring-inset px-3 py-2 bg-gray-50 text-gray-800 ring-gray-200" title={`Tickets ${dHm(r.taskHours)} · meetings ${dHm(r.meetingHours)}`}>
+              <div className="text-[11px] font-medium">Hours worked</div>
+              <div className="text-xl font-semibold tabular-nums">{dHm(r.hours)}</div>
+            </div>
+            <div className="rounded ring-1 ring-inset px-3 py-2 bg-gray-50 text-gray-800 ring-gray-200">
+              <div className="text-[11px] font-medium">Day's plan</div>
+              <div className="text-xl font-semibold tabular-nums">{plan != null ? `${plan}%` : '—'}</div>
+              <div className="text-[10px] text-gray-500">{r.completed} of {r.planned} done or in review</div>
+            </div>
+          </div>
+
+          <div className="divide-y divide-gray-100 border border-gray-200 rounded bg-white">
+            {r.tasks.map(k => (
+              <div key={k.key} className="flex items-center gap-3 px-3 py-1.5 text-xs">
+                <span className={`shrink-0 w-28 truncate text-center px-1.5 py-0.5 rounded ring-1 ring-inset text-[10px] font-medium ${DAILY_BUCKETS[k.bucket][1]}`} title={k.status}>{DAILY_BUCKETS[k.bucket][0]}</span>
+                <span className="shrink-0 font-mono text-[11px] text-gray-500 w-32 truncate">{k.key}</span>
+                <span className="flex-1 min-w-0 truncate text-gray-800" title={k.title}>{k.title}</span>
+                {k.carried && <span className="shrink-0 text-[10px] text-red-600" title="Scheduled earlier, still open">from {fmtDate(k.scheduled)}</span>}
+                {k.workType && <span className="shrink-0 text-[10px] uppercase tracking-wide text-gray-500 max-w-[110px] truncate">{k.workType}</span>}
+                <span className={`shrink-0 w-14 text-right tabular-nums ${k.hours ? 'text-gray-800' : 'text-gray-300'}`} title="Time worked on it this day">{k.hours ? dHm(k.hours) : '—'}</span>
+              </div>
+            ))}
+            {r.meetingList.map(m => (
+              <div key={`m-${m.id}`} className="flex items-center gap-3 px-3 py-1.5 text-xs">
+                <span className="shrink-0 w-28 text-center px-1.5 py-0.5 rounded ring-1 ring-inset text-[10px] font-medium bg-indigo-50 text-indigo-800 ring-indigo-200">Meeting</span>
+                <span className="shrink-0 text-[11px] text-gray-500 w-32 tabular-nums">{new Date(m.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} · {m.durationMin} min</span>
+                <span className="flex-1 min-w-0 truncate text-gray-800" title={m.title}>{m.title}</span>
+                <span className={`shrink-0 text-[10px] ${m.attended === 0 ? 'text-red-600' : 'text-gray-500'}`}>{meetingState(m)}</span>
+                <span className={`shrink-0 w-14 text-right tabular-nums ${m.hours ? 'text-gray-800' : 'text-gray-300'}`}>{m.hours ? dHm(m.hours) : '—'}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-gray-500 mt-2">The same report as the board's Daily report, for this person: where each of their tickets stood when the day ended, plus time logged and meetings. Use ‹ › to move through the period.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ───────────────────────── employee report ───────────────────────── */
 
 const DETAIL_TABS = [
@@ -1076,6 +1373,7 @@ const DETAIL_TABS = [
   ['time', 'Time log', Clock],
   ['meetings', 'Meetings', Video],
   ['reschedules', 'Reschedules', Calendar],
+  ['daily', 'Daily report', Calendar],
   ['activity', 'Activity', MessageSquare],
   ['reviews', 'Reviews', Star]
 ];
@@ -1123,7 +1421,7 @@ const TaskTable = ({ rows, open }) => {
               )}
               {!open && <td className="py-2 px-3 text-right tabular-nums">{fmtNum(t.cycleDays)}</td>}
               <td className="py-2 px-3 text-right tabular-nums">{t.hoursLogged || '—'}{t.estimateHours ? <span className="text-gray-400"> / {Math.round(t.estimateHours * 10) / 10}</span> : ''}</td>
-              <td className="py-2 pl-3 text-right tabular-nums">{t.points || 0}</td>
+              <td className="py-2 pl-3 text-right tabular-nums" title={t.effortEvaluation ? `Task score ${t.effortEvaluation.score}%: ${t.points} earned of ${t.basePoints} base points` : undefined}>{t.points || 0}{t.basePoints != null && t.basePoints !== t.points ? <span className="text-gray-400"> / {t.basePoints}</span> : ''}</td>
             </tr>
           ))}
         </tbody>
@@ -1179,7 +1477,7 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
             className="no-print inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 cursor-pointer">
             <FileText size={13} /> Review meeting report (PDF)
           </button>
-          <PeriodBar params={params} setParams={setParams} showDepartment={false} onExport={exportCsv} onPrint={() => window.print()} />
+          <PeriodBar params={params} setParams={setParams} showDepartment={false} onExport={exportCsv} onPrint={() => downloadEmployeePdf(data)} />
         </div>
       </div>
 
@@ -1211,6 +1509,15 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
         </div>
       </div>
 
+      {/* Headline figures */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <StatTile icon={Trophy} label="Overall score" value={data.score != null ? `${data.score}/100` : '—'} hint={data.grade} tone={data.score != null && data.score < 50 ? 'warn' : 'default'} />
+        <StatTile icon={CheckCircle2} label="Tasks completed" value={m.tasksCompleted} hint={`of ${m.tasksAssigned} assigned`} />
+        <StatTile icon={Target} label="On-time delivery" value={fmtNum(m.onTimeRate, '%')} hint={`${m.onTimeCompleted} on time · ${m.lateCompleted} late`} />
+        <StatTile icon={Star} label="Quality score" value={fmtNum(qualityScoreOf(m), '%')} hint={m.reopened ? `${m.reopened} reopened after done` : 'No task reopened after done'} tone={qualityScoreOf(m) != null && qualityScoreOf(m) < 90 ? 'warn' : 'default'} />
+        <StatTile icon={Award} label="Effort points" value={m.pointsEarned} hint={m.pointsPossible ? `of ${m.pointsPossible} possible · ${m.effortQuality}% quality` : 'From finished tasks'} />
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatTile icon={Award} label="Effort delivered" value={`${m.effortHours || 0} h`} hint={m.tasksCompleted ? `${m.tasksCompleted} tasks · ~${m.avgEffortPerTask} h each` : 'No finished task'} />
@@ -1225,7 +1532,7 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
         <StatTile icon={Users} label="Active days" value={m.activeDays} hint="Days with any recorded work" />
         <StatTile icon={Zap} label="Speed vs standard" value={fmtNum(m.speedVsStandard, '%')} tone={m.speedVsStandard != null && m.speedVsStandard < 60 ? 'warn' : 'default'} hint={m.speedActualHours ? `${m.speedStandardHours} h standard took ${m.speedActualHours} h · 100% = standard` : 'No timed tasks'} />
         <StatTile icon={Star} label="Quality factor" value={m.qualityFactor != null ? `x${m.qualityFactor}` : '—'} tone={m.qualityFactor != null && m.qualityFactor < 0.95 ? 'warn' : 'default'} hint="Deadline, rework, review: at most ±25%" />
-        <StatTile icon={Star} label="Points" value={m.pointsEarned} hint={m.pointsApproved ? `${m.pointsApproved} approved` : 'From finished tasks'} />
+        <StatTile icon={Star} label="Points approved" value={m.pointsApproved || 0} hint="Manager-approved in the Review Gate" />
         <StatTile icon={Video} label="Meetings" value={m.meetings} hint={m.meetingHours ? `${m.meetingHours} h${m.avgMeetingMinutes ? ` · avg ${m.avgMeetingMinutes} min` : ''}` : undefined} />
         <StatTile icon={AlertTriangle} label="Overdue now" value={m.overdueOpen} tone="warn" />
         <StatTile icon={Calendar} label="Rescheduled" value={m.reschedules || 0}
@@ -1257,19 +1564,37 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
           {data.breakdown.length === 0 ? (
             <Empty>No finished task or review in this period, so there is nothing to score.</Empty>
           ) : (
-            <ul className="space-y-3">
-              {data.breakdown.map(part => (
-                <li key={part.component}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-700">{COMPONENT_LABELS[part.component]} <span className="text-gray-400">· weight {part.weight}%</span></span>
-                    <span className=" tabular-nums text-gray-900">{part.value}</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded overflow-hidden" aria-hidden="true">
-                    <div className="h-full rounded" style={{ width: `${part.value}%`, background: SERIES }} />
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-gray-500 border-b border-gray-200">
+                  <th className="py-1.5 pr-2 font-medium">Parameter</th>
+                  <th className="py-1.5 px-1 font-medium text-right">Weight</th>
+                  <th className="py-1.5 px-2 font-medium w-[28%]">Score (100)</th>
+                  <th className="py-1.5 pl-1 font-medium text-right">Weighted</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.breakdown.map(part => (
+                  <tr key={part.component} className="border-b border-gray-100">
+                    <td className="py-2 pr-2 text-gray-800">{COMPONENT_LABELS[part.component]}</td>
+                    <td className="py-2 px-1 text-right tabular-nums text-gray-600">{part.weight}%</td>
+                    <td className="py-2 px-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex-1 h-2 bg-gray-100 rounded overflow-hidden" aria-hidden="true"><div className="h-full rounded bg-green-500" style={{ width: `${part.value}%` }} /></div>
+                        <span className="tabular-nums text-gray-900 w-6 text-right">{part.value}</span>
+                      </div>
+                    </td>
+                    <td className="py-2 pl-1 text-right tabular-nums text-gray-900">{(Math.round(part.value * part.weight) / 100).toFixed(1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-green-50">
+                  <td className="py-2 pr-2 font-semibold text-gray-900" colSpan={3}>Overall performance score</td>
+                  <td className="py-2 pl-1 text-right font-semibold tabular-nums text-green-800">{data.score} / 100</td>
+                </tr>
+              </tfoot>
+            </table>
           )}
           <ScoreExplainer weights={data.scoreWeights} />
           {(m.estimateAccuracy != null || m.reopened > 0 || m.updates + m.comments > 0) && (
@@ -1299,11 +1624,22 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
         <Section title="Hours logged per month" subtitle="Last 12 months"><TrendChart data={data.monthly} dataKey="hoursLogged" unit=" h" /></Section>
       </div>
 
+      <EffortEvaluation metrics={m} />
+
       <PlannedVsActual metrics={m} tasks={data.tasks.completed} />
 
       <Section title="Work by type" subtitle={`${data.range.label} · compared with the department's average time for the same kind of work`}>
         <WorkTypeTable rows={data.workTypes} />
       </Section>
+
+      <WeeklySection tasks={data.tasks.completed} range={data.range} />
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <ImprovementAreas metrics={m} />
+        <div className="xl:col-span-2">
+          <ManagerPlan reviews={data.reviews} range={data.range} insights={data.insights} canReview={canReview} isSelf={isSelf} onAdd={() => setReviewOpen(true)} />
+        </div>
+      </div>
 
       <Section title="Monthly scorecard" subtitle="Last 12 months, newest first. Score and rank are within the department for that month.">
         <ScorecardTable rows={data.scorecard} />
@@ -1320,11 +1656,11 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
             const count = k === 'completed' ? data.tasks.completed.length : k === 'open' ? data.tasks.open.length
               : k === 'time' ? data.timeLog.length : k === 'meetings' ? data.meetings.length
                 : k === 'reschedules' ? (data.rescheduleLog || []).length
-                  : k === 'activity' ? data.activity.length : data.reviews.length;
+                  : k === 'daily' ? null : k === 'activity' ? data.activity.length : data.reviews.length;
             return (
               <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
                 className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 -mb-px whitespace-nowrap cursor-pointer ${tab === k ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
-                <Icon size={13} /> {label} <span className="text-gray-400 tabular-nums">{count}</span>
+                <Icon size={13} /> {label} {count != null && <span className="text-gray-400 tabular-nums">{count}</span>}
               </button>
             );
           })}
@@ -1385,6 +1721,7 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
               <p className="text-[11px] text-gray-500 mt-2">On-time delivery is judged against the latest due date. This list shows every move so managers can see how often deadlines changed and who changed them.</p>
             </div>
           ))}
+          {tab === 'daily' && <EmployeeDailyReport employee={e} range={data.range} />}
           {tab === 'activity' && (data.activity.length === 0 ? <Empty>No ticket updates or comments in this period.</Empty> : (
             <ol className="relative border-l border-gray-200 ml-2 space-y-3">
               {data.activity.map((a, i) => (
@@ -1409,6 +1746,11 @@ const EmployeeReport = ({ employeeId, params, setParams, onBack, canReview, isSe
                     <span>On-time {fmtNum(r.onTime)}</span><span>Efficiency {fmtNum(r.efficiency)}</span>
                   </div>
                   {r.feedback && <p className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">{r.feedback}</p>}
+                  {(r.strengths || r.focusNextMonth || r.actions) && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 text-xs text-gray-700">
+                      {[['Strengths', r.strengths], ['Focus next month', r.focusNextMonth], ['Actions', r.actions]].map(([l, v]) => v ? <div key={l}><div className="font-semibold text-gray-900">{l}</div><div className="whitespace-pre-wrap">{v}</div></div> : null)}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -1545,7 +1887,7 @@ const HRPerformance = () => {
         </div>
       </div>
 
-      <PeriodBar params={params} setParams={setParams} departments={data?.departments} onExport={exportTeamCsv} onPrint={() => window.print()} />
+      <PeriodBar params={params} setParams={setParams} departments={data?.departments} onExport={exportTeamCsv} onPrint={data ? () => downloadTeamPdf(data, { department: params.department }) : undefined} />
 
       {loading && !data && <div className="py-20 text-center text-sm text-gray-500">Loading report…</div>}
       {error && !selfOnly && <div className="py-10 text-center text-sm text-red-700">{error}</div>}

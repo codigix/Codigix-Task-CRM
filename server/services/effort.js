@@ -131,7 +131,8 @@ const canSeeEffort = (user) => {
 const EFFORT_KEYS = new Set([
   'effort_points', 'effortPoints', 'point_value', 'contribution_method', 'contribution_review_status',
   'effortHours', 'effortPerDay', 'avgEffortPerTask', 'effortByBasis', 'effortBasis', 'effortExceedsCapacity',
-  'productivity', 'pointsEarned', 'pointsApproved', 'planVsStandard', 'ownPlansCount', 'qualityFactor', 'qualityParts', 'effortFlags'
+  'productivity', 'pointsEarned', 'pointsApproved', 'planVsStandard', 'ownPlansCount', 'qualityFactor', 'qualityParts', 'effortFlags',
+  'pointsPossible', 'effortQuality', 'effortScore', 'effortBreakdown', 'effortParameters', 'basePoints', 'effortEvaluation'
 ]);
 
 /** Remove effort fields from any JSON-like value (in place), at any depth. */

@@ -18,6 +18,7 @@
 
 const { parseDurationToSeconds: parseWorkDuration, workingSecondsBetween, workingDaysBetween } = require('./workTime');
 const effort = require('./effort');
+const taskEval = require('./taskEvaluation');
 
 const DAY = 24 * 60 * 60 * 1000;
 const DONE = new Set(['DONE', 'COMPLETED', 'CLOSED', 'RESOLVED']);
@@ -103,7 +104,29 @@ const parseDurationHours = (v) => {
 const resolveRange = ({ period = 'month', value, from, to } = {}) => {
   const now = new Date();
   let start; let end; let label;
-  if (period === 'custom' && from && to) {
+  if (period === 'day') {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+    const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+    label = start.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  } else if (period === 'week') {
+    // value is an ISO week (2026-W47) or any date inside the week; weeks run Monday to Sunday.
+    let anchor;
+    const w = /^(\d{4})-W(\d{1,2})$/i.exec(value || '');
+    const dt = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+    if (w) {
+      const jan4 = new Date(Number(w[1]), 0, 4);
+      const mondayWeek1 = new Date(jan4.getFullYear(), 0, 4 - ((jan4.getDay() + 6) % 7));
+      anchor = new Date(mondayWeek1.getFullYear(), mondayWeek1.getMonth(), mondayWeek1.getDate() + (Number(w[2]) - 1) * 7);
+    } else {
+      anchor = dt ? new Date(Number(dt[1]), Number(dt[2]) - 1, Number(dt[3])) : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+    start = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() - ((anchor.getDay() + 6) % 7));
+    end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6, 23, 59, 59, 999);
+    const f = (d, y) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
+    label = `${f(start)} – ${f(end, true)}`;
+  } else if (period === 'custom' && from && to) {
     start = new Date(`${from}T00:00:00`);
     end = new Date(`${to}T23:59:59.999`);
     label = `${from} – ${to}`;
@@ -149,9 +172,9 @@ const loadDataset = async (pool) => {
               r.name AS role_name
          FROM users u LEFT JOIN roles r ON r.id = u.role_id`),
     // estimate_approved / requested_estimate say whether a plan is trusted for scoring.
-    pool.query(`SELECT id, issue_key, title, type, priority, status, assignee, due_date, start_date, created_at, updated_at, effort_points, story_points, original_estimate, subtasks, comments, project_id, department, labels, estimate_approved, requested_estimate FROM it_kanban_issues`)
+    pool.query(`SELECT id, issue_key, title, type, priority, status, assignee, reporter, due_date, start_date, created_at, updated_at, effort_points, story_points, original_estimate, subtasks, comments, project_id, department, labels, estimate_approved, requested_estimate FROM it_kanban_issues`)
       .then(r => r[0])
-      .catch(e => (e.code === 'ER_BAD_FIELD_ERROR' ? q(`SELECT id, issue_key, title, type, priority, status, assignee, due_date, start_date, created_at, updated_at, effort_points, story_points, original_estimate, subtasks, comments, project_id, department, labels FROM it_kanban_issues`) : Promise.reject(e))),
+      .catch(e => (e.code === 'ER_BAD_FIELD_ERROR' ? q(`SELECT id, issue_key, title, type, priority, status, assignee, reporter, due_date, start_date, created_at, updated_at, effort_points, story_points, original_estimate, subtasks, comments, project_id, department, labels FROM it_kanban_issues`) : Promise.reject(e))),
     q(`SELECT issue_key, field, old_value, new_value, changed_by, created_at FROM it_kanban_history ORDER BY created_at ASC`),
     pool.query(`SELECT issue_key, author, seconds, description, started_at, created_at, kind FROM it_kanban_worklogs
                 WHERE COALESCE(approval, 'approved') = 'approved'`)
@@ -169,8 +192,7 @@ const loadDataset = async (pool) => {
          FROM followups WHERE type IN (${MEETING_FOLLOWUP_TYPES.map(() => '?').join(',')})`, MEETING_FOLLOWUP_TYPES),
     q(`SELECT id, call_type, duration, started_at, created_at, created_by, caller_name FROM call_history`),
     q(`SELECT task_id, user_id, effort_points, approved_at, approval_status FROM task_contributions WHERE approval_status = 'Approved'`),
-    q(`SELECT pr.id, pr.employee_id, pr.reviewer_id, pr.score, pr.task_completion, pr.quality_of_work, pr.on_time_delivery,
-              pr.efficiency, pr.feedback, pr.created_at,
+    q(`SELECT pr.*,
               TRIM(CONCAT(COALESCE(ru.first_name,''),' ',COALESCE(ru.last_name,''))) AS reviewer_name
          FROM performance_reviews pr LEFT JOIN users ru ON ru.id = pr.reviewer_id
         ORDER BY pr.created_at DESC`),
@@ -269,13 +291,30 @@ const buildFacts = (data) => {
     const firstActive = events.find(e => isActive(e.to));
     const reopened = events.filter(e => isDone(e.from) && !isDone(e.to)).length;
     const done = isDone(i.status);
-    const completedAt = done ? (lastDone?.at || toDate(i.updated_at)) : null;
+    // The employee's part ends when they hand the work in (In Review, or Testing). From then it waits on
+    // someone else: the reporter approves it. So handed-in work counts as finished for the employee, and
+    // the wait for approval is the reporter's pending work, not the employee's.
+    const isHandIn = (s) => ['IN REVIEW', 'REVIEW', 'TESTING'].includes(String(s || '').toUpperCase().trim());
+    const inReview = ['IN REVIEW', 'REVIEW'].includes(String(i.status || '').toUpperCase().trim());
+    const finished = done || isHandIn(i.status);
+    const approvedAt = done ? (lastDone?.at || toDate(i.updated_at)) : null;
+    // The last hand-in: after the last time it was reopened, and before it was approved.
+    const lastReopen = [...events].reverse().find(e => isDone(e.from) && !isDone(e.to) && (!approvedAt || e.at <= approvedAt));
+    const handedIn = finished ? [...events].reverse().find(e => isHandIn(e.to) && e.at && (!approvedAt || e.at <= approvedAt) && (!lastReopen || e.at > lastReopen.at)) : null;
+    const completedAt = finished ? (handedIn?.at || approvedAt || toDate(i.updated_at)) : null;
+    // Sent back to the assignee by the reviewer (counts as rework).
+    const sentBack = events.filter(e => isHandIn(e.from) && !isHandIn(e.to) && !isDone(e.to)).length;
     const startedAt = firstActive?.at || toDate(i.start_date) || toDate(i.created_at);
-    // Finished work belongs to whoever held it when it was finished, so reassigning a Done
-    // ticket afterwards doesn't move the credit.
-    const userId = idForName(done && lastDone ? assigneeAt(i, lastDone.at) : i.assignee);
+    // Finished work belongs to whoever held it when it was handed in, so reassigning the ticket
+    // afterwards doesn't move the credit.
+    const userId = idForName(finished && completedAt ? assigneeAt(i, completedAt) : i.assignee);
     // The deadline to hold the person to: moves they made themselves don't count.
     const due = effort.effectiveDue(toDate(i.due_date), dueEvents.get(i.issue_key), (n) => userId != null && idForName(n) === userId);
+    // Evidence, comments and hand-in time for the nine-parameter evaluation (services/taskEvaluation.js).
+    const cmts = (parseJson(i.comments, []) || []).filter(Boolean);
+    const evidenceC = [...cmts].reverse().find(c => c.kind === 'evidence');
+    const evNote = evidenceC ? String(evidenceC.text || '').replace(/<[^>]+>/g, '').trim() : '';
+    const evidence = evidenceC ? { links: (evidenceC.links || []).length, files: (evidenceC.files || []).length, note: Boolean(evNote) && !/^submitted for review\.?$/i.test(evNote) } : null;
 
     tasks.push({
       source: 'Ticket',
@@ -291,8 +330,20 @@ const buildFacts = (data) => {
       selfMoves: due.selfMoves,
       rating: ratings.get(i.issue_key) || null,
       completedAt,
-      completionEstimated: done && !lastDone, // no history row: date taken from last update
-      points: Number(i.effort_points) || Number(i.story_points) || 0,
+      submittedAt: handedIn ? handedIn.at : null,
+      approvedAt,
+      awaitingReview: inReview, // handed in; waiting for the reporter's decision
+      reporterId: idForName(i.reporter),
+      approverId: approvedAt ? (idForName(lastDone?.by) || idForName(i.reporter)) : null,
+      sentBack,
+      evidence,
+      ownComments: userId != null ? cmts.filter(c => c.author && idForName(c.author) === userId).length : null,
+      selfRaised: userId != null && idForName(i.reporter) === userId,
+      // Done is the reporter's call (often many at once), so finished work is credited to the day it was
+      // scheduled for, like the Daily report: due date, else start date, else the day it was finished.
+      scheduledAt: toDate(i.due_date) || toDate(i.start_date),
+      completionEstimated: finished && !handedIn && !lastDone, // no history row: date taken from last update
+      points: Number(i.effort_points) || 0, // story points are an agile estimate, a different thing; missing points are priced below
       estimateHours: parseDurationHours(i.original_estimate),
       // A plan set or approved by a manager is trusted; an employee's own plan isn't.
       estimateApproved: Number(i.estimate_approved) === 1,
@@ -325,6 +376,7 @@ const buildFacts = (data) => {
       startedAt: toDate(t.start_date) || toDate(t.created_at),
       dueAt: toDate(t.due_date),
       completedAt: done ? (toDate(t.completed_date) || toDate(t.updated_at)) : null,
+      scheduledAt: toDate(t.due_date),
       completionEstimated: done && !t.completed_date,
       points: Number(t.effort_points) || 0,
       estimateHours: t.estimated_hours != null ? Number(t.estimated_hours) : null,
@@ -349,6 +401,7 @@ const buildFacts = (data) => {
       startedAt: toDate(t.created_at),
       dueAt: toDate(t.due_date),
       completedAt: done ? toDate(t.updated_at) : null,
+      scheduledAt: toDate(t.due_date),
       completionEstimated: done,
       points: Number(t.effort_points) || 0,
       estimateHours: t.estimated_hours != null ? Number(t.estimated_hours) : null,
@@ -364,6 +417,7 @@ const buildFacts = (data) => {
   const sizeMap = new Map(Object.entries(DEFAULT_WORK_SIZES).map(([k, v]) => [k.toLowerCase(), v]));
   (data.workSizes || []).forEach(r => { if (Number(r.hours) > 0) sizeMap.set(String(r.work_type).toLowerCase(), Number(r.hours)); });
   tasks.forEach(t => {
+    t.creditAt = t.completedAt ? (t.scheduledAt || t.completedAt) : null;
     const std = sizeMap.get(String(t.workType || '').toLowerCase());
     // Trusted plan = a manager-approved planned time, else the standard size. Effort and
     // efficiency both use it, so padding one's own planned time gains nothing.
@@ -384,6 +438,8 @@ const buildFacts = (data) => {
     t.qualityParts = q.parts;
     t.planRatio = t.estimateHours > 0 && std ? t.estimateHours / std : null;
     t.effortHours = round(stdSize * effort.weightFor(t.priority) * (t.completedAt ? q.factor : 1), 2);
+    // A ticket that never got stored points is priced the same way the server prices new tickets (meetings earn none).
+    if (!t.points && t.source === 'Ticket' && String(t.type || '').toLowerCase() !== 'meeting') t.points = effort.pointsFor(std, t.priority);
   });
 
   // Time entries (hours), each attributed to a user id with a date and optionally a task key.
@@ -492,10 +548,31 @@ const buildFacts = (data) => {
   const reviews = data.reviews.map(r => ({
     id: r.id, userId: Number(r.employee_id), score: r.score != null ? Number(r.score) : null, at: toDate(r.created_at),
     reviewer: r.reviewer_name || null, feedback: r.feedback || '',
+    // Structured manager action plan (older reviews have none).
+    strengths: r.strengths || '', focusNextMonth: r.focus_next_month || '', actions: r.actions || '',
     taskCompletion: r.task_completion, quality: r.quality_of_work, onTime: r.on_time_delivery, efficiency: r.efficiency
   }));
 
   return { employees, tasks, subtaskFacts, time, meetings, activity, points, reviews, sizeMap, reschedules };
+};
+
+/** Hours each person recorded on each task, built once per report. */
+const timeByUserKey = (facts) => {
+  if (!facts._timeByUserKey) {
+    const m = new Map();
+    facts.time.forEach(e => { if (e.taskKey) { const k = `${e.userId}|${e.taskKey}`; m.set(k, (m.get(k) || 0) + e.hours); } });
+    facts._timeByUserKey = m;
+  }
+  return facts._timeByUserKey;
+};
+
+/** Evaluate a finished task once (nine parameters) and set the points it earned. Base points stay on t.points. */
+const ensureEval = (facts, t) => {
+  if (t._eval !== undefined) return t._eval;
+  t.basePoints = t.points || 0;
+  t._eval = t.completedAt ? taskEval.evaluate(t, { actualHours: timeByUserKey(facts).get(`${t.userId}|${t.key}`) || 0 }) : null;
+  t.earnedPoints = t._eval ? round(t.basePoints * t._eval.score / 100, 1) : t.basePoints;
+  return t._eval;
 };
 
 /** All metrics for one person over one date range. */
@@ -504,9 +581,18 @@ const computeMetrics = (facts, userId, from, to) => {
   const now = new Date();
   const mine = facts.tasks.filter(t => Number(t.userId) === uid);
 
-  const completed = mine.filter(t => inRange(t.completedAt, from, to));
+  const completed = mine.filter(t => inRange(t.creditAt, from, to));
+  completed.forEach(t => ensureEval(facts, t));
+  // Reviews are the reporter's work. Waiting now = handed in and not yet approved or sent back. Approved = decided in the period.
+  const reviewQueue = facts.tasks.filter(t => t.awaitingReview && Number(t.reporterId) === uid);
+  const reviewedHere = facts.tasks.filter(t => t.approvedAt && Number(t.approverId) === uid && t.submittedAt && inRange(t.approvedAt, from, to));
+  const waitDays = (t) => Math.max(0, (now - t.completedAt) / DAY);
+  const reviewTurnaround = reviewedHere.map(t => Math.max(0, (t.approvedAt - t.submittedAt) / DAY));
+  const pointsPossible = completed.reduce((s, t) => s + (t.basePoints || 0), 0);
+  const pointsEarned = round(completed.reduce((s, t) => s + (t.earnedPoints || 0), 0), 1) || 0;
+  const effortEval = taskEval.summarize(completed.map(t => ({ ev: t._eval, w: Math.max(1, t.basePoints || 1) })));
   // Workload: tasks that existed by the end of the range and were not finished before it began.
-  const assigned = mine.filter(t => t.createdAt && t.createdAt <= to && (!t.completedAt || t.completedAt >= from));
+  const assigned = mine.filter(t => t.createdAt && t.createdAt <= to && (!t.creditAt || t.creditAt >= from));
   const cutoff = to < now ? to : now;
   const openOverdue = mine.filter(t => t.dueAt && t.dueAt < cutoff && (!t.completedAt || t.completedAt > cutoff) && !(!t.completedAt && isOnHold(t.status)));
   const withDue = completed.filter(t => t.dueAt);
@@ -552,7 +638,7 @@ const computeMetrics = (facts, userId, from, to) => {
   const activeDays = new Set([
     // Only real work marks a day as active: time recorded, a task finished, a status move,
     // a meeting. Comments and small edits don't, so they can't be used to pad the count.
-    ...timeInRange.map(e => e.at), ...completed.map(t => t.completedAt),
+    ...timeInRange.map(e => e.at), ...completed.map(t => t.completedAt).filter(d => inRange(d, from, to)),
     ...activity.filter(a => a.kind === 'update' && a.field === 'status').map(a => a.at), ...meetings.map(m => m.at)
   ].filter(Boolean).map(dayKey));
 
@@ -605,7 +691,7 @@ const computeMetrics = (facts, userId, from, to) => {
   const manualHours = timeInRange.filter(e => !/^Automatic/.test(e.source || '')).reduce((s, e) => s + e.hours, 0);
   const hoursByDay = new Map();
   timeInRange.forEach(e => { if (e.at) hoursByDay.set(dayKey(e.at), (hoursByDay.get(dayKey(e.at)) || 0) + e.hours); });
-  const workDays = new Set([...completed.map(t => t.completedAt), ...activity.filter(a => a.kind === 'update' && a.field === 'status').map(a => a.at), ...meetings.map(m => m.at)].filter(Boolean).map(dayKey));
+  const workDays = new Set([...completed.map(t => t.completedAt).filter(d => inRange(d, from, to)), ...activity.filter(a => a.kind === 'update' && a.field === 'status').map(a => a.at), ...meetings.map(m => m.at)].filter(Boolean).map(dayKey));
   const daysWithTimeNoActivity = [...hoursByDay.entries()].filter(([k, h]) => h >= 2 && !workDays.has(k)).length;
   const effortFlags = effort.detectFlags({
     plannedVsActual: completedWithLogs.filter(t => t.estimateHours > 0).map(t => ({ plan: t.estimateHours, actual: myTimeByTask.get(t.key) })),
@@ -658,13 +744,23 @@ const computeMetrics = (facts, userId, from, to) => {
     tasksCompleted: completed.length,
     completionRate: pct(completed.length, assigned.length),
     subtasksCompleted: subtasks.length,
-    pointsEarned: completed.reduce((s, t) => s + t.points, 0),
+    pointsEarned,
+    pointsPossible,
+    effortQuality: pointsPossible > 0 ? Math.round((pointsEarned / pointsPossible) * 100) : null,
+    effortScore: effortEval.score,
+    effortBreakdown: effortEval.parameters,
     pointsApproved: approvedPoints,
     onTimeCompleted: onTime.length,
     lateCompleted: late.length,
     onTimeRate: pct(onTime.length, withDue.length),
     overdueOpen: openOverdue.length,
     reopened: completed.reduce((s, t) => s + (t.reopened || 0), 0),
+    sentBack: completed.reduce((s, t) => s + (t.sentBack || 0), 0),
+    reviewsPending: reviewQueue.length,
+    reviewsOldestDays: reviewQueue.length ? round(Math.max(...reviewQueue.map(waitDays)), 1) : null,
+    reviewsApproved: reviewedHere.length,
+    avgReviewDays: reviewTurnaround.length ? round(reviewTurnaround.reduce((a, b) => a + b, 0) / reviewTurnaround.length, 1) : null,
+    awaitingApproval: completed.filter(t => t.awaitingReview).length,
     avgCycleDays: cycleDays.length ? round(cycleDays.reduce((a, b) => a + b, 0) / cycleDays.length) : null,
     fastestCycleDays: cycleDays.length ? round(Math.min(...cycleDays)) : null,
     hoursLogged: round(hoursLogged),
@@ -746,7 +842,7 @@ const seriesFor = (facts, userIds, buckets) => buckets.map(b => {
     label: b.label,
     tasksCompleted: sum('tasksCompleted'),
     hoursLogged: round(sum('hoursLogged')),
-    pointsEarned: sum('pointsEarned'),
+    pointsEarned: round(sum('pointsEarned'), 1),
     effortHours: round(sum('effortHours')),
     meetings: sum('meetings'),
     onTimeRate: pct(sum('onTimeCompleted'), withDue),
@@ -760,7 +856,7 @@ const bestRecords = (facts, userId) => {
   const done = facts.tasks.filter(t => Number(t.userId) === uid && t.completedAt).sort((a, b) => a.completedAt - b.completedAt);
 
   const byMonth = new Map();
-  done.forEach(t => { const k = monthKey(t.completedAt); byMonth.set(k, (byMonth.get(k) || 0) + 1); });
+  done.forEach(t => { const k = monthKey(t.creditAt || t.completedAt); byMonth.set(k, (byMonth.get(k) || 0) + 1); });
   const hoursByMonth = new Map();
   facts.time.filter(e => Number(e.userId) === uid && e.at).forEach(e => { const k = monthKey(e.at); hoursByMonth.set(k, (hoursByMonth.get(k) || 0) + e.hours); });
   const top = (map) => [...map.entries()].sort((a, b) => b[1] - a[1])[0] || null;
@@ -885,7 +981,7 @@ const teamRecords = (facts, people) => {
   const doneByPersonMonth = new Map();
   const doneByMonth = new Map();
   facts.tasks.filter(t => t.completedAt && ids.has(Number(t.userId))).forEach(t => {
-    const mk = monthKey(t.completedAt);
+    const mk = monthKey(t.creditAt || t.completedAt);
     doneByPersonMonth.set(`${t.userId}|${mk}`, (doneByPersonMonth.get(`${t.userId}|${mk}`) || 0) + 1);
     doneByMonth.set(mk, (doneByMonth.get(mk) || 0) + 1);
   });
@@ -926,11 +1022,11 @@ const teamRecords = (facts, people) => {
 /** How complete the underlying records are, so readers know how far to trust the numbers. */
 const dataQualityFor = (facts, people, from, to, rows) => {
   const ids = new Set(people.map(p => Number(p.id)));
-  const inPeriod = facts.tasks.filter(t => t.createdAt && t.createdAt <= to && (!t.completedAt || t.completedAt >= from));
+  const inPeriod = facts.tasks.filter(t => t.createdAt && t.createdAt <= to && (!t.creditAt || t.creditAt >= from));
   const ownedTickets = inPeriod.filter(t => t.source === 'Ticket');
   const completed = rows.reduce((s, r) => s + r.metrics.tasksCompleted, 0);
   const withTime = rows.reduce((s, r) => s + r.metrics.tasksWithTimeLogged, 0);
-  const completedTasks = facts.tasks.filter(t => ids.has(Number(t.userId)) && inRange(t.completedAt, from, to));
+  const completedTasks = facts.tasks.filter(t => ids.has(Number(t.userId)) && inRange(t.creditAt, from, to));
   return {
     unassignedTickets: ownedTickets.filter(t => !t.userId).length,
     ticketsInPeriod: ownedTickets.length,
@@ -1037,7 +1133,7 @@ const buildTeamReport = async (pool, query = {}) => {
       avgHoursPerTask: timedRows.length
         ? round(timedRows.reduce((s, r) => s + r.metrics.avgHoursPerTask * r.metrics.tasksWithTimeLogged, 0) / timedRows.reduce((s, r) => s + r.metrics.tasksWithTimeLogged, 0))
         : null,
-      pointsEarned: sum('pointsEarned'),
+      pointsEarned: round(sum('pointsEarned'), 1),
       meetings: sum('meetings'),
       meetingHours: round(sum('meetingHours')),
       overdueOpen: sum('overdueOpen'),
@@ -1149,10 +1245,11 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
   }).reverse();
 
   const uid = Number(employee.id);
-  const fmt = (t) => ({
-    key: t.key, title: t.title, source: t.source, type: t.type, workType: t.workType, priority: t.priority, status: t.status, points: t.points,
-    createdAt: t.createdAt, startedAt: t.startedAt, dueAt: t.dueAt, completedAt: t.completedAt,
-    completionEstimated: t.completionEstimated,
+  const fmt = (t) => { ensureEval(facts, t); return {
+    key: t.key, title: t.title, source: t.source, type: t.type, workType: t.workType, priority: t.priority, status: t.status,
+    points: t.earnedPoints, basePoints: t.basePoints, effortEvaluation: t._eval ? { score: t._eval.score, parts: t._eval.parts } : null,
+    createdAt: t.createdAt, startedAt: t.startedAt, dueAt: t.dueAt, completedAt: t.completedAt, creditAt: t.creditAt,
+    completionEstimated: t.completionEstimated, awaitingReview: Boolean(t.awaitingReview), approvedAt: t.approvedAt,
     cycleDays: t.completedAt && t.startedAt && t.completedAt >= t.startedAt ? round((t.completedAt - t.startedAt) / DAY) : null,
     onTime: t.completedAt && t.dueAt ? t.completedAt <= new Date(t.dueAt.getFullYear(), t.dueAt.getMonth(), t.dueAt.getDate(), 23, 59, 59, 999) : null,
     hoursLogged: round(facts.time.filter(e => Number(e.userId) === uid && e.taskKey === t.key).reduce((s, e) => s + e.hours, 0)) || 0,
@@ -1172,13 +1269,14 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
         planVerdict: actual <= t.planHours * 1.1 ? (actual < t.planHours * 0.9 ? 'Under plan' : 'On plan') : 'Over plan'
       };
     })()
-  });
+  }; };
   const mineTasks = facts.tasks.filter(t => Number(t.userId) === uid);
   const now = new Date();
 
   return {
     range: { period: range.period, label: range.label, from: range.from, to: range.to },
     scoreWeights: SCORE_WEIGHTS,
+    effortParameters: taskEval.PARAMETERS,
     employee,
     metrics,
     score: me.score,
@@ -1200,8 +1298,15 @@ const buildEmployeeReport = async (pool, userId, query = {}) => {
     monthly: seriesFor(facts, [uid], monthsBack(trendEnd(range), 12)),
     quarterly: seriesFor(facts, [uid], quartersBack(trendEnd(range), 4)),
     bests: bestRecords(facts, uid),
+    // Finished tasks waiting for THIS person to approve (they are the reporter), oldest first.
+    reviewQueue: facts.tasks.filter(t => t.awaitingReview && Number(t.reporterId) === uid)
+      .sort((a, b) => a.completedAt - b.completedAt)
+      .map(t => ({
+        key: t.key, title: t.title, assignee: (facts.employees.find(e => Number(e.id) === Number(t.userId)) || {}).name || '—',
+        handedInAt: t.completedAt, waitingDays: round(Math.max(0, (now - t.completedAt) / DAY), 1), dueAt: t.dueAt
+      })),
     tasks: {
-      completed: mineTasks.filter(t => inRange(t.completedAt, range.from, range.to)).sort((a, b) => b.completedAt - a.completedAt).map(fmt),
+      completed: mineTasks.filter(t => inRange(t.creditAt, range.from, range.to)).sort((a, b) => b.creditAt - a.creditAt).map(fmt),
       open: mineTasks.filter(t => !t.completedAt).sort((a, b) => (a.dueAt || Infinity) - (b.dueAt || Infinity)).map(fmt)
         .map(t => ({ ...t, onHold: isOnHold(t.status), overdue: Boolean(t.dueAt && new Date(t.dueAt) < now && !isOnHold(t.status)) }))
     },

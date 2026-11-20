@@ -23,16 +23,14 @@ module.exports = function setupItKanbanRoutes(app, pool) {
    * What a ticket is worth: the standard size of its kind of work x priority. Never the planned or
    * logged time, which the assignee controls. Meetings are time, not output, so they earn no points.
    */
-  const standardPoints = async (issue) => {
-    const report = require('../services/performanceReport');
-    let labels = issue.labels;
-    if (typeof labels === 'string') { try { labels = JSON.parse(labels); } catch (e) { labels = []; } }
-    const workType = report.workTypeOf(Array.isArray(labels) ? labels : [], issue.type);
-    if (String(issue.type || '').toLowerCase() === 'meeting') return { points: 0, workType, sizeHours: 0, weight: 0, known: true };
-    const sizes = await effort.loadSizes(pool, report.DEFAULT_WORK_SIZES);
-    const size = effort.sizeOf(sizes, workType);
-    return { points: effort.pointsFor(size, issue.priority), workType, sizeHours: size ?? effort.FALLBACK_SIZE, weight: effort.weightFor(issue.priority), known: size != null };
-  };
+  const effortPoints = require('../services/effortPoints');
+  const standardPoints = (issue) => effortPoints.priceIssue(pool, issue);
+
+  // Every ticket gets its points on the server. Whatever was created without any (imports, sheet
+  // sync, older tickets) is priced when the server starts; meetings stay at 0.
+  effortPoints.backfillMissing(pool)
+    .then(n => { if (n) console.log(`Effort points filled in on ${n} ticket(s).`); })
+    .catch(e => console.error('Effort points backfill:', e.message));
 
   // Auto-upgrade column types on boot to prevent truncation / size errors on production
   (async () => {
@@ -1299,6 +1297,21 @@ app.get('/api/it-kanban/labels', async (req, res) => {
       res.json({ points: r.points, basis: 'standard-size', workType: r.workType, sizeHours: r.sizeHours, weight: r.weight, sizeKnown: r.known });
     } catch (error) {
       res.status(500).json({ error: 'Failed to calculate points' });
+    }
+  });
+
+  // Recalculate one ticket's points on the server and store them. The browser only asks; it never sends a number.
+  app.post('/api/it-kanban/issues/:key/recalculate-points', async (req, res) => {
+    if (!(req.user?.isManager || req.user?.isAdmin || effort.canSeeEffort(req.user))) return res.status(403).json({ error: 'Only a manager, HR or an admin can recalculate points.' });
+    try {
+      const [[row]] = await db.query('SELECT issue_key, type, priority, labels FROM it_kanban_issues WHERE issue_key = ?', [req.params.key]);
+      if (!row) return res.status(404).json({ error: 'Ticket not found' });
+      const r = await standardPoints(row);
+      await db.query('UPDATE it_kanban_issues SET effort_points = ? WHERE issue_key = ?', [r.points, row.issue_key]);
+      res.json({ points: r.points, workType: r.workType, sizeHours: r.sizeHours, weight: r.weight, sizeKnown: r.known });
+    } catch (error) {
+      console.error('recalculate points:', error.message);
+      res.status(500).json({ error: 'Failed to recalculate the points' });
     }
   });
 
